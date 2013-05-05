@@ -188,6 +188,13 @@ void titanicFrame::OnAbout(wxCommandEvent& event)
 
 void titanicFrame::loadShip(std::string filename)
 {
+    // RGB channels contain separate information:
+    // R: Strength (higher = more)
+    // G: Empty or not (white background has high G so is ignored, all materials have low G)
+    // B: Hull or not (blue has high G, is not hull; black has high G, is hull)
+    // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
+    // Can vary shades of red for varying strengths and colours
+
     wxImage shipimage(filename, wxBITMAP_TYPE_PNG);
     phys::ship *shp = new phys::ship(wld);
 
@@ -210,6 +217,10 @@ void titanicFrame::loadShip(std::string filename)
         }
     }
 
+    // Points have been generated, so fill in all the beams between them.
+    // If beam joins two hull nodes, it is a hull beam.
+    // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
+
     for (int x = 0; x < shipimage.GetWidth(); x++)
     {
         for (int y = 0; y < shipimage.GetHeight(); y++)
@@ -217,6 +228,7 @@ void titanicFrame::loadShip(std::string filename)
             phys::point *a = points[x][y];
             if (!a)
                 continue;
+            // First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y) - this covers each pair of points in each direction
             for (int i = 0; i < 4; i++)
             {
                 phys::point *b = points[x + directions[i][0]][y + directions[i][1]];
@@ -263,6 +275,7 @@ void titanicFrame::assertSettings()
 
 void titanicFrame::initgl()
 {
+    // Set the context, clear the canvas and set up all the matrices.
     GLContext1->SetCurrent(*GLCanvas1);
 
     glViewport(0, 0, canvaswidth, canvasheight);
@@ -293,6 +306,7 @@ void titanicFrame::initgl()
 
 void titanicFrame::endgl()
 {
+    // Flush all the draw operations and flip the back buffer onto the screen.
     glFlush();
     GLCanvas1->SwapBuffers();
     GLCanvas1->Refresh();
@@ -320,6 +334,7 @@ vec2 titanicFrame::screen2world(vec2 pos)
 
 void titanicFrame::OnTimer1Trigger(wxTimerEvent& event)
 {
+    // Main timing event!
     initgl();
     float halfheight = zoomsize;
     float halfwidth = (float)canvaswidth / canvasheight * halfheight;

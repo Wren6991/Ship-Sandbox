@@ -16,30 +16,34 @@
 
 void phys::world::update(double dt)
 {
-    //std::cout << " * Updating world\n";
     time += dt;
+    // Advance simulation for points: (velocity and forces)
     for (unsigned int i = 0; i < points.size(); i++)
         points[i]->update(dt);
+    // Iterate the spring relaxation (can tune this parameter, or make it scale automatically depending on free time)
     for (int iteration = 0; iteration < 15; iteration++)
         for (unsigned int i = 0; i < springs.size(); i++)
             springs[i]->update();
+    // Check if any springs exceed their breaking strain:
     for (std::vector<spring*>::iterator iter = springs.begin(); iter != springs.end();)
     {
         spring *spr = *iter;
         if (spr->isBroken())
         {
-            springs.erase(iter++);
-            delete spr;
+            springs.erase(iter++);  // have to delete after erasure - else there is a possibility of
+            delete spr;             // other objects accessing a bad pointer during this cleanup
         }
         else
             iter++;
     }
+    // Tell each ship to update all of its water stuff
     for (unsigned int i = 0; i < ships.size(); i++)
         ships[i]->update(dt);
 }
 
 void phys::world::render(double left, double right, double bottom, double top)
 {
+    // Draw the ocean floor
     glColor4f(0.5, 0.5, 0.5, 1);
     glBegin(GL_QUADS);
     glVertex3f(left, -seadepth, -1);
@@ -47,10 +51,12 @@ void phys::world::render(double left, double right, double bottom, double top)
     glVertex3f(right, bottom, -1);
     glVertex3f(left, bottom, -1);
     glEnd();
+    // Draw all the points and springs
     for (unsigned int i = 0; i < points.size(); i++)
         points[i]->render();
     for (unsigned int i = 0; i < springs.size(); i++)
         springs[i]->render();
+    // Cut the water into vertical slices (to get the different heights of waves) and draw it
     glColor4f(0, 0.25, 1, 0.5);
     double slicewidth = (right - left) / 50.0;
     for (double slicex = left; slicex < right; slicex += slicewidth)
@@ -62,14 +68,15 @@ void phys::world::render(double left, double right, double bottom, double top)
         glVertex3f(slicex + slicewidth, bottom, -1);
         glEnd();
     }
-
 }
 
+// Function of time and x (though time is constant during the update step, so no need to parameterise it)
 double phys::world::waterheight(double x)
 {
     return (sin(x * 0.1 + time) * 0.5 + sin(x * 0.3 - time * 1.1) * 0.3) * waveheight;
 }
 
+// Destroy all points within a 0.5m radius (could parameterise the radius but...)
 void phys::world::destroyAt(vec2 pos)
 {
     for (std::vector<point*>::iterator iter = points.begin(); iter != points.end();)
@@ -85,6 +92,7 @@ void phys::world::destroyAt(vec2 pos)
     }
 }
 
+// Copy parameters and set up initial params:
 phys::world::world(vec2 _gravity, double _buoyancy, double _strength)
 {
     time = 0;
@@ -96,6 +104,7 @@ phys::world::world(vec2 _gravity, double _buoyancy, double _strength)
     seadepth = 150;
 }
 
+// Destroy everything in the set order
 phys::world::~world()
 {
     // DESTROY THE WORLD??? Y/N
@@ -118,6 +127,7 @@ phys::world::~world()
 // P         O   O      I     N    NN     T
 // P          OOO    IIIIIII  N     N     T
 
+// Just copies parameters into relevant fields:
 phys::point::point(world *_parent, vec2 _pos, double _mass, double _buoyancy)
 {
     parent = _parent;
@@ -147,6 +157,7 @@ void phys::point::update(double dt)
     // Water drag:
     if (pos.y < parent->waterheight(pos.x))
         pos += (lastpos - pos) * (1 - pow(0.7, dt));
+    // Collision with seafloor:
     if (pos.y < -parent->seadepth)
         pos.y = -parent->seadepth;
     lastpos = newlastpos;
@@ -160,6 +171,7 @@ vec2 phys::point::getPos()
 
 void phys::point::setColor(bool isHull, double strength)
 {
+    // Gets more brown as strength goes down. If not hull, gets more blue as water goes up.
    if (isHull)
         glColor3f(1.2 - strength * 0.6, 0.6 - strength * 0.3, 0.1);
     else
@@ -168,6 +180,7 @@ void phys::point::setColor(bool isHull, double strength)
 
 void phys::point::render()
 {
+    // Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
     if (isLeaking)
     {
         glColor3f(0, 0, 1);
@@ -222,16 +235,10 @@ phys::spring::spring(world *_parent, point *_a, point *_b, bool _isHull, double 
 
 phys::spring::~spring()
 {
-    if (isHull)
-    {
-        a->isLeaking = true;
-        b->isLeaking = true;
-    }
-    if (true || a->water > 0.5 || b->water > 0.5)
-    {
-        a->isLeaking = true;
-        b->isLeaking = true;
-    }
+    // Used to do more complicated checks, but easier (and better) to make everything leak when it breaks
+    a->isLeaking = true;
+    b->isLeaking = true;
+    // Scour out any references to this spring
     for (unsigned int i = 0; i < parent->ships.size(); i++)
     {
         ship *shp = parent->ships[i];
@@ -244,16 +251,18 @@ phys::spring::~spring()
 
 void phys::spring::update()
 {
+    // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
     double correction_size = length - (a->pos - b->pos).length();
     vec2 correction_dir = (b->pos - a->pos).normalise();
     double total_mass = a->mass + b->mass;
     a->pos -= correction_dir * (b->mass / total_mass * correction_size);    // if b is heavier, a moves more.
-    b->pos += correction_dir * (a->mass / total_mass * correction_size);
+    b->pos += correction_dir * (a->mass / total_mass * correction_size);    // (and vice versa...)
 }
 
 void phys::spring::render()
 {
-    bool isStressed = parent->showstress && (a->pos - b->pos).length() / this->length > 1 + (parent->strength * strength) * 0.15;
+    // If member is heavily stressed, highlight it in red (ignored if world's showstress field is false)
+    bool isStressed = parent->showstress && (a->pos - b->pos).length() / this->length > 1 + (parent->strength * strength) * 0.2;
     glBegin(GL_LINES);
     if (isStressed)
         glColor3f(1, 0, 0);
@@ -268,6 +277,7 @@ void phys::spring::render()
 
 bool phys::spring::isBroken()
 {
+    // Check whether strain is more than the word's base strength * this object's relative strength
     return (a->pos - b->pos).length() / this->length > 1 + (parent->strength * strength);
 }
 
@@ -292,11 +302,13 @@ void phys::ship::update(double dt)
 {
     leakWater(dt);
     gravitateWater(dt);
+    // Could possibly iterate this next step:
     balancePressure(dt);
 }
 
 void phys::ship::leakWater(double dt)
 {
+    // Stuff some water into all the leaking nodes, if they're not under too much pressure
    for (std::set<point*>::iterator iter = points.begin(); iter != points.end(); iter++)
    {
         point *p = *iter;
@@ -309,6 +321,8 @@ void phys::ship::leakWater(double dt)
 
 void phys::ship::gravitateWater(double dt)
 {
+    // Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
+    // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
     for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
          iter != adjacentnodes.end(); iter++)
     {
@@ -319,7 +333,7 @@ void phys::ship::gravitateWater(double dt)
             double cos_theta = (b->pos - a->pos).normalise().dot(parent->gravity.normalise());
             if (cos_theta > 0)
             {
-                double correction = std::min(0.5 * cos_theta * dt, a->water);
+                double correction = std::min(0.5 * cos_theta * dt, a->water);   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
                 a->water -= correction;
                 b->water += correction;
             }
@@ -330,6 +344,8 @@ void phys::ship::gravitateWater(double dt)
 
 void phys::ship::balancePressure(double dt)
 {
+    // If there's too much water in this node, try and push it into the others
+    // (This needs to iterate over multiple frames for pressure waves to spread through water)
     for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
          iter != adjacentnodes.end(); iter++)
     {

@@ -72,7 +72,7 @@
 			</object>
 			<object class="sizeritem">
 				<object class="wxSlider" name="ID_SLIDER5" variable="sldWaterPressure" member="yes">
-					<value>2</value>
+					<value>5</value>
 					<max>10</max>
 					<style>wxSL_LABELS</style>
 					<handler function="OnSlider1CmdScroll" entry="EVT_COMMAND_SCROLL" />
