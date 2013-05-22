@@ -80,7 +80,6 @@ private:
 
     wxGLContext* GLContext1;
 
-    void loadShip(std::string filename);
     void initgl();
     void endgl();
 

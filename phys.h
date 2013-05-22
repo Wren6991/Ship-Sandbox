@@ -1,10 +1,11 @@
-#include "vec.h"
 #ifndef _PHYS_H_INCLUDED_
 #define _PHYS_H_INCLUDED_
 
 #include <map>
 #include <set>
 #include <vector>
+#include "material.h"
+#include "vec.h"
 
 namespace phys
 {
@@ -41,16 +42,16 @@ namespace phys
         friend class spring;
         friend class world;
         friend class ship;
+        material *mtl;
         vec2 pos;
         vec2 lastpos;
-        double mass;
         vec2 force;
         double buoyancy;
         double water;
         double getPressure();
     public:
         bool isLeaking;
-        point(world *_parent, vec2 _pos = vec2(0, 0), double _mass = 1000, double _buoyancy = 1);
+        point(world *_parent, vec2 _pos = vec2(0, 0), material *_mtl, double _buoyancy = 1);
         ~point();
         void applyForce(vec2 f);
         void update(double dt);
@@ -67,10 +68,9 @@ namespace phys
         world *parent;
         point *a, *b;
         double length;
-        double strength;
-        bool isHull;
+        material *mtl;
     public:
-        spring(world *_parent, point *_a, point *_b, bool _isHull = false, double _length = -1, double _strength = 1);
+        spring(world *_parent, point *_a, point *_b, bool _isHull = false, double _length = -1, material *_mtl);
         ~spring();
         void update();
         void render();

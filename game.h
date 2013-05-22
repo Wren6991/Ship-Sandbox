@@ -1,12 +1,14 @@
 #ifndef _GAME_H_
 #define _GAME_H_
 
+#include <vector>
+#include <wx/image.h>
 #include "phys.h"
-
 
 
 class game
 {
+    std::vector <material*> materials;
 public:
 
     struct
@@ -33,6 +35,7 @@ public:
     float zoomsize;
     float camx, camy;
     int canvaswidth, canvasheight;
+    void loadShip(std::string filename);
     void assertSettings();
     vec2 screen2world(vec2);
 

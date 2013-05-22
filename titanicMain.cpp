@@ -20,16 +20,6 @@
 
 
 //helper functions
-const int directions[8][2] = {
-{ 1,  0},
-{ 1, -1},
-{ 0, -1},
-{-1, -1},
-{-1,  0},
-{-1,  1},
-{ 0,  1},
-{ 1,  1}
-};
 
 enum wxbuildinfoformat {
     short_f, long_f };
@@ -129,7 +119,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
 
     GLContext1 = new wxGLContext(GLCanvas1);
 
-    loadShip("ship.png");
+    gm.loadShip("ship.png");
 
     gm.zoomsize = 30;
     gm.running = true;
@@ -169,72 +159,6 @@ void titanicFrame::OnAbout(wxCommandEvent& event)
 // SS   SS  H     H     I     P
 //   SSS    H     H  IIIIIII  P
 
-void titanicFrame::loadShip(std::string filename)
-{
-    // RGB channels contain separate information:
-    // R: Strength (higher = more)
-    // G: Empty or not (white background has high G so is ignored, all materials have low G)
-    // B: Hull or not (blue has high G, is not hull; black has high G, is hull)
-    // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
-    // Can vary shades of red for varying strengths and colours
-
-    wxImage shipimage(filename, wxBITMAP_TYPE_PNG);
-    phys::ship *shp = new phys::ship(gm.wld);
-
-    std::map<int,  std::map <int, phys::point*> > points;
-
-    for (int x = 0; x < shipimage.GetWidth(); x++)
-    {
-        for (int y = 0; y < shipimage.GetHeight(); y++)
-        {
-            if (shipimage.GetGreen(x, shipimage.GetHeight() - y - 1) < 128)
-            {
-                bool isHull = shipimage.GetBlue(x, shipimage.GetHeight() - y - 1) < 128;
-                points[x][y] = new phys::point(gm.wld, vec2(x - shipimage.GetWidth()/2, y), isHull? 1500 : 1000, isHull? 0 : 1);  // no buoyancy if it's a hull section
-                shp->points.insert(points[x][y]);
-            }
-            else
-            {
-                points[x][y] = 0;
-            }
-        }
-    }
-
-    // Points have been generated, so fill in all the beams between them.
-    // If beam joins two hull nodes, it is a hull beam.
-    // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
-
-    for (int x = 0; x < shipimage.GetWidth(); x++)
-    {
-        for (int y = 0; y < shipimage.GetHeight(); y++)
-        {
-            phys::point *a = points[x][y];
-            if (!a)
-                continue;
-            // First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y) - this covers each pair of points in each direction
-            for (int i = 0; i < 4; i++)
-            {
-                phys::point *b = points[x + directions[i][0]][y + directions[i][1]];
-                if (b)
-                {
-                    bool pointIsHull = shipimage.GetBlue(x, shipimage.GetHeight() - y - 1) < 128;
-                    bool isHull = pointIsHull && shipimage.GetBlue(x + directions[i][0], shipimage.GetHeight() - y - directions[i][1] - 1) < 128;
-                    double strength = 1.0 + (shipimage.GetRed(x, shipimage.GetHeight() - y - 1) / 255.0);
-                    shp->springs.insert(new phys::spring(gm.wld, a, b, isHull, -1, strength));
-                    if (!isHull)
-                    {
-                        shp->adjacentnodes[a].insert(b);
-                        shp->adjacentnodes[b].insert(a);
-                    }
-                    if (!(pointIsHull || (points[x+1][y] && points[x][y+1] && points[x-1][y] && points[x][y-1])))   // check for gaps next to non-hull areas:
-                    {
-                        points[x][y]->isLeaking = true;
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 
@@ -313,7 +237,7 @@ void titanicFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
         delete gm.wld;
         gm.wld = new phys::world;
         gm.assertSettings();
-        loadShip(filename);
+        gm.loadShip(filename);
     }
 }
 

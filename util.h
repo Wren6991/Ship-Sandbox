@@ -1,7 +1,7 @@
 #ifndef _UTIL_H_
 #define _UTIL_H
 
-
+#include <GL/gl.h>
 #include <json/json.h>
 #include <string>
 
