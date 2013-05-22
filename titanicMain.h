@@ -19,7 +19,7 @@
 #include <wx/timer.h>
 //*)
 
-#include "phys.h"
+#include "game.h"
 #include "settingsDialog.h"
 
 class titanicFrame: public wxFrame
@@ -28,15 +28,7 @@ public:
 
     titanicFrame(wxWindow* parent,wxWindowID id = -1);
     virtual ~titanicFrame();
-
-    double strength;
-    double buoyancy;
-    double waveheight;
-    double waterpressure;
-    double seadepth;
-    bool showstress;
-
-    void assertSettings();
+    game gm;
 
 private:
 
@@ -55,12 +47,16 @@ private:
     void OnMenuItemOptionsSelected(wxCommandEvent& event);
     void OnGLCanvas1MouseWheel(wxMouseEvent& event);
     void OnMenuItemPlayPauseSelected(wxCommandEvent& event);
+    void OnMenuItemSmashSelected(wxCommandEvent& event);
+    void OnMenuItemGrabSelected(wxCommandEvent& event);
     //*)
 
     //(*Identifiers(titanicFrame)
     static const long ID_GLCANVAS1;
     static const long ID_MENUITEM1;
     static const long idMenuQuit;
+    static const long ID_MENUITEM3;
+    static const long ID_MENUITEM4;
     static const long mnuShow;
     static const long ID_MENUITEM2;
     static const long idMenuAbout;
@@ -73,28 +69,16 @@ private:
     wxMenuItem* MenuItem4;
     wxGLCanvas* GLCanvas1;
     wxFileDialog* dlgOpen;
+    wxMenuItem* MenuItemGrab;
     wxMenuItem* MenuItem3;
+    wxMenuItem* MenuItemSmash;
     wxTimer Timer1;
+    wxMenu* Menu4;
     //*)
 
     settingsDialog *settings;
 
-    struct
-    {
-        bool ldown;
-        bool rdown;
-        int x, y;
-    } mouse;
-
-    bool running;
-
-    float zoomsize;
-    float camx, camy;
-    vec2 screen2world(vec2);
-
     wxGLContext* GLContext1;
-    int canvaswidth, canvasheight;
-    phys::world *wld;
 
     void loadShip(std::string filename);
     void initgl();

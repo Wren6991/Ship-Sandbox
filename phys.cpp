@@ -77,7 +77,7 @@ double phys::world::waterheight(double x)
 }
 
 // Destroy all points within a 0.5m radius (could parameterise the radius but...)
-void phys::world::destroyAt(vec2 pos)
+void phys::world::destroyAt(vec2f pos)
 {
     for (std::vector<point*>::iterator iter = points.begin(); iter != points.end();)
     {
@@ -92,8 +92,20 @@ void phys::world::destroyAt(vec2 pos)
     }
 }
 
+// Attract all points to a single position
+void phys::world::drawTo(vec2f target)
+{
+    for (std::vector<point*>::iterator iter = points.begin(); iter != points.end(); iter++)
+    {
+        vec2f &pos = (*iter)->pos;
+        vec2f dir = (target - pos);
+        double magnitude = 50000 / sqrt(0.1 + dir.length());
+        (*iter)->applyForce(dir.normalise() * magnitude);
+    }
+}
+
 // Copy parameters and set up initial params:
-phys::world::world(vec2 _gravity, double _buoyancy, double _strength)
+phys::world::world(vec2f _gravity, double _buoyancy, double _strength)
 {
     time = 0;
     gravity = _gravity;
@@ -128,7 +140,7 @@ phys::world::~world()
 // P          OOO    IIIIIII  N     N     T
 
 // Just copies parameters into relevant fields:
-phys::point::point(world *_parent, vec2 _pos, double _mass, double _buoyancy)
+phys::point::point(world *_parent, vec2f _pos, double _mass, double _buoyancy)
 {
     parent = _parent;
     parent->points.push_back(this);
@@ -140,18 +152,18 @@ phys::point::point(world *_parent, vec2 _pos, double _mass, double _buoyancy)
     water = 0;
 }
 
-void phys::point::applyForce(vec2 f)
+void phys::point::applyForce(vec2f f)
 {
     force += f;
 }
 
 void phys::point::update(double dt)
 {
-    this->applyForce(parent->gravity * (mass * (1 + water * parent->buoyancy * buoyancy)));
+    this->applyForce(parent->gravity * (mass * (1 + fmin(water, 1) * parent->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
     // Buoyancy:
     if (pos.y < parent->waterheight(pos.x))
         this->applyForce(parent->gravity * (-parent->buoyancy * buoyancy * mass));
-    vec2 newlastpos = pos;
+    vec2f newlastpos = pos;
     // Apply verlet integration:
     pos += (pos - lastpos) + force * (dt * dt / mass);
     // Water drag:
@@ -161,10 +173,10 @@ void phys::point::update(double dt)
     if (pos.y < -parent->seadepth)
         pos.y = -parent->seadepth;
     lastpos = newlastpos;
-    force = vec2(0, 0);
+    force = vec2f(0, 0);
 }
 
-vec2 phys::point::getPos()
+vec2f phys::point::getPos()
 {
     return pos;
 }
@@ -188,6 +200,11 @@ void phys::point::render()
         glVertex3f(pos.x, pos.y, -1);
         glEnd();
     }
+}
+
+double phys::point::getPressure()
+{
+    return parent->gravity.length() * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
 }
 
 phys::point::~point()
@@ -253,7 +270,7 @@ void phys::spring::update()
 {
     // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
     double correction_size = length - (a->pos - b->pos).length();
-    vec2 correction_dir = (b->pos - a->pos).normalise();
+    vec2f correction_dir = (b->pos - a->pos).normalise();
     double total_mass = a->mass + b->mass;
     a->pos -= correction_dir * (b->mass / total_mass * correction_size);    // if b is heavier, a moves more.
     b->pos += correction_dir * (a->mass / total_mass * correction_size);    // (and vice versa...)
@@ -301,9 +318,13 @@ phys::ship::ship(world *_parent)
 void phys::ship::update(double dt)
 {
     leakWater(dt);
-    gravitateWater(dt);
-    // Could possibly iterate this next step:
-    balancePressure(dt);
+    for (int i = 0; i < 4; i++)
+    {
+        gravitateWater(dt);
+        balancePressure(dt);
+    }
+    for (int i = 0; i < 4; i++)
+        balancePressure(dt);
 }
 
 void phys::ship::leakWater(double dt)
@@ -312,9 +333,10 @@ void phys::ship::leakWater(double dt)
    for (std::set<point*>::iterator iter = points.begin(); iter != points.end(); iter++)
    {
         point *p = *iter;
+        double pressure = p->getPressure();
         if (p->isLeaking && p->pos.y < parent->waterheight(p->pos.x) && p->water < 1.5)
         {
-            p->water += dt * parent->waterpressure;
+            p->water += dt * parent->waterpressure * (pressure - p->water);
         }
    }
 }

@@ -36,30 +36,15 @@ enum wxbuildinfoformat {
 
 wxString wxbuildinfo(wxbuildinfoformat format)
 {
-    wxString wxbuild(wxVERSION_STRING);
-
-    if (format == long_f )
-    {
-#if defined(__WXMSW__)
-        wxbuild << _T("-Windows");
-#elif defined(__UNIX__)
-        wxbuild << _T("-Linux");
-#endif
-
-#if wxUSE_UNICODE
-        wxbuild << _T("-Unicode build");
-#else
-        wxbuild << _T("-ANSI build");
-#endif // wxUSE_UNICODE
-    }
-
-    return wxbuild;
+    return "Ship Sandbox v1.1\n(c) Luke Wren 2013\nLicensed to Pac0";
 }
 
 //(*IdInit(titanicFrame)
 const long titanicFrame::ID_GLCANVAS1 = wxNewId();
 const long titanicFrame::ID_MENUITEM1 = wxNewId();
 const long titanicFrame::idMenuQuit = wxNewId();
+const long titanicFrame::ID_MENUITEM3 = wxNewId();
+const long titanicFrame::ID_MENUITEM4 = wxNewId();
 const long titanicFrame::mnuShow = wxNewId();
 const long titanicFrame::ID_MENUITEM2 = wxNewId();
 const long titanicFrame::idMenuAbout = wxNewId();
@@ -100,6 +85,12 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
     Menu1->Append(MenuItem1);
     MenuBar1->Append(Menu1, _("&File"));
+    Menu4 = new wxMenu();
+    MenuItemSmash = new wxMenuItem(Menu4, ID_MENUITEM3, _("Smash"), wxEmptyString, wxITEM_RADIO);
+    Menu4->Append(MenuItemSmash);
+    MenuItemGrab = new wxMenuItem(Menu4, ID_MENUITEM4, _("Grab"), wxEmptyString, wxITEM_RADIO);
+    Menu4->Append(MenuItemGrab);
+    MenuBar1->Append(Menu4, _("Tools"));
     Menu3 = new wxMenu();
     MenuItem4 = new wxMenuItem(Menu3, mnuShow, _("Show\tCtrl+S"), wxEmptyString, wxITEM_NORMAL);
     Menu3->Append(MenuItem4);
@@ -107,7 +98,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     Menu3->Append(MenuItem5);
     MenuBar1->Append(Menu3, _("Options"));
     Menu2 = new wxMenu();
-    MenuItem2 = new wxMenuItem(Menu2, idMenuAbout, _("About\tF1"), _("Show info about this application"), wxITEM_RADIO);
+    MenuItem2 = new wxMenuItem(Menu2, idMenuAbout, _("About\tF1"), _("Show info about this application"), wxITEM_NORMAL);
     Menu2->Append(MenuItem2);
     MenuBar1->Append(Menu2, _("Help"));
     SetMenuBar(MenuBar1);
@@ -117,7 +108,6 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     BoxSizer1->Fit(this);
     BoxSizer1->SetSizeHints(this);
 
-    GLCanvas1->Connect(wxEVT_PAINT,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1Paint,0,this);
     GLCanvas1->Connect(wxEVT_LEFT_DOWN,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1LeftDown,0,this);
     GLCanvas1->Connect(wxEVT_LEFT_UP,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1LeftUp,0,this);
     GLCanvas1->Connect(wxEVT_RIGHT_DOWN,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1RightDown,0,this);
@@ -127,36 +117,29 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     GLCanvas1->Connect(wxEVT_SIZE,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1Resize,0,this);
     Connect(ID_MENUITEM1,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemLoadSelected);
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnQuit);
+    Connect(ID_MENUITEM3,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemSmashSelected);
+    Connect(ID_MENUITEM4,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemGrabSelected);
     Connect(mnuShow,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemOptionsSelected);
     Connect(ID_MENUITEM2,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemPlayPauseSelected);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnAbout);
     Connect(ID_TIMER1,wxEVT_TIMER,(wxObjectEventFunction)&titanicFrame::OnTimer1Trigger);
     //*)
 
-    buoyancy = 4.0;
-    strength = 0.01;
-    waveheight = 1.0;
-    waterpressure = 0.5;
-    seadepth = 150;
-    showstress = false;
-
-    running = true;
-
     settings = new settingsDialog(this);
 
     GLContext1 = new wxGLContext(GLCanvas1);
 
-    wld = new phys::world;
-
     loadShip("ship.png");
 
-    zoomsize = 30;
-    camx = 0;
-    camy = 0;
+    gm.zoomsize = 30;
+    gm.running = true;
+
+    gm.camx = 0;
+    gm.camy = 0;
 
     Timer1.Start();
-    canvaswidth = 200;
-    canvasheight = 200;
+    gm.canvaswidth = 200;
+    gm.canvasheight = 200;
 }
 
 titanicFrame::~titanicFrame()
@@ -196,7 +179,7 @@ void titanicFrame::loadShip(std::string filename)
     // Can vary shades of red for varying strengths and colours
 
     wxImage shipimage(filename, wxBITMAP_TYPE_PNG);
-    phys::ship *shp = new phys::ship(wld);
+    phys::ship *shp = new phys::ship(gm.wld);
 
     std::map<int,  std::map <int, phys::point*> > points;
 
@@ -207,7 +190,7 @@ void titanicFrame::loadShip(std::string filename)
             if (shipimage.GetGreen(x, shipimage.GetHeight() - y - 1) < 128)
             {
                 bool isHull = shipimage.GetBlue(x, shipimage.GetHeight() - y - 1) < 128;
-                points[x][y] = new phys::point(wld, vec2(x - shipimage.GetWidth()/2, y), isHull? 1500 : 1000, isHull? 0 : 1);  // no buoyancy if it's a hull section
+                points[x][y] = new phys::point(gm.wld, vec2(x - shipimage.GetWidth()/2, y), isHull? 1500 : 1000, isHull? 0 : 1);  // no buoyancy if it's a hull section
                 shp->points.insert(points[x][y]);
             }
             else
@@ -237,7 +220,7 @@ void titanicFrame::loadShip(std::string filename)
                     bool pointIsHull = shipimage.GetBlue(x, shipimage.GetHeight() - y - 1) < 128;
                     bool isHull = pointIsHull && shipimage.GetBlue(x + directions[i][0], shipimage.GetHeight() - y - directions[i][1] - 1) < 128;
                     double strength = 1.0 + (shipimage.GetRed(x, shipimage.GetHeight() - y - 1) / 255.0);
-                    shp->springs.insert(new phys::spring(wld, a, b, isHull, -1, strength));
+                    shp->springs.insert(new phys::spring(gm.wld, a, b, isHull, -1, strength));
                     if (!isHull)
                     {
                         shp->adjacentnodes[a].insert(b);
@@ -253,15 +236,7 @@ void titanicFrame::loadShip(std::string filename)
     }
 }
 
-void titanicFrame::assertSettings()
-{
-    wld->buoyancy = buoyancy;
-    wld->strength = strength;
-    wld->waterpressure = waterpressure;
-    wld->waveheight = waveheight;
-    wld->seadepth = seadepth;
-    wld->showstress = showstress;
-}
+
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS
 //  GG      R   RR     A A    P   PP   H     H     I      CC CC   SS   SS
@@ -275,19 +250,19 @@ void titanicFrame::assertSettings()
 
 void titanicFrame::initgl()
 {
-    // Set the context, clear the canvas and set up all the matrices.
+    // Set the context, clear the gm.canvas and set up all the matrices.
     GLContext1->SetCurrent(*GLCanvas1);
 
-    glViewport(0, 0, canvaswidth, canvasheight);
+    glViewport(0, 0, gm.canvaswidth, gm.canvasheight);
     glClearColor(0.529, 0.808, 0.980, 1); //(cornflower blue)
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    float halfheight = zoomsize;
-    float halfwidth = (float)canvaswidth / canvasheight * halfheight;
+    float halfheight = gm.zoomsize;
+    float halfwidth = (float)gm.canvaswidth / gm.canvasheight * halfheight;
     glFrustum(-halfwidth, halfwidth, -halfheight, halfheight, 1, 1000);
-    glTranslatef(-camx, -camy, 0);
+    glTranslatef(-gm.camx, -gm.camy, 0);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -312,39 +287,21 @@ void titanicFrame::endgl()
     GLCanvas1->Refresh();
 }
 
-void titanicFrame::OnGLCanvas1Paint(wxPaintEvent& event)
-{
-
-}
-
 void titanicFrame::OnGLCanvas1Resize(wxSizeEvent& event)
 {
-    canvaswidth = event.GetSize().GetX();
-    canvasheight = event.GetSize().GetY();
+    gm.canvaswidth = event.GetSize().GetX();
+    gm.canvasheight = event.GetSize().GetY();
     GLCanvas1->Refresh();
 }
 
-vec2 titanicFrame::screen2world(vec2 pos)
-{
-    float height = zoomsize * 2.0;
-    float width = (float)canvaswidth / canvasheight * height;
-    return vec2((pos.x / canvaswidth - 0.5) * width + camx,
-                (pos.y / canvasheight - 0.5) * -height + camy);
-}
+
 
 void titanicFrame::OnTimer1Trigger(wxTimerEvent& event)
 {
     // Main timing event!
     initgl();
-    float halfheight = zoomsize;
-    float halfwidth = (float)canvaswidth / canvasheight * halfheight;
-    if (mouse.ldown)
-    {
-        wld->destroyAt(screen2world(vec2(mouse.x, mouse.y)));
-    }
-    if (running)
-        wld->update(0.02);
-    wld->render(camx - halfwidth, camx + halfwidth, camy - halfheight, camx + halfheight);
+    gm.update();
+    gm.render();
     endgl();
 }
 
@@ -353,9 +310,9 @@ void titanicFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
     if (dlgOpen->ShowModal() == wxID_OK)
     {
         std::string filename = dlgOpen->GetPath().ToStdString();
-        delete wld;
-        wld = new phys::world;
-        assertSettings();
+        delete gm.wld;
+        gm.wld = new phys::world;
+        gm.assertSettings();
         loadShip(filename);
     }
 }
@@ -372,35 +329,35 @@ void titanicFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
 
 void titanicFrame::OnGLCanvas1LeftDown(wxMouseEvent& event)
 {
-    mouse.ldown = true;
+    gm.mouse.ldown = true;
 }
 
 void titanicFrame::OnGLCanvas1LeftUp(wxMouseEvent& event)
 {
-    mouse.ldown = false;
+    gm.mouse.ldown = false;
 }
 
 void titanicFrame::OnGLCanvas1RightDown(wxMouseEvent& event)
 {
-    mouse.rdown = true;
+    gm.mouse.rdown = true;
 }
 
 void titanicFrame::OnGLCanvas1RightUp(wxMouseEvent& event)
 {
-    mouse.rdown = false;
+    gm.mouse.rdown = false;
 }
 
 void titanicFrame::OnGLCanvas1MouseMove(wxMouseEvent& event)
 {
-    int oldx = mouse.x;
-    int oldy = mouse.y;
-    mouse.x = event.GetX();
-    mouse.y = event.GetY();
-    if (mouse.rdown)
+    int oldx = gm.mouse.x;
+    int oldy = gm.mouse.y;
+    gm.mouse.x = event.GetX();
+    gm.mouse.y = event.GetY();
+    if (gm.mouse.rdown)
     {
-        vec2 difference = screen2world(vec2(mouse.x, mouse.y)) - screen2world(vec2(oldx, oldy));
-        camx -= difference.x;
-        camy -= difference.y;
+        vec2 difference = gm.screen2world(vec2(gm.mouse.x, gm.mouse.y)) - gm.screen2world(vec2(oldx, oldy));
+        gm.camx -= difference.x;
+        gm.camy -= difference.y;
     }
 }
 
@@ -411,10 +368,20 @@ void titanicFrame::OnMenuItemOptionsSelected(wxCommandEvent& event)
 
 void titanicFrame::OnGLCanvas1MouseWheel(wxMouseEvent& event)
 {
-    zoomsize *= pow(0.998, event.GetWheelRotation());
+    gm.zoomsize *= pow(0.998, event.GetWheelRotation());
 }
 
 void titanicFrame::OnMenuItemPlayPauseSelected(wxCommandEvent& event)
 {
-    running = !running;
+    gm.running = !gm.running;
+}
+
+void titanicFrame::OnMenuItemSmashSelected(wxCommandEvent& event)
+{
+    gm.tool = game::TOOL_SMASH;
+}
+
+void titanicFrame::OnMenuItemGrabSelected(wxCommandEvent& event)
+{
+    gm.tool = game::TOOL_GRAB;
 }

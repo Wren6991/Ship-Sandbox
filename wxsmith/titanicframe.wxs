@@ -8,7 +8,6 @@
 				<object class="wxGLCanvas" name="ID_GLCANVAS1" variable="GLCanvas1" member="yes">
 					<mDepthSize>16</mDepthSize>
 					<size>640,480</size>
-					<handler function="OnGLCanvas1Paint" entry="EVT_PAINT" />
 					<handler function="OnGLCanvas1LeftDown" entry="EVT_LEFT_DOWN" />
 					<handler function="OnGLCanvas1LeftUp" entry="EVT_LEFT_UP" />
 					<handler function="OnGLCanvas1RightDown" entry="EVT_RIGHT_DOWN" />
@@ -37,6 +36,19 @@
 					<handler function="OnQuit" entry="EVT_MENU" />
 				</object>
 			</object>
+			<object class="wxMenu" variable="Menu4" member="yes">
+				<label>Tools</label>
+				<object class="wxMenuItem" name="ID_MENUITEM3" variable="MenuItemSmash" member="yes">
+					<label>Smash</label>
+					<handler function="OnMenuItemSmashSelected" entry="EVT_MENU" />
+					<radio>1</radio>
+				</object>
+				<object class="wxMenuItem" name="ID_MENUITEM4" variable="MenuItemGrab" member="yes">
+					<label>Grab</label>
+					<handler function="OnMenuItemGrabSelected" entry="EVT_MENU" />
+					<radio>1</radio>
+				</object>
+			</object>
 			<object class="wxMenu" variable="Menu3" member="yes">
 				<label>Options</label>
 				<object class="wxMenuItem" name="mnuShow" variable="MenuItem4" member="yes">
@@ -57,7 +69,6 @@
 					<accel>F1</accel>
 					<help>Show info about this application</help>
 					<handler function="OnAbout" entry="EVT_MENU" />
-					<radio>1</radio>
 				</object>
 			</object>
 		</object>

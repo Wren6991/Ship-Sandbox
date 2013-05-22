@@ -1,0 +1,48 @@
+[
+	{
+		"name": "Steel Hull",
+		"strength": 3,
+		"mass": 2,
+		"colour:" "#A0A0A0",
+		"isHull": true
+	},
+	{
+		"name": "Steel",
+		"strength": 3,
+		"mass": 2,
+		"colour:" "#D8D8D8",
+	},
+        {
+		"name": "Iron Hull",
+		"strength": 2,
+		"mass": 2,
+		"colour:" "#404050",
+		"isHull": true
+	},
+        {
+		"name": "Iron",
+		"strength": 2,
+		"mass": 2,
+		"colour:" "#808090"
+	},
+        {
+		"name": "Wooden Hull",
+		"strength": 1,
+		"mass": 1,
+		"colour:" "#905020",
+		"isHull": true
+	},
+        {
+		"name": "Wood",
+		"strength": 1,
+		"mass": 1,
+		"colour:" "#E0D8C0"
+	},
+	{
+		"name": "Rope",
+		"strength": 2,
+		"mass": 0.5,
+		"colour": "#00FF00",
+		"isHull": true
+	}
+]

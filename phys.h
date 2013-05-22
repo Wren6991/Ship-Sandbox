@@ -1,4 +1,4 @@
-#include "vec2.h"
+#include "vec.h"
 #ifndef _PHYS_H_INCLUDED_
 #define _PHYS_H_INCLUDED_
 
@@ -30,6 +30,7 @@ namespace phys
         void update(double dt);
         void render(double left, double right, double bottom, double top);
         void destroyAt(vec2 pos);
+        void drawTo(vec2 target);
         world(vec2 _gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
         ~world();
     };
@@ -46,6 +47,7 @@ namespace phys
         vec2 force;
         double buoyancy;
         double water;
+        double getPressure();
     public:
         bool isLeaking;
         point(world *_parent, vec2 _pos = vec2(0, 0), double _mass = 1000, double _buoyancy = 1);
