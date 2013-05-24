@@ -17,6 +17,7 @@ struct vec2f
     vec2f& operator*=(float rhs);
     vec2f& operator/=(float rhs);
     bool operator==(const vec2f &rhs) const;
+    bool operator<(const vec2f &rhs) const; // (lexicographic comparison only)
     float dot(const vec2f &rhs) const;
     float length() const;
     vec2f normalise() const;
@@ -40,6 +41,7 @@ struct vec3f
     vec3f& operator*=(float rhs);
     vec3f& operator/=(float rhs);
     bool operator==(const vec3f &rhs) const;
+    bool operator<(const vec3f &rhs) const; // (lexicographic comparison only)
     float dot(const vec3f &rhs) const;
     float length() const;
     vec3f normalise() const;

@@ -1,7 +1,8 @@
 #include "phys.h"
 
-#include <GL/gl.h>
+#include <algorithm>
 #include <cmath>
+#include <GL/gl.h>
 #include <iostream>
 
 void setColour(vec3f c)
@@ -33,13 +34,9 @@ void phys::world::update(double dt)
     for (std::vector<spring*>::iterator iter = springs.begin(); iter != springs.end();)
     {
         spring *spr = *iter;
-        if (spr->isBroken())
-        {
-            springs.erase(iter++);  // have to delete after erasure - else there is a possibility of
+        iter++;
+        if (spr->isBroken())        // have to delete after erasure - else there is a possibility of
             delete spr;             // other objects accessing a bad pointer during this cleanup
-        }
-        else
-            iter++;
     }
     // Tell each ship to update all of its water stuff
     for (unsigned int i = 0; i < ships.size(); i++)
@@ -63,7 +60,7 @@ void phys::world::render(double left, double right, double bottom, double top)
         springs[i]->render();
     // Cut the water into vertical slices (to get the different heights of waves) and draw it
     glColor4f(0, 0.25, 1, 0.5);
-    double slicewidth = (right - left) / 50.0;
+    double slicewidth = (right - left) / 80.0;
     for (double slicex = left; slicex < right; slicex += slicewidth)
     {
         glBegin(GL_TRIANGLE_STRIP);
@@ -86,14 +83,13 @@ void phys::world::destroyAt(vec2f pos)
 {
     for (std::vector<point*>::iterator iter = points.begin(); iter != points.end();)
     {
-        if (((*iter)->pos - pos).length() < 0.5)
+        point *p = *iter;
+        iter++;
+        if ((p->pos - pos).length() < 0.5f)
         {
-            point *p = *iter;
-            points.erase(iter++);
             delete p;           // have to remove reference before deleting, else other cleanup code will use bad memory!
+            iter--;
         }
-        else
-            iter++;
     }
 }
 
@@ -147,8 +143,8 @@ phys::world::~world()
 // Just copies parameters into relevant fields:
 phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
 {
-    parent = _parent;
-    parent->points.push_back(this);
+    wld = _parent;
+    wld->points.push_back(this);
     pos = _pos;
     lastpos = pos;
     mtl = _mtl;
@@ -165,19 +161,19 @@ void phys::point::applyForce(vec2f f)
 void phys::point::update(double dt)
 {
     double mass = mtl->mass;
-    this->applyForce(parent->gravity * (mass * (1 + fmin(water, 1) * parent->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
+    this->applyForce(wld->gravity * (mass * (1 + fmin(water, 1) * wld->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
     // Buoyancy:
-    if (pos.y < parent->waterheight(pos.x))
-        this->applyForce(parent->gravity * (-parent->buoyancy * buoyancy * mass));
+    if (pos.y < wld->waterheight(pos.x))
+        this->applyForce(wld->gravity * (-wld->buoyancy * buoyancy * mass));
     vec2f newlastpos = pos;
     // Apply verlet integration:
     pos += (pos - lastpos) + force * (dt * dt / mass);
     // Water drag:
-    if (pos.y < parent->waterheight(pos.x))
+    if (pos.y < wld->waterheight(pos.x))
         pos += (lastpos - pos) * (1 - pow(0.6, dt));
     // Collision with seafloor:
-    if (pos.y < -parent->seadepth)
-        pos.y = -parent->seadepth;
+    if (pos.y < -wld->seadepth)
+        pos.y = -wld->seadepth;
     lastpos = newlastpos;
     force = vec2f(0, 0);
 }
@@ -208,26 +204,29 @@ void phys::point::render()
 
 double phys::point::getPressure()
 {
-    return parent->gravity.length() * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
+    return wld->gravity.length() * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
 }
 
 phys::point::~point()
 {
-    //remove any springs attached to this point:
-    for (std::vector<spring*>::iterator iter = parent->springs.begin(); iter != parent->springs.end();)
+    // remove any springs attached to this point:
+
+    for (std::vector<spring*>::iterator iter = wld->springs.begin(); iter != wld->springs.end();)
     {
         spring *spr = *iter;
+        iter++;
         if (spr->a == this || spr->b == this)
         {
-            parent->springs.erase(iter++);
             delete spr;
+            iter--;
         }
-        else
-            iter++;
     }
-    // remove any references held by ships:
-    for (unsigned int i = 0; i < parent->ships.size(); i++)
-        parent->ships[i]->points.erase(this);
+    // remove any references:
+    for (unsigned int i = 0; i < wld->ships.size(); i++)
+        wld->ships[i]->points.erase(this);
+    std::vector<point*>::iterator iter = std::find(wld->points.begin(), wld->points.end(), this);
+    if (iter != wld->points.end())
+        wld->points.erase(iter);
 }
 
 //   SSS    PPPP     RRRR     IIIIIII  N     N    GGGGG
@@ -242,7 +241,7 @@ phys::point::~point()
 
 phys::spring::spring(world *_parent, point *_a, point *_b, material *_mtl, double _length)
 {
-    parent = _parent;
+    wld = _parent;
     _parent->springs.push_back(this);
     a = _a;
     b = _b;
@@ -259,14 +258,17 @@ phys::spring::~spring()
     a->isLeaking = true;
     b->isLeaking = true;
     // Scour out any references to this spring
-    for (unsigned int i = 0; i < parent->ships.size(); i++)
+    for (unsigned int i = 0; i < wld->ships.size(); i++)
     {
-        ship *shp = parent->ships[i];
+        ship *shp = wld->ships[i];
         if (shp->adjacentnodes.find(a) != shp->adjacentnodes.end())
             shp->adjacentnodes[a].erase(b);
         if (shp->adjacentnodes.find(b) != shp->adjacentnodes.end())
             shp->adjacentnodes[b].erase(a);
     }
+    std::vector <spring*>::iterator iter = std::find(wld->springs.begin(), wld->springs.end(), this);
+    if (iter != wld->springs.end())
+        wld->springs.erase(iter);
 }
 
 void phys::spring::update()
@@ -282,7 +284,7 @@ void phys::spring::update()
 void phys::spring::render()
 {
     // If member is heavily stressed, highlight it in red (ignored if world's showstress field is false)
-    bool isStressed = parent->showstress && (a->pos - b->pos).length() / this->length > 1 + (parent->strength * mtl->strength) * 0.2;
+    bool isStressed = wld->showstress && (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength) * 0.2;
     glBegin(GL_LINES);
     if (isStressed)
         glColor3f(1, 0, 0);
@@ -298,7 +300,7 @@ void phys::spring::render()
 bool phys::spring::isBroken()
 {
     // Check whether strain is more than the word's base strength * this object's relative strength
-    return (a->pos - b->pos).length() / this->length > 1 + (parent->strength * mtl->strength);
+    return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength);
 }
 
 
@@ -314,8 +316,8 @@ bool phys::spring::isBroken()
 
 phys::ship::ship(world *_parent)
 {
-    parent = _parent;
-    parent->ships.push_back(this);
+    wld = _parent;
+    wld->ships.push_back(this);
 }
 
 void phys::ship::update(double dt)
@@ -337,9 +339,9 @@ void phys::ship::leakWater(double dt)
    {
         point *p = *iter;
         double pressure = p->getPressure();
-        if (p->isLeaking && p->pos.y < parent->waterheight(p->pos.x) && p->water < 1.5)
+        if (p->isLeaking && p->pos.y < wld->waterheight(p->pos.x) && p->water < 1.5)
         {
-            p->water += dt * parent->waterpressure * (pressure - p->water);
+            p->water += dt * wld->waterpressure * (pressure - p->water);
         }
    }
 }
@@ -355,7 +357,7 @@ void phys::ship::gravitateWater(double dt)
         for (std::set<point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
         {
             point *b = *second;
-            double cos_theta = (b->pos - a->pos).normalise().dot(parent->gravity.normalise());
+            double cos_theta = (b->pos - a->pos).normalise().dot(wld->gravity.normalise());
             if (cos_theta > 0)
             {
                 double correction = std::min(0.5 * cos_theta * dt, a->water);   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...

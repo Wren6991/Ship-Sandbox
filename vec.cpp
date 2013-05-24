@@ -70,6 +70,11 @@ bool vec2f::operator==(const vec2f &rhs) const
     return x == rhs.x && y == rhs.y;
 }
 
+bool vec2f::operator<(const vec2f &rhs) const
+{
+    return x < rhs.x || (x == rhs.x && y < rhs.y);
+}
+
 float vec2f::dot(const vec2f &rhs) const
 {
     return x * rhs.x + y * rhs.y;
@@ -174,6 +179,11 @@ vec3f& vec3f::operator/=(float rhs)
 bool vec3f::operator==(const vec3f &rhs) const
 {
     return x == rhs.x && y == rhs.y && z == rhs.z;
+}
+
+bool vec3f::operator<(const vec3f &rhs) const
+{
+    return x < rhs.x || (x == rhs.x && (y < rhs.y || (y == rhs.y && z < rhs.z)));
 }
 
 float vec3f::dot(const vec3f &rhs) const

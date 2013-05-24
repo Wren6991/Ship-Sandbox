@@ -46,7 +46,7 @@ BEGIN_EVENT_TABLE(titanicFrame,wxFrame)
     //*)
 END_EVENT_TABLE()
 
-titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
+titanicFrame::titanicFrame(wxWindow* wld,wxWindowID id)
 {
     //(*Initialize(titanicFrame)
     wxMenuItem* MenuItem2;
@@ -56,7 +56,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     wxMenuBar* MenuBar1;
     wxMenu* Menu2;
 
-    Create(parent, id, _("Pac0\'s Ship Sandbox"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
+    Create(wld, id, _("Pac0\'s Ship Sandbox"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     BoxSizer1 = new wxBoxSizer(wxHORIZONTAL);
     int GLCanvasAttributes_1[] = {

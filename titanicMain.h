@@ -26,7 +26,7 @@ class titanicFrame: public wxFrame
 {
 public:
 
-    titanicFrame(wxWindow* parent,wxWindowID id = -1);
+    titanicFrame(wxWindow* wld,wxWindowID id = -1);
     virtual ~titanicFrame();
     game gm;
 

@@ -38,7 +38,7 @@ namespace phys
 
     class point
     {
-        world *parent;
+        world *wld;
         friend class spring;
         friend class world;
         friend class ship;
@@ -65,7 +65,7 @@ namespace phys
         friend class world;
         friend class point;
         friend class ship;
-        world *parent;
+        world *wld;
         point *a, *b;
         double length;
         material *mtl;
@@ -79,7 +79,7 @@ namespace phys
 
     struct ship
     {
-        world *parent;
+        world *wld;
         std::set<point*> points;
         std::set<spring*> springs;
         std::map<point*, std::set<point*> > adjacentnodes;

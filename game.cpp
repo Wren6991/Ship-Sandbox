@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <map>
 #include "util.h"
 
 
@@ -31,6 +32,10 @@ void game::loadShip(std::string filename)
     // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
     // Can vary shades of red for varying strengths and colours
 
+    std::map<vec3f, material*> colourdict;
+    for (unsigned int i = 0; i < materials.size(); i++)
+        colourdict[materials[i]->colour] = materials[i];
+
     wxImage shipimage(filename, wxBITMAP_TYPE_PNG);
     phys::ship *shp = new phys::ship(wld);
 
@@ -43,18 +48,9 @@ void game::loadShip(std::string filename)
             vec3f colour(shipimage.GetRed  (x, shipimage.GetHeight() - y - 1) / 255.f,
                          shipimage.GetGreen(x, shipimage.GetHeight() - y - 1) / 255.f,
                          shipimage.GetBlue (x, shipimage.GetHeight() - y - 1) / 255.f);
-            material *mtl = 0;
-            for (unsigned int i = 0; i < materials.size(); i++)
+            if (colourdict.find(colour) != colourdict.end())
             {
-                if (materials[i]->colour == colour)
-                {
-                    mtl = materials[i];
-                    break;
-                }
-            }
-            if (mtl)
-            {
-
+                material *mtl = colourdict[colour];
                 points[x][y] = new phys::point(wld, vec2(x - shipimage.GetWidth()/2, y), mtl, mtl->isHull? 0 : 1);  // no buoyancy if it's a hull section
                 shp->points.insert(points[x][y]);
             }
@@ -135,7 +131,7 @@ void game::render()
 game::game()
 {
     Json::Value matroot = jsonParseFile("data/materials.json");
-    for (int i = 0; i < matroot.size(); i++)
+    for (unsigned int i = 0; i < matroot.size(); i++)
         materials.push_back(new material(matroot[i]));
     wld = new phys::world();
     buoyancy = 4.0;
