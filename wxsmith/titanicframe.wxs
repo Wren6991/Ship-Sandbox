@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <wxsmith>
 	<object class="wxFrame" name="titanicFrame">
-		<title>Pac0&apos;s Ship Sandbox</title>
+		<title>Ship Sandbox Alpha 1.2</title>
 		<bg>wxSYS_COLOUR_BTNFACE</bg>
 		<object class="wxBoxSizer" variable="BoxSizer1" member="no">
 			<object class="sizeritem">

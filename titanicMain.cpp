@@ -46,7 +46,7 @@ BEGIN_EVENT_TABLE(titanicFrame,wxFrame)
     //*)
 END_EVENT_TABLE()
 
-titanicFrame::titanicFrame(wxWindow* wld,wxWindowID id)
+titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
 {
     //(*Initialize(titanicFrame)
     wxMenuItem* MenuItem2;
@@ -56,7 +56,7 @@ titanicFrame::titanicFrame(wxWindow* wld,wxWindowID id)
     wxMenuBar* MenuBar1;
     wxMenu* Menu2;
 
-    Create(wld, id, _("Pac0\'s Ship Sandbox"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
+    Create(parent, id, _("Ship Sandbox Alpha 1.2"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     BoxSizer1 = new wxBoxSizer(wxHORIZONTAL);
     int GLCanvasAttributes_1[] = {
@@ -188,15 +188,15 @@ void titanicFrame::initgl()
     glFrustum(-halfwidth, halfwidth, -halfheight, halfheight, 1, 1000);
     glTranslatef(-gm.camx, -gm.camy, 0);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH, GL_NICEST);
     glEnable(GL_POINT_SMOOTH);
 
-    glPointSize(5.f);
-    glLineWidth(3.f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+
+    glPointSize(90.f / gm.zoomsize);
+    glLineWidth(80.f / gm.zoomsize);
     glColor3f(0, 0, 0);
 
     glMatrixMode(GL_MODELVIEW);

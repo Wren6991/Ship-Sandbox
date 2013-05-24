@@ -27,9 +27,11 @@ namespace phys
         double waveheight;
         double seadepth;
         bool showstress;
+        bool quickwaterfix;
         double time;
         void update(double dt);
         void render(double left, double right, double bottom, double top);
+        void renderWater(double left, double right, double bottom, double top);
         void destroyAt(vec2 pos);
         void drawTo(vec2 target);
         world(vec2 _gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);

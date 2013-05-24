@@ -17,6 +17,7 @@ class settingsDialog: public wxDialog
 		virtual ~settingsDialog();
 
 		//(*Declarations(settingsDialog)
+		wxCheckBox* chkQuickFix;
 		wxSlider* sldBuoyancy;
 		wxStaticText* StaticText2;
 		wxCheckBox* chkShowStress;
@@ -43,6 +44,7 @@ class settingsDialog: public wxDialog
 		static const long ID_SLIDER5;
 		static const long ID_STATICTEXT5;
 		static const long ID_SLIDER3;
+		static const long ID_CHECKBOX2;
 		static const long ID_CHECKBOX1;
 		//*)
 

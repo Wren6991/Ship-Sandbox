@@ -19,6 +19,7 @@ const long settingsDialog::ID_STATICTEXT4 = wxNewId();
 const long settingsDialog::ID_SLIDER5 = wxNewId();
 const long settingsDialog::ID_STATICTEXT5 = wxNewId();
 const long settingsDialog::ID_SLIDER3 = wxNewId();
+const long settingsDialog::ID_CHECKBOX2 = wxNewId();
 const long settingsDialog::ID_CHECKBOX1 = wxNewId();
 //*)
 
@@ -57,9 +58,12 @@ settingsDialog::settingsDialog(wxWindow* _parent,wxWindowID id)
 	sldSeaDepth = new wxSlider(this, ID_SLIDER3, 150, 50, 1000, wxDefaultPosition, wxDefaultSize, wxSL_LABELS, wxDefaultValidator, _T("ID_SLIDER3"));
 	sldSeaDepth->SetTickFreq(50);
 	BoxSizer1->Add(sldSeaDepth, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
-	chkShowStress = new wxCheckBox(this, ID_CHECKBOX1, _("Highlight Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
+	chkShowStress = new wxCheckBox(this, ID_CHECKBOX2, _("Highlight Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX2"));
 	chkShowStress->SetValue(false);
-	BoxSizer1->Add(chkShowStress, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+	BoxSizer1->Add(chkShowStress, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+	chkQuickFix = new wxCheckBox(this, ID_CHECKBOX1, _("Quick Water Fix"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
+	chkQuickFix->SetValue(false);
+	BoxSizer1->Add(chkQuickFix, 0, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
 	SetSizer(BoxSizer1);
 	BoxSizer1->Fit(this);
 	BoxSizer1->SetSizeHints(this);
@@ -74,6 +78,7 @@ settingsDialog::settingsDialog(wxWindow* _parent,wxWindowID id)
 	Connect(ID_SLIDER5,wxEVT_SCROLL_THUMBTRACK,(wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
 	Connect(ID_SLIDER3,wxEVT_SCROLL_TOP|wxEVT_SCROLL_BOTTOM|wxEVT_SCROLL_LINEUP|wxEVT_SCROLL_LINEDOWN|wxEVT_SCROLL_PAGEUP|wxEVT_SCROLL_PAGEDOWN|wxEVT_SCROLL_THUMBTRACK|wxEVT_SCROLL_THUMBRELEASE|wxEVT_SCROLL_CHANGED,(wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
 	Connect(ID_SLIDER3,wxEVT_SCROLL_THUMBTRACK,(wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
+	Connect(ID_CHECKBOX2,wxEVT_COMMAND_CHECKBOX_CLICKED,(wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
 	Connect(ID_CHECKBOX1,wxEVT_COMMAND_CHECKBOX_CLICKED,(wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
 	//*)
 }
@@ -94,6 +99,7 @@ void settingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
     frame->gm.waterpressure = sldWaterPressure->GetValue() * 0.06;
     frame->gm.seadepth = sldSeaDepth->GetValue();
     frame->gm.showstress = chkShowStress->GetValue();
+    frame->gm.quickwaterfix = chkQuickFix->GetValue();
     frame->gm.assertSettings();
     std::cout << "Slider moved\n";
 }

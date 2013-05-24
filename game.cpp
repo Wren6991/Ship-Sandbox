@@ -32,6 +32,8 @@ void game::loadShip(std::string filename)
     // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
     // Can vary shades of red for varying strengths and colours
 
+    int nodecount = 0, springcount = 0;
+
     std::map<vec3f, material*> colourdict;
     for (unsigned int i = 0; i < materials.size(); i++)
         colourdict[materials[i]->colour] = materials[i];
@@ -53,6 +55,7 @@ void game::loadShip(std::string filename)
                 material *mtl = colourdict[colour];
                 points[x][y] = new phys::point(wld, vec2(x - shipimage.GetWidth()/2, y), mtl, mtl->isHull? 0 : 1);  // no buoyancy if it's a hull section
                 shp->points.insert(points[x][y]);
+                nodecount++;
             }
             else
             {
@@ -94,10 +97,12 @@ void game::loadShip(std::string filename)
                     }
                     if (c)
                         shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
+                    springcount++;
                 }
             }
         }
     }
+    std::cout << "Loaded ship \"" << filename << "\": " << nodecount << " points, " << springcount << " springs.\n";
 }
 
 
@@ -109,6 +114,7 @@ void game::assertSettings()
     wld->waveheight = waveheight;
     wld->seadepth = seadepth;
     wld->showstress = showstress;
+    wld->quickwaterfix = quickwaterfix;
 }
 
 void game::update()
@@ -143,5 +149,6 @@ game::game()
     waterpressure = 0.3;
     seadepth = 150;
     showstress = false;
+    quickwaterfix = false;
     assertSettings();
 }

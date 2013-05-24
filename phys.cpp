@@ -50,13 +50,21 @@ void phys::world::render(double left, double right, double bottom, double top)
     glVertex3f(right, bottom, -1);
     glVertex3f(left, bottom, -1);
     glEnd();
+    if (quickwaterfix)
+        renderWater(left, right, bottom, top);
     // Draw all the points and springs
-    for (unsigned int i = 0; i < ships.size(); i++)
-        ships[i]->render();
     for (unsigned int i = 0; i < points.size(); i++)
         points[i]->render();
     for (unsigned int i = 0; i < springs.size(); i++)
         springs[i]->render();
+    for (unsigned int i = 0; i < ships.size(); i++)
+        ships[i]->render();
+    if (!quickwaterfix)
+        renderWater(left, right, bottom, top);
+}
+
+void phys::world::renderWater(double left, double right, double bottom, double top)
+{
     // Cut the water into vertical slices (to get the different heights of waves) and draw it
     glColor4f(0, 0.25, 1, 0.5);
     double slicewidth = (right - left) / 80.0;

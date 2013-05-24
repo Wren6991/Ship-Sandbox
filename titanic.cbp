@@ -75,6 +75,8 @@
 		<Unit filename="material.h" />
 		<Unit filename="phys.cpp" />
 		<Unit filename="phys.h" />
+		<Unit filename="render.cpp" />
+		<Unit filename="render.h" />
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>

@@ -29,6 +29,7 @@ public:
     double waterpressure;
     double seadepth;
     bool showstress;
+    bool quickwaterfix;
 
     bool running;
 

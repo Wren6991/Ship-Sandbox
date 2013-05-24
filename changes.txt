@@ -1,5 +1,5 @@
  Alpha 1.2 - Changes:
- - Materials system with customizable materials
+ - Materials system with customizable materials (data/materials.json)
  - New materials (+ new colour codes)
  - Improved physics/stiffness
  - Dropped back to wxWidgets stable release (may fix load dialog crash)
