@@ -26,7 +26,7 @@ enum wxbuildinfoformat {
 
 wxString wxbuildinfo(wxbuildinfoformat format)
 {
-    return "Ship Sandbox v1.1\n(c) Luke Wren 2013\nLicensed to Pac0";
+    return "Ship Sandbox Alpha v1.2\n(c) Luke Wren 2013\nLicensed to Francis Racicot";
 }
 
 //(*IdInit(titanicFrame)

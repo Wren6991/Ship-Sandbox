@@ -75,7 +75,8 @@ void game::loadShip(std::string filename)
             // First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y) - this covers each pair of points in each direction
             for (int i = 0; i < 4; i++)
             {
-                phys::point *b = points[x + directions[i][0]][y + directions[i][1]];
+                phys::point *b = points[x + directions[i][0]][y + directions[i][1]];                        // adjacent point in direction (i)
+                phys::point *c = points[x + directions[(i + 1) % 8][0]][y + directions[(i + 1) % 8][1]];    // adjacent point in next CW direction (for constructing triangles)
                 if (b)
                 {
                     bool pointIsHull = a->mtl->isHull;
@@ -91,6 +92,8 @@ void game::loadShip(std::string filename)
                     {
                         a->isLeaking = true;
                     }
+                    if (c)
+                        shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
                 }
             }
         }

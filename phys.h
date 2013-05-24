@@ -9,7 +9,7 @@
 
 namespace phys
 {
-    class point; class spring; class ship; class game;
+    class point; class spring; struct ship; class game;
     class world
     {
         friend class point;
@@ -36,6 +36,29 @@ namespace phys
         ~world();
     };
 
+    struct ship
+    {
+        world *wld;
+        struct triangle {
+            ship *parent;
+            point *a, *b, *c;
+            triangle(phys::ship *_parent, point *_a, point *_b, point *_c);
+            ~triangle();
+            };
+        std::set<point*> points;
+        std::set<spring*> springs;
+        std::map<point*, std::set<point*> > adjacentnodes;
+        std::set<triangle*> triangles;
+        void render();
+        void leakWater(double dt);
+        void gravitateWater(double dt);
+        void balancePressure(double dt);
+
+        ship(world *_parent);
+        ~ship();
+        void update(double dt);
+    };
+
     class point
     {
         world *wld;
@@ -49,14 +72,16 @@ namespace phys
         double water;
         double getPressure();
     public:
+        std::set<ship::triangle*> tris;
         material *mtl;
         bool isLeaking;
         point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy);
         ~point();
         void applyForce(vec2 f);
+        void breach();  // set to leaking and remove any incident triangles
         void update(double dt);
         vec2 getPos();
-        void setColor(vec3f basecolour);
+        vec3f getColour(vec3f basecolour);
         void render();
     };
 
@@ -75,20 +100,6 @@ namespace phys
         void update();
         void render();
         bool isBroken();
-    };
-
-    struct ship
-    {
-        world *wld;
-        std::set<point*> points;
-        std::set<spring*> springs;
-        std::map<point*, std::set<point*> > adjacentnodes;
-        void leakWater(double dt);
-        void gravitateWater(double dt);
-        void balancePressure(double dt);
-    public:
-        ship(world *_parent);
-        void update(double dt);
     };
 }
 

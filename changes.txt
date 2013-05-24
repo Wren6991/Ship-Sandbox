@@ -1,0 +1,25 @@
+ Alpha 1.2 - Changes:
+ - Materials system with customizable materials
+ - New materials (+ new colour codes)
+ - Improved physics/stiffness
+ - Dropped back to wxWidgets stable release (may fix load dialog crash)
+ - Fixed crashing and physics issues associated with smash tool
+ - *Temporary fix* for non-transparent water (see settings dialog)
+
+Alpha 1.1 - Changes:
+ - Added Smash tool
+ - Pressure increases with depth
+ - Water can flow both in and out of hull breaches
+ - Improved fluid dynamics
+
+Alpha 1.0 - Changes:
+ - Hull material is not self-buoyant (need air pockets for buoyancy)
+ - Hull material is heavier, slightly stronger
+ - Exposed white areas flood more quickly
+ - Gaps in hull material leak automatically, without anything breaking
+ - Different materials - Steel, wood, etc. (different strengths, colours)
+ - Can destroy ships with mouse (interactive!)
+ - Fixed crashing issue (was some bad memory access, fixed up the order of things now)
+ - Customizable wave height, water pressure, strength and buoyancy
+ - Sea floor at 150m depth
+ - Can view stress levels

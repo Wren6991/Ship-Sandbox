@@ -4,11 +4,8 @@
 #include <cmath>
 #include <GL/gl.h>
 #include <iostream>
+#include "render.h"
 
-void setColour(vec3f c)
-{
-    glColor3f(c.x, c.y, c.z);
-}
 
 // W     W    OOO    RRRR     L        DDDD
 // W     W   O   O   R   RR   L        D  DDD
@@ -54,6 +51,8 @@ void phys::world::render(double left, double right, double bottom, double top)
     glVertex3f(left, bottom, -1);
     glEnd();
     // Draw all the points and springs
+    for (unsigned int i = 0; i < ships.size(); i++)
+        ships[i]->render();
     for (unsigned int i = 0; i < points.size(); i++)
         points[i]->render();
     for (unsigned int i = 0; i < springs.size(); i++)
@@ -183,11 +182,21 @@ vec2f phys::point::getPos()
     return pos;
 }
 
-void phys::point::setColor(vec3f basecolour)
+vec3f phys::point::getColour(vec3f basecolour)
 {
-    // Gets more brown as strength goes down. If not hull, gets more blue as water goes up.
    double wetness = fmin(water, 1);
-   setColour(basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness);
+   return basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness;
+}
+
+void phys::point::breach()
+{
+    isLeaking = true;
+    for (std::set<ship::triangle*>::iterator iter = tris.begin(); iter != tris.end();)
+    {
+        ship::triangle *t = *iter;
+        iter++;
+        delete t;
+    }
 }
 
 void phys::point::render()
@@ -209,8 +218,9 @@ double phys::point::getPressure()
 
 phys::point::~point()
 {
+    // get rid of any attached triangles:
+    breach();
     // remove any springs attached to this point:
-
     for (std::vector<spring*>::iterator iter = wld->springs.begin(); iter != wld->springs.end();)
     {
         spring *spr = *iter;
@@ -255,8 +265,8 @@ phys::spring::spring(world *_parent, point *_a, point *_b, material *_mtl, doubl
 phys::spring::~spring()
 {
     // Used to do more complicated checks, but easier (and better) to make everything leak when it breaks
-    a->isLeaking = true;
-    b->isLeaking = true;
+    a->breach();
+    b->breach();
     // Scour out any references to this spring
     for (unsigned int i = 0; i < wld->ships.size(); i++)
     {
@@ -289,10 +299,10 @@ void phys::spring::render()
     if (isStressed)
         glColor3f(1, 0, 0);
     else
-        a->setColor(mtl->colour);
+        render::setColour(a->getColour(mtl->colour));
     glVertex3f(a->pos.x, a->pos.y, -1);
     if (!isStressed)
-        b->setColor(mtl->colour);
+        render::setColour(b->getColour(mtl->colour));
     glVertex3f(b->pos.x, b->pos.y, -1);
     glEnd();
 }
@@ -387,6 +397,43 @@ void phys::ship::balancePressure(double dt)
             b->water -= correction;
         }
     }
+}
+
+void phys::ship::render()
+{
+    for (std::set<ship::triangle*>::iterator iter = triangles.begin(); iter != triangles.end(); iter++)
+    {
+        triangle *t = *iter;
+        render::triangle(t->a->pos, t->b->pos, t->c->pos,
+                         t->a->getColour(t->a->mtl->colour),
+                         t->b->getColour(t->b->mtl->colour),
+                         t->c->getColour(t->c->mtl->colour));
+    }
+}
+
+phys::ship::~ship()
+{
+    /*for (unsigned int i = 0; i < triangles.size(); i++)
+        delete triangles[i];*/
+}
+
+phys::ship::triangle::triangle(phys::ship *_parent, point *_a, point *_b, point *_c)
+{
+    parent = _parent;
+    a = _a;
+    b = _b;
+    c = _c;
+    a->tris.insert(this);
+    b->tris.insert(this);
+    c->tris.insert(this);
+}
+
+phys::ship::triangle::~triangle()
+{
+    parent->triangles.erase(this);
+    a->tris.erase(this);
+    b->tris.erase(this);
+    c->tris.erase(this);
 }
 
 
