@@ -91,7 +91,7 @@ void settingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
     frame->gm.strength = (sldStrength->GetValue() ? sldStrength->GetValue() : 0.5) * 0.005;
     frame->gm.buoyancy = sldBuoyancy->GetValue();
     frame->gm.waveheight = sldWaveHeight->GetValue() * 0.5;
-    frame->gm.waterpressure = sldWaterPressure->GetValue() * 0.1;
+    frame->gm.waterpressure = sldWaterPressure->GetValue() * 0.06;
     frame->gm.seadepth = sldSeaDepth->GetValue();
     frame->gm.showstress = chkShowStress->GetValue();
     frame->gm.assertSettings();

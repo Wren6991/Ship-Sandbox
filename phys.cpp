@@ -4,6 +4,11 @@
 #include <cmath>
 #include <iostream>
 
+void setColour(vec3f c)
+{
+    glColor3f(c.x, c.y, c.z);
+}
+
 // W     W    OOO    RRRR     L        DDDD
 // W     W   O   O   R   RR   L        D  DDD
 // W     W  O     O  R    RR  L        D    DD
@@ -111,7 +116,7 @@ phys::world::world(vec2f _gravity, double _buoyancy, double _strength)
     gravity = _gravity;
     buoyancy = _buoyancy;
     strength = _strength;
-    waterpressure = 0.5;
+    waterpressure = 0.3;
     waveheight = 1.0;
     seadepth = 150;
 }
@@ -140,13 +145,13 @@ phys::world::~world()
 // P          OOO    IIIIIII  N     N     T
 
 // Just copies parameters into relevant fields:
-phys::point::point(world *_parent, vec2f _pos, double _mass, double _buoyancy)
+phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
 {
     parent = _parent;
     parent->points.push_back(this);
     pos = _pos;
     lastpos = pos;
-    mass = _mass;
+    mtl = _mtl;
     buoyancy = _buoyancy;
     isLeaking = false;
     water = 0;
@@ -159,6 +164,7 @@ void phys::point::applyForce(vec2f f)
 
 void phys::point::update(double dt)
 {
+    double mass = mtl->mass;
     this->applyForce(parent->gravity * (mass * (1 + fmin(water, 1) * parent->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
     // Buoyancy:
     if (pos.y < parent->waterheight(pos.x))
@@ -168,7 +174,7 @@ void phys::point::update(double dt)
     pos += (pos - lastpos) + force * (dt * dt / mass);
     // Water drag:
     if (pos.y < parent->waterheight(pos.x))
-        pos += (lastpos - pos) * (1 - pow(0.7, dt));
+        pos += (lastpos - pos) * (1 - pow(0.6, dt));
     // Collision with seafloor:
     if (pos.y < -parent->seadepth)
         pos.y = -parent->seadepth;
@@ -181,13 +187,11 @@ vec2f phys::point::getPos()
     return pos;
 }
 
-void phys::point::setColor(bool isHull, double strength)
+void phys::point::setColor(vec3f basecolour)
 {
     // Gets more brown as strength goes down. If not hull, gets more blue as water goes up.
-   if (isHull)
-        glColor3f(1.2 - strength * 0.6, 0.6 - strength * 0.3, 0.1);
-    else
-        glColor3f(0.8 - water + strength * 0.1, 0.7 - water + strength * 0.15, strength * 0.8);
+   double wetness = fmin(water, 1);
+   setColour(basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness);
 }
 
 void phys::point::render()
@@ -236,7 +240,7 @@ phys::point::~point()
 // SS   SS  P        R    R      I     N    NN   GG  GG
 //   SSS    P        R     R  IIIIIII  N     N    GGGG
 
-phys::spring::spring(world *_parent, point *_a, point *_b, bool _isHull, double _length, double _strength)
+phys::spring::spring(world *_parent, point *_a, point *_b, material *_mtl, double _length)
 {
     parent = _parent;
     _parent->springs.push_back(this);
@@ -246,8 +250,7 @@ phys::spring::spring(world *_parent, point *_a, point *_b, bool _isHull, double 
         length = (a->pos - b->pos).length();
     else
         length = _length;
-    strength = _strength;
-    isHull = _isHull;
+    mtl = _mtl;
 }
 
 phys::spring::~spring()
@@ -269,25 +272,25 @@ phys::spring::~spring()
 void phys::spring::update()
 {
     // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
-    double correction_size = length - (a->pos - b->pos).length();
+    float correction_size = length - (a->pos - b->pos).length();
     vec2f correction_dir = (b->pos - a->pos).normalise();
-    double total_mass = a->mass + b->mass;
-    a->pos -= correction_dir * (b->mass / total_mass * correction_size);    // if b is heavier, a moves more.
-    b->pos += correction_dir * (a->mass / total_mass * correction_size);    // (and vice versa...)
+    float total_mass = a->mtl->mass + b->mtl->mass * 0.8;                       // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    a->pos -= correction_dir * (b->mtl->mass / total_mass * correction_size);    // if b is heavier, a moves more.
+    b->pos += correction_dir * (a->mtl->mass / total_mass * correction_size);    // (and vice versa...)
 }
 
 void phys::spring::render()
 {
     // If member is heavily stressed, highlight it in red (ignored if world's showstress field is false)
-    bool isStressed = parent->showstress && (a->pos - b->pos).length() / this->length > 1 + (parent->strength * strength) * 0.2;
+    bool isStressed = parent->showstress && (a->pos - b->pos).length() / this->length > 1 + (parent->strength * mtl->strength) * 0.2;
     glBegin(GL_LINES);
     if (isStressed)
         glColor3f(1, 0, 0);
     else
-        a->setColor(isHull, strength);
+        a->setColor(mtl->colour);
     glVertex3f(a->pos.x, a->pos.y, -1);
     if (!isStressed)
-        b->setColor(isHull, strength);
+        b->setColor(mtl->colour);
     glVertex3f(b->pos.x, b->pos.y, -1);
     glEnd();
 }
@@ -295,7 +298,7 @@ void phys::spring::render()
 bool phys::spring::isBroken()
 {
     // Check whether strain is more than the word's base strength * this object's relative strength
-    return (a->pos - b->pos).length() / this->length > 1 + (parent->strength * strength);
+    return (a->pos - b->pos).length() / this->length > 1 + (parent->strength * mtl->strength);
 }
 
 

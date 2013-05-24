@@ -9,7 +9,7 @@
 
 namespace phys
 {
-    class point; class spring; class ship;
+    class point; class spring; class ship; class game;
     class world
     {
         friend class point;
@@ -19,8 +19,8 @@ namespace phys
         std::vector <spring*> springs;
         std::vector <ship*> ships;
         double waterheight(double x);
-    public:
         vec2 gravity;
+    public:
         double buoyancy;
         double strength;
         double waterpressure;
@@ -42,7 +42,6 @@ namespace phys
         friend class spring;
         friend class world;
         friend class ship;
-        material *mtl;
         vec2 pos;
         vec2 lastpos;
         vec2 force;
@@ -50,13 +49,14 @@ namespace phys
         double water;
         double getPressure();
     public:
+        material *mtl;
         bool isLeaking;
-        point(world *_parent, vec2 _pos = vec2(0, 0), material *_mtl, double _buoyancy = 1);
+        point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy);
         ~point();
         void applyForce(vec2 f);
         void update(double dt);
         vec2 getPos();
-        void setColor(bool isHull, double strength);
+        void setColor(vec3f basecolour);
         void render();
     };
 
@@ -70,7 +70,7 @@ namespace phys
         double length;
         material *mtl;
     public:
-        spring(world *_parent, point *_a, point *_b, bool _isHull = false, double _length = -1, material *_mtl);
+        spring(world *_parent, point *_a, point *_b, material *_mtl, double _length = -1);
         ~spring();
         void update();
         void render();

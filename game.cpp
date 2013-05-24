@@ -40,12 +40,13 @@ void game::loadShip(std::string filename)
     {
         for (int y = 0; y < shipimage.GetHeight(); y++)
         {
-            wxColor col = shipimage.GetColor(x, shipimage.GetHeight() - y - 1);
-            vec3f vcol(col.r, col.g, col.g);
+            vec3f colour(shipimage.GetRed  (x, shipimage.GetHeight() - y - 1) / 255.f,
+                         shipimage.GetGreen(x, shipimage.GetHeight() - y - 1) / 255.f,
+                         shipimage.GetBlue (x, shipimage.GetHeight() - y - 1) / 255.f);
             material *mtl = 0;
             for (unsigned int i = 0; i < materials.size(); i++)
             {
-                if (materials[i]->colour == vcol)
+                if (materials[i]->colour == colour)
                 {
                     mtl = materials[i];
                     break;
@@ -83,8 +84,8 @@ void game::loadShip(std::string filename)
                 {
                     bool pointIsHull = a->mtl->isHull;
                     bool isHull = pointIsHull && b->mtl->isHull;
-                    material *mtl = b->mtl->isHull? b->mtl : a->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
-                    shp->springs.insert(new phys::spring(wld, a, b, isHull, -1, a->mtl));
+                    material *mtl = b->mtl->isHull? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
+                    shp->springs.insert(new phys::spring(wld, a, b, mtl, -1));
                     if (!isHull)
                     {
                         shp->adjacentnodes[a].insert(b);
@@ -140,7 +141,7 @@ game::game()
     buoyancy = 4.0;
     strength = 0.01;
     waveheight = 1.0;
-    waterpressure = 0.5;
+    waterpressure = 0.3;
     seadepth = 150;
     showstress = false;
     assertSettings();

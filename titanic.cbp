@@ -22,11 +22,6 @@
 					<Add directory="C:/MinGW/lib/gcc_dll/mswud" />
 				</ResourceCompiler>
 				<Linker>
-					<Add library="libwxmsw29u_gl.a" />
-					<Add library="libwxmsw29u_core.a" />
-					<Add library="libwxbase29u.a" />
-					<Add library="libwxpng.a" />
-					<Add library="libwxzlib.a" />
 					<Add directory="C:/MinGW/lib/gcc_dll" />
 				</Linker>
 			</Target>
@@ -45,11 +40,6 @@
 				</ResourceCompiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="libwxmsw29u_gl.a" />
-					<Add library="libwxmsw29u_core.a" />
-					<Add library="libwxbase29u.a" />
-					<Add library="libwxpng.a" />
-					<Add library="libwxzlib.a" />
 					<Add directory="C:/MinGW/lib/gcc_dll" />
 				</Linker>
 			</Target>
@@ -72,7 +62,17 @@
 		<Linker>
 			<Add option="-mthreads" />
 			<Add library="libopengl32.a" />
+			<Add library="libwxmsw29u_gl.a" />
+			<Add library="libwxmsw29u_core.a" />
+			<Add library="libwxbase29u.a" />
+			<Add library="libwxpng.a" />
+			<Add library="libwxzlib.a" />
+			<Add library="libjson.a" />
 		</Linker>
+		<Unit filename="game.cpp" />
+		<Unit filename="game.h" />
+		<Unit filename="material.cpp" />
+		<Unit filename="material.h" />
 		<Unit filename="phys.cpp" />
 		<Unit filename="phys.h" />
 		<Unit filename="resource.rc">
@@ -84,8 +84,10 @@
 		<Unit filename="titanicApp.h" />
 		<Unit filename="titanicMain.cpp" />
 		<Unit filename="titanicMain.h" />
-		<Unit filename="vec2.cpp" />
-		<Unit filename="vec2.h" />
+		<Unit filename="util.cpp" />
+		<Unit filename="util.h" />
+		<Unit filename="vec.cpp" />
+		<Unit filename="vec.h" />
 		<Unit filename="wxsmith/settingsDialog.wxs" />
 		<Unit filename="wxsmith/titanicframe.wxs" />
 		<Extensions>
