@@ -3,6 +3,7 @@
 	<object class="wxDialog" name="settingsDialog">
 		<title>Pac0&apos;s Ship Sandbox</title>
 		<minsize>200,300</minsize>
+		<id_arg>0</id_arg>
 		<style>wxCAPTION|wxSYSTEM_MENU|wxRESIZE_BORDER|wxCLOSE_BOX|wxMINIMIZE_BOX|wxFRAME_SHAPED</style>
 		<object class="wxBoxSizer" variable="BoxSizer1" member="no">
 			<orient>wxVERTICAL</orient>
@@ -108,7 +109,7 @@
 					<label>Highlight Stress</label>
 					<handler function="OnCheckBox1Click" entry="EVT_CHECKBOX" />
 				</object>
-				<flag>wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+				<flag>wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL</flag>
 				<border>5</border>
 			</object>
 			<object class="sizeritem">
@@ -116,7 +117,15 @@
 					<label>Quick Water Fix</label>
 					<handler function="OnCheckBox1Click" entry="EVT_CHECKBOX" />
 				</object>
-				<flag>wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL</flag>
+				<flag>wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL</flag>
+				<border>5</border>
+			</object>
+			<object class="sizeritem">
+				<object class="wxCheckBox" name="ID_CHECKBOX3" variable="chkXRay" member="yes">
+					<label>X-Ray Mode</label>
+					<handler function="OnCheckBox1Click" entry="EVT_CHECKBOX" />
+				</object>
+				<flag>wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL</flag>
 				<border>5</border>
 			</object>
 		</object>

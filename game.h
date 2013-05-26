@@ -30,6 +30,7 @@ public:
     double seadepth;
     bool showstress;
     bool quickwaterfix;
+    bool xraymode;
 
     bool running;
 
@@ -37,8 +38,12 @@ public:
     float camx, camy;
     int canvaswidth, canvasheight;
     void loadShip(std::string filename);
+    void loadDepth(std::string filename);
     void assertSettings();
     vec2 screen2world(vec2);
+
+    std::string lastFilename;
+    float *oceandepthbuffer;
 
     phys::world *wld;
     game();

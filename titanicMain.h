@@ -50,11 +50,14 @@ private:
     void OnMenuItemSmashSelected(wxCommandEvent& event);
     void OnMenuItemGrabSelected(wxCommandEvent& event);
     void OnTimer2Trigger(wxTimerEvent& event);
+    void OnClose(wxCloseEvent& event);
+    void OnMenuReloadSelected(wxCommandEvent& event);
     //*)
 
     //(*Identifiers(titanicFrame)
     static const long ID_GLCANVAS1;
     static const long ID_MENUITEM1;
+    static const long ID_MENUITEM5;
     static const long idMenuQuit;
     static const long ID_MENUITEM3;
     static const long ID_MENUITEM4;
@@ -74,6 +77,7 @@ private:
     wxMenuItem* MenuItemGrab;
     wxMenuItem* MenuItem3;
     wxTimer Timer2;
+    wxMenuItem* MenuItem6;
     wxMenuItem* MenuItemSmash;
     wxTimer Timer1;
     wxMenu* Menu4;

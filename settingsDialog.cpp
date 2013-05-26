@@ -21,6 +21,7 @@ const long settingsDialog::ID_STATICTEXT5 = wxNewId();
 const long settingsDialog::ID_SLIDER3 = wxNewId();
 const long settingsDialog::ID_CHECKBOX2 = wxNewId();
 const long settingsDialog::ID_CHECKBOX1 = wxNewId();
+const long settingsDialog::ID_CHECKBOX3 = wxNewId();
 //*)
 
 BEGIN_EVENT_TABLE(settingsDialog,wxDialog)
@@ -34,7 +35,7 @@ settingsDialog::settingsDialog(wxWindow* _parent,wxWindowID id)
 	//(*Initialize(settingsDialog)
 	wxBoxSizer* BoxSizer1;
 
-	Create(parent, id, _("Pac0\'s Ship Sandbox"), wxDefaultPosition, wxDefaultSize, wxCAPTION|wxSYSTEM_MENU|wxRESIZE_BORDER|wxCLOSE_BOX|wxMINIMIZE_BOX|wxFRAME_SHAPED, _T("id"));
+	Create(parent, wxID_ANY, _("Pac0\'s Ship Sandbox"), wxDefaultPosition, wxDefaultSize, wxCAPTION|wxSYSTEM_MENU|wxRESIZE_BORDER|wxCLOSE_BOX|wxMINIMIZE_BOX|wxFRAME_SHAPED, _T("wxID_ANY"));
 	SetMinSize(wxSize(200,300));
 	BoxSizer1 = new wxBoxSizer(wxVERTICAL);
 	StaticText1 = new wxStaticText(this, ID_STATICTEXT1, _("Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT1"));
@@ -60,10 +61,13 @@ settingsDialog::settingsDialog(wxWindow* _parent,wxWindowID id)
 	BoxSizer1->Add(sldSeaDepth, 1, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
 	chkShowStress = new wxCheckBox(this, ID_CHECKBOX2, _("Highlight Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX2"));
 	chkShowStress->SetValue(false);
-	BoxSizer1->Add(chkShowStress, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+	BoxSizer1->Add(chkShowStress, 0, wxALL|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
 	chkQuickFix = new wxCheckBox(this, ID_CHECKBOX1, _("Quick Water Fix"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
 	chkQuickFix->SetValue(false);
-	BoxSizer1->Add(chkQuickFix, 0, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5);
+	BoxSizer1->Add(chkQuickFix, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
+	chkXRay = new wxCheckBox(this, ID_CHECKBOX3, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX3"));
+	chkXRay->SetValue(false);
+	BoxSizer1->Add(chkXRay, 0, wxALL|wxEXPAND|wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL, 5);
 	SetSizer(BoxSizer1);
 	BoxSizer1->Fit(this);
 	BoxSizer1->SetSizeHints(this);
@@ -80,6 +84,7 @@ settingsDialog::settingsDialog(wxWindow* _parent,wxWindowID id)
 	Connect(ID_SLIDER3,wxEVT_SCROLL_THUMBTRACK,(wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
 	Connect(ID_CHECKBOX2,wxEVT_COMMAND_CHECKBOX_CLICKED,(wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
 	Connect(ID_CHECKBOX1,wxEVT_COMMAND_CHECKBOX_CLICKED,(wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
+	Connect(ID_CHECKBOX3,wxEVT_COMMAND_CHECKBOX_CLICKED,(wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
 	//*)
 }
 
@@ -100,6 +105,7 @@ void settingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
     frame->gm.seadepth = sldSeaDepth->GetValue();
     frame->gm.showstress = chkShowStress->GetValue();
     frame->gm.quickwaterfix = chkQuickFix->GetValue();
+    frame->gm.xraymode = chkXRay->GetValue();
     frame->gm.assertSettings();
     std::cout << "Slider moved\n";
 }

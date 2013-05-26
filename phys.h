@@ -22,20 +22,24 @@ namespace phys
         std::vector <point*> points;
         std::vector <spring*> springs;
         std::vector <ship*> ships;
-        double waterheight(double x);
+        float waterheight(float x);
+        float oceanfloorheight(float x);
         void doSprings(double dt);
         vec2 gravity;
     public:
-        double buoyancy;
-        double strength;
-        double waterpressure;
-        double waveheight;
-        double seadepth;
+        float *oceandepthbuffer;
+        float buoyancy;
+        float strength;
+        float waterpressure;
+        float waveheight;
+        float seadepth;
         bool showstress;
         bool quickwaterfix;
-        double time;
+        bool xraymode;
+        float time;
         void update(double dt);
         void render(double left, double right, double bottom, double top);
+        void renderLand(double left, double right, double bottom, double top);
         void renderWater(double left, double right, double bottom, double top);
         void destroyAt(vec2 pos);
         void drawTo(vec2 target);
@@ -124,8 +128,9 @@ namespace phys
         spring(world *_parent, point *_a, point *_b, material *_mtl, double _length = -1);
         ~spring();
         void update();
-        void damping(double dt);
-        void render();
+        void damping(float amount);
+        void render(bool isStressed = false);
+        bool isStressed();
         bool isBroken();
     };
 }

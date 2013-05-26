@@ -26,12 +26,13 @@ enum wxbuildinfoformat {
 
 wxString wxbuildinfo(wxbuildinfoformat format)
 {
-    return "Ship Sandbox Alpha v1.2\n(c) Luke Wren 2013\nLicensed to Francis Racicot";
+    return "Ship Sandbox Alpha v1.3\n(c) Luke Wren 2013\nLicensed to Francis Racicot";
 }
 
 //(*IdInit(titanicFrame)
 const long titanicFrame::ID_GLCANVAS1 = wxNewId();
 const long titanicFrame::ID_MENUITEM1 = wxNewId();
+const long titanicFrame::ID_MENUITEM5 = wxNewId();
 const long titanicFrame::idMenuQuit = wxNewId();
 const long titanicFrame::ID_MENUITEM3 = wxNewId();
 const long titanicFrame::ID_MENUITEM4 = wxNewId();
@@ -57,7 +58,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     wxMenuBar* MenuBar1;
     wxMenu* Menu2;
 
-    Create(parent, id, _("Ship Sandbox Alpha 1.2"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
+    Create(parent, id, _("Ship Sandbox Alpha 1.3"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
     SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
     BoxSizer1 = new wxBoxSizer(wxHORIZONTAL);
     int GLCanvasAttributes_1[] = {
@@ -73,6 +74,8 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     Menu1 = new wxMenu();
     MenuItem3 = new wxMenuItem(Menu1, ID_MENUITEM1, _("Load Ship\tCtrl+O"), wxEmptyString, wxITEM_NORMAL);
     Menu1->Append(MenuItem3);
+    MenuItem6 = new wxMenuItem(Menu1, ID_MENUITEM5, _("Reload Last Ship\tCtrl+R"), wxEmptyString, wxITEM_NORMAL);
+    Menu1->Append(MenuItem6);
     MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
     Menu1->Append(MenuItem1);
     MenuBar1->Append(Menu1, _("&File"));
@@ -109,6 +112,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     GLCanvas1->Connect(wxEVT_MOUSEWHEEL,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1MouseWheel,0,this);
     GLCanvas1->Connect(wxEVT_SIZE,(wxObjectEventFunction)&titanicFrame::OnGLCanvas1Resize,0,this);
     Connect(ID_MENUITEM1,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemLoadSelected);
+    Connect(ID_MENUITEM5,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuReloadSelected);
     Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnQuit);
     Connect(ID_MENUITEM3,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemSmashSelected);
     Connect(ID_MENUITEM4,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemGrabSelected);
@@ -117,6 +121,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnAbout);
     Connect(ID_TIMER1,wxEVT_TIMER,(wxObjectEventFunction)&titanicFrame::OnTimer1Trigger);
     Connect(ID_TIMER2,wxEVT_TIMER,(wxObjectEventFunction)&titanicFrame::OnTimer2Trigger);
+    Connect(wxID_ANY,wxEVT_CLOSE_WINDOW,(wxObjectEventFunction)&titanicFrame::OnClose);
     //*)
 
     settings = new settingsDialog(this);
@@ -309,4 +314,19 @@ void titanicFrame::OnTimer2Trigger(wxTimerEvent& event)
 {
     std::cout << "FPS: " << frameCount << "\n";
     frameCount = 0;
+}
+
+void titanicFrame::OnClose(wxCloseEvent& event)
+{
+    // UGLY UGLY URGH
+    exit(0);
+    // BUT IT SAVES MESSING ABOUT WHEN THE EVENT QUEUES ARE FULL OF OTHER STUFF
+}
+
+void titanicFrame::OnMenuReloadSelected(wxCommandEvent& event)
+{
+        delete gm.wld;
+        gm.wld = new phys::world;
+        gm.assertSettings();
+        gm.loadShip(gm.lastFilename);
 }

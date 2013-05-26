@@ -47,14 +47,18 @@ void phys::world::doSprings(double dt)
 {
     int nchunks = wxThread::GetCPUCount();
     int springchunk = springs.size() / nchunks + 1;
-    for (int iteration = 0; iteration < 15; iteration++)
+    for (int outiter = 0; outiter < 3; outiter++)
     {
-        for (unsigned int i = 0; i < springs.size(); i += springchunk)
-            springScheduler.schedule(new springCalculateTask(this, i, imin(i + springchunk, springs.size()) - 1));
-        springScheduler.wait();
+        for (int iteration = 0; iteration < 5; iteration++)
+        {
+            for (unsigned int i = 0; i < springs.size(); i += springchunk)
+                springScheduler.schedule(new springCalculateTask(this, i, imin(i + springchunk, springs.size()) - 1));
+            springScheduler.wait();
+        }
+        float dampingamount = (1 - pow(0.0, dt)) * 0.5;
+        for (unsigned int i = 0; i < springs.size(); i++)
+            springs[i]->damping(dampingamount);
     }
-    for (unsigned int i = 0; i < springs.size(); i++)
-        springs[i]->damping(dt);
 }
 
 phys::world::springCalculateTask::springCalculateTask(world *_wld, int _first, int _last)
@@ -89,13 +93,7 @@ void phys::world::pointIntegrateTask::process()
 void phys::world::render(double left, double right, double bottom, double top)
 {
     // Draw the ocean floor
-    glColor4f(0.5, 0.5, 0.5, 1);
-    glBegin(GL_QUADS);
-    glVertex3f(left, -seadepth, -1);
-    glVertex3f(right, -seadepth, -1);
-    glVertex3f(right, bottom, -1);
-    glVertex3f(left, bottom, -1);
-    glEnd();
+    renderLand(left, right, bottom, top);
     if (quickwaterfix)
         renderWater(left, right, bottom, top);
     // Draw all the points and springs
@@ -103,17 +101,37 @@ void phys::world::render(double left, double right, double bottom, double top)
         points[i]->render();
     for (unsigned int i = 0; i < springs.size(); i++)
         springs[i]->render();
-    for (unsigned int i = 0; i < ships.size(); i++)
-        ships[i]->render();
+    if (!xraymode)
+        for (unsigned int i = 0; i < ships.size(); i++)
+            ships[i]->render();
+    if (showstress)
+        for (unsigned int i = 0; i < springs.size(); i++)
+            if (springs[i]->isStressed())
+                springs[i]->render(true);
     if (!quickwaterfix)
         renderWater(left, right, bottom, top);
+}
+
+void phys::world::renderLand(double left, double right, double bottom, double top)
+{
+    glColor4f(0.5, 0.5, 0.5, 1);
+    double slicewidth = (right - left) / 200.0;
+    for (double slicex = left; slicex < right; slicex += slicewidth)
+    {
+        glBegin(GL_TRIANGLE_STRIP);
+        glVertex3f(slicex, oceanfloorheight(slicex), -1);
+        glVertex3f(slicex + slicewidth, oceanfloorheight(slicex + slicewidth), -1);
+        glVertex3f(slicex, bottom, -1);
+        glVertex3f(slicex + slicewidth, bottom, -1);
+        glEnd();
+    }
 }
 
 void phys::world::renderWater(double left, double right, double bottom, double top)
 {
     // Cut the water into vertical slices (to get the different heights of waves) and draw it
     glColor4f(0, 0.25, 1, 0.5);
-    double slicewidth = (right - left) / 80.0;
+    double slicewidth = (right - left) / 100.0;
     for (double slicex = left; slicex < right; slicex += slicewidth)
     {
         glBegin(GL_TRIANGLE_STRIP);
@@ -125,10 +143,19 @@ void phys::world::renderWater(double left, double right, double bottom, double t
     }
 }
 
-// Function of time and x (though time is constant during the update step, so no need to parameterise it)
-double phys::world::waterheight(double x)
+float phys::world::oceanfloorheight(float x)
 {
-    return (sin(x * 0.1 + time) * 0.5 + sin(x * 0.3 - time * 1.1) * 0.3) * waveheight;
+    /*x += 1024.f;
+    x = x - 2048.f * floorf(x / 2048.f);
+    float t = x - floorf(x);
+    return oceandepthbuffer[(int)floorf(x)] * (1 - t) + oceandepthbuffer[((int)ceilf(x)) % 2048] * t;*/
+    return (sinf(x * 0.005f) * 10.f + sinf(x * 0.015f) * 6.f - sin(x * 0.0011f) * 45.f) - seadepth;
+}
+
+// Function of time and x (though time is constant during the update step, so no need to parameterise it)
+float phys::world::waterheight(float x)
+{
+    return (sinf(x * 0.1f + time) * 0.5f + sinf(x * 0.3f - time * 1.1f) * 0.3f) * waveheight;
 }
 
 // Destroy all points within a 0.5m radius (could parameterise the radius but...)
@@ -222,14 +249,18 @@ void phys::point::update(double dt)
     if (pos.y < wld->waterheight(pos.x))
         this->applyForce(wld->gravity * (-wld->buoyancy * buoyancy * mass));
     vec2f newlastpos = pos;
-    // Apply verlet integration:
-    pos += (pos - lastpos) + force * (dt * dt / mass);
     // Water drag:
     if (pos.y < wld->waterheight(pos.x))
-        pos += (lastpos - pos) * (1 - pow(0.6, dt));
+        lastpos += (pos - lastpos) * (1 - pow(0.6, dt));
+    // Apply verlet integration:
+    pos += (pos - lastpos) + force * (dt * dt / mass);
     // Collision with seafloor:
-    if (pos.y < -wld->seadepth)
-        pos.y = -wld->seadepth;
+    float floorheight = wld->oceanfloorheight(pos.x);
+    if (pos.y < floorheight)
+    {
+        vec2f dir = vec2f(floorheight - wld->oceanfloorheight(pos.x + 0.01f), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
+        pos += dir * (floorheight - pos.y);
+    }
     lastpos = newlastpos;
     force = vec2f(0, 0);
 }
@@ -343,35 +374,38 @@ void phys::spring::update()
     // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
     vec2f correction_dir = (b->pos - a->pos);
     float currentlength = correction_dir.length();
-    correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.8); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.85); // * 0.8 => 25% overcorrection (stiffer, converges faster)
     a->pos -= correction_dir * b->mtl->mass;    // if b is heavier, a moves more.
     b->pos += correction_dir * a->mtl->mass;    // (and vice versa...)
 }
 
-void phys::spring::damping(double dt)
+void phys::spring::damping(float amount)
 {
-    vec2f rel_vel = a->pos - a->lastpos - (b->pos - b->lastpos);
     vec2f springdir = (a->pos - b->pos).normalise();
-    float projected_vel = rel_vel.dot(springdir);
-    float damping_amount = projected_vel * (1 - pow(0.9, dt));
-    a->pos -= springdir * damping_amount;
-    b->pos += springdir * damping_amount;
+    springdir *= (a->pos - a->lastpos - (b->pos - b->lastpos)).dot(springdir) * amount;   // relative velocity o spring direction = projected velocity, amount = amount of projected velocity that remains after damping
+    a->lastpos += springdir;
+    b->lastpos -= springdir;
 }
 
-void phys::spring::render()
+void phys::spring::render(bool showStress)
 {
     // If member is heavily stressed, highlight it in red (ignored if world's showstress field is false)
-    bool isStressed = wld->showstress && (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength) * 0.2;
     glBegin(GL_LINES);
-    if (isStressed)
+    if (showStress)
         glColor3f(1, 0, 0);
     else
         render::setColour(a->getColour(mtl->colour));
     glVertex3f(a->pos.x, a->pos.y, -1);
-    if (!isStressed)
+    if (!showStress)
         render::setColour(b->getColour(mtl->colour));
     glVertex3f(b->pos.x, b->pos.y, -1);
     glEnd();
+}
+
+bool phys::spring::isStressed()
+{
+    // Check whether strain is more than the word's base strength * this object's relative strength
+    return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength) * 0.25;
 }
 
 bool phys::spring::isBroken()

@@ -32,6 +32,8 @@ void game::loadShip(std::string filename)
     // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
     // Can vary shades of red for varying strengths and colours
 
+    lastFilename = filename;
+
     int nodecount = 0, springcount = 0;
 
     std::map<vec3f, material*> colourdict;
@@ -105,6 +107,19 @@ void game::loadShip(std::string filename)
     std::cout << "Loaded ship \"" << filename << "\": " << nodecount << " points, " << springcount << " springs.\n";
 }
 
+void game::loadDepth(std::string filename)
+{
+    wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
+    oceandepthbuffer = new float[2048];
+    for (unsigned i = 0; i < 2048; i++)
+    {
+        float xpos = i / 16.f;
+        oceandepthbuffer[i] = depthimage.GetRed(floorf(xpos), 0) * (floorf(xpos) - xpos) + depthimage.GetRed(ceilf(xpos), 0) * (1 - (floorf(xpos) - xpos))
+                            ;//+ depthimage.GetGreen(i % 256, 0) * 0.0625f;
+        oceandepthbuffer[i] = oceandepthbuffer[i] * 1.f - 180.f;
+    }
+}
+
 
 void game::assertSettings()
 {
@@ -115,6 +130,8 @@ void game::assertSettings()
     wld->seadepth = seadepth;
     wld->showstress = showstress;
     wld->quickwaterfix = quickwaterfix;
+    wld->oceandepthbuffer = oceandepthbuffer;
+    wld->xraymode = xraymode;
 }
 
 void game::update()
@@ -143,6 +160,7 @@ game::game()
     for (unsigned int i = 0; i < matroot.size(); i++)
         materials.push_back(new material(matroot[i]));
     wld = new phys::world();
+    loadDepth("data/depth.png");
     buoyancy = 4.0;
     strength = 0.01;
     waveheight = 1.0;

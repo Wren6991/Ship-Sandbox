@@ -29,6 +29,7 @@ class settingsDialog: public wxDialog
 		wxSlider* sldSeaDepth;
 		wxStaticText* StaticText4;
 		wxSlider* sldWaterPressure;
+		wxCheckBox* chkXRay;
 		//*)
 
 	protected:
@@ -46,6 +47,7 @@ class settingsDialog: public wxDialog
 		static const long ID_SLIDER3;
 		static const long ID_CHECKBOX2;
 		static const long ID_CHECKBOX1;
+		static const long ID_CHECKBOX3;
 		//*)
 
 	private:
