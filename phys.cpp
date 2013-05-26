@@ -29,13 +29,7 @@ void phys::world::update(double dt)
     for (unsigned int i = 0; i < points.size(); i++)
         points[i]->update(dt);
     // Iterate the spring relaxation (can tune this parameter, or make it scale automatically depending on free time)
-    for (int iteration = 0; iteration < 15; iteration++)
-    {
-        int unitsize = springs.size() / wxThread::GetCPUCount() + 1;
-        for (unsigned int i = 0; i < springs.size(); i += unitsize)
-            springScheduler.schedule(new springTask(this, i, imin(i + unitsize, springs.size()) - 1));
-        springScheduler.wait();
-    }
+    doSprings(dt);
     // Check if any springs exceed their breaking strain:
     for (std::vector<spring*>::iterator iter = springs.begin(); iter != springs.end();)
     {
@@ -49,16 +43,47 @@ void phys::world::update(double dt)
         ships[i]->update(dt);
 }
 
-phys::world::springTask::springTask(world *_wld, int _first, int _last)
+void phys::world::doSprings(double dt)
+{
+    int nchunks = wxThread::GetCPUCount();
+    int springchunk = springs.size() / nchunks + 1;
+    for (int iteration = 0; iteration < 15; iteration++)
+    {
+        for (unsigned int i = 0; i < springs.size(); i += springchunk)
+            springScheduler.schedule(new springCalculateTask(this, i, imin(i + springchunk, springs.size()) - 1));
+        springScheduler.wait();
+    }
+    for (unsigned int i = 0; i < springs.size(); i++)
+        springs[i]->damping(dt);
+}
+
+phys::world::springCalculateTask::springCalculateTask(world *_wld, int _first, int _last)
 {
     wld = _wld;
     first = _first;
     last = _last;
 }
-void phys::world::springTask::process()
+void phys::world::springCalculateTask::process()
 {
     for (int i = first; i <= last; i++)
         wld->springs[i]->update();
+}
+
+phys::world::pointIntegrateTask::pointIntegrateTask(world *_wld, int _first, int _last, float _dt)
+{
+    wld = _wld;
+    first = _first;
+    last = _last;
+    dt = _dt;
+}
+void phys::world::pointIntegrateTask::process()
+{
+    for (int i = first; i <= last; i++)
+    {
+        wld->points[i]->pos += wld->points[i]->force * dt;
+        wld->points[i]->force = vec2(0, 0);
+    }
+
 }
 
 void phys::world::render(double left, double right, double bottom, double top)
@@ -183,7 +208,10 @@ phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
 
 void phys::point::applyForce(vec2f f)
 {
+    // Needs to be atomic:
+    forcelock.Lock();
     force += f;
+    forcelock.Unlock();
 }
 
 void phys::point::update(double dt)
@@ -213,7 +241,7 @@ vec2f phys::point::getPos()
 
 vec3f phys::point::getColour(vec3f basecolour)
 {
-   double wetness = fmin(water, 1);
+   double wetness = fmin(water, 1) * 0.7;
    return basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness;
 }
 
@@ -318,6 +346,16 @@ void phys::spring::update()
     correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.8); // * 0.8 => 25% overcorrection (stiffer, converges faster)
     a->pos -= correction_dir * b->mtl->mass;    // if b is heavier, a moves more.
     b->pos += correction_dir * a->mtl->mass;    // (and vice versa...)
+}
+
+void phys::spring::damping(double dt)
+{
+    vec2f rel_vel = a->pos - a->lastpos - (b->pos - b->lastpos);
+    vec2f springdir = (a->pos - b->pos).normalise();
+    float projected_vel = rel_vel.dot(springdir);
+    float damping_amount = projected_vel * (1 - pow(0.9, dt));
+    a->pos -= springdir * damping_amount;
+    b->pos += springdir * damping_amount;
 }
 
 void phys::spring::render()

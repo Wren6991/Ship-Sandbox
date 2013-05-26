@@ -49,6 +49,7 @@ private:
     void OnMenuItemPlayPauseSelected(wxCommandEvent& event);
     void OnMenuItemSmashSelected(wxCommandEvent& event);
     void OnMenuItemGrabSelected(wxCommandEvent& event);
+    void OnTimer2Trigger(wxTimerEvent& event);
     //*)
 
     //(*Identifiers(titanicFrame)
@@ -61,6 +62,7 @@ private:
     static const long ID_MENUITEM2;
     static const long idMenuAbout;
     static const long ID_TIMER1;
+    static const long ID_TIMER2;
     //*)
 
     //(*Declarations(titanicFrame)
@@ -71,11 +73,13 @@ private:
     wxFileDialog* dlgOpen;
     wxMenuItem* MenuItemGrab;
     wxMenuItem* MenuItem3;
+    wxTimer Timer2;
     wxMenuItem* MenuItemSmash;
     wxTimer Timer1;
     wxMenu* Menu4;
     //*)
 
+    int frameCount;
     settingsDialog *settings;
 
     wxGLContext* GLContext1;

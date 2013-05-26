@@ -81,5 +81,9 @@
 			<wildcard>(*.png)|*.png</wildcard>
 			<style>wxFD_OPEN|wxFD_FILE_MUST_EXIST</style>
 		</object>
+		<object class="wxTimer" name="ID_TIMER2" variable="Timer2" member="yes">
+			<interval>1000</interval>
+			<handler function="OnTimer2Trigger" entry="EVT_TIMER" />
+		</object>
 	</object>
 </wxsmith>

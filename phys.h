@@ -16,18 +16,14 @@ namespace phys
         friend class point;
         friend class spring;
         friend class ship;
-        struct springTask: scheduler::task
-        {
-            springTask(world *_wld, int _first, int _last);
-            world *wld;
-            int first, last;
-            virtual void process();
-        };
+        struct springCalculateTask;
+        struct pointIntegrateTask;
         scheduler springScheduler;
         std::vector <point*> points;
         std::vector <spring*> springs;
         std::vector <ship*> ships;
         double waterheight(double x);
+        void doSprings(double dt);
         vec2 gravity;
     public:
         double buoyancy;
@@ -46,6 +42,24 @@ namespace phys
         world(vec2 _gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
         ~world();
     };
+
+    struct world::springCalculateTask: scheduler::task
+    {
+        springCalculateTask(world *_wld, int _first, int _last);
+        world *wld;
+        int first, last;
+        virtual void process();
+    };
+
+    struct world::pointIntegrateTask: scheduler::task
+    {
+        pointIntegrateTask(world *_wld, int _first, int _last, float _dt);
+        world *wld;
+        float dt;
+        int first, last;
+        virtual void process();
+    };
+
 
     struct ship
     {
@@ -78,6 +92,7 @@ namespace phys
         friend class ship;
         vec2 pos;
         vec2 lastpos;
+        wxMutex forcelock;
         vec2 force;
         double buoyancy;
         double water;
@@ -109,6 +124,7 @@ namespace phys
         spring(world *_parent, point *_a, point *_b, material *_mtl, double _length = -1);
         ~spring();
         void update();
+        void damping(double dt);
         void render();
         bool isBroken();
     };

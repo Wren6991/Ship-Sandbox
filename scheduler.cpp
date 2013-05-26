@@ -5,8 +5,8 @@
 
 scheduler::scheduler()
 {
-    int ncores = wxThread::GetCPUCount();
-    for (int i = 0; i < ncores; i++)
+    int nthreads = wxThread::GetCPUCount() * 2;
+    for (int i = 0; i < nthreads; i++)
     {
         threadPool.push_back(new thread(this));
         threadPool[i]->name = i;
@@ -18,7 +18,7 @@ scheduler::scheduler()
 scheduler::~scheduler()
 {
     for (unsigned int i = 0; i < threadPool.size(); i++)
-        threadPool[i]->Delete();
+        threadPool[i]->Kill();
 }
 
 void scheduler::schedule(task *t)

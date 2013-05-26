@@ -39,6 +39,7 @@ const long titanicFrame::mnuShow = wxNewId();
 const long titanicFrame::ID_MENUITEM2 = wxNewId();
 const long titanicFrame::idMenuAbout = wxNewId();
 const long titanicFrame::ID_TIMER1 = wxNewId();
+const long titanicFrame::ID_TIMER2 = wxNewId();
 //*)
 
 BEGIN_EVENT_TABLE(titanicFrame,wxFrame)
@@ -95,6 +96,8 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     Timer1.SetOwner(this, ID_TIMER1);
     Timer1.Start(20, false);
     dlgOpen = new wxFileDialog(this, _("Select Ship Image"), wxEmptyString, wxEmptyString, _("(*.png)|*.png"), wxFD_OPEN|wxFD_FILE_MUST_EXIST, wxDefaultPosition, wxDefaultSize, _T("wxFileDialog"));
+    Timer2.SetOwner(this, ID_TIMER2);
+    Timer2.Start(1000, false);
     BoxSizer1->Fit(this);
     BoxSizer1->SetSizeHints(this);
 
@@ -113,6 +116,7 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     Connect(ID_MENUITEM2,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnMenuItemPlayPauseSelected);
     Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&titanicFrame::OnAbout);
     Connect(ID_TIMER1,wxEVT_TIMER,(wxObjectEventFunction)&titanicFrame::OnTimer1Trigger);
+    Connect(ID_TIMER2,wxEVT_TIMER,(wxObjectEventFunction)&titanicFrame::OnTimer2Trigger);
     //*)
 
     settings = new settingsDialog(this);
@@ -128,6 +132,8 @@ titanicFrame::titanicFrame(wxWindow* parent,wxWindowID id)
     gm.camy = 0;
 
     Timer1.Start();
+    Timer2.Start();
+    frameCount = 0;
     gm.canvaswidth = 200;
     gm.canvasheight = 200;
 }
@@ -211,6 +217,7 @@ void titanicFrame::OnGLCanvas1Resize(wxSizeEvent& event)
 void titanicFrame::OnTimer1Trigger(wxTimerEvent& event)
 {
     // Main timing event!
+    frameCount++;
     initgl();
     gm.update();
     gm.render();
@@ -296,4 +303,10 @@ void titanicFrame::OnMenuItemSmashSelected(wxCommandEvent& event)
 void titanicFrame::OnMenuItemGrabSelected(wxCommandEvent& event)
 {
     gm.tool = game::TOOL_GRAB;
+}
+
+void titanicFrame::OnTimer2Trigger(wxTimerEvent& event)
+{
+    std::cout << "FPS: " << frameCount << "\n";
+    frameCount = 0;
 }
