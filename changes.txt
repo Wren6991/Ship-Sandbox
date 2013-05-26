@@ -2,12 +2,12 @@
  - Materials system with customizable materials (data/materials.json)
  - New materials (+ new colour codes)
  - Improved physics/stiffness
- - Dropped back to wxWidgets stable release (may fix load dialog crash)
+ - Improved graphics (solid panels)
  - Fixed crashing and physics issues associated with smash tool
  - *Temporary fix* for non-transparent water (see settings dialog)
 
 Alpha 1.1 - Changes:
- - Added Smash tool
+ - Added Grab tool
  - Pressure increases with depth
  - Water can flow both in and out of hull breaches
  - Improved fluid dynamics

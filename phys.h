@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 #include "material.h"
+#include "scheduler.h"
 #include "vec.h"
 
 namespace phys
@@ -15,6 +16,14 @@ namespace phys
         friend class point;
         friend class spring;
         friend class ship;
+        struct springTask: scheduler::task
+        {
+            springTask(world *_wld, int _first, int _last);
+            world *wld;
+            int first, last;
+            virtual void process();
+        };
+        scheduler springScheduler;
         std::vector <point*> points;
         std::vector <spring*> springs;
         std::vector <ship*> ships;

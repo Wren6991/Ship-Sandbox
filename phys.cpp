@@ -17,6 +17,11 @@
 //  W W W    O   O   R    R   L        D  DDD
 //   W W      OOO    R     R  LLLLLLL  DDDD
 
+int imin(int a, int b)
+{
+    return a < b ? a : b;
+}
+
 void phys::world::update(double dt)
 {
     time += dt;
@@ -25,8 +30,12 @@ void phys::world::update(double dt)
         points[i]->update(dt);
     // Iterate the spring relaxation (can tune this parameter, or make it scale automatically depending on free time)
     for (int iteration = 0; iteration < 15; iteration++)
-        for (unsigned int i = 0; i < springs.size(); i++)
-            springs[i]->update();
+    {
+        int unitsize = springs.size() / wxThread::GetCPUCount() + 1;
+        for (unsigned int i = 0; i < springs.size(); i += unitsize)
+            springScheduler.schedule(new springTask(this, i, imin(i + unitsize, springs.size()) - 1));
+        springScheduler.wait();
+    }
     // Check if any springs exceed their breaking strain:
     for (std::vector<spring*>::iterator iter = springs.begin(); iter != springs.end();)
     {
@@ -38,6 +47,18 @@ void phys::world::update(double dt)
     // Tell each ship to update all of its water stuff
     for (unsigned int i = 0; i < ships.size(); i++)
         ships[i]->update(dt);
+}
+
+phys::world::springTask::springTask(world *_wld, int _first, int _last)
+{
+    wld = _wld;
+    first = _first;
+    last = _last;
+}
+void phys::world::springTask::process()
+{
+    for (int i = first; i <= last; i++)
+        wld->springs[i]->update();
 }
 
 void phys::world::render(double left, double right, double bottom, double top)
@@ -292,11 +313,11 @@ phys::spring::~spring()
 void phys::spring::update()
 {
     // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
-    float correction_size = length - (a->pos - b->pos).length();
-    vec2f correction_dir = (b->pos - a->pos).normalise();
-    float total_mass = a->mtl->mass + b->mtl->mass * 0.8;                       // * 0.8 => 25% overcorrection (stiffer, converges faster)
-    a->pos -= correction_dir * (b->mtl->mass / total_mass * correction_size);    // if b is heavier, a moves more.
-    b->pos += correction_dir * (a->mtl->mass / total_mass * correction_size);    // (and vice versa...)
+    vec2f correction_dir = (b->pos - a->pos);
+    float currentlength = correction_dir.length();
+    correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.8); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    a->pos -= correction_dir * b->mtl->mass;    // if b is heavier, a moves more.
+    b->pos += correction_dir * a->mtl->mass;    // (and vice versa...)
 }
 
 void phys::spring::render()
@@ -443,5 +464,3 @@ phys::ship::triangle::~triangle()
     b->tris.erase(this);
     c->tris.erase(this);
 }
-
-

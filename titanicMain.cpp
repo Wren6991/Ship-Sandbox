@@ -149,18 +149,6 @@ void titanicFrame::OnAbout(wxCommandEvent& event)
     wxMessageBox(msg, _("Welcome to..."));
 }
 
-//   SSS    H     H  IIIIIII  PPPP
-// SS   SS  H     H     I     P   PP
-// S        H     H     I     P    PP
-// SS       H     H     I     P   PP
-//   SSS    HHHHHHH     I     PPPP
-//      SS  H     H     I     P
-//       S  H     H     I     P
-// SS   SS  H     H     I     P
-//   SSS    H     H  IIIIIII  P
-
-
-
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS
 //  GG      R   RR     A A    P   PP   H     H     I      CC CC   SS   SS
@@ -195,8 +183,8 @@ void titanicFrame::initgl()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
-    glPointSize(90.f / gm.zoomsize);
-    glLineWidth(80.f / gm.zoomsize);
+    glPointSize(0.15f * gm.canvasheight / gm.zoomsize);
+    glLineWidth(0.1f * gm.canvasheight / gm.zoomsize);
     glColor3f(0, 0, 0);
 
     glMatrixMode(GL_MODELVIEW);
