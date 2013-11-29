@@ -13,6 +13,27 @@
 //   VVV    E         CC CC    2       F
 //    V     EEEEEEE    CCC    2222222  F
 
+
+// Quake <3
+
+inline float fast_inv_sqrt(float x)
+{
+    union {float f; unsigned long ul;} y;
+    y.f = x;
+    y.ul = (0xBE6EB50CUL - y.ul) >> 1;
+    y.f = 0.5f * y.f * (3.0f - x * y.f * y.f);
+    return y.f;
+}
+
+inline float fast_sqrt(float x)
+{
+    union {float f; unsigned long ul;} y;
+    y.f = x;
+    y.ul = (0xBE6EB50CUL - y.ul) >> 1;
+    y.f = 0.5f * y.f * (3.0f - x * y.f * y.f);
+    return x * y.f;
+}
+
 vec2f vec2f::operator+(const vec2f &rhs) const
 {
     return vec2f(x + rhs.x,
@@ -82,12 +103,12 @@ float vec2f::dot(const vec2f &rhs) const
 
 float vec2f::length() const
 {
-    return sqrt(x * x + y * y);
+    return sqrtf(x * x + y * y);
 }
 
 vec2f vec2f::normalise() const
 {
-    return *this / this->length();
+    return *this * fast_inv_sqrt(x * x + y * y);
 }
 
 std::string vec2f::toString()
@@ -97,12 +118,11 @@ std::string vec2f::toString()
     return ss.str();
 }
 
-vec2f::vec2f(float _x, float _y)
+/*vec2f::vec2f(float _x, float _y)
 {
     x = _x;
     y = _y;
-}
-
+}*/
 
 // V     V  EEEEEEE    CCC      333    FFFFFFF
 // V     V  E         CC CC   33   33  F
@@ -193,12 +213,12 @@ float vec3f::dot(const vec3f &rhs) const
 
 float vec3f::length() const
 {
-    return sqrt(x * x + y * y + z * z);
+    return sqrtf(x * x + y * y + z * z);
 }
 
 vec3f vec3f::normalise() const
 {
-    return *this * (1.f / this->length());
+    return *this * fast_inv_sqrt(x * x + y * y + z * z);
 }
 
 std::string vec3f::toString()
@@ -208,9 +228,3 @@ std::string vec3f::toString()
     return ss.str();
 }
 
-vec3f::vec3f(float _x, float _y, float _z)
-{
-    x = _x;
-    y = _y;
-    z = _z;
-}

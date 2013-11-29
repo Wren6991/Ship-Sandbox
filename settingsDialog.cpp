@@ -1,4 +1,4 @@
-#include "settingsDialog.h"
+/*#include "settingsDialog.h"
 #include "titanicMain.h"
 
 #include <iostream>
@@ -115,3 +115,4 @@ void settingsDialog::OnCheckBox1Click(wxCommandEvent& event)
     wxScrollEvent evt;
     OnSlider1CmdScroll(evt);
 }
+*/

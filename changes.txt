@@ -1,4 +1,13 @@
- Alpha 1.2 - Changes:
+Alpha 1.3 - Changes:
+ - Stress markers are visible through panels
+ - Added x-ray mode
+ - Uneven ocean floor (not yet editable, but physics are working)
+ - Multithreaded simulation: should run much faster on multicore processors
+ - Fixed the "jelly bug" - simulation is much more stable (still issues with spheres)
+ - Fixed bug where program would fail to close when a large ship was loaded
+ - Added option (Ctrl+R) to reload last ship
+
+Alpha 1.2 - Changes:
  - Materials system with customizable materials (data/materials.json)
  - New materials (+ new colour codes)
  - Improved physics/stiffness

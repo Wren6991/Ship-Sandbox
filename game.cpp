@@ -1,6 +1,10 @@
 #include "game.h"
 
+#include <IL/il.h>
+#include <IL/ilu.h>
+#include <iostream>
 #include <map>
+#include <string>
 #include "util.h"
 
 
@@ -25,13 +29,6 @@ vec2 game::screen2world(vec2 pos)
 
 void game::loadShip(std::string filename)
 {
-    // RGB channels contain separate information:
-    // R: Strength (higher = more)
-    // G: Empty or not (white background has high G so is ignored, all materials have low G)
-    // B: Hull or not (blue has high G, is not hull; black has high G, is hull)
-    // black: weak hull; blue: weak internal; red: strong hull; magenta: strong internal
-    // Can vary shades of red for varying strengths and colours
-
     lastFilename = filename;
 
     int nodecount = 0, springcount = 0;
@@ -40,22 +37,44 @@ void game::loadShip(std::string filename)
     for (unsigned int i = 0; i < materials.size(); i++)
         colourdict[materials[i]->colour] = materials[i];
 
-    wxImage shipimage(filename, wxBITMAP_TYPE_PNG);
+    wchar_t *wide_filename = new wchar_t[filename.length() + 1];
+    std::copy(filename.begin(), filename.end(), wide_filename);
+    wide_filename[filename.length()] = 0;
+
+    ILuint imghandle;
+    ilGenImages(1, &imghandle);
+    ilBindImage(imghandle);
+
+    if (!ilLoadImage((const ILstring)(filename.c_str())))
+    {
+        ILint devilError = ilGetError();
+        std::cout << "Error: could not load image \"" << filename  << "\":";
+        std::string errstr(iluErrorString(devilError));
+        std::cout << devilError << ": " << errstr << "\n";
+    }
+    delete wide_filename;
+
+    ILubyte *data = ilGetData();
+
+    int width, height;
+    width = ilGetInteger(IL_IMAGE_WIDTH);
+    height = ilGetInteger(IL_IMAGE_HEIGHT);
+
     phys::ship *shp = new phys::ship(wld);
 
     std::map<int,  std::map <int, phys::point*> > points;
 
-    for (int x = 0; x < shipimage.GetWidth(); x++)
+    for (int x = 0; x < width; x++)
     {
-        for (int y = 0; y < shipimage.GetHeight(); y++)
+        for (int y = 0; y < height; y++)
         {
-            vec3f colour(shipimage.GetRed  (x, shipimage.GetHeight() - y - 1) / 255.f,
-                         shipimage.GetGreen(x, shipimage.GetHeight() - y - 1) / 255.f,
-                         shipimage.GetBlue (x, shipimage.GetHeight() - y - 1) / 255.f);
+            vec3f colour(data[(x + (height - y) * width) * 3 + 0] / 255.f,
+                         data[(x + (height - y) * width) * 3 + 1] / 255.f,
+                         data[(x + (height - y) * width) * 3 + 2] / 255.f);
             if (colourdict.find(colour) != colourdict.end())
             {
                 material *mtl = colourdict[colour];
-                points[x][y] = new phys::point(wld, vec2(x - shipimage.GetWidth()/2, y), mtl, mtl->isHull? 0 : 1);  // no buoyancy if it's a hull section
+                points[x][y] = new phys::point(wld, vec2(x - width/2, y), mtl, mtl->isHull? 0 : 1);  // no buoyancy if it's a hull section
                 shp->points.insert(points[x][y]);
                 nodecount++;
             }
@@ -70,9 +89,9 @@ void game::loadShip(std::string filename)
     // If beam joins two hull nodes, it is a hull beam.
     // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
 
-    for (int x = 0; x < shipimage.GetWidth(); x++)
+    for (int x = 0; x < width; x++)
     {
-        for (int y = 0; y < shipimage.GetHeight(); y++)
+        for (int y = 0; y < height; y++)
         {
             phys::point *a = points[x][y];
             if (!a)
@@ -109,7 +128,7 @@ void game::loadShip(std::string filename)
 
 void game::loadDepth(std::string filename)
 {
-    wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
+    /*wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
     oceandepthbuffer = new float[2048];
     for (unsigned i = 0; i < 2048; i++)
     {
@@ -117,7 +136,7 @@ void game::loadDepth(std::string filename)
         oceandepthbuffer[i] = depthimage.GetRed(floorf(xpos), 0) * (floorf(xpos) - xpos) + depthimage.GetRed(ceilf(xpos), 0) * (1 - (floorf(xpos) - xpos))
                             ;//+ depthimage.GetGreen(i % 256, 0) * 0.0625f;
         oceandepthbuffer[i] = oceandepthbuffer[i] * 1.f - 180.f;
-    }
+    }*/
 }
 
 
@@ -143,6 +162,14 @@ void game::update()
         else if (tool == TOOL_GRAB)
             wld->drawTo(screen2world(vec2(mouse.x, mouse.y)));
     }
+    if (mouse.rdown)
+    {
+        vec2 difference = screen2world(vec2(mouse.x, mouse.y)) - screen2world(vec2(mouse.lastx, mouse.lasty));
+        camx -= difference.x;
+        camy -= difference.y;
+    }
+    mouse.lastx = mouse.x;
+    mouse.lasty = mouse.y;
     if (running)
         wld->update(0.02);
 }
@@ -168,5 +195,10 @@ game::game()
     seadepth = 150;
     showstress = false;
     quickwaterfix = false;
+    zoomsize = 30.f;
+    camx = 0;
+    camy = 0;
+    running = true;
+    tool = TOOL_SMASH;
     assertSettings();
 }

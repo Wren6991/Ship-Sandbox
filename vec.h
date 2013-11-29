@@ -26,6 +26,12 @@ struct vec2f
     vec2f(float _x = 0, float _y = 0);
 };
 
+inline vec2f::vec2f(float _x, float _y)
+{
+    x = _x;
+    y = _y;
+}
+
 typedef vec2f vec2;
 
 struct vec3f
@@ -49,5 +55,13 @@ struct vec3f
 
     vec3f(float _x = 0, float _y = 0, float _z = 0);
 };
+
+inline vec3f::vec3f(float _x, float _y, float _z)
+{
+    x = _x;
+    y = _y;
+    z = _z;
+}
+
 
 #endif // VEC2_H

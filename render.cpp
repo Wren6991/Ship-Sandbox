@@ -23,6 +23,17 @@ void render::triangle(vec2 posa, vec2 posb, vec2 posc, vec3f cola, vec3f colb, v
     glEnd();
 }
 
+void render::box(vec2 bottomleft, vec2 topright)
+{
+    glBegin(GL_LINE_LOOP);
+    glColor4f(1.f, 0.f, 0.f, 0.5f);
+    glVertex3f(bottomleft.x, topright.y, -1);
+    glVertex3f(topright.x, topright.y, -1);
+    glVertex3f(topright.x, bottomleft.y, -1);
+    glVertex3f(bottomleft.x, bottomleft.y, -1);
+    glEnd();
+}
+
 void render::setColour(vec3f c)
 {
     glColor3f(c.x, c.y, c.z);

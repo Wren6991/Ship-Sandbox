@@ -10,7 +10,7 @@
 
 namespace phys
 {
-    class point; class spring; struct ship; class game;
+    class point; class spring; struct ship; class game; struct AABB; struct BVHNode;
     class world
     {
         friend class point;
@@ -22,10 +22,12 @@ namespace phys
         std::vector <point*> points;
         std::vector <spring*> springs;
         std::vector <ship*> ships;
+        BVHNode *collisionTree;
         float waterheight(float x);
         float oceanfloorheight(float x);
         void doSprings(double dt);
         vec2 gravity;
+        void buildBVHTree(bool splitInX, std::vector<point*> &pointlist, BVHNode *thisnode, int depth = 1);
     public:
         float *oceandepthbuffer;
         float buoyancy;
@@ -94,9 +96,9 @@ namespace phys
         friend class spring;
         friend class world;
         friend class ship;
+        static const float radius = 0.4f;
         vec2 pos;
         vec2 lastpos;
-        wxMutex forcelock;
         vec2 force;
         double buoyancy;
         double water;
@@ -112,6 +114,7 @@ namespace phys
         void update(double dt);
         vec2 getPos();
         vec3f getColour(vec3f basecolour);
+        AABB getAABB();
         void render();
     };
 
@@ -132,6 +135,27 @@ namespace phys
         void render(bool isStressed = false);
         bool isStressed();
         bool isBroken();
+    };
+
+    struct AABB
+    {
+        vec2 bottomleft, topright;
+        AABB() {}
+        AABB(vec2 _bottomleft, vec2 _topright);
+        void extendTo(AABB other);
+        void render();
+    };
+
+    struct BVHNode
+    {
+        AABB volume;
+        BVHNode *l, *r;
+        bool isLeaf;
+        int pointCount;
+        static const int MAX_DEPTH = 15;
+        static const int MAX_N_POINTS = 10;
+        point* points[MAX_N_POINTS];
+        static BVHNode *allocateTree(int depth = MAX_DEPTH);
     };
 }
 

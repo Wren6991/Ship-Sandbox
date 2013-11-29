@@ -6,7 +6,6 @@
 #include <iostream>
 #include "render.h"
 
-
 // W     W    OOO    RRRR     L        DDDD
 // W     W   O   O   R   RR   L        D  DDD
 // W     W  O     O  R    RR  L        D    DD
@@ -20,6 +19,11 @@
 int imin(int a, int b)
 {
     return a < b ? a : b;
+}
+
+int imax(int a, int b)
+{
+    return a > b ? a : b;
 }
 
 void phys::world::update(double dt)
@@ -45,14 +49,16 @@ void phys::world::update(double dt)
 
 void phys::world::doSprings(double dt)
 {
-    int nchunks = wxThread::GetCPUCount();
+    int nchunks = springScheduler.getNThreads();
     int springchunk = springs.size() / nchunks + 1;
     for (int outiter = 0; outiter < 3; outiter++)
     {
-        for (int iteration = 0; iteration < 5; iteration++)
+        for (int iteration = 0; iteration < 8; iteration++)
         {
-            for (unsigned int i = 0; i < springs.size(); i += springchunk)
-                springScheduler.schedule(new springCalculateTask(this, i, imin(i + springchunk, springs.size()) - 1));
+            for (int i = springs.size() - 1; i > 0; i -= springchunk)
+            {
+                springScheduler.schedule(new springCalculateTask(this, imax(i - springchunk, 0), i));
+            }
             springScheduler.wait();
         }
         float dampingamount = (1 - pow(0.0, dt)) * 0.5;
@@ -110,6 +116,65 @@ void phys::world::render(double left, double right, double bottom, double top)
                 springs[i]->render(true);
     if (!quickwaterfix)
         renderWater(left, right, bottom, top);
+    glBegin(GL_LINES);
+    glLineWidth(1.f);
+    glEnd();
+    //buildBVHTree(true, points, collisionTree);
+}
+
+void swapf(float &x, float &y)
+{
+    float temp = x;
+    x = y;
+    y = temp;
+}
+
+float medianOf3(float a, float b, float c)
+{
+    if (a < b)
+        swapf(a, b);
+    if (b < c)
+        swapf(b, c);
+    if (a < b)
+        swapf(a, b);
+    return b;
+}
+
+void phys::world::buildBVHTree(bool splitInX, std::vector<point*> &pointlist, BVHNode *thisnode, int depth)
+{
+    int npoints = pointlist.size();
+    if (npoints)
+        thisnode->volume = pointlist[0]->getAABB();
+    for (unsigned int i = 1; i < npoints; i++)
+        thisnode->volume.extendTo(pointlist[i]->getAABB());
+
+    thisnode->volume.render();
+    if (npoints <= BVHNode::MAX_N_POINTS || depth >= BVHNode::MAX_DEPTH)
+    {
+        thisnode->isLeaf = true;
+        thisnode->pointCount = npoints;
+        for (int i = 0; i < npoints; i++)
+            thisnode->points[i] = pointlist[i];
+    }
+    else
+    {
+        float pivotline = splitInX ?
+            medianOf3(pointlist[0]->pos.x, pointlist[npoints / 2]->pos.x, pointlist[npoints - 1]->pos.x) :
+            medianOf3(pointlist[0]->pos.y, pointlist[npoints / 2]->pos.y, pointlist[npoints - 1]->pos.y);
+        std::vector<point*> listL;
+        std::vector<point*> listR;
+        listL.reserve(npoints / 2);
+        listR.reserve(npoints / 2);
+        for (int i = 0; i < npoints; i++)
+        {
+            if (splitInX ? pointlist[i]->pos.x < pivotline : pointlist[i]->pos.y < pivotline)
+                listL.push_back(pointlist[i]);
+            else
+                listR.push_back(pointlist[i]);
+        }
+        buildBVHTree(!splitInX, listL, thisnode->l, depth + 1);
+        buildBVHTree(!splitInX, listR, thisnode->r, depth + 1);
+    }
 }
 
 void phys::world::renderLand(double left, double right, double bottom, double top)
@@ -195,6 +260,7 @@ phys::world::world(vec2f _gravity, double _buoyancy, double _strength)
     waterpressure = 0.3;
     waveheight = 1.0;
     seadepth = 150;
+    collisionTree = BVHNode::allocateTree();
 }
 
 // Destroy everything in the set order
@@ -235,10 +301,7 @@ phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
 
 void phys::point::applyForce(vec2f f)
 {
-    // Needs to be atomic:
-    forcelock.Lock();
     force += f;
-    forcelock.Unlock();
 }
 
 void phys::point::update(double dt)
@@ -302,6 +365,11 @@ void phys::point::render()
 double phys::point::getPressure()
 {
     return wld->gravity.length() * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
+}
+
+phys::AABB phys::point::getAABB()
+{
+    return phys::AABB(pos - vec2(radius, radius), pos + vec2(radius, radius));
 }
 
 phys::point::~point()
@@ -382,7 +450,7 @@ void phys::spring::update()
 void phys::spring::damping(float amount)
 {
     vec2f springdir = (a->pos - b->pos).normalise();
-    springdir *= (a->pos - a->lastpos - (b->pos - b->lastpos)).dot(springdir) * amount;   // relative velocity o spring direction = projected velocity, amount = amount of projected velocity that remains after damping
+    springdir *= (a->pos - a->lastpos - (b->pos - b->lastpos)).dot(springdir) * amount;   // relative velocity • spring direction = projected velocity, amount = amount of projected velocity that remains after damping
     a->lastpos += springdir;
     b->lastpos -= springdir;
 }
@@ -535,4 +603,37 @@ phys::ship::triangle::~triangle()
     a->tris.erase(this);
     b->tris.erase(this);
     c->tris.erase(this);
+}
+
+phys::AABB::AABB(vec2 _bottomleft, vec2 _topright)
+{
+    bottomleft = _bottomleft;
+    topright = _topright;
+}
+
+void phys::AABB::extendTo(phys::AABB other)
+{
+    if (other.bottomleft.x < bottomleft.x)
+        bottomleft.x = other.bottomleft.x;
+    if (other.bottomleft.y < bottomleft.y)
+        bottomleft.y = other.bottomleft.y;
+    if (other.topright.x > topright.x)
+        topright.x = other.topright.x;
+    if (other.topright.y > topright.y)
+        topright.y = other.topright.y;
+}
+
+void phys::AABB::render()
+{
+    render::box(bottomleft, topright);
+}
+
+phys::BVHNode* phys::BVHNode::allocateTree(int depth)
+{
+    if (depth <= 0)
+        return 0;
+    BVHNode *thisnode = new BVHNode;
+    thisnode->l = allocateTree(depth - 1);
+    thisnode->r = allocateTree(depth - 1);
+    return thisnode;
 }

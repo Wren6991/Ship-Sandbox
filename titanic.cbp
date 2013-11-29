@@ -50,7 +50,7 @@
 			<Add option="-mthreads" />
 			<Add option='[[if (PLATFORM == PLATFORM_MSW &amp;&amp; (GetCompilerFactory().GetCompilerVersionString(_T(&quot;gcc&quot;)) &gt;= _T(&quot;4.0.0&quot;))) print(_T(&quot;-Wno-attributes&quot;));]]' />
 			<Add option="-std=gnu++0x" />
-			<Add option="-pthreads" />
+			<Add option="-lpthreads" />
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-DWXUSINGDLL" />
@@ -82,6 +82,8 @@
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="scheduler.cpp" />
+		<Unit filename="scheduler.h" />
 		<Unit filename="settingsDialog.cpp" />
 		<Unit filename="settingsDialog.h" />
 		<Unit filename="titanicApp.cpp" />

@@ -14,7 +14,9 @@
 #include <wx/image.h>
 //*)
 
-IMPLEMENT_APP(titanicApp);
+//IMPLEMENT_APP(titanicApp);
+
+#include <iostream>
 
 bool titanicApp::OnInit()
 {
@@ -30,4 +32,12 @@ bool titanicApp::OnInit()
     //*)
     return wxsOK;
 
+}
+
+
+int main()
+{
+    std::cout << "Hello from main!\n";
+    char c;
+    std::cin >> c;
 }

@@ -2,7 +2,6 @@
 #define _GAME_H_
 
 #include <vector>
-#include <wx/image.h>
 #include "phys.h"
 
 
@@ -16,6 +15,7 @@ public:
         bool ldown;
         bool rdown;
         int x, y;
+        int lastx, lasty;
     } mouse;
 
     enum tool_type {
