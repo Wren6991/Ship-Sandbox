@@ -50,3 +50,10 @@ charbuffer getFileContents(std::string filename)
     result.length = length;
     return result;
 }
+
+template <typename T> std::string tostring(T x)
+{
+    std::stringstream ss;
+    ss << x;
+    return ss.str();
+}

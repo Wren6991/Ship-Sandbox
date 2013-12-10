@@ -33,6 +33,11 @@
 				<Option projectLinkerOptionsRelation="2" />
 				<Compiler>
 					<Add option="-O3" />
+					<Add option="-ffast-math" />
+					<Add option="-fno-math-errno" />
+					<Add option="-funsafe-math-optimizations" />
+					<Add option="-ffinite-math-only" />
+					<Add option="-fno-trapping-math" />
 					<Add directory="C:/MinGW/lib/gcc_dll/mswu" />
 				</Compiler>
 				<ResourceCompiler>
@@ -49,8 +54,8 @@
 			<Add option="-pipe" />
 			<Add option="-mthreads" />
 			<Add option='[[if (PLATFORM == PLATFORM_MSW &amp;&amp; (GetCompilerFactory().GetCompilerVersionString(_T(&quot;gcc&quot;)) &gt;= _T(&quot;4.0.0&quot;))) print(_T(&quot;-Wno-attributes&quot;));]]' />
-			<Add option="-std=gnu++0x" />
 			<Add option="-lpthreads" />
+			<Add option="-march=pentium" />
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-DWXUSINGDLL" />
@@ -63,39 +68,34 @@
 		</ResourceCompiler>
 		<Linker>
 			<Add option="-mthreads" />
+			<Add library="libglfw3.a" />
 			<Add library="libopengl32.a" />
-			<Add library="libwxmsw29u_gl.a" />
-			<Add library="libwxmsw29u_core.a" />
-			<Add library="libwxbase29u.a" />
-			<Add library="libwxpng.a" />
-			<Add library="libwxzlib.a" />
+			<Add library="libgdi32.a" />
+			<Add library="libglu32.a" />
 			<Add library="libjson.a" />
+			<Add library="libdevil.a" />
+			<Add library="libilu.a" />
+			<Add library="libtinythread.a" />
 		</Linker>
+		<Unit filename="fast_mutex.h" />
 		<Unit filename="game.cpp" />
 		<Unit filename="game.h" />
+		<Unit filename="main.cpp" />
 		<Unit filename="material.cpp" />
 		<Unit filename="material.h" />
 		<Unit filename="phys.cpp" />
 		<Unit filename="phys.h" />
 		<Unit filename="render.cpp" />
 		<Unit filename="render.h" />
-		<Unit filename="resource.rc">
-			<Option compilerVar="WINDRES" />
-		</Unit>
 		<Unit filename="scheduler.cpp" />
 		<Unit filename="scheduler.h" />
 		<Unit filename="settingsDialog.cpp" />
 		<Unit filename="settingsDialog.h" />
-		<Unit filename="titanicApp.cpp" />
-		<Unit filename="titanicApp.h" />
-		<Unit filename="titanicMain.cpp" />
-		<Unit filename="titanicMain.h" />
+		<Unit filename="tinythread.h" />
 		<Unit filename="util.cpp" />
 		<Unit filename="util.h" />
 		<Unit filename="vec.cpp" />
 		<Unit filename="vec.h" />
-		<Unit filename="wxsmith/settingsDialog.wxs" />
-		<Unit filename="wxsmith/titanicframe.wxs" />
 		<Extensions>
 			<DoxyBlocks>
 				<comment_style block="0" line="0" />

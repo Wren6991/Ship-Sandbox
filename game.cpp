@@ -37,10 +37,6 @@ void game::loadShip(std::string filename)
     for (unsigned int i = 0; i < materials.size(); i++)
         colourdict[materials[i]->colour] = materials[i];
 
-    wchar_t *wide_filename = new wchar_t[filename.length() + 1];
-    std::copy(filename.begin(), filename.end(), wide_filename);
-    wide_filename[filename.length()] = 0;
-
     ILuint imghandle;
     ilGenImages(1, &imghandle);
     ilBindImage(imghandle);
@@ -52,7 +48,6 @@ void game::loadShip(std::string filename)
         std::string errstr(iluErrorString(devilError));
         std::cout << devilError << ": " << errstr << "\n";
     }
-    delete wide_filename;
 
     ILubyte *data = ilGetData();
 
@@ -68,6 +63,7 @@ void game::loadShip(std::string filename)
     {
         for (int y = 0; y < height; y++)
         {
+            // assume R G B:
             vec3f colour(data[(x + (height - y) * width) * 3 + 0] / 255.f,
                          data[(x + (height - y) * width) * 3 + 1] / 255.f,
                          data[(x + (height - y) * width) * 3 + 2] / 255.f);
@@ -123,6 +119,7 @@ void game::loadShip(std::string filename)
             }
         }
     }
+    ilDeleteImage(imghandle);
     std::cout << "Loaded ship \"" << filename << "\": " << nodecount << " points, " << springcount << " springs.\n";
 }
 
@@ -195,6 +192,7 @@ game::game()
     seadepth = 150;
     showstress = false;
     quickwaterfix = false;
+    xraymode = false;
     zoomsize = 30.f;
     camx = 0;
     camy = 0;

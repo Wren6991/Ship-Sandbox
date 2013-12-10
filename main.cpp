@@ -13,6 +13,8 @@
 #include <IL/il.h>
 #include <IL/ilu.h>
 #include "game.h"
+#include "util.h"
+#include <sstream>
 
 int scroll_delta = 0;
 
@@ -104,7 +106,6 @@ void doInput(GLFWwindow *window, game &gm)
     gm.mouse.y = yd;
     gm.mouse.ldown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     gm.mouse.rdown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-    std::cout << "mouse: " << xd << ", " << yd << (gm.mouse.ldown ? "L" : "-") << (gm.mouse.rdown ? "R" : "-") << "\n";
     if (scroll_delta != 0)
     {
         gm.zoomsize *= pow(0.85, scroll_delta);
@@ -117,15 +118,26 @@ void scrollCallback(GLFWwindow *window, double x, double y)
     scroll_delta += y;
 }
 
+template <typename T> std::string tostring(T x)
+{
+    std::stringstream ss;
+    ss << x;
+    return ss.str();
+}
+
+
 int main()
 {
     ilInit();
     iluInit();
     if (glfwInit() == -1)
         return -1;
-    GLFWwindow *window = glfwCreateWindow(1920, 1080, "Sinking Simulator", glfwGetPrimaryMonitor(), NULL);
+
+    GLFWwindow *window = glfwCreateWindow(1024, 768, "Sinking Simulator", NULL, NULL);
     glfwSwapInterval(1);
     glfwSetScrollCallback(window, scrollCallback);
+    double lasttime = glfwGetTime();
+    int nframes = 0;
 
     glfwMakeContextCurrent(window);
 
@@ -135,6 +147,13 @@ int main()
     bool running = true;
     while (running && !glfwWindowShouldClose(window))
     {
+        nframes++;
+        if (glfwGetTime() - lasttime > 1.0)
+        {
+            lasttime = glfwGetTime();
+            glfwSetWindowTitle(window, ("Sinking Simulator - " + gm.lastFilename +  " (" + tostring<int>(nframes) + " FPS)").c_str());
+            nframes = 0;
+        }
         doInput(window, gm);
         gm.update();
         initgl(window, &gm);

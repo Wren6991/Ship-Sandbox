@@ -14,5 +14,6 @@ struct charbuffer
 
 Json::Value jsonParseFile(std::string filename);
 charbuffer getFileContents(std::string filename);
+template <typename T> std::string tostring(T x);
 
 #endif // _UTIL_H_
