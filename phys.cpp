@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <GL/gl.h>
 #include <iostream>
+#include "ogl.h"
 #include "render.h"
 
 // W     W    OOO    RRRR     L        DDDD
