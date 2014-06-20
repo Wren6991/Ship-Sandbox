@@ -192,7 +192,7 @@ vec3f& vec3f::operator/=(float rhs)
 {
     x /= rhs;
     y /= rhs;
-    y /= rhs;
+    z /= rhs;
     return *this;
 }
 
