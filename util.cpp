@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 Json::Value jsonParseFile(std::string filename)
@@ -14,21 +15,23 @@ Json::Value jsonParseFile(std::string filename)
     }
 
     file.seekg(0, std::ios::end);
-    int length = file.tellg();
+    size_t length = static_cast<size_t>(file.tellg());
     file.seekg(0, std::ios::beg);
     char *buffer = new char[length + 1];
     file.read(buffer, length);
 
-    Json::Reader reader;
+    Json::CharReaderBuilder readerBuilder;
+	std::unique_ptr<Json::CharReader> reader(readerBuilder.newCharReader());
     Json::Value root;
-    bool parsingSuccessful = reader.parse(buffer, root);
+	JSONCPP_STRING errors;
+    bool parsingSuccessful = reader->parse(buffer, buffer + length, &root, &errors);
     if (parsingSuccessful)
     {
         return root;
     }
     else
     {
-        std::cout << "In file " << filename << ": Parsing error(s):\n" << reader.getFormatedErrorMessages();
+        std::cout << "In file " << filename << ": Parsing error(s):\n" << errors;
         return Json::Value();
     }
 }
@@ -41,7 +44,7 @@ charbuffer getFileContents(std::string filename)
         std::cerr << "Could not open file " << filename << " for reading.\n";
     }
     file.seekg(0, std::ios::end);
-    int length = file.tellg();
+    size_t length = static_cast<size_t>(file.tellg());
     file.seekg(0, std::ios::beg);
     char *buffer = new char[length];
     file.read(buffer, length);

@@ -1,5 +1,6 @@
 #include "material.h"
 
+#include <iostream>
 #include <sstream>
 
 
@@ -26,8 +27,8 @@ vec3f hex2Colour(std::string str)    //  e.g. "#00FF00";
 material::material(Json::Value root)
 {
     name = root.get("name", "Unspecified").asString();
-    mass = root.get("mass", 1).asDouble();
-    strength = root.get("strength", 1).asDouble() / mass * 1000;
+    mass = root.get("mass", 1).asFloat();
+    strength = root.get("strength", 1).asFloat() / mass * 1000.0f;
     colour = hex2Colour((root.isMember("colour") ? root["colour"] : root["color"]).asString());  // may as well account for American spelling...
     isHull = root["isHull"].asBool();
     std::cout << "Adding new material: \"" << name << "\" " << colour.toString() << "\n";

@@ -2,8 +2,9 @@
 #define _UTIL_H
 
 #ifdef WIN32
-#include <Windows.h>
+#include <windows.h>
 #endif
+
 #include <GL/gl.h>
 #include <json/json.h>
 #include <string>
