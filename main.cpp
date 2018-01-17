@@ -7,13 +7,15 @@
  * License:
  **************************************************************/
 
-#include <cmath>
-#include <map>
+#include "game.h"
+#include "util.h"
+
 #include <GLFW/glfw3.h>
 #include <IL/il.h>
 #include <IL/ilu.h>
-#include "game.h"
-#include "util.h"
+
+#include <cmath>
+#include <map>
 #include <sstream>
 
 int scroll_delta = 0;
@@ -58,7 +60,7 @@ void initgl(GLFWwindow *window, game *gm)
     glLoadIdentity();
 }
 
-void endgl(GLFWwindow *window, game *gm)
+void endgl(GLFWwindow *window, game * /*gm*/)
 {
     // Flush all the draw operations and flip the back buffer onto the screen.
     glFlush();

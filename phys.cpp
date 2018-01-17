@@ -1,10 +1,19 @@
 #include "phys.h"
 
+#include "render.h"
+
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+#include <GL/gl.h>
+
 #include <algorithm>
 #include <cmath>
-#include <GL/gl.h>
 #include <iostream>
-#include "render.h"
+
 
 // W     W    OOO    RRRR     L        DDDD
 // W     W   O   O   R   RR   L        D  DDD

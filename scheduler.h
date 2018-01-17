@@ -1,8 +1,15 @@
-#ifndef _SCHEDULER_H_
-#define _SCHEDULER_H_
+////////////////////////////////////////////////////////////////////////////////////////////
+// 
+// Original code by Luke Wren (https://github.com/Wren6991/Ship-Sandbox)
+//
+// Modified by Gabriele Giuseppini (https://github.com/GabrieleGiuseppini/Ship-Sandbox)
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+#pragma once
 
+#include <mutex>
 #include <queue>
-#include "tinythread.h"
+#include <thread>
 
 class scheduler
 {
@@ -12,32 +19,44 @@ public:
         virtual void process() = 0;
         virtual ~task() {}
     };
+
 private:
-    class thread: public tthread::thread
+    class thread
     {
-        scheduler *parent;
-        task *currentTask;
+	private:
+        scheduler * const mParent;
+		std::thread mThread;
+
+		task * mCurrentTask;
+
     public:
         int name;
-        thread(scheduler *_parent);
+        thread(scheduler * parent);
         static void enter(void *_this);
     };
+
     class semaphore
     {
-        tthread::mutex m;
-        tthread::condition_variable condition;
-        unsigned long count_;
+	private:
+        std::mutex mMutex;
+        std::condition_variable mCondition;
+        unsigned long mCount;
+
     public:
-        semaphore(): count_(0) {}
+        semaphore()
+			: mCount(0) 
+		{}
         void signal();
         void wait();
     };
-    int nthreads;
-    std::vector <thread*> threadPool;
-    semaphore available;
-    semaphore completed;
-    std::queue<task*> tasks;
-    tthread::mutex critical;
+
+    int const mNThreads;
+    std::vector <thread*> mThreadPool;
+    semaphore mAvailable;
+    semaphore mCompleted;
+    std::queue<task*> mTasks;
+    std::mutex mCritical;
+
 public:
     scheduler();
     ~scheduler();
@@ -45,6 +64,3 @@ public:
     void wait();
     int getNThreads();
 };
-
-
-#endif // _SCHEDULER_H_

@@ -10,7 +10,7 @@
 
 namespace phys
 {
-    class point; class spring; struct ship; class game; struct AABB; struct BVHNode;
+    class point; class spring; class ship; class game; struct AABB; struct BVHNode;
     class world
     {
         friend class point;
@@ -45,7 +45,7 @@ namespace phys
         void renderWater(double left, double right, double bottom, double top);
         void destroyAt(vec2 pos);
         void drawTo(vec2 target);
-        world(vec2 _gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
+        world(vec2 _gravity = vec2(0.0f, -9.8f), double _buoyancy = 4, double _strength = 0.01);
         ~world();
     };
 
@@ -67,8 +67,9 @@ namespace phys
     };
 
 
-    struct ship
+    class ship
     {
+	public:
         world *wld;
         struct triangle {
             ship *parent;
@@ -96,7 +97,7 @@ namespace phys
         friend class spring;
         friend class world;
         friend class ship;
-        static const float radius = 0.4f;
+		static constexpr float radius = 0.4f;
         vec2 pos;
         vec2 lastpos;
         vec2 force;
