@@ -25,33 +25,23 @@ set (WXWIDGET_INCLUDE_DIRS
 
 link_directories("C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
 
-IF(CMAKE_BUILD_TYPE MATCHES RELEASE)	
+IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 	set (WXWIDGET_INCLUDE_DIRS 
 		${WXWIDGET_INCLUDE_DIRS}
 		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/mswu")
-	find_library(WXWIDGET_WXMSW_LIBRARY NAMES wxmsw31u_core
-		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
-	find_library(WXWIDGET_WXBASE_LIBRARY NAMES wxbase31u
-		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
+	set (WXWIDGET_WXMSW_LIBRARY
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/wxmsw31u_core.lib")
+	set (WXWIDGET_WXBASE_LIBRARY
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/wxbase31u.lib")
 ELSE()
 	set (WXWIDGET_INCLUDE_DIRS 
 		${WXWIDGET_INCLUDE_DIRS}
 		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/mswud")
-	find_library(WXWIDGET_WXMSW_LIBRARY NAMES wxmsw31ud_core
-		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
-	find_library(WXWIDGET_WXBASE_LIBRARY NAMES wxbase31ud
-		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
+	set (WXWIDGET_WXMSW_LIBRARY
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/wxmsw31ud_core.lib")
+	set (WXWIDGET_WXBASE_LIBRARY
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/wxbase31ud.lib")
 ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-
-
-#set (GLFW_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/glfw-3.2.1.bin.WIN64/include")
-#IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-#	find_library(GLFW_LIBRARY NAMES glfw3
-#		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Release")
-#ELSE()
-#	find_library(GLFW_LIBRARY NAMES glfw3
-#		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Debug")
-#ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 
 
 set (DEVIL_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/include")
