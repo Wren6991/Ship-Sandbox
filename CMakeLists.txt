@@ -9,6 +9,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 #
 
 set (JSONCPP_INCLUDE_DIRS "C:/Users/Neurodancer/source/repos/jsoncpp/include")
+
 IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 	find_library(JSONCPP_LIBRARY NAMES lib_json
 		HINTS "C:/Users/Neurodancer/source/repos/jsoncpp/makefiles/msvc2010/x64/Release")
@@ -18,17 +19,43 @@ ELSE()
 ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 
 
-set (GLFW_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/glfw-3.2.1.bin.WIN64/include")
-IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-	find_library(GLFW_LIBRARY NAMES glfw3
-		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Release")
+set (WXWIDGET_INCLUDE_DIRS 
+	"C:/Users/Neurodancer/source/repos/wxWidgets/include" 
+	"C:/Users/Neurodancer/source/repos/wxWidgets/include/msvc")
+
+link_directories("C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
+
+IF(CMAKE_BUILD_TYPE MATCHES RELEASE)	
+	set (WXWIDGET_INCLUDE_DIRS 
+		${WXWIDGET_INCLUDE_DIRS}
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/mswu")
+	find_library(WXWIDGET_WXMSW_LIBRARY NAMES wxmsw31u_core
+		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
+	find_library(WXWIDGET_WXBASE_LIBRARY NAMES wxbase31u
+		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
 ELSE()
-	find_library(GLFW_LIBRARY NAMES glfw3
-		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Debug")
+	set (WXWIDGET_INCLUDE_DIRS 
+		${WXWIDGET_INCLUDE_DIRS}
+		"C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib/mswud")
+	find_library(WXWIDGET_WXMSW_LIBRARY NAMES wxmsw31ud_core
+		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
+	find_library(WXWIDGET_WXBASE_LIBRARY NAMES wxbase31ud
+		HINTS "C:/Users/Neurodancer/source/repos/wxWidgets/lib/vc_x64_lib")
 ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 
 
+#set (GLFW_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/glfw-3.2.1.bin.WIN64/include")
+#IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
+#	find_library(GLFW_LIBRARY NAMES glfw3
+#		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Release")
+#ELSE()
+#	find_library(GLFW_LIBRARY NAMES glfw3
+#		HINTS "C:/Users/Neurodancer/source/build/glfw/src/Debug")
+#ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
+
+
 set (DEVIL_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/include")
+
 find_library(DEVIL_DEVIL_LIBRARY NAMES DevIL
        HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/Release")
 find_library(DEVIL_ILU_LIBRARY NAMES ILU
@@ -37,33 +64,43 @@ find_library(DEVIL_ILUT_LIBRARY NAMES ILUT
        HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/Release")
 
 
+if (MSVC)
+	set(ADDITIONAL_LIBRARIES "comctl32;rpcrt4;advapi32") # winmm.lib wsock32.lib
+else(MSVC)
+	set(ADDITIONAL_LIBRARIES "")
+endif(MSVC)
+
+
 find_package(OpenGL REQUIRED)
+
 
 #
 # ShipSandbox
 #
 
 set  (SHIP_SANDBOX_SOURCES
-	game.cpp
-	game.h
-	main.cpp
-	material.cpp
-	material.h
-	phys.cpp
-	phys.h
-	render.cpp
-	render.h
-	scheduler.cpp
-	scheduler.h
-	settingsDialog.cpp
-	settingsDialog.h
-	titanicApp.cpp
-	titanicApp.h
-	titanicMain.h
-	util.cpp
-	util.h
-	vec.cpp
-	vec.h)
+	#game.cpp
+	#game.h
+	#main.cpp
+	main_test_wx.cpp
+	#material.cpp
+	#material.h
+	#phys.cpp
+	#phys.h
+	#render.cpp
+	#render.h
+	#scheduler.cpp
+	#scheduler.h
+	#settingsDialog.cpp
+	#settingsDialog.h
+	#titanicApp.cpp
+	#titanicApp.h
+	#titanicMain.h
+	#util.cpp
+	#util.h
+	#vec.cpp
+	#vec.h
+	)
 
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
 
@@ -73,23 +110,35 @@ target_include_directories(
 	ShipSandbox
 	PRIVATE
 	${JSONCPP_INCLUDE_DIRS}
-	${GLFW_INCLUDE_DIRS}
+	${WXWIDGET_INCLUDE_DIRS}
 	${DEVIL_INCLUDE_DIRS})
 
 target_link_libraries (
 	ShipSandbox
 	${JSONCPP_LIBRARY}
 	${OPENGL_LIBRARIES}
-	${GLFW_LIBRARY}
+	${WXWIDGET_WXMSW_LIBRARY}
+	${WXWIDGET_WXBASE_LIBRARY}
 	${DEVIL_DEVIL_LIBRARY}
 	${DEVIL_ILU_LIBRARY}
-	${DEVIL_ILUT_LIBRARY})
+	${DEVIL_ILUT_LIBRARY}
+	${ADDITIONAL_LIBRARIES})
+
+if (MSVC)
+	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+else (MSVC)
+endif(MSVC)
+
 
 #
 # Flags
 #
 
 if (MSVC)
+	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE")
+
 	foreach(flag_var
 		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
 		CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
@@ -103,9 +152,9 @@ if (MSVC)
 	endforeach(flag_var)
 
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-else()
+else(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-endif()
+endif(MSVC)
  
 message ("cxx Flags:" ${CMAKE_CXX_FLAGS})
 message ("cxx Flags Release:" ${CMAKE_CXX_FLAGS_RELEASE})
