@@ -47,11 +47,11 @@ ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
 set (DEVIL_INCLUDE_DIRS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/include")
 
 find_library(DEVIL_DEVIL_LIBRARY NAMES DevIL
-       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/Release")
+       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/unicode/Release")
 find_library(DEVIL_ILU_LIBRARY NAMES ILU
-       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/Release")
+       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/unicode/Release")
 find_library(DEVIL_ILUT_LIBRARY NAMES ILUT
-       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/Release")
+       HINTS "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK/lib/x64/unicode/Release")
 
 
 if (MSVC)
@@ -69,27 +69,29 @@ find_package(OpenGL REQUIRED)
 #
 
 set  (SHIP_SANDBOX_SOURCES
-	#game.cpp
-	#game.h
-	#main.cpp
-	main_test_wx.cpp
-	#material.cpp
-	#material.h
-	#phys.cpp
-	#phys.h
-	#render.cpp
-	#render.h
-	#scheduler.cpp
-	#scheduler.h
-	#settingsDialog.cpp
-	#settingsDialog.h
-	#titanicApp.cpp
-	#titanicApp.h
-	#titanicMain.h
-	#util.cpp
-	#util.h
-	#vec.cpp
-	#vec.h
+	game.cpp
+	game.h
+	Log.cpp
+	Log.h
+	LoggingWindow.cpp
+	LoggingWindow.h
+	MainApp.cpp
+	MainFrame.cpp
+	MainFrame.h
+	material.cpp
+	material.h
+	phys.cpp
+	phys.h
+	render.cpp
+	render.h
+	scheduler.cpp
+	scheduler.h
+	settingsDialog.cpp
+	settingsDialog.h
+	util.cpp
+	util.h
+	vec.cpp
+	vec.h
 	)
 
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
@@ -127,7 +129,7 @@ endif(MSVC)
 if (MSVC)
 	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
 
 	foreach(flag_var
 		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE

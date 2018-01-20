@@ -26,8 +26,10 @@ scheduler::scheduler()
 
 scheduler::~scheduler()
 {
-    /*for (unsigned int i = 0; i < threadPool.size(); i++)
-        threadPool[i];*/
+	/*
+	for (unsigned int i = 0; i < mThreadPool.size(); i++)
+		mThreadPool[i];
+		*/
 }
 
 void scheduler::schedule(task *t)

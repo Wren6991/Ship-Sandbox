@@ -1,5 +1,7 @@
 #include "game.h"
 
+#include "Log.h"
+
 #include <IL/il.h>
 #include <IL/ilu.h>
 #include <iostream>
@@ -27,7 +29,7 @@ vec2 game::screen2world(vec2 pos)
                 (pos.y / canvasheight - 0.5) * -height + camy);
 }
 
-void game::loadShip(std::string filename)
+void game::loadShip(std::wstring filename)
 {
     lastFilename = filename;
 
@@ -41,12 +43,13 @@ void game::loadShip(std::string filename)
     ilGenImages(1, &imghandle);
     ilBindImage(imghandle);
 
-    if (!ilLoadImage((const ILstring)(filename.c_str())))
+	ILconst_string ilFilename(filename.c_str());
+    if (!ilLoadImage(ilFilename))
     {
         ILint devilError = ilGetError();
-        std::cout << "Error: could not load image \"" << filename  << "\":";
-        std::string errstr(iluErrorString(devilError));
-        std::cout << devilError << ": " << errstr << "\n";
+        std::wcout << L"Error: could not load image \"" << filename  << L"\":";
+        std::wstring errstr(iluErrorString(devilError));
+        std::wcout << devilError << L": " << errstr << L"\n";
     }
 
     ILubyte *data = ilGetData();
@@ -119,11 +122,13 @@ void game::loadShip(std::string filename)
             }
         }
     }
+
     ilDeleteImage(imghandle);
-    std::cout << "Loaded ship \"" << filename << "\": " << nodecount << " points, " << springcount << " springs.\n";
+
+	LogMessage(L"Loaded ship \"", filename, L"\": ", nodecount, L" points, ", springcount, L" springs.");
 }
 
-void game::loadDepth(std::string filename)
+void game::loadDepth(std::wstring filename)
 {
     /*wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
     oceandepthbuffer = new float[2048];
@@ -184,7 +189,7 @@ game::game()
     for (unsigned int i = 0; i < matroot.size(); i++)
         materials.push_back(new material(matroot[i]));
     wld = new phys::world();
-    loadDepth("data/depth.png");
+    loadDepth(L"data/depth.png");
     buoyancy = 4.0;
     strength = 0.01;
     waveheight = 1.0;

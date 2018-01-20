@@ -1,4 +1,4 @@
-/*#ifndef SETTINGSDIALOG_H
+#ifndef SETTINGSDIALOG_H
 #define SETTINGSDIALOG_H
 
 //(*Headers(settingsDialog)
@@ -9,58 +9,57 @@
 #include <wx/dialog.h>
 //*)
 
-class settingsDialog: public wxDialog
+class settingsDialog : public wxDialog
 {
-	public:
+public:
 
-		settingsDialog(wxWindow* parent,wxWindowID id=wxID_ANY);
-		virtual ~settingsDialog();
+	settingsDialog(wxWindow* parent, wxWindowID id = wxID_ANY);
+	virtual ~settingsDialog();
 
-		//(*Declarations(settingsDialog)
-		wxCheckBox* chkQuickFix;
-		wxSlider* sldBuoyancy;
-		wxStaticText* StaticText2;
-		wxCheckBox* chkShowStress;
-		wxSlider* sldStrength;
-		wxStaticText* StaticText1;
-		wxStaticText* StaticText3;
-		wxSlider* sldWaveHeight;
-		wxStaticText* StaticText5;
-		wxSlider* sldSeaDepth;
-		wxStaticText* StaticText4;
-		wxSlider* sldWaterPressure;
-		wxCheckBox* chkXRay;
-		//*)
+	//(*Declarations(settingsDialog)
+	wxCheckBox* chkQuickFix;
+	wxSlider* sldBuoyancy;
+	wxStaticText* StaticText2;
+	wxCheckBox* chkShowStress;
+	wxSlider* sldStrength;
+	wxStaticText* StaticText1;
+	wxStaticText* StaticText3;
+	wxSlider* sldWaveHeight;
+	wxStaticText* StaticText5;
+	wxSlider* sldSeaDepth;
+	wxStaticText* StaticText4;
+	wxSlider* sldWaterPressure;
+	wxCheckBox* chkXRay;
+	//*)
 
-	protected:
+protected:
 
-		//(*Identifiers(settingsDialog)
-		static const long ID_STATICTEXT1;
-		static const long ID_SLIDER1;
-		static const long ID_STATICTEXT2;
-		static const long ID_SLIDER2;
-		static const long ID_STATICTEXT3;
-		static const long ID_SLIDER4;
-		static const long ID_STATICTEXT4;
-		static const long ID_SLIDER5;
-		static const long ID_STATICTEXT5;
-		static const long ID_SLIDER3;
-		static const long ID_CHECKBOX2;
-		static const long ID_CHECKBOX1;
-		static const long ID_CHECKBOX3;
-		//*)
+	//(*Identifiers(settingsDialog)
+	static const long ID_STATICTEXT1;
+	static const long ID_SLIDER1;
+	static const long ID_STATICTEXT2;
+	static const long ID_SLIDER2;
+	static const long ID_STATICTEXT3;
+	static const long ID_SLIDER4;
+	static const long ID_STATICTEXT4;
+	static const long ID_SLIDER5;
+	static const long ID_STATICTEXT5;
+	static const long ID_SLIDER3;
+	static const long ID_CHECKBOX2;
+	static const long ID_CHECKBOX1;
+	static const long ID_CHECKBOX3;
+	//*)
 
-	private:
+private:
 
-		//(*Handlers(settingsDialog)
-		void OnSlider1CmdScroll(wxScrollEvent& event);
-		void OnCheckBox1Click(wxCommandEvent& event);
-		//*)
+	//(*Handlers(settingsDialog)
+	void OnSlider1CmdScroll(wxScrollEvent& event);
+	void OnCheckBox1Click(wxCommandEvent& event);
+	//*)
 
-		wxWindow *parent;
+	wxWindow *parent;
 
-		DECLARE_EVENT_TABLE()
+	DECLARE_EVENT_TABLE()
 };
 
 #endif
-*/

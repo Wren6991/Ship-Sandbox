@@ -10,12 +10,24 @@ class game
     std::vector <material*> materials;
 public:
 
-    struct
+    struct MouseInfo
     {
         bool ldown;
         bool rdown;
-        int x, y;
-        int lastx, lasty;
+		int x;
+		int y;
+		int lastx;
+		int lasty;
+
+		MouseInfo()
+			: ldown(false)
+			, rdown(false)
+			, x(0)
+			, y(0)
+			, lastx(0)
+			, lasty(0)
+		{
+		}
     } mouse;
 
     enum tool_type {
@@ -37,12 +49,12 @@ public:
     float zoomsize;
     float camx, camy;
     int canvaswidth, canvasheight;
-    void loadShip(std::string filename);
-    void loadDepth(std::string filename);
+    void loadShip(std::wstring filename);
+    void loadDepth(std::wstring filename);
     void assertSettings();
     vec2 screen2world(vec2);
 
-    std::string lastFilename;
+    std::wstring lastFilename;
     float *oceandepthbuffer;
 
     phys::world *wld;
