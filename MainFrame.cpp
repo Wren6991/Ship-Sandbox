@@ -154,6 +154,7 @@ MainFrame::MainFrame(
 	gm.canvaswidth = 200;
 	gm.canvasheight = 200;
 
+	// TODO: use one-shot timer for render loop
 	mTimer1.Start(20, false);
 	mTimer2.Start(1000, false);
 }
@@ -164,6 +165,8 @@ MainFrame::~MainFrame()
 
 void MainFrame::OnQuit(wxCommandEvent& event)
 {
+	mTimer1.Stop();
+	mTimer2.Stop();
 	Close();
 }
 

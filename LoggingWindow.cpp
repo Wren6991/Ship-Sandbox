@@ -2,20 +2,19 @@
 
 #include "Log.h"
 
+#include <cassert>
+
 wxBEGIN_EVENT_TABLE(LoggingWindow, wxFrame)
 EVT_CLOSE(LoggingWindow::OnClose)
 EVT_SHOW(LoggingWindow::OnShow)
 wxEND_EVENT_TABLE()
 
-LoggingWindow::LoggingWindow(
-	wxWindow* parent, 
-	wxWindowID id)
+LoggingWindow::LoggingWindow(wxWindow * parent)
+	: mParent(parent)
 {
-	// TODO: rich edit box
-
 	Create(
 		parent, 
-		id, 
+		-1, 
 		_("Logging"), 
 		wxDefaultPosition, 
 		wxDefaultSize, 
@@ -24,6 +23,21 @@ LoggingWindow::LoggingWindow(
 		_T("id"));
 
 	SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
+
+	//
+	// Create RichText control
+	//
+
+	mRichTextCtrl = std::make_unique<wxRichTextCtrl>(
+		this, 
+		wxID_ANY, 
+		wxEmptyString, 
+		wxDefaultPosition,
+		wxSize(200, 200), 
+		wxVSCROLL | wxHSCROLL | wxBORDER_NONE | wxRE_READONLY);
+
+	wxFont font(10, wxTELETYPE, wxNORMAL, wxNORMAL);
+	mRichTextCtrl->SetFont(font);
 }
 
 LoggingWindow::~LoggingWindow()
@@ -42,12 +56,14 @@ void LoggingWindow::OnShow(wxShowEvent& event)
 		Logger::Instance.RegisterListener(
 			[this](std::wstring const & message)
 			{
-				// TODO
+				assert(!!this->mRichTextCtrl);
+				this->mRichTextCtrl->WriteText(message);
 			});
 	}
 	else
 	{
 		Logger::Instance.UnregisterListener();
+		this->mRichTextCtrl->Clear();
 	}
 }
 

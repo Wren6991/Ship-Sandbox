@@ -58,6 +58,8 @@ void game::loadShip(std::wstring filename)
     width = ilGetInteger(IL_IMAGE_WIDTH);
     height = ilGetInteger(IL_IMAGE_HEIGHT);
 
+
+
     phys::ship *shp = new phys::ship(wld);
 
     std::map<int,  std::map <int, phys::point*> > points;
@@ -125,7 +127,7 @@ void game::loadShip(std::wstring filename)
 
     ilDeleteImage(imghandle);
 
-	LogMessage(L"Loaded ship \"", filename, L"\": ", nodecount, L" points, ", springcount, L" springs.");
+	LogMessage(L"Loaded ship \"", filename, L"\": W=", width, L", H=", height, ", ", nodecount, L" points, ", springcount, L" springs.");
 }
 
 void game::loadDepth(std::wstring filename)
@@ -185,6 +187,7 @@ void game::render()
 
 game::game()
 {
+	// TODO: log outcome
     Json::Value matroot = jsonParseFile("data/materials.json");
     for (unsigned int i = 0; i < matroot.size(); i++)
         materials.push_back(new material(matroot[i]));

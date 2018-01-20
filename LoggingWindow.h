@@ -6,12 +6,15 @@
 #pragma once
 
 #include <wx/frame.h>
+#include <wx/richtext/richtextctrl.h>
+
+#include <memory>
 
 class LoggingWindow : public wxFrame
 {
 public:
 
-	LoggingWindow(wxWindow* parent, wxWindowID id = -1);
+	LoggingWindow(wxWindow* parent);
 	virtual ~LoggingWindow();
 
 
@@ -22,8 +25,9 @@ private:
 
 private:
 
+	wxWindow const * const mParent;
 
-	wxWindow *parent;
+	std::unique_ptr<wxRichTextCtrl> mRichTextCtrl;
 
 	DECLARE_EVENT_TABLE()
 };
