@@ -1,66 +1,78 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// 
-// Original code by Luke Wren (https://github.com/Wren6991/Ship-Sandbox)
-//
-// Modified by Gabriele Giuseppini (https://github.com/GabrieleGiuseppini/Ship-Sandbox)
-//
-////////////////////////////////////////////////////////////////////////////////////////////
+/***************************************************************************************
+* Original Author:		Luke Wren (wren6991@gmail.com)
+* Created:				2013-04-30
+* Modified By:			Gabriele Giuseppini
+* Copyright:			Luke Wren (http://github.com/Wren6991),
+*						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
+***************************************************************************************/
 #pragma once
 
 #include <mutex>
 #include <queue>
 #include <thread>
 
-class scheduler
+class Scheduler
 {
 public:
-    struct task
+
+    struct ITask
     {
-        virtual void process() = 0;
-        virtual ~task() {}
+		virtual ~ITask() {}
+
+        virtual void Process() = 0;        
     };
+
+public:
+	
+	Scheduler();
+	~Scheduler();
+
+	Scheduler(Scheduler const &) = delete;
+	Scheduler & operator=(Scheduler const &) = delete;
+	
+	void Schedule(ITask *t);
+
+	void WaitForAllTasks();
+
+	size_t GetNumberOfThreads() const { return mNThreads; }
 
 private:
-    class thread
+
+    class Thread
     {
+	public:
+		Thread(
+			Scheduler * parent,
+			int name);
+
+		static void Enter(void * thisThread);
+
 	private:
-        scheduler * const mParent;
+        Scheduler * const mParent;
+		int const mName;
 		std::thread mThread;
-
-		task * mCurrentTask;
-
-    public:
-        int name;
-        thread(scheduler * parent);
-        static void enter(void *_this);
+		ITask * mCurrentTask;
     };
 
-    class semaphore
+    class Semaphore
     {
+	public:
+		Semaphore()
+			: mCount(0)
+		{}
+		void Signal();
+		void Wait();
+
 	private:
         std::mutex mMutex;
         std::condition_variable mCondition;
         unsigned long mCount;
-
-    public:
-        semaphore()
-			: mCount(0) 
-		{}
-        void signal();
-        void wait();
     };
 
-    int const mNThreads;
-    std::vector <thread*> mThreadPool;
-    semaphore mAvailable;
-    semaphore mCompleted;
-    std::queue<task*> mTasks;
+    size_t const mNThreads;
+    std::vector <Thread*> mThreadPool;
+    Semaphore mAvailable;
+    Semaphore mCompleted;
+    std::queue<ITask*> mTasks;
     std::mutex mCritical;
-
-public:
-    scheduler();
-    ~scheduler();
-    void schedule(task *t);
-    void wait();
-    int getNThreads();
 };

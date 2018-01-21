@@ -107,14 +107,15 @@ set  (SHIP_SANDBOX_SOURCES
 	phys.h
 	render.cpp
 	render.h
-	scheduler.cpp
-	scheduler.h
+	Scheduler.cpp
+	Scheduler.h
 	SettingsDialog.cpp
 	SettingsDialog.h
 	util.cpp
 	util.h
 	vec.cpp
 	vec.h
+	Version.h
 	)
 
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})

@@ -1,11 +1,12 @@
 #ifndef _PHYS_H_INCLUDED_
 #define _PHYS_H_INCLUDED_
 
+#include "Scheduler.h"
+
 #include <map>
 #include <set>
 #include <vector>
 #include "material.h"
-#include "scheduler.h"
 #include "vec.h"
 
 namespace phys
@@ -18,7 +19,7 @@ namespace phys
         friend class ship;
         struct springCalculateTask;
         struct pointIntegrateTask;
-        scheduler springScheduler;
+        Scheduler springScheduler;
         std::vector <point*> points;
         std::vector <spring*> springs;
         std::vector <ship*> ships;
@@ -49,21 +50,21 @@ namespace phys
         ~world();
     };
 
-    struct world::springCalculateTask: scheduler::task
+    struct world::springCalculateTask: Scheduler::ITask
     {
         springCalculateTask(world *_wld, int _first, int _last);
         world *wld;
         int first, last;
-        virtual void process();
+        virtual void Process() override;
     };
 
-    struct world::pointIntegrateTask: scheduler::task
+    struct world::pointIntegrateTask: Scheduler::ITask
     {
         pointIntegrateTask(world *_wld, int _first, int _last, float _dt);
         world *wld;
         float dt;
         int first, last;
-        virtual void process();
+        virtual void Process() override;
     };
 
 

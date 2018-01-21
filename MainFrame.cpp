@@ -7,7 +7,9 @@
 ***************************************************************************************/
 #include "MainFrame.h"
 
+#include "Log.h"
 #include "phys.h"
+#include "Version.h"
 
 #include <wx/intl.h>
 #include <wx/msgdlg.h>
@@ -19,124 +21,174 @@
 
 namespace /* anonymous */ {
 
-	enum wxbuildinfoformat {
-		short_f, long_f
-	};
-
+	std::wstring GetWindowTitle()
+	{
+		return std::wstring(L"Ship Sandbox ") + GetVersionInfo(VersionFormat::Short);
+	}
 }
 
-#define VERSION "2.0"
+const long ID_MAIN_CANVAS = wxNewId();
+const long ID_LOAD_SHIP_MENUITEM = wxNewId();
+const long ID_RELOAD_LAST_SHIP_MENUITEM = wxNewId();
+const long ID_QUIT_MENUITEM = wxNewId();
+const long ID_SMASH_MENUITEM = wxNewId();
+const long ID_GRAB_MENUITEM = wxNewId();
+const long ID_OPEN_SETTINGS_WINDOW_MENUITEM = wxNewId();
+const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
+const long ID_PLAY_PAUSE_MENUITEM = wxNewId();
+const long ID_ABOUT_MENUITEM = wxNewId();
+const long ID_GAME_TIMER = wxNewId();
+const long ID_STATS_REFRESH_TIMER = wxNewId();
 
-// TODO: see this one
-wxString wxbuildinfo(wxbuildinfoformat format)
+
+//BEGIN_EVENT_TABLE(MainFrame, wxFrame)
+//END_EVENT_TABLE()
+
+
+MainFrame::MainFrame(wxWindow* parent)
 {
-	return "Ship Sandbox Alpha v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nLicensed to Francis Racicot";
-}
+	Create(
+		parent, 
+		wxID_ANY,
+		GetWindowTitle(),		
+		wxDefaultPosition, 
+		wxDefaultSize, 
+		wxDEFAULT_FRAME_STYLE, 
+		_T("Main Frame"));
 
-const long MainFrame::ID_GLCANVAS1 = wxNewId();
-const long MainFrame::ID_MENUITEM1 = wxNewId();
-const long MainFrame::ID_MENUITEM5 = wxNewId();
-const long MainFrame::idMenuQuit = wxNewId();
-const long MainFrame::ID_MENUITEM3 = wxNewId();
-const long MainFrame::ID_MENUITEM4 = wxNewId();
-const long MainFrame::mnuShow = wxNewId();
-const long MainFrame::mnuShowLoggingWindow = wxNewId();
-const long MainFrame::ID_MENUITEM2 = wxNewId();
-const long MainFrame::idMenuAbout = wxNewId();
-
-static const long ID_GAME_TIMER = wxNewId();
-static const long ID_STATS_REFRESH_TIMER = wxNewId();
-
-BEGIN_EVENT_TABLE(MainFrame, wxFrame)
-END_EVENT_TABLE()
-
-MainFrame::MainFrame(
-	wxWindow* parent, 
-	wxWindowID id)
-{
-	wxMenuItem* MenuItem2;
-	wxMenuItem* MenuItem1;
-	wxMenu* Menu1;
-	wxBoxSizer* BoxSizer1;
-	wxMenuBar* MenuBar1;
-	wxMenu* Menu2;
-
-	Create(parent, id, _("Ship Sandbox Alpha " VERSION), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
 	SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
-	BoxSizer1 = new wxBoxSizer(wxHORIZONTAL);
-	int GLCanvasAttributes_1[8] = {
+
+	wxBoxSizer * mainFrameSizer = new wxBoxSizer(wxHORIZONTAL);
+	SetSizer(mainFrameSizer);
+
+	Connect(this->GetId(), wxEVT_CLOSE_WINDOW, (wxObjectEventFunction)&MainFrame::OnMainFrameClose);
+
+
+	//
+	// Build main GL canvas
+	//
+	
+	int mainGLCanvasAttributes[8] = 
+	{
 		WX_GL_RGBA,
 		WX_GL_DOUBLEBUFFER,
 		WX_GL_DEPTH_SIZE,      16,
 		WX_GL_STENCIL_SIZE,    0,
-		0, 0 };
-	mGLCanvas1 = new wxGLCanvas(
+		0, 0 
+	};
+
+	mMainGLCanvas = std::make_unique<wxGLCanvas>(
 		this,
-		ID_GLCANVAS1,
-		GLCanvasAttributes_1,
+		ID_MAIN_CANVAS,
+		mainGLCanvasAttributes,
 		wxDefaultPosition,
 		wxSize(640, 480),
 		0L,
-		_T("ID_GLCANVAS1"));	
+		_T("Main GL Canvas"));	
 
-	BoxSizer1->Add(mGLCanvas1, 1, wxALL | wxEXPAND /*| wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL*/, 5);
-	SetSizer(BoxSizer1);
-	MenuBar1 = new wxMenuBar();
-	Menu1 = new wxMenu();
-	mMenuItem3 = new wxMenuItem(Menu1, ID_MENUITEM1, _("Load Ship\tCtrl+O"), wxEmptyString, wxITEM_NORMAL);
-	Menu1->Append(mMenuItem3);
-	mMenuItem6 = new wxMenuItem(Menu1, ID_MENUITEM5, _("Reload Last Ship\tCtrl+R"), wxEmptyString, wxITEM_NORMAL);
-	Menu1->Append(mMenuItem6);
-	MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
-	Menu1->Append(MenuItem1);
-	MenuBar1->Append(Menu1, _("&File"));
-	mMenu4 = new wxMenu();
-	mMenuItemSmash = new wxMenuItem(mMenu4, ID_MENUITEM3, _("Smash"), wxEmptyString, wxITEM_RADIO);
-	mMenu4->Append(mMenuItemSmash);
-	mMenuItemGrab = new wxMenuItem(mMenu4, ID_MENUITEM4, _("Grab"), wxEmptyString, wxITEM_RADIO);
-	mMenu4->Append(mMenuItemGrab);
-	MenuBar1->Append(mMenu4, _("Tools"));
-	mMenu3 = new wxMenu();
-	mMenuItem4 = new wxMenuItem(mMenu3, mnuShow, _("Show\tCtrl+S"), wxEmptyString, wxITEM_NORMAL);
-	mMenu3->Append(mMenuItem4);
-
-	mMenuItemShowLoggingWindow = new wxMenuItem(mMenu3, mnuShowLoggingWindow, _("Show Logging\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
-	mMenu3->Append(mMenuItemShowLoggingWindow);
-
-	mMenuItem5 = new wxMenuItem(mMenu3, ID_MENUITEM2, _("Play/Pause\tCtrl+P"), wxEmptyString, wxITEM_NORMAL);
-	mMenu3->Append(mMenuItem5);
-	MenuBar1->Append(mMenu3, _("Options"));
-	Menu2 = new wxMenu();
-	MenuItem2 = new wxMenuItem(Menu2, idMenuAbout, _("About\tF1"), _("Show info about this application"), wxITEM_NORMAL);
-	Menu2->Append(MenuItem2);
-	MenuBar1->Append(Menu2, _("Help"));
-	SetMenuBar(MenuBar1);	
-	mDlgOpen = new wxFileDialog(this, _("Select Ship Image"), wxEmptyString, wxEmptyString, _("(*.png)|*.png"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, wxDefaultPosition, wxDefaultSize, _T("wxFileDialog"));
-	BoxSizer1->Fit(this);
-	BoxSizer1->SetSizeHints(this);
-
-	mGLCanvas1->Connect(wxEVT_LEFT_DOWN, (wxObjectEventFunction)&MainFrame::OnGLCanvas1LeftDown, 0, this);
-	mGLCanvas1->Connect(wxEVT_LEFT_UP, (wxObjectEventFunction)&MainFrame::OnGLCanvas1LeftUp, 0, this);
-	mGLCanvas1->Connect(wxEVT_RIGHT_DOWN, (wxObjectEventFunction)&MainFrame::OnGLCanvas1RightDown, 0, this);
-	mGLCanvas1->Connect(wxEVT_RIGHT_UP, (wxObjectEventFunction)&MainFrame::OnGLCanvas1RightUp, 0, this);
-	mGLCanvas1->Connect(wxEVT_MOTION, (wxObjectEventFunction)&MainFrame::OnGLCanvas1MouseMove, 0, this);
-	mGLCanvas1->Connect(wxEVT_MOUSEWHEEL, (wxObjectEventFunction)&MainFrame::OnGLCanvas1MouseWheel, 0, this);
-	mGLCanvas1->Connect(wxEVT_SIZE, (wxObjectEventFunction)&MainFrame::OnGLCanvas1Resize, 0, this);
-	Connect(ID_MENUITEM1, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemLoadSelected);
-	Connect(ID_MENUITEM5, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuReloadSelected);
-	Connect(idMenuQuit, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnQuit);
-	Connect(ID_MENUITEM3, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemSmashSelected);
-	Connect(ID_MENUITEM4, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemGrabSelected);
-	Connect(mnuShow, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemOptionsSelected);
-	Connect(mnuShowLoggingWindow, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemShowLoggingWindowSelected);
-	Connect(ID_MENUITEM2, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemPlayPauseSelected);
-	Connect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAbout);
-	Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
-	Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);
-	Connect(wxID_ANY, wxEVT_CLOSE_WINDOW, (wxObjectEventFunction)&MainFrame::OnClose);
-	//*)
+	mMainGLCanvas->Connect(wxEVT_SIZE, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasResize, 0, this);
+	mMainGLCanvas->Connect(wxEVT_LEFT_DOWN, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasLeftDown, 0, this);
+	mMainGLCanvas->Connect(wxEVT_LEFT_UP, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasLeftUp, 0, this);
+	mMainGLCanvas->Connect(wxEVT_RIGHT_DOWN, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasRightDown, 0, this);
+	mMainGLCanvas->Connect(wxEVT_RIGHT_UP, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasRightUp, 0, this);
+	mMainGLCanvas->Connect(wxEVT_MOTION, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasMouseMove, 0, this);
+	mMainGLCanvas->Connect(wxEVT_MOUSEWHEEL, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasMouseWheel, 0, this);
 	
-	mGLContext1 = new wxGLContext(mGLCanvas1);
+	mainFrameSizer->Add(
+		mMainGLCanvas.get(),
+		1,					// Proportion
+		wxALL | wxEXPAND,	// Flags
+		5);					// Border	
+
+	// Take context for this canvas
+	mMainGLCanvasContext = std::make_unique<wxGLContext>(mMainGLCanvas.get());
+
+
+	//
+	// Build menu
+	//
+
+	wxMenuBar * mainMenuBar = new wxMenuBar();
+		
+	// File
+
+	wxMenu * fileMenu = new wxMenu();
+	
+	wxMenuItem * loadShipMenuItem = new wxMenuItem(fileMenu, ID_LOAD_SHIP_MENUITEM, _("Load Ship\tCtrl+O"), wxEmptyString, wxITEM_NORMAL);
+	fileMenu->Append(loadShipMenuItem);
+	Connect(ID_LOAD_SHIP_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnLoadShipMenuItemSelected);
+
+	wxMenuItem * reloadLastShipMenuItem = new wxMenuItem(fileMenu, ID_RELOAD_LAST_SHIP_MENUITEM, _("Reload Last Ship\tCtrl+R"), wxEmptyString, wxITEM_NORMAL);
+	fileMenu->Append(reloadLastShipMenuItem);
+	Connect(ID_RELOAD_LAST_SHIP_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnReloadLastShipMenuItemSelected);
+
+	wxMenuItem* quitMenuItem = new wxMenuItem(fileMenu, ID_QUIT_MENUITEM, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
+	fileMenu->Append(quitMenuItem);
+	Connect(ID_QUIT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnQuit);
+
+	mainMenuBar->Append(fileMenu, _("&File"));
+
+	// Tools
+
+	wxMenu * toolsMenu = new wxMenu();
+
+	wxMenuItem * smashMenuItem = new wxMenuItem(toolsMenu, ID_SMASH_MENUITEM, _("Smash"), wxEmptyString, wxITEM_RADIO);
+	toolsMenu->Append(smashMenuItem);
+	Connect(ID_SMASH_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnSmashMenuItemSelected);
+
+	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab"), wxEmptyString, wxITEM_RADIO);
+	toolsMenu->Append(grabMenuItem);
+	Connect(ID_GRAB_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnGrabMenuItemSelected);
+
+	mainMenuBar->Append(toolsMenu, _("Tools"));
+
+	
+	// Options
+
+	wxMenu * optionsMenu = new wxMenu();
+
+	wxMenuItem * openSettingsWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_SETTINGS_WINDOW_MENUITEM, _("Open Settings Window\tCtrl+S"), wxEmptyString, wxITEM_NORMAL);	
+	optionsMenu->Append(openSettingsWindowMenuItem);
+	Connect(ID_OPEN_SETTINGS_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenSettingsWindowMenuItemSelected);
+
+	wxMenuItem * openLogWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_LOG_WINDOW_MENUITEM, _("Show Log Window\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
+	optionsMenu->Append(openLogWindowMenuItem);
+	Connect(ID_OPEN_LOG_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenLogWindowMenuItemSelected);
+
+	wxMenuItem * playPauseMenuItem = new wxMenuItem(optionsMenu, ID_PLAY_PAUSE_MENUITEM, _("Play/Pause\tCtrl+P"), wxEmptyString, wxITEM_NORMAL);
+	optionsMenu->Append(playPauseMenuItem);
+	Connect(ID_PLAY_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPlayPauseMenuItemSelected);
+	
+	mainMenuBar->Append(optionsMenu, _("Options"));
+
+	// Help
+
+	wxMenu * helpMenu = new wxMenu();
+
+	wxMenuItem * aboutMenuItem = new wxMenuItem(helpMenu, ID_ABOUT_MENUITEM, _("About\tF1"), _("Show info about this application"), wxITEM_NORMAL);
+	helpMenu->Append(aboutMenuItem);
+	Connect(ID_ABOUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAboutMenuItemSelected);
+
+	mainMenuBar->Append(helpMenu, _("Help"));
+
+	SetMenuBar(mainMenuBar);
+
+	// Finalize frame
+	mainFrameSizer->Fit(this);
+	mainFrameSizer->SetSizeHints(this);
+
+
+	// TODOHERE
+
+	//
+	// Dialogs
+	//
+
+
+	mDlgOpen = new wxFileDialog(this, _("Select Ship Image"), wxEmptyString, wxEmptyString, _("(*.png)|*.png"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, wxDefaultPosition, wxDefaultSize, _T("wxFileDialog"));
+		
+		
+
 
 	gm.loadShip(L"ship.png");
 
@@ -152,13 +204,15 @@ MainFrame::MainFrame(
 
 
 	//
-	// Setup timers
+	// Timers
 	//
-
+	
 	mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
+	Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);	
 	mGameTimer->Start(0, true);
 
 	mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
+	Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);	
 	mStatsRefreshTimer->Start(1000, false);
 }
 
@@ -166,18 +220,161 @@ MainFrame::~MainFrame()
 {
 }
 
-void MainFrame::OnQuit(wxCommandEvent & /*event*/)
+//
+// App event handlers
+//
+
+void MainFrame::OnMainFrameClose(wxCloseEvent & /*event*/)
 {
 	mGameTimer->Stop();
 	mStatsRefreshTimer->Stop();
+
+	Destroy();
+}
+
+void MainFrame::OnQuit(wxCommandEvent & /*event*/)
+{
 	Close();
 }
 
-void MainFrame::OnAbout(wxCommandEvent & /* event */)
+void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
-	wxString msg = wxbuildinfo(long_f);
-	wxMessageBox(msg, _("Welcome to..."));
+	// Main timing event!
+	mFrameCount++;
+	initgl();
+	gm.update();
+	gm.render();
+	endgl();
+
+	mGameTimer->Start(0, true);
 }
+
+void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
+{
+	std::wostringstream ss;
+	ss << GetWindowTitle();
+	ss << "  FPS: " << mFrameCount;
+
+	SetTitle(ss.str());
+
+	mFrameCount = 0;
+}
+
+//
+// Main canvas event handlers
+//
+
+void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
+{
+	gm.canvaswidth = event.GetSize().GetX();
+	gm.canvasheight = event.GetSize().GetY();
+	mMainGLCanvas->Refresh();
+}
+
+void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
+{
+	gm.mouse.ldown = true;
+}
+
+void MainFrame::OnMainGLCanvasLeftUp(wxMouseEvent & /*event*/)
+{
+	gm.mouse.ldown = false;
+}
+
+void MainFrame::OnMainGLCanvasRightDown(wxMouseEvent & /*event*/)
+{
+	gm.mouse.rdown = true;
+}
+
+void MainFrame::OnMainGLCanvasRightUp(wxMouseEvent & /*event*/)
+{
+	gm.mouse.rdown = false;
+}
+
+void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
+{
+	int oldx = gm.mouse.x;
+	int oldy = gm.mouse.y;
+	gm.mouse.x = event.GetX();
+	gm.mouse.y = event.GetY();
+	if (gm.mouse.rdown)
+	{
+		vec2 difference = gm.screen2world(vec2(gm.mouse.x, gm.mouse.y)) - gm.screen2world(vec2(oldx, oldy));
+		gm.camx -= difference.x;
+		gm.camy -= difference.y;
+	}
+}
+
+void MainFrame::OnMainGLCanvasMouseWheel(wxMouseEvent& event)
+{
+	gm.zoomsize *= pow(0.998, event.GetWheelRotation());
+}
+
+
+//
+// Menu event handlers
+//
+
+void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	if (mDlgOpen->ShowModal() == wxID_OK)
+	{
+		std::wstring filename = mDlgOpen->GetPath().ToStdWstring();
+		delete gm.wld;
+		gm.wld = new phys::world;
+		gm.assertSettings();
+		gm.loadShip(filename);
+	}
+}
+
+void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	delete gm.wld;
+	gm.wld = new phys::world;
+	gm.assertSettings();
+	gm.loadShip(gm.lastFilename);
+}
+
+void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	gm.tool = game::TOOL_SMASH;
+}
+
+void MainFrame::OnGrabMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	gm.tool = game::TOOL_GRAB;
+}
+
+void MainFrame::OnOpenSettingsWindowMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	if (!mSettingsDialog)
+	{
+		mSettingsDialog = std::make_unique<SettingsDialog>(this);
+	}
+
+	mSettingsDialog->Show();
+}
+
+void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	if (!mLoggingWindow)
+	{
+		mLoggingWindow = std::make_unique<LoggingWindow>(this);
+	}
+
+	mLoggingWindow->Show();
+}
+
+void MainFrame::OnPlayPauseMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	gm.running = !gm.running;
+}
+
+void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	wxMessageBox(GetVersionInfo(VersionFormat::Long), L"Welcome to...");
+}
+
 
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS
@@ -193,8 +390,11 @@ void MainFrame::OnAbout(wxCommandEvent & /* event */)
 void MainFrame::initgl()
 {
 	// Set the context, clear the gm.canvas and set up all the matrices.
-	mGLContext1->SetCurrent(*mGLCanvas1);
 
+	// TODO: see if all of this can be done once and for all
+	mMainGLCanvasContext->SetCurrent(*mMainGLCanvas);
+
+	// Clear canvas (blue)
 	glViewport(0, 0, gm.canvaswidth, gm.canvasheight);
 	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -225,147 +425,9 @@ void MainFrame::endgl()
 {
 	// Flush all the draw operations and flip the back buffer onto the screen.
 	glFlush();
-	mGLCanvas1->SwapBuffers();
-	mGLCanvas1->Refresh();
-}
-
-void MainFrame::OnGLCanvas1Resize(wxSizeEvent & event)
-{
-	gm.canvaswidth = event.GetSize().GetX();
-	gm.canvasheight = event.GetSize().GetY();
-	mGLCanvas1->Refresh();
+	mMainGLCanvas->SwapBuffers();
+	mMainGLCanvas->Refresh();
 }
 
 
 
-void MainFrame::OnGameTimerTrigger(wxTimerEvent & /* event */)
-{
-	// Main timing event!
-	mFrameCount++;
-	initgl();
-	gm.update();
-	gm.render();
-	endgl();
-
-	mGameTimer->Start(0, true);
-}
-
-void MainFrame::OnMenuItemLoadSelected(wxCommandEvent & /* event */)
-{
-	if (mDlgOpen->ShowModal() == wxID_OK)
-	{
-		std::wstring filename = mDlgOpen->GetPath().ToStdWstring();
-		delete gm.wld;
-		gm.wld = new phys::world;
-		gm.assertSettings();
-		gm.loadShip(filename);
-	}
-}
-
-// M     M    OOO    U     U    SSS    EEEEEEE
-// MM   MM   O   O   U     U  SS   SS  E
-// M M M M  O     O  U     U  S        E
-// M  M  M  O     O  U     U  SS       E
-// M     M  O     O  U     U    SSS    EEEE
-// M     M  O     O  U     U       SS  E
-// M     M  O     O  U     U        S  E
-// M     M   O   O    U   U   SS   SS  E
-// M     M    OOO      UUU      SSS    EEEEEEE
-
-void MainFrame::OnGLCanvas1LeftDown(wxMouseEvent & /* event */)
-{
-	gm.mouse.ldown = true;
-}
-
-void MainFrame::OnGLCanvas1LeftUp(wxMouseEvent & /* event */)
-{
-	gm.mouse.ldown = false;
-}
-
-void MainFrame::OnGLCanvas1RightDown(wxMouseEvent & /* event */)
-{
-	gm.mouse.rdown = true;
-}
-
-void MainFrame::OnGLCanvas1RightUp(wxMouseEvent & /* event */)
-{
-	gm.mouse.rdown = false;
-}
-
-void MainFrame::OnGLCanvas1MouseMove(wxMouseEvent& event)
-{
-	int oldx = gm.mouse.x;
-	int oldy = gm.mouse.y;
-	gm.mouse.x = event.GetX();
-	gm.mouse.y = event.GetY();
-	if (gm.mouse.rdown)
-	{
-		vec2 difference = gm.screen2world(vec2(gm.mouse.x, gm.mouse.y)) - gm.screen2world(vec2(oldx, oldy));
-		gm.camx -= difference.x;
-		gm.camy -= difference.y;
-	}
-}
-
-void MainFrame::OnMenuItemOptionsSelected(wxCommandEvent & /* event */)
-{
-	if (!mSettingsDialog)
-	{
-		mSettingsDialog = std::make_unique<SettingsDialog>(this);
-	}
-
-	mSettingsDialog->Show();
-}
-
-void MainFrame::OnMenuItemShowLoggingWindowSelected(wxCommandEvent & /* event */)
-{
-	if (!mLoggingWindow)
-	{
-		mLoggingWindow = std::make_unique<LoggingWindow>(this);
-	}
-
-	mLoggingWindow->Show();
-}
-
-void MainFrame::OnGLCanvas1MouseWheel(wxMouseEvent& event)
-{
-	gm.zoomsize *= pow(0.998, event.GetWheelRotation());
-}
-
-void MainFrame::OnMenuItemPlayPauseSelected(wxCommandEvent & /* event */)
-{
-	gm.running = !gm.running;
-}
-
-void MainFrame::OnMenuItemSmashSelected(wxCommandEvent & /* event */)
-{
-	gm.tool = game::TOOL_SMASH;
-}
-
-void MainFrame::OnMenuItemGrabSelected(wxCommandEvent & /* event */)
-{
-	gm.tool = game::TOOL_GRAB;
-}
-
-void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /* event */)
-{
-	std::ostringstream ss;
-	ss << "Ship Sandbox Alpha " VERSION;
-	ss << "  FPS: " << mFrameCount;
-
-	SetTitle(ss.str());
-	
-	mFrameCount = 0;
-}
-
-void MainFrame::OnClose(wxCloseEvent & /* event */)
-{
-	Destroy();
-}
-
-void MainFrame::OnMenuReloadSelected(wxCommandEvent & /* event */)
-{
-	delete gm.wld;
-	gm.wld = new phys::world;
-	gm.assertSettings();
-	gm.loadShip(gm.lastFilename);
-}

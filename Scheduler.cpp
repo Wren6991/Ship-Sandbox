@@ -1,30 +1,29 @@
-// TODO
-/***************************************************************
-* Name:      titanicApp.h
-* Purpose:   Defines Application Class
-* Author:    Luke Wren (wren6991@gmail.com)
-* Created:   2013-04-30
-* Copyright: Luke Wren (http://github.com/Wren6991)
-* License:
-**************************************************************/
+/***************************************************************************************
+* Original Author:		Luke Wren (wren6991@gmail.com)
+* Created:				2013-04-30
+* Modified By:			Gabriele Giuseppini
+* Copyright:			Luke Wren (http://github.com/Wren6991),
+*						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
+***************************************************************************************/
+#include "Scheduler.h"
 
-#include "scheduler.h"
+#include "Log.h"
 
-#include <iostream>
 
-// scheduler
+//
+// Scheduler
+//
 
-scheduler::scheduler()
+Scheduler::Scheduler()
 	: mNThreads(std::thread::hardware_concurrency())
 {
     for (int i = 0; i < mNThreads; i++)
     {
-        mThreadPool.push_back(new thread(this));
-		mThreadPool[i]->name = i;
+        mThreadPool.push_back(new Thread(this, i + 1));
     }
 }
 
-scheduler::~scheduler()
+Scheduler::~Scheduler()
 {
 	/*
 	for (unsigned int i = 0; i < mThreadPool.size(); i++)
@@ -32,34 +31,33 @@ scheduler::~scheduler()
 		*/
 }
 
-void scheduler::schedule(task *t)
+void Scheduler::Schedule(ITask *t)
 {
 	std::lock_guard<std::mutex> lock(mCritical);
 
     mTasks.push(t);
-    mAvailable.signal();
+    mAvailable.Signal();
 }
 
-void scheduler::wait()
+void Scheduler::WaitForAllTasks()
 {
-	int tasksleft;
+	size_t tasksleft;
 	{
 		std::lock_guard<std::mutex> lock(mCritical);
 		tasksleft = mTasks.size();
 	}
 
-    for (int i = 0; i < tasksleft; i++)	
-        mCompleted.wait();
+	for (size_t i = 0; i < tasksleft; ++i)
+	{
+		mCompleted.Wait();
+	}
 }
 
-int scheduler::getNThreads()
-{
-    return mNThreads;
-}
+//
+// Semaphore
+//
 
-// scheduler::semaphore
-
-void scheduler::semaphore::signal()
+void Scheduler::Semaphore::Signal()
 {
     std::lock_guard<std::mutex> lock(mMutex);
 
@@ -67,46 +65,54 @@ void scheduler::semaphore::signal()
     mCondition.notify_one();
 }
 
-void scheduler::semaphore::wait()
+void Scheduler::Semaphore::Wait()
 {
     std::unique_lock<std::mutex> lock(mMutex);
 
-    while (!mCount)
-        mCondition.wait(lock);
+	while (!mCount)
+	{
+		mCondition.wait(lock);
+	}
+
     --mCount;
 }
 
-// scheduler::thread
+//
+// Thread
+//
 
-scheduler::thread::thread(scheduler * parent)
+Scheduler::Thread::Thread(
+	Scheduler * parent,
+	int name)
 	: mParent(parent)
+	, mName(name)
 {
 	// Start thread
-	mThread = std::thread(scheduler::thread::enter, this);
+	mThread = std::thread(Scheduler::Thread::Enter, this);
 	mThread.detach();
 }
 
-void scheduler::thread::enter(void *arg)
+void Scheduler::Thread::Enter(void *arg)
 {
-    scheduler::thread *_this = static_cast<scheduler::thread*>(arg);
+    Scheduler::Thread * thisThread = static_cast<Scheduler::Thread *>(arg);
 	while (true)
 	{
 		// Wait for a task to become available
-		_this->mParent->mAvailable.wait();
+		thisThread->mParent->mAvailable.Wait();
 
 		// Deque the task
 		{
-			std::lock_guard<std::mutex> lock(_this->mParent->mCritical);
+			std::lock_guard<std::mutex> lock(thisThread->mParent->mCritical);
 			
-			_this->mCurrentTask = _this->mParent->mTasks.front();
-			_this->mParent->mTasks.pop();
+			thisThread->mCurrentTask = thisThread->mParent->mTasks.front();
+			thisThread->mParent->mTasks.pop();
 		}
 
         // Run the task
-        _this->mCurrentTask->process();
+		thisThread->mCurrentTask->Process();
 
 		// Notify completion
-        delete _this->mCurrentTask;
-        _this->mParent->mCompleted.signal();
+        delete thisThread->mCurrentTask;
+		thisThread->mParent->mCompleted.Signal();
    }
 }

@@ -27,14 +27,21 @@ class MainFrame : public wxFrame
 {
 public:
 
-	MainFrame(wxWindow* parent, wxWindowID id = -1);
+	MainFrame(wxWindow* parent);
 	virtual ~MainFrame();
 	game gm;
 
 private:
 
 	//
-	// Windows and Frames
+	// Canvas
+	//
+
+	std::unique_ptr<wxGLCanvas> mMainGLCanvas;
+	std::unique_ptr<wxGLContext> mMainGLCanvasContext;
+
+	//
+	// Dialogs
 	//
 
 	std::unique_ptr<LoggingWindow> mLoggingWindow;
@@ -53,61 +60,37 @@ private:
 	// Event handlers
 	//
 
+	// App
+	void OnMainFrameClose(wxCloseEvent& event);
+	void OnQuit(wxCommandEvent& event);
 	void OnGameTimerTrigger(wxTimerEvent& event);
 	void OnStatsRefreshTimerTrigger(wxTimerEvent& event);
 
+	// Main GL canvas
+	void OnMainGLCanvasResize(wxSizeEvent& event);
+	void OnMainGLCanvasLeftDown(wxMouseEvent& event);
+	void OnMainGLCanvasLeftUp(wxMouseEvent& event);
+	void OnMainGLCanvasRightDown(wxMouseEvent& event);
+	void OnMainGLCanvasRightUp(wxMouseEvent& event);
+	void OnMainGLCanvasMouseMove(wxMouseEvent& event);
+	void OnMainGLCanvasMouseWheel(wxMouseEvent& event);
+
+	// Menu
+	void OnLoadShipMenuItemSelected(wxCommandEvent& event);
+	void OnReloadLastShipMenuItemSelected(wxCommandEvent& event);
+	void OnSmashMenuItemSelected(wxCommandEvent& event);
+	void OnGrabMenuItemSelected(wxCommandEvent& event);
+	void OnOpenSettingsWindowMenuItemSelected(wxCommandEvent& event);
+	void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);
+	void OnPlayPauseMenuItemSelected(wxCommandEvent& event);
+	void OnAboutMenuItemSelected(wxCommandEvent& event);
+
 private:
 
-	void OnQuit(wxCommandEvent& event);
-	void OnAbout(wxCommandEvent& event);
-	void OnGLCanvas1Paint(wxPaintEvent& event);
-	void OnGLCanvas1Resize(wxSizeEvent& event);
-	void OnMenuItemLoadSelected(wxCommandEvent& event);
-	void OnGLCanvas1LeftDown(wxMouseEvent& event);
-	void OnGLCanvas1LeftUp(wxMouseEvent& event);
-	void OnGLCanvas1RightDown(wxMouseEvent& event);
-	void OnGLCanvas1RightUp(wxMouseEvent& event);
-	void OnGLCanvas1MouseMove(wxMouseEvent& event);
-	void OnMenuItemOptionsSelected(wxCommandEvent& event);
-	void OnMenuItemShowLoggingWindowSelected(wxCommandEvent& event);
-	void OnGLCanvas1MouseWheel(wxMouseEvent& event);
-	void OnMenuItemPlayPauseSelected(wxCommandEvent& event);
-	void OnMenuItemSmashSelected(wxCommandEvent& event);
-	void OnMenuItemGrabSelected(wxCommandEvent& event);
-	void OnClose(wxCloseEvent& event);
-	void OnMenuReloadSelected(wxCommandEvent& event);
-	
-private:
-
-	static const long ID_GLCANVAS1;
-	static const long ID_MENUITEM1;
-	static const long ID_MENUITEM5;
-	static const long idMenuQuit;
-	static const long ID_MENUITEM3;
-	static const long ID_MENUITEM4;
-	static const long mnuShow;
-	static const long mnuShowLoggingWindow;
-	static const long ID_MENUITEM2;
-	static const long idMenuAbout;
-
-	wxMenuItem* mMenuItem5;
-	wxMenu* mMenu3;
-	wxMenuItem* mMenuItem4;
-	wxMenuItem* mMenuItemShowLoggingWindow;
-	wxGLCanvas* mGLCanvas1;
 	wxFileDialog* mDlgOpen;
-	wxMenuItem* mMenuItemGrab;
-	wxMenuItem* mMenuItem3;
-	wxMenuItem* mMenuItem6;
-	wxMenuItem* mMenuItemSmash;
-	wxMenu* mMenu4;
 
-	int mFrameCount;
-
-	wxGLContext* mGLContext1;
+	int mFrameCount;	
 
 	void initgl();
 	void endgl();
-
-	DECLARE_EVENT_TABLE()
 };

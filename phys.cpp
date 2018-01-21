@@ -58,7 +58,7 @@ void phys::world::update(double dt)
 
 void phys::world::doSprings(double dt)
 {
-    int nchunks = springScheduler.getNThreads();
+    int nchunks = springScheduler.GetNumberOfThreads();
     int springchunk = springs.size() / nchunks + 1;
     for (int outiter = 0; outiter < 3; outiter++)
     {
@@ -66,9 +66,10 @@ void phys::world::doSprings(double dt)
         {
             for (int i = springs.size() - 1; i > 0; i -= springchunk)
             {
-                springScheduler.schedule(new springCalculateTask(this, imax(i - springchunk, 0), i));
+                springScheduler.Schedule(new springCalculateTask(this, imax(i - springchunk, 0), i));
             }
-            springScheduler.wait();
+
+            springScheduler.WaitForAllTasks();
         }
         float dampingamount = (1 - pow(0.0, dt)) * 0.5;
         for (unsigned int i = 0; i < springs.size(); i++)
@@ -82,7 +83,7 @@ phys::world::springCalculateTask::springCalculateTask(world *_wld, int _first, i
     first = _first;
     last = _last;
 }
-void phys::world::springCalculateTask::process()
+void phys::world::springCalculateTask::Process()
 {
     for (int i = first; i <= last; i++)
         wld->springs[i]->update();
@@ -95,14 +96,14 @@ phys::world::pointIntegrateTask::pointIntegrateTask(world *_wld, int _first, int
     last = _last;
     dt = _dt;
 }
-void phys::world::pointIntegrateTask::process()
+
+void phys::world::pointIntegrateTask::Process()
 {
     for (int i = first; i <= last; i++)
     {
         wld->points[i]->pos += wld->points[i]->force * dt;
         wld->points[i]->force = vec2(0, 0);
     }
-
 }
 
 void phys::world::render(double left, double right, double bottom, double top)
@@ -344,8 +345,8 @@ vec2f phys::point::getPos()
 
 vec3f phys::point::getColour(vec3f basecolour)
 {
-   double wetness = fmin(water, 1) * 0.7;
-   return basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness;
+   float wetness = fmin(water, 1.0f) * 0.7f;
+   return basecolour * (1.0f - wetness) + vec3f(0.0f, 0.0f, 0.8f) * wetness;
 }
 
 void phys::point::breach()
@@ -451,7 +452,7 @@ void phys::spring::update()
     // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
     vec2f correction_dir = (b->pos - a->pos);
     float currentlength = correction_dir.length();
-    correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.85); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.85f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
     a->pos -= correction_dir * b->mtl->mass;    // if b is heavier, a moves more.
     b->pos += correction_dir * a->mtl->mass;    // (and vice versa...)
 }
