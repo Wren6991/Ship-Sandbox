@@ -27,7 +27,7 @@ std::wstring GetVersionInfo(VersionFormat versionFormat)
 
 		case VersionFormat::Long:
 		{
-			return std::wstring(L"Ship Sandbox Alpha v" VERSION L"\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nLicensed to Francis Racicot");
+			return std::wstring(L"Ship Sandbox Alpha v" VERSION L"\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018");
 		}
 
 		default:

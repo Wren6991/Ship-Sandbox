@@ -44,6 +44,7 @@ private:
 	// Dialogs
 	//
 
+	std::unique_ptr<wxFileDialog> mFileOpenDialog;
 	std::unique_ptr<LoggingWindow> mLoggingWindow;
 	std::unique_ptr<SettingsDialog> mSettingsDialog;
 
@@ -86,8 +87,6 @@ private:
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
 private:
-
-	wxFileDialog* mDlgOpen;
 
 	int mFrameCount;	
 

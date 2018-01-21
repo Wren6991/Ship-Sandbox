@@ -180,15 +180,6 @@ MainFrame::MainFrame(wxWindow* parent)
 
 	// TODOHERE
 
-	//
-	// Dialogs
-	//
-
-
-	mDlgOpen = new wxFileDialog(this, _("Select Ship Image"), wxEmptyString, wxEmptyString, _("(*.png)|*.png"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, wxDefaultPosition, wxDefaultSize, _T("wxFileDialog"));
-		
-		
-
 
 	gm.loadShip(L"ship.png");
 
@@ -317,9 +308,26 @@ void MainFrame::OnMainGLCanvasMouseWheel(wxMouseEvent& event)
 
 void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	if (mDlgOpen->ShowModal() == wxID_OK)
+	if (!mFileOpenDialog)
 	{
-		std::wstring filename = mDlgOpen->GetPath().ToStdWstring();
+		mFileOpenDialog = std::make_unique<wxFileDialog>(
+			this, 
+			L"Select Ship", 
+			wxEmptyString, 
+			wxEmptyString, 
+			L"(*.png)|*.png", 
+			wxFD_OPEN | wxFD_FILE_MUST_EXIST, 
+			wxDefaultPosition, 
+			wxDefaultSize, 
+			_T("File Open Dialog"));
+	}
+
+	assert(!!mFileOpenDialog);
+
+	if (mFileOpenDialog->ShowModal() == wxID_OK)
+	{
+		std::wstring filename = mFileOpenDialog->GetPath().ToStdWstring();
+
 		delete gm.wld;
 		gm.wld = new phys::world;
 		gm.assertSettings();
