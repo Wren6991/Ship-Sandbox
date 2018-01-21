@@ -92,8 +92,13 @@ find_package(OpenGL REQUIRED)
 #
 
 set  (SHIP_SANDBOX_SOURCES
-	game.cpp
-	game.h
+	Game.cpp
+	Game2.cpp
+	Game.h
+	Game2.h
+	GameController.cpp
+	GameController.h
+	GameSettings.h
 	Log.cpp
 	Log.h
 	LoggingWindow.cpp
@@ -107,6 +112,7 @@ set  (SHIP_SANDBOX_SOURCES
 	phys.h
 	render.cpp
 	render.h
+	RenderSettings.h
 	Scheduler.cpp
 	Scheduler.h
 	SettingsDialog.cpp
