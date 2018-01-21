@@ -5,7 +5,6 @@
 * Copyright:			Luke Wren (http://github.com/Wren6991),
 *						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
-
 #include "MainFrame.h"
 
 #include "phys.h"
@@ -31,7 +30,7 @@ namespace /* anonymous */ {
 // TODO: see this one
 wxString wxbuildinfo(wxbuildinfoformat format)
 {
-	return "Ship Sandbox Alpha v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2017\nLicensed to Francis Racicot";
+	return "Ship Sandbox Alpha v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nLicensed to Francis Racicot";
 }
 
 const long MainFrame::ID_GLCANVAS1 = wxNewId();
@@ -167,14 +166,14 @@ MainFrame::~MainFrame()
 {
 }
 
-void MainFrame::OnQuit(wxCommandEvent& event)
+void MainFrame::OnQuit(wxCommandEvent & /*event*/)
 {
 	mGameTimer->Stop();
 	mStatsRefreshTimer->Stop();
 	Close();
 }
 
-void MainFrame::OnAbout(wxCommandEvent& event)
+void MainFrame::OnAbout(wxCommandEvent & /* event */)
 {
 	wxString msg = wxbuildinfo(long_f);
 	wxMessageBox(msg, _("Welcome to..."));
@@ -197,7 +196,7 @@ void MainFrame::initgl()
 	mGLContext1->SetCurrent(*mGLCanvas1);
 
 	glViewport(0, 0, gm.canvaswidth, gm.canvasheight);
-	glClearColor(0.529, 0.808, 0.980, 1); //(cornflower blue)
+	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glMatrixMode(GL_PROJECTION);
@@ -230,7 +229,7 @@ void MainFrame::endgl()
 	mGLCanvas1->Refresh();
 }
 
-void MainFrame::OnGLCanvas1Resize(wxSizeEvent& event)
+void MainFrame::OnGLCanvas1Resize(wxSizeEvent & event)
 {
 	gm.canvaswidth = event.GetSize().GetX();
 	gm.canvasheight = event.GetSize().GetY();
@@ -239,7 +238,7 @@ void MainFrame::OnGLCanvas1Resize(wxSizeEvent& event)
 
 
 
-void MainFrame::OnGameTimerTrigger(wxTimerEvent& event)
+void MainFrame::OnGameTimerTrigger(wxTimerEvent & /* event */)
 {
 	// Main timing event!
 	mFrameCount++;
@@ -251,7 +250,7 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent& event)
 	mGameTimer->Start(0, true);
 }
 
-void MainFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemLoadSelected(wxCommandEvent & /* event */)
 {
 	if (mDlgOpen->ShowModal() == wxID_OK)
 	{
@@ -273,22 +272,22 @@ void MainFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
 // M     M   O   O    U   U   SS   SS  E
 // M     M    OOO      UUU      SSS    EEEEEEE
 
-void MainFrame::OnGLCanvas1LeftDown(wxMouseEvent& event)
+void MainFrame::OnGLCanvas1LeftDown(wxMouseEvent & /* event */)
 {
 	gm.mouse.ldown = true;
 }
 
-void MainFrame::OnGLCanvas1LeftUp(wxMouseEvent& event)
+void MainFrame::OnGLCanvas1LeftUp(wxMouseEvent & /* event */)
 {
 	gm.mouse.ldown = false;
 }
 
-void MainFrame::OnGLCanvas1RightDown(wxMouseEvent& event)
+void MainFrame::OnGLCanvas1RightDown(wxMouseEvent & /* event */)
 {
 	gm.mouse.rdown = true;
 }
 
-void MainFrame::OnGLCanvas1RightUp(wxMouseEvent& event)
+void MainFrame::OnGLCanvas1RightUp(wxMouseEvent & /* event */)
 {
 	gm.mouse.rdown = false;
 }
@@ -307,7 +306,7 @@ void MainFrame::OnGLCanvas1MouseMove(wxMouseEvent& event)
 	}
 }
 
-void MainFrame::OnMenuItemOptionsSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemOptionsSelected(wxCommandEvent & /* event */)
 {
 	if (!mSettingsDialog)
 	{
@@ -317,7 +316,7 @@ void MainFrame::OnMenuItemOptionsSelected(wxCommandEvent& event)
 	mSettingsDialog->Show();
 }
 
-void MainFrame::OnMenuItemShowLoggingWindowSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemShowLoggingWindowSelected(wxCommandEvent & /* event */)
 {
 	if (!mLoggingWindow)
 	{
@@ -332,22 +331,22 @@ void MainFrame::OnGLCanvas1MouseWheel(wxMouseEvent& event)
 	gm.zoomsize *= pow(0.998, event.GetWheelRotation());
 }
 
-void MainFrame::OnMenuItemPlayPauseSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemPlayPauseSelected(wxCommandEvent & /* event */)
 {
 	gm.running = !gm.running;
 }
 
-void MainFrame::OnMenuItemSmashSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemSmashSelected(wxCommandEvent & /* event */)
 {
 	gm.tool = game::TOOL_SMASH;
 }
 
-void MainFrame::OnMenuItemGrabSelected(wxCommandEvent& event)
+void MainFrame::OnMenuItemGrabSelected(wxCommandEvent & /* event */)
 {
 	gm.tool = game::TOOL_GRAB;
 }
 
-void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent& event)
+void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /* event */)
 {
 	std::ostringstream ss;
 	ss << "Ship Sandbox Alpha " VERSION;
@@ -358,12 +357,12 @@ void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent& event)
 	mFrameCount = 0;
 }
 
-void MainFrame::OnClose(wxCloseEvent& event)
+void MainFrame::OnClose(wxCloseEvent & /* event */)
 {
 	Destroy();
 }
 
-void MainFrame::OnMenuReloadSelected(wxCommandEvent& event)
+void MainFrame::OnMenuReloadSelected(wxCommandEvent & /* event */)
 {
 	delete gm.wld;
 	gm.wld = new phys::world;

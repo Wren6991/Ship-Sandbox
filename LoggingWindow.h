@@ -6,6 +6,7 @@
 #pragma once
 
 #include <wx/frame.h>
+#include <wx/textctrl.h>
 #include <wx/richtext/richtextctrl.h>
 
 #include <memory>
@@ -27,7 +28,7 @@ private:
 
 	wxWindow const * const mParent;
 
-	std::unique_ptr<wxRichTextCtrl> mRichTextCtrl;
+	std::unique_ptr<wxTextCtrl> mTextCtrl;
 
 	DECLARE_EVENT_TABLE()
 };
