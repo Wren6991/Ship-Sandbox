@@ -44,8 +44,9 @@ const long MainFrame::mnuShow = wxNewId();
 const long MainFrame::mnuShowLoggingWindow = wxNewId();
 const long MainFrame::ID_MENUITEM2 = wxNewId();
 const long MainFrame::idMenuAbout = wxNewId();
-const long MainFrame::ID_TIMER1 = wxNewId();
-const long MainFrame::ID_TIMER2 = wxNewId();
+
+static const long ID_GAME_TIMER = wxNewId();
+static const long ID_STATS_REFRESH_TIMER = wxNewId();
 
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
 END_EVENT_TABLE()
@@ -110,10 +111,8 @@ MainFrame::MainFrame(
 	MenuItem2 = new wxMenuItem(Menu2, idMenuAbout, _("About\tF1"), _("Show info about this application"), wxITEM_NORMAL);
 	Menu2->Append(MenuItem2);
 	MenuBar1->Append(Menu2, _("Help"));
-	SetMenuBar(MenuBar1);
-	mTimer1.SetOwner(this, ID_TIMER1);	
+	SetMenuBar(MenuBar1);	
 	mDlgOpen = new wxFileDialog(this, _("Select Ship Image"), wxEmptyString, wxEmptyString, _("(*.png)|*.png"), wxFD_OPEN | wxFD_FILE_MUST_EXIST, wxDefaultPosition, wxDefaultSize, _T("wxFileDialog"));
-	mTimer2.SetOwner(this, ID_TIMER2);	
 	BoxSizer1->Fit(this);
 	BoxSizer1->SetSizeHints(this);
 
@@ -133,13 +132,11 @@ MainFrame::MainFrame(
 	Connect(mnuShowLoggingWindow, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemShowLoggingWindowSelected);
 	Connect(ID_MENUITEM2, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMenuItemPlayPauseSelected);
 	Connect(idMenuAbout, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAbout);
-	Connect(ID_TIMER1, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnTimer1Trigger);
-	Connect(ID_TIMER2, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnTimer2Trigger);
+	Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
+	Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);
 	Connect(wxID_ANY, wxEVT_CLOSE_WINDOW, (wxObjectEventFunction)&MainFrame::OnClose);
 	//*)
 	
-	mSettings = new settingsDialog(this);
-
 	mGLContext1 = new wxGLContext(mGLCanvas1);
 
 	gm.loadShip(L"ship.png");
@@ -154,9 +151,16 @@ MainFrame::MainFrame(
 	gm.canvaswidth = 200;
 	gm.canvasheight = 200;
 
-	// TODO: use one-shot timer for render loop
-	mTimer1.Start(20, false);
-	mTimer2.Start(1000, false);
+
+	//
+	// Setup timers
+	//
+
+	mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
+	mGameTimer->Start(0, true);
+
+	mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
+	mStatsRefreshTimer->Start(1000, false);
 }
 
 MainFrame::~MainFrame()
@@ -165,8 +169,8 @@ MainFrame::~MainFrame()
 
 void MainFrame::OnQuit(wxCommandEvent& event)
 {
-	mTimer1.Stop();
-	mTimer2.Stop();
+	mGameTimer->Stop();
+	mStatsRefreshTimer->Stop();
 	Close();
 }
 
@@ -235,7 +239,7 @@ void MainFrame::OnGLCanvas1Resize(wxSizeEvent& event)
 
 
 
-void MainFrame::OnTimer1Trigger(wxTimerEvent& event)
+void MainFrame::OnGameTimerTrigger(wxTimerEvent& event)
 {
 	// Main timing event!
 	mFrameCount++;
@@ -243,6 +247,8 @@ void MainFrame::OnTimer1Trigger(wxTimerEvent& event)
 	gm.update();
 	gm.render();
 	endgl();
+
+	mGameTimer->Start(0, true);
 }
 
 void MainFrame::OnMenuItemLoadSelected(wxCommandEvent& event)
@@ -303,7 +309,12 @@ void MainFrame::OnGLCanvas1MouseMove(wxMouseEvent& event)
 
 void MainFrame::OnMenuItemOptionsSelected(wxCommandEvent& event)
 {
-	mSettings->Show();
+	if (!mSettingsDialog)
+	{
+		mSettingsDialog = std::make_unique<SettingsDialog>(this);
+	}
+
+	mSettingsDialog->Show();
 }
 
 void MainFrame::OnMenuItemShowLoggingWindowSelected(wxCommandEvent& event)
@@ -336,7 +347,7 @@ void MainFrame::OnMenuItemGrabSelected(wxCommandEvent& event)
 	gm.tool = game::TOOL_GRAB;
 }
 
-void MainFrame::OnTimer2Trigger(wxTimerEvent& event)
+void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent& event)
 {
 	std::ostringstream ss;
 	ss << "Ship Sandbox Alpha " VERSION;

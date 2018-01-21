@@ -1,24 +1,29 @@
-#ifndef SETTINGSDIALOG_H
-#define SETTINGSDIALOG_H
+/***************************************************************************************
+* Original Author:		Luke Wren (wren6991@gmail.com)
+* Created:				2013-04-30
+* Modified By:			Gabriele Giuseppini
+* Copyright:			Luke Wren (http://github.com/Wren6991),
+*						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
+***************************************************************************************/
+#pragma once
 
-//(*Headers(settingsDialog)
-#include <wx/sizer.h>
-#include <wx/stattext.h>
 #include <wx/checkbox.h>
-#include <wx/slider.h>
 #include <wx/dialog.h>
-//*)
+#include <wx/sizer.h>
+#include <wx/slider.h>
+#include <wx/stattext.h>
 
-class settingsDialog : public wxDialog
+#include <memory>
+
+class SettingsDialog : public wxDialog
 {
 public:
 
-	settingsDialog(wxWindow* parent, wxWindowID id = wxID_ANY);
-	virtual ~settingsDialog();
+	SettingsDialog(wxWindow* parent);
+	virtual ~SettingsDialog();
 
-	//(*Declarations(settingsDialog)
-	wxCheckBox* chkQuickFix;
-	wxSlider* sldBuoyancy;
+	std::unique_ptr<wxCheckBox> mChkQuickFix;
+	std::unique_ptr<wxSlider> mSldBuoyancy;
 	wxStaticText* StaticText2;
 	wxCheckBox* chkShowStress;
 	wxSlider* sldStrength;
@@ -57,9 +62,7 @@ private:
 	void OnCheckBox1Click(wxCommandEvent& event);
 	//*)
 
-	wxWindow *parent;
+	wxWindow *mParent;
 
 	DECLARE_EVENT_TABLE()
 };
-
-#endif

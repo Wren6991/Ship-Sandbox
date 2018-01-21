@@ -10,7 +10,7 @@
 #include "LoggingWindow.h"
 
 #include "game.h"
-#include "settingsDialog.h"
+#include "SettingsDialog.h"
 
 #include <wx/filedlg.h>
 #include <wx/frame.h>
@@ -33,7 +33,28 @@ public:
 
 private:
 
+	//
+	// Windows and Frames
+	//
+
 	std::unique_ptr<LoggingWindow> mLoggingWindow;
+	std::unique_ptr<SettingsDialog> mSettingsDialog;
+
+	//
+	// Timers
+	//
+
+	std::unique_ptr<wxTimer> mGameTimer;
+	std::unique_ptr<wxTimer> mStatsRefreshTimer;
+
+private:
+
+	//
+	// Event handlers
+	//
+
+	void OnGameTimerTrigger(wxTimerEvent& event);
+	void OnStatsRefreshTimerTrigger(wxTimerEvent& event);
 
 private:
 
@@ -41,7 +62,6 @@ private:
 	void OnAbout(wxCommandEvent& event);
 	void OnGLCanvas1Paint(wxPaintEvent& event);
 	void OnGLCanvas1Resize(wxSizeEvent& event);
-	void OnTimer1Trigger(wxTimerEvent& event);
 	void OnMenuItemLoadSelected(wxCommandEvent& event);
 	void OnGLCanvas1LeftDown(wxMouseEvent& event);
 	void OnGLCanvas1LeftUp(wxMouseEvent& event);
@@ -54,7 +74,6 @@ private:
 	void OnMenuItemPlayPauseSelected(wxCommandEvent& event);
 	void OnMenuItemSmashSelected(wxCommandEvent& event);
 	void OnMenuItemGrabSelected(wxCommandEvent& event);
-	void OnTimer2Trigger(wxTimerEvent& event);
 	void OnClose(wxCloseEvent& event);
 	void OnMenuReloadSelected(wxCommandEvent& event);
 	
@@ -70,8 +89,6 @@ private:
 	static const long mnuShowLoggingWindow;
 	static const long ID_MENUITEM2;
 	static const long idMenuAbout;
-	static const long ID_TIMER1;
-	static const long ID_TIMER2;
 
 	wxMenuItem* mMenuItem5;
 	wxMenu* mMenu3;
@@ -81,14 +98,11 @@ private:
 	wxFileDialog* mDlgOpen;
 	wxMenuItem* mMenuItemGrab;
 	wxMenuItem* mMenuItem3;
-	wxTimer mTimer2;
 	wxMenuItem* mMenuItem6;
 	wxMenuItem* mMenuItemSmash;
-	wxTimer mTimer1;
 	wxMenu* mMenu4;
 
 	int mFrameCount;
-	settingsDialog *mSettings;	
 
 	wxGLContext* mGLContext1;
 

@@ -1,37 +1,31 @@
-#include "settingsDialog.h"
-#include "titanicMain.h"
+#include "SettingsDialog.h"
 
-#include <iostream>
+#include "Log.h"
+#include "MainFrame.h"
 
-//(*InternalHeaders(settingsDialog)
 #include <wx/intl.h>
 #include <wx/string.h>
-//*)
 
-//(*IdInit(settingsDialog)
-const long settingsDialog::ID_STATICTEXT1 = wxNewId();
-const long settingsDialog::ID_SLIDER1 = wxNewId();
-const long settingsDialog::ID_STATICTEXT2 = wxNewId();
-const long settingsDialog::ID_SLIDER2 = wxNewId();
-const long settingsDialog::ID_STATICTEXT3 = wxNewId();
-const long settingsDialog::ID_SLIDER4 = wxNewId();
-const long settingsDialog::ID_STATICTEXT4 = wxNewId();
-const long settingsDialog::ID_SLIDER5 = wxNewId();
-const long settingsDialog::ID_STATICTEXT5 = wxNewId();
-const long settingsDialog::ID_SLIDER3 = wxNewId();
-const long settingsDialog::ID_CHECKBOX2 = wxNewId();
-const long settingsDialog::ID_CHECKBOX1 = wxNewId();
-const long settingsDialog::ID_CHECKBOX3 = wxNewId();
-//*)
+const long SettingsDialog::ID_STATICTEXT1 = wxNewId();
+const long SettingsDialog::ID_SLIDER1 = wxNewId();
+const long SettingsDialog::ID_STATICTEXT2 = wxNewId();
+const long SettingsDialog::ID_SLIDER2 = wxNewId();
+const long SettingsDialog::ID_STATICTEXT3 = wxNewId();
+const long SettingsDialog::ID_SLIDER4 = wxNewId();
+const long SettingsDialog::ID_STATICTEXT4 = wxNewId();
+const long SettingsDialog::ID_SLIDER5 = wxNewId();
+const long SettingsDialog::ID_STATICTEXT5 = wxNewId();
+const long SettingsDialog::ID_SLIDER3 = wxNewId();
+const long SettingsDialog::ID_CHECKBOX2 = wxNewId();
+const long SettingsDialog::ID_CHECKBOX1 = wxNewId();
+const long SettingsDialog::ID_CHECKBOX3 = wxNewId();
 
-BEGIN_EVENT_TABLE(settingsDialog, wxDialog)
-//(*EventTable(settingsDialog)
-//*)
+BEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
 END_EVENT_TABLE()
 
-settingsDialog::settingsDialog(wxWindow* _parent, wxWindowID id)
+SettingsDialog::SettingsDialog(wxWindow* parent)
 {
-	parent = _parent;
+	mParent = parent;
 	//(*Initialize(settingsDialog)
 	wxBoxSizer* BoxSizer1;
 
@@ -64,8 +58,8 @@ settingsDialog::settingsDialog(wxWindow* _parent, wxWindowID id)
 	chkShowStress = new wxCheckBox(this, ID_CHECKBOX2, _("Highlight Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX2"));
 	chkShowStress->SetValue(false);
 	//BoxSizer1->Add(chkShowStress, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-	chkQuickFix = new wxCheckBox(this, ID_CHECKBOX1, _("Quick Water Fix"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
-	chkQuickFix->SetValue(false);
+	mChkQuickFix = std::make_unique<wxCheckBox>(this, ID_CHECKBOX1, _("Quick Water Fix"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
+	mChkQuickFix->SetValue(false);
 	//BoxSizer1->Add(chkQuickFix, 0, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
 	chkXRay = new wxCheckBox(this, ID_CHECKBOX3, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX3"));
 	chkXRay->SetValue(false);
@@ -74,45 +68,44 @@ settingsDialog::settingsDialog(wxWindow* _parent, wxWindowID id)
 	//BoxSizer1->Fit(this);
 	//BoxSizer1->SetSizeHints(this);
 
-	Connect(ID_SLIDER1, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER1, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER2, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER2, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER4, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER4, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER5, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER5, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER3, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER3, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&settingsDialog::OnSlider1CmdScroll);
-	Connect(ID_CHECKBOX2, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
-	Connect(ID_CHECKBOX1, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
-	Connect(ID_CHECKBOX3, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&settingsDialog::OnCheckBox1Click);
+	Connect(ID_SLIDER1, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER1, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER2, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER2, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER4, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER4, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER5, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER5, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER3, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_SLIDER3, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
+	Connect(ID_CHECKBOX2, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
+	Connect(ID_CHECKBOX1, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
+	Connect(ID_CHECKBOX3, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
 	//*)
 }
 
-settingsDialog::~settingsDialog()
+SettingsDialog::~SettingsDialog()
 {
-	//(*Destroy(settingsDialog)
-	//*)
 }
 
 
-void settingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
+void SettingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
 {
-	titanicFrame *frame = (titanicFrame*)parent;
+	MainFrame *frame = dynamic_cast<MainFrame *>(mParent);
 	frame->gm.strength = (sldStrength->GetValue() ? sldStrength->GetValue() : 0.5) * 0.005;
-	frame->gm.buoyancy = sldBuoyancy->GetValue();
+	frame->gm.buoyancy = mSldBuoyancy->GetValue();
 	frame->gm.waveheight = sldWaveHeight->GetValue() * 0.5;
 	frame->gm.waterpressure = sldWaterPressure->GetValue() * 0.06;
 	frame->gm.seadepth = sldSeaDepth->GetValue();
 	frame->gm.showstress = chkShowStress->GetValue();
-	frame->gm.quickwaterfix = chkQuickFix->GetValue();
+	frame->gm.quickwaterfix = mChkQuickFix->GetValue();
 	frame->gm.xraymode = chkXRay->GetValue();
 	frame->gm.assertSettings();
-	std::cout << "Slider moved\n";
+
+	LogDebug("SettingsDialog::Slider moved");
 }
 
-void settingsDialog::OnCheckBox1Click(wxCommandEvent& event)
+void SettingsDialog::OnCheckBox1Click(wxCommandEvent& event)
 {
 	wxScrollEvent evt;
 	OnSlider1CmdScroll(evt);
