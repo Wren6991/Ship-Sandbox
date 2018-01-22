@@ -23,7 +23,7 @@ struct RenderSettings
 	RenderSettings()
 		: ShowStress(false)
 		, UseXRayMode(false)
-		, Zoom(30.0f)
+		, Zoom(20.0f)
 		, CamX(0.0f)
 		, CamY(0.0f)
 		, CanvasWidth()

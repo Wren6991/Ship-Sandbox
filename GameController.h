@@ -26,16 +26,18 @@ public:
 	void Reset(std::wstring const & filepath);
     void AddShip(std::wstring const & filepath);
 
-	void Update();
-    void Render();
+	void DoStep();
 
 	//
 	// Interactions
 	//
 
+	void SetRunningState(bool isRunning);
 	void DestroyAt(vec2 const & screenCoordinates);
 	void DrawAt(vec2 const & screenCoordinates);
+	void SetCanvasSize(int width, int height);
 	void Pan(vec2 const & screenOffset);
+	void AdjustZoom(float amount);
 
 private:
 

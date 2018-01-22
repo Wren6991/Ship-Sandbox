@@ -93,9 +93,7 @@ find_package(OpenGL REQUIRED)
 
 set  (SHIP_SANDBOX_SOURCES
 	Game.cpp
-	Game2.cpp
 	Game.h
-	Game2.h
 	GameController.cpp
 	GameController.h
 	GameSettings.h

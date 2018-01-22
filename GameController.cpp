@@ -34,7 +34,7 @@ void GameController::AddShip(std::wstring const & filepath)
 	mGame->LoadShip(filepath);
 }
 
-void GameController::Update()
+void GameController::DoStep()
 {
 	assert(!!mGame);
 
@@ -48,14 +48,14 @@ void GameController::Update()
 			0.02, // TODO: setting? if not, constant
 			mGameSettings);
 	}
-}
-
-void GameController::Render()
-{
-	assert(!!mGame);
 
 	// Render game, copying the settings
 	mGame->Render(mRenderSettings);
+}
+
+void GameController::SetRunningState(bool isRunning)
+{
+	mIsRunning = isRunning;
 }
 
 void GameController::DestroyAt(vec2 const & screenCoordinates)
@@ -78,6 +78,14 @@ void GameController::DrawAt(vec2 const & screenCoordinates)
 	// TODO
 }
 
+void GameController::SetCanvasSize(
+	int width,
+	int height)
+{
+	mRenderSettings.CanvasWidth = width;
+	mRenderSettings.CanvasHeight = height;
+}
+
 void GameController::Pan(vec2 const & screenOffset)
 {
 	vec2 worldOffset = ScreenOffset2WorldOffset(
@@ -86,6 +94,11 @@ void GameController::Pan(vec2 const & screenOffset)
 
 	mRenderSettings.CamX -= worldOffset.x;
 	mRenderSettings.CamY -= worldOffset.y;
+}
+
+void GameController::AdjustZoom(float amount)
+{
+	mRenderSettings.Zoom *= amount;
 }
 
 vec2 GameController::Screen2World(
@@ -104,6 +117,8 @@ vec2 GameController::ScreenOffset2WorldOffset(
 {
 	float height = renderSettings.Zoom * 2.0f;
 	float width = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * height;
-	return vec2((screenOffset.x / static_cast<float>(renderSettings.CanvasWidth) - 0.5f) * width,
-		(screenOffset.y / static_cast<float>(renderSettings.CanvasHeight) - 0.5f) * -height);
+
+	return vec2(
+		screenOffset.x / static_cast<float>(renderSettings.CanvasWidth) * width,
+		screenOffset.y / static_cast<float>(renderSettings.CanvasHeight) * -height);
 }

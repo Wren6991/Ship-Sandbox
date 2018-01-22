@@ -9,7 +9,7 @@
 
 #include "LoggingWindow.h"
 
-#include "game.h"
+#include "GameController.h"
 #include "SettingsDialog.h"
 
 #include <wx/filedlg.h>
@@ -27,9 +27,9 @@ class MainFrame : public wxFrame
 {
 public:
 
-	MainFrame(wxWindow* parent);
+	MainFrame(std::shared_ptr<GameController> gameController);
+
 	virtual ~MainFrame();
-	game gm;
 
 private:
 
@@ -88,8 +88,41 @@ private:
 
 private:
 
-	int mFrameCount;	
-
 	void initgl();
 	void endgl();
+
+private:
+
+	struct MouseInfo
+	{
+		bool ldown;
+		bool rdown;
+		int x;
+		int y;
+		int lastx;
+		int lasty;
+
+		MouseInfo()
+			: ldown(false)
+			, rdown(false)
+			, x(0)
+			, y(0)
+			, lastx(0)
+			, lasty(0)
+		{
+		}
+	};
+	
+	MouseInfo mMouseInfo;
+
+	enum class ToolType
+	{
+		Smash,
+		Grab
+	};
+
+	ToolType mToolType;
+
+	std::shared_ptr<GameController> mGameController;
+	int mFrameCount;	
 };

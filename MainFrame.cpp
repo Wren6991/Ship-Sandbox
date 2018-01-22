@@ -16,6 +16,7 @@
 #include <wx/settings.h>
 #include <wx/string.h>
 
+#include <cassert>
 #include <map>
 #include <sstream>
 
@@ -40,15 +41,14 @@ const long ID_ABOUT_MENUITEM = wxNewId();
 const long ID_GAME_TIMER = wxNewId();
 const long ID_STATS_REFRESH_TIMER = wxNewId();
 
-
-//BEGIN_EVENT_TABLE(MainFrame, wxFrame)
-//END_EVENT_TABLE()
-
-
-MainFrame::MainFrame(wxWindow* parent)
+MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
+	: mMouseInfo()
+	, mToolType(ToolType::Smash)
+	, mGameController(std::move(gameController))
+	, mFrameCount(0)
 {
 	Create(
-		parent, 
+		nullptr, 
 		wxID_ANY,
 		GetWindowTitle(),		
 		wxDefaultPosition, 
@@ -109,7 +109,8 @@ MainFrame::MainFrame(wxWindow* parent)
 	//
 
 	wxMenuBar * mainMenuBar = new wxMenuBar();
-		
+	
+
 	// File
 
 	wxMenu * fileMenu = new wxMenu();
@@ -128,6 +129,7 @@ MainFrame::MainFrame(wxWindow* parent)
 
 	mainMenuBar->Append(fileMenu, _("&File"));
 
+
 	// Tools
 
 	wxMenu * toolsMenu = new wxMenu();
@@ -139,6 +141,8 @@ MainFrame::MainFrame(wxWindow* parent)
 	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab"), wxEmptyString, wxITEM_RADIO);
 	toolsMenu->Append(grabMenuItem);
 	Connect(ID_GRAB_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnGrabMenuItemSelected);
+
+	// TODO: select the right one based off mToolType
 
 	mainMenuBar->Append(toolsMenu, _("Tools"));
 
@@ -161,6 +165,7 @@ MainFrame::MainFrame(wxWindow* parent)
 	
 	mainMenuBar->Append(optionsMenu, _("Options"));
 
+
 	// Help
 
 	wxMenu * helpMenu = new wxMenu();
@@ -173,25 +178,13 @@ MainFrame::MainFrame(wxWindow* parent)
 
 	SetMenuBar(mainMenuBar);
 
+
+	//
 	// Finalize frame
+	//
+
 	mainFrameSizer->Fit(this);
 	mainFrameSizer->SetSizeHints(this);
-
-
-	// TODOHERE
-
-
-	gm.loadShip(L"ship.png");
-
-	gm.zoomsize = 30;
-	gm.running = true;
-
-	gm.camx = 0;
-	gm.camy = 0;
-
-	mFrameCount = 0;
-	gm.canvaswidth = 200;
-	gm.canvasheight = 200;
 
 
 	//
@@ -230,11 +223,12 @@ void MainFrame::OnQuit(wxCommandEvent & /*event*/)
 
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
+	assert(!!mGameController);
+
 	// Main timing event!
 	mFrameCount++;
 	initgl();
-	gm.update();
-	gm.render();
+	mGameController->DoStep();
 	endgl();
 
 	mGameTimer->Start(0, true);
@@ -257,48 +251,79 @@ void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
 
 void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 {
-	gm.canvaswidth = event.GetSize().GetX();
-	gm.canvasheight = event.GetSize().GetY();
+	LogDebug("MainFrame::OnMainGLCanvasResize");
+
+	assert(!!mGameController);
+
+	mGameController->SetCanvasSize(
+		event.GetSize().GetX(),
+		event.GetSize().GetY());
+
 	mMainGLCanvas->Refresh();
 }
 
 void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
 {
-	gm.mouse.ldown = true;
+	assert(!!mGameController);
+
+	// Action depends on current tool
+	switch (mToolType)	
+	{
+		case ToolType::Grab:
+		{
+			mGameController->DrawAt(vec2(mMouseInfo.x, mMouseInfo.y));
+			break;
+		}
+
+		case ToolType::Smash:
+		{
+			mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y));
+			break;
+		}
+
+	}
+	
+	// Remember the mouse button is down
+	mMouseInfo.ldown = true;
 }
 
 void MainFrame::OnMainGLCanvasLeftUp(wxMouseEvent & /*event*/)
 {
-	gm.mouse.ldown = false;
+	// Remember the mouse button is not down anymore
+	mMouseInfo.ldown = false;
 }
 
 void MainFrame::OnMainGLCanvasRightDown(wxMouseEvent & /*event*/)
 {
-	gm.mouse.rdown = true;
+	mMouseInfo.rdown = true;
 }
 
 void MainFrame::OnMainGLCanvasRightUp(wxMouseEvent & /*event*/)
 {
-	gm.mouse.rdown = false;
+	mMouseInfo.rdown = false;
 }
 
 void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
 {
-	int oldx = gm.mouse.x;
-	int oldy = gm.mouse.y;
-	gm.mouse.x = event.GetX();
-	gm.mouse.y = event.GetY();
-	if (gm.mouse.rdown)
+	assert(!!mGameController);
+
+	int oldx = mMouseInfo.x;
+	int oldy = mMouseInfo.y;
+	mMouseInfo.x = event.GetX();
+	mMouseInfo.y = event.GetY();
+	if (mMouseInfo.rdown)
 	{
-		vec2 difference = gm.screen2world(vec2(gm.mouse.x, gm.mouse.y)) - gm.screen2world(vec2(oldx, oldy));
-		gm.camx -= difference.x;
-		gm.camy -= difference.y;
+		// Pan
+		vec2 screenOffset = vec2(mMouseInfo.x, mMouseInfo.y) - vec2(oldx, oldy);
+		mGameController->Pan(screenOffset);
 	}
 }
 
 void MainFrame::OnMainGLCanvasMouseWheel(wxMouseEvent& event)
 {
-	gm.zoomsize *= pow(0.998, event.GetWheelRotation());
+	assert(!!mGameController);
+
+	mGameController->AdjustZoom(powf(0.998f, event.GetWheelRotation()));
 }
 
 
@@ -328,29 +353,30 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 	{
 		std::wstring filename = mFileOpenDialog->GetPath().ToStdWstring();
 
-		delete gm.wld;
-		gm.wld = new phys::world;
-		gm.assertSettings();
-		gm.loadShip(filename);
+		assert(!!mGameController);
+
+		mGameController->Reset(filename);
 	}
 }
 
 void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 {
+	/* TODO
 	delete gm.wld;
 	gm.wld = new phys::world;
 	gm.assertSettings();
 	gm.loadShip(gm.lastFilename);
+	*/
 }
 
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	gm.tool = game::TOOL_SMASH;
+	mToolType = ToolType::Smash;
 }
 
 void MainFrame::OnGrabMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	gm.tool = game::TOOL_GRAB;
+	mToolType = ToolType::Grab;
 }
 
 void MainFrame::OnOpenSettingsWindowMenuItemSelected(wxCommandEvent & /*event*/)
@@ -375,7 +401,10 @@ void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnPlayPauseMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	gm.running = !gm.running;
+	assert(!!mGameController);
+
+	// TODO: use state of menu item selection
+	mGameController->SetRunningState(true);
 }
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
@@ -397,36 +426,9 @@ void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::initgl()
 {
-	// Set the context, clear the gm.canvas and set up all the matrices.
-
+	// Set the context
 	// TODO: see if all of this can be done once and for all
 	mMainGLCanvasContext->SetCurrent(*mMainGLCanvas);
-
-	// Clear canvas (blue)
-	glViewport(0, 0, gm.canvaswidth, gm.canvasheight);
-	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	float halfheight = gm.zoomsize;
-	float halfwidth = (float)gm.canvaswidth / gm.canvasheight * halfheight;
-	glFrustum(-halfwidth, halfwidth, -halfheight, halfheight, 1, 1000);
-	glTranslatef(-gm.camx, -gm.camy, 0);
-
-	glEnable(GL_LINE_SMOOTH);
-	glHint(GL_LINE_SMOOTH, GL_NICEST);
-	glEnable(GL_POINT_SMOOTH);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glPointSize(0.15f * gm.canvasheight / gm.zoomsize);
-	glLineWidth(0.1f * gm.canvasheight / gm.zoomsize);
-	glColor3f(0, 0, 0);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
 }
 
 void MainFrame::endgl()

@@ -5,7 +5,8 @@
 #include <memory>
 #include <sstream>
 
-Json::Value jsonParseFile(std::string filename)
+// TODO: see if can have jsoncpp in unicode
+Json::Value jsonParseFile(std::string const & filename)
 {
     std::fstream file(filename.c_str(), std::ios::in | std::ios::binary);
     if (!file.is_open())
@@ -31,12 +32,12 @@ Json::Value jsonParseFile(std::string filename)
     }
     else
     {
-        std::cout << "In file " << filename << ": Parsing error(s):\n" << errors;
+		std::cout << "In file " << filename << ": Parsing error(s):\n" << errors;
         return Json::Value();
     }
 }
 
-charbuffer getFileContents(std::string filename)
+charbuffer getFileContents(std::string const & filename)
 {
     std::fstream file(filename.c_str(), std::ios::in | std::ios::binary);
     if (!file.is_open())

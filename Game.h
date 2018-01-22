@@ -54,7 +54,8 @@ private:
 
 	void LoadDepth(std::wstring const & filepath);
 
-	static std::vector<std::shared_ptr<material>> LoadMaterials(std::wstring const & filepath);
+	// TODOç make it a wstring once we have jsoncpp in unicode
+	static std::vector<std::shared_ptr<material>> LoadMaterials(std::string const & filepath);
 
 private:
 

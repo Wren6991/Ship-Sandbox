@@ -32,7 +32,7 @@ const int directions[8][2] = {
 
 std::unique_ptr<Game> Game::Create()
 {
-	auto materials = LoadMaterials(L"data/materials.json");
+	auto materials = LoadMaterials("data/materials.json");
 
 	std::unique_ptr<phys::world> world = std::make_unique<phys::world>();
 	
@@ -47,7 +47,7 @@ std::unique_ptr<Game> Game::Create()
 
 void Game::Reset()
 {
-	// TODO
+	mWorld.reset(new phys::world());
 }
 
 void Game::LoadShip(std::wstring const & filepath)
@@ -74,31 +74,31 @@ void Game::LoadShip(std::wstring const & filepath)
 
 	ILubyte *data = ilGetData();
 
-	int width, height;
-	width = ilGetInteger(IL_IMAGE_WIDTH);
-	height = ilGetInteger(IL_IMAGE_HEIGHT);
-
-
+	int const width = ilGetInteger(IL_IMAGE_WIDTH);
+	int const height = ilGetInteger(IL_IMAGE_HEIGHT);
+	float const halfWidth = static_cast<float>(width) / 2.0f;
 
 	phys::ship *shp = new phys::ship(mWorld.get());
 
 	std::map<int, std::map <int, phys::point*> > points;
 
-	for (int x = 0; x < width; x++)
+	for (int x = 0; x < width; ++x)
 	{
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < height; ++y)
 		{
 			// assume R G B:
-			vec3f colour(data[(x + (height - y) * width) * 3 + 0] / 255.f,
+			vec3f colour(
+				data[(x + (height - y) * width) * 3 + 0] / 255.f,
 				data[(x + (height - y) * width) * 3 + 1] / 255.f,
 				data[(x + (height - y) * width) * 3 + 2] / 255.f);
+
 			if (colourdict.find(colour) != colourdict.end())
 			{
 				auto mtl = colourdict[colour];
 
 				points[x][y] = new phys::point(
 					mWorld.get(), 
-					vec2(static_cast<float>(x - width) / 2.0f, static_cast<float>(y)), 
+					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl.get(), 
 					mtl->isHull ? 0 : 1);  // no buoyancy if it's a hull section
 
@@ -182,14 +182,39 @@ void Game::Render(RenderSettings renderSettings)
 	mWorld->showstress = renderSettings.ShowStress;
 	mWorld->xraymode = renderSettings.UseXRayMode;
 
-	float halfheight = renderSettings.Zoom;
-	float halfwidth = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * halfheight;
-	
+	float halfHeight = renderSettings.Zoom;
+	float halfWidth = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * halfHeight;
+
+	// Clear canvas (blue)
+	glViewport(0, 0, renderSettings.CanvasWidth, renderSettings.CanvasHeight);
+	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// TODO: see if all of this may be cached (with SettingsGenerationSequenceNumber check)
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
+	glTranslatef(-renderSettings.CamX, -renderSettings.CamY, 0);
+
+	glEnable(GL_LINE_SMOOTH);
+	glHint(GL_LINE_SMOOTH, GL_NICEST);
+	glEnable(GL_POINT_SMOOTH);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPointSize(0.15f * renderSettings.CanvasHeight / renderSettings.Zoom);
+	glLineWidth(0.1f * renderSettings.CanvasHeight / renderSettings.Zoom);
+	glColor3f(0, 0, 0);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
 	mWorld->render(
-		renderSettings.CamX - halfwidth, 
-		renderSettings.CamX + halfwidth, 
-		renderSettings.CamY - halfheight, 
-		renderSettings.CamY + halfheight);
+		renderSettings.CamX - halfWidth, 
+		renderSettings.CamX + halfWidth, 
+		renderSettings.CamY - halfHeight, 
+		renderSettings.CamY + halfHeight);
 }
 
 void Game::LoadDepth(std::wstring const & filepath)
@@ -205,7 +230,7 @@ void Game::LoadDepth(std::wstring const & filepath)
 	}*/
 }
 
-std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::wstring const & filepath)
+std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::string const & filepath)
 {
 	std::vector<std::shared_ptr<material>> materials;
 

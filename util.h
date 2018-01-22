@@ -16,8 +16,8 @@ struct charbuffer
     int length;
 };
 
-Json::Value jsonParseFile(std::wstring const & filename);
-charbuffer getFileContents(std::wstring const & filename);
+Json::Value jsonParseFile(std::string const & filename);
+charbuffer getFileContents(std::string const & filename);
 template <typename T> std::string tostring(T x);
 
 #endif // _UTIL_H_

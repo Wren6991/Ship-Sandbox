@@ -10,6 +10,7 @@
 // The main application. Everything begins from here.
 //
 
+#include "GameController.h"
 #include "MainFrame.h"
 
 #include <IL/il.h>
@@ -32,7 +33,11 @@ bool MainApp::OnInit()
 
 	wxInitAllImageHandlers();
 
-	MainFrame* frame = new MainFrame(nullptr);
+	// Create Game controller
+	// TODO: splash screen and game controller progress
+	auto gameController = GameController::Create();
+
+	MainFrame* frame = new MainFrame(std::move(gameController));
 	frame->Show();
 	SetTopWindow(frame);
 	

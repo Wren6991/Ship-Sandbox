@@ -99,6 +99,7 @@ SettingsDialog::~SettingsDialog()
 void SettingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
 {
 	MainFrame *frame = dynamic_cast<MainFrame *>(mParent);
+	/* TODO
 	frame->gm.strength = (sldStrength->GetValue() ? sldStrength->GetValue() : 0.5) * 0.005;
 	frame->gm.buoyancy = mSldBuoyancy->GetValue();
 	frame->gm.waveheight = sldWaveHeight->GetValue() * 0.5;
@@ -108,7 +109,7 @@ void SettingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
 	frame->gm.quickwaterfix = mChkQuickFix->GetValue();
 	frame->gm.xraymode = chkXRay->GetValue();
 	frame->gm.assertSettings();
-
+	*/
 	LogDebug("SettingsDialog::Slider moved");
 }
 
