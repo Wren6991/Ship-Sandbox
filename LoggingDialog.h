@@ -5,30 +5,30 @@
 ***************************************************************************************/
 #pragma once
 
-#include <wx/frame.h>
+#include <wx/dialog.h>
 #include <wx/textctrl.h>
-#include <wx/richtext/richtextctrl.h>
 
 #include <memory>
 
-class LoggingWindow : public wxFrame
+class LoggingWindow : public wxDialog
 {
 public:
 
 	LoggingWindow(wxWindow* parent);
+	
 	virtual ~LoggingWindow();
 
+	void Open();
 
 private:
 
 	void OnClose(wxCloseEvent& event);
-	void OnShow(wxShowEvent& event);
 
 private:
 
-	wxWindow const * const mParent;
+	wxWindow * const mParent;
 
-	std::unique_ptr<wxTextCtrl> mTextCtrl;
+	wxTextCtrl * mTextCtrl;
 
 	DECLARE_EVENT_TABLE()
 };

@@ -6,9 +6,9 @@
 #pragma once
 
 /*
-* Settings that affect the rendering of the game.
+* Parameters that affect the rendering of the game.
 */
-struct RenderSettings
+struct RenderParameters
 {
 	bool ShowStress;
 	bool UseXRayMode;
@@ -20,10 +20,10 @@ struct RenderSettings
 	int CanvasWidth;
 	int CanvasHeight;
 
-	RenderSettings()
+	RenderParameters()
 		: ShowStress(false)
 		, UseXRayMode(false)
-		, Zoom(20.0f)
+		, Zoom(75.0f)
 		, CamX(0.0f)
 		, CamY(0.0f)
 		, CanvasWidth()

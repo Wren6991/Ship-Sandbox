@@ -7,9 +7,8 @@
 ***************************************************************************************/
 #pragma once
 
-#include "LoggingWindow.h"
-
 #include "GameController.h"
+#include "LoggingDialog.h"
 #include "SettingsDialog.h"
 
 #include <wx/filedlg.h>
@@ -45,7 +44,7 @@ private:
 	//
 
 	std::unique_ptr<wxFileDialog> mFileOpenDialog;
-	std::unique_ptr<LoggingWindow> mLoggingWindow;
+	std::unique_ptr<LoggingDialog> mLoggingDialog;
 	std::unique_ptr<SettingsDialog> mSettingsDialog;
 
 	//
@@ -64,6 +63,8 @@ private:
 	// App
 	void OnMainFrameClose(wxCloseEvent& event);
 	void OnQuit(wxCommandEvent& event);
+	void OnPaint(wxPaintEvent& event);
+	void OnKeyDown(wxKeyEvent& event);
 	void OnGameTimerTrigger(wxTimerEvent& event);
 	void OnStatsRefreshTimerTrigger(wxTimerEvent& event);
 
@@ -83,13 +84,12 @@ private:
 	void OnGrabMenuItemSelected(wxCommandEvent& event);
 	void OnOpenSettingsWindowMenuItemSelected(wxCommandEvent& event);
 	void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);
-	void OnPlayPauseMenuItemSelected(wxCommandEvent& event);
+	void OnPauseMenuItemSelected(wxCommandEvent& event);
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
 private:
 
-	void initgl();
-	void endgl();
+	void RenderGame();
 
 private:
 
@@ -121,7 +121,7 @@ private:
 		Grab
 	};
 
-	ToolType mToolType;
+	ToolType mCurrentToolType;
 
 	std::shared_ptr<GameController> mGameController;
 	int mFrameCount;	

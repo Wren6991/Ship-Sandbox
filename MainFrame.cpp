@@ -14,6 +14,7 @@
 #include <wx/intl.h>
 #include <wx/msgdlg.h>
 #include <wx/settings.h>
+#include <wx/sizer.h>
 #include <wx/string.h>
 
 #include <cassert>
@@ -36,14 +37,14 @@ const long ID_SMASH_MENUITEM = wxNewId();
 const long ID_GRAB_MENUITEM = wxNewId();
 const long ID_OPEN_SETTINGS_WINDOW_MENUITEM = wxNewId();
 const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
-const long ID_PLAY_PAUSE_MENUITEM = wxNewId();
+const long ID_PAUSE_MENUITEM = wxNewId();
 const long ID_ABOUT_MENUITEM = wxNewId();
 const long ID_GAME_TIMER = wxNewId();
 const long ID_STATS_REFRESH_TIMER = wxNewId();
 
 MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	: mMouseInfo()
-	, mToolType(ToolType::Smash)
+	, mCurrentToolType(ToolType::Smash)
 	, mGameController(std::move(gameController))
 	, mFrameCount(0)
 {
@@ -58,10 +59,13 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
 	SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
 
+	wxPanel* mainPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS);
+	mainPanel->Bind(wxEVT_CHAR_HOOK, (wxObjectEventFunction)&MainFrame::OnKeyDown, this);
+
 	wxBoxSizer * mainFrameSizer = new wxBoxSizer(wxHORIZONTAL);
-	SetSizer(mainFrameSizer);
 
 	Connect(this->GetId(), wxEVT_CLOSE_WINDOW, (wxObjectEventFunction)&MainFrame::OnMainFrameClose);
+	Connect(this->GetId(), wxEVT_PAINT, (wxObjectEventFunction)&MainFrame::OnPaint);
 
 
 	//
@@ -78,7 +82,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	};
 
 	mMainGLCanvas = std::make_unique<wxGLCanvas>(
-		this,
+		mainPanel, 
 		ID_MAIN_CANVAS,
 		mainGLCanvasAttributes,
 		wxDefaultPosition,
@@ -98,7 +102,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 		mMainGLCanvas.get(),
 		1,					// Proportion
 		wxALL | wxEXPAND,	// Flags
-		5);					// Border	
+		0);					// Border	
 
 	// Take context for this canvas
 	mMainGLCanvasContext = std::make_unique<wxGLContext>(mMainGLCanvas.get());
@@ -134,15 +138,15 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
 	wxMenu * toolsMenu = new wxMenu();
 
-	wxMenuItem * smashMenuItem = new wxMenuItem(toolsMenu, ID_SMASH_MENUITEM, _("Smash"), wxEmptyString, wxITEM_RADIO);
-	toolsMenu->Append(smashMenuItem);
+	wxMenuItem * smashMenuItem = new wxMenuItem(toolsMenu, ID_SMASH_MENUITEM, _("Smash"), wxEmptyString, wxITEM_RADIO);		
+	toolsMenu->Append(smashMenuItem);		
 	Connect(ID_SMASH_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnSmashMenuItemSelected);
 
-	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab"), wxEmptyString, wxITEM_RADIO);
-	toolsMenu->Append(grabMenuItem);
+	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab"), wxEmptyString, wxITEM_RADIO);	
+	toolsMenu->Append(grabMenuItem);	
 	Connect(ID_GRAB_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnGrabMenuItemSelected);
 
-	// TODO: select the right one based off mToolType
+	toolsMenu->Check(mCurrentToolType == ToolType::Smash ? ID_SMASH_MENUITEM : ID_GRAB_MENUITEM, true);
 
 	mainMenuBar->Append(toolsMenu, _("Tools"));
 
@@ -155,13 +159,14 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	optionsMenu->Append(openSettingsWindowMenuItem);
 	Connect(ID_OPEN_SETTINGS_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenSettingsWindowMenuItemSelected);
 
-	wxMenuItem * openLogWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_LOG_WINDOW_MENUITEM, _("Show Log Window\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
+	wxMenuItem * openLogWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_LOG_WINDOW_MENUITEM, _("Open Log Window\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
 	optionsMenu->Append(openLogWindowMenuItem);
 	Connect(ID_OPEN_LOG_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenLogWindowMenuItemSelected);
 
-	wxMenuItem * playPauseMenuItem = new wxMenuItem(optionsMenu, ID_PLAY_PAUSE_MENUITEM, _("Play/Pause\tCtrl+P"), wxEmptyString, wxITEM_NORMAL);
-	optionsMenu->Append(playPauseMenuItem);
-	Connect(ID_PLAY_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPlayPauseMenuItemSelected);
+	wxMenuItem * pauseMenuItem = new wxMenuItem(optionsMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);	
+	optionsMenu->Append(pauseMenuItem);
+	pauseMenuItem->Check(!mGameController->IsRunning());
+	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
 	
 	mainMenuBar->Append(optionsMenu, _("Options"));
 
@@ -183,12 +188,14 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	// Finalize frame
 	//
 
-	mainFrameSizer->Fit(this);
-	mainFrameSizer->SetSizeHints(this);
+	mainPanel->SetSizerAndFit(mainFrameSizer);
+	
+	Maximize();
+	Centre();
 
 
 	//
-	// Timers
+	// Initialize timers
 	//
 	
 	mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
@@ -221,15 +228,41 @@ void MainFrame::OnQuit(wxCommandEvent & /*event*/)
 	Close();
 }
 
+void MainFrame::OnPaint(wxPaintEvent& event)
+{
+	RenderGame();
+
+	event.Skip();
+}
+
+void MainFrame::OnKeyDown(wxKeyEvent& event)
+{
+	assert(!!mGameController);
+
+	if ('+' == event.GetKeyCode())
+	{
+		mGameController->AdjustZoom(0.66f);
+	}
+	else if ('-' == event.GetKeyCode())
+	{
+		mGameController->AdjustZoom(1.5f);
+	}
+
+	event.Skip();
+}
+
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
 	assert(!!mGameController);
 
 	// Main timing event!
 	mFrameCount++;
-	initgl();
+
+	// Do a simulation step
 	mGameController->DoStep();
-	endgl();
+
+	// Render
+	RenderGame();
 
 	mGameTimer->Start(0, true);
 }
@@ -267,7 +300,7 @@ void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
 	assert(!!mGameController);
 
 	// Action depends on current tool
-	switch (mToolType)	
+	switch (mCurrentToolType)
 	{
 		case ToolType::Grab:
 		{
@@ -371,40 +404,40 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	mToolType = ToolType::Smash;
+	mCurrentToolType = ToolType::Smash;
 }
 
 void MainFrame::OnGrabMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	mToolType = ToolType::Grab;
+	mCurrentToolType = ToolType::Grab;
 }
 
 void MainFrame::OnOpenSettingsWindowMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	if (!mSettingsDialog)
 	{
-		mSettingsDialog = std::make_unique<SettingsDialog>(this);
+		mSettingsDialog = std::make_unique<SettingsDialog>(
+			this,
+			mGameController);
 	}
 
-	mSettingsDialog->Show();
+	mSettingsDialog->Open();
 }
 
 void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	if (!mLoggingWindow)
+	if (!mLoggingDialog)
 	{
-		mLoggingWindow = std::make_unique<LoggingWindow>(this);
+		mLoggingDialog = std::make_unique<LoggingDialog>(this);
 	}
 
-	mLoggingWindow->Show();
+	mLoggingDialog->Open();
 }
 
-void MainFrame::OnPlayPauseMenuItemSelected(wxCommandEvent & /*event*/)
+void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
 {
 	assert(!!mGameController);
-
-	// TODO: use state of menu item selection
-	mGameController->SetRunningState(true);
+	mGameController->SetRunningState(!event.IsChecked());
 }
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
@@ -424,17 +457,16 @@ void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 //  GG  GG  R    R   A     A  P        H     H     I      CC CC   SS   SS
 //   GGGG   R     R  A     A  P        H     H  IIIIIII    CCC      SSS
 
-void MainFrame::initgl()
+void MainFrame::RenderGame()
 {
 	// Set the context
 	// TODO: see if all of this can be done once and for all
 	mMainGLCanvasContext->SetCurrent(*mMainGLCanvas);
-}
 
-void MainFrame::endgl()
-{
-	// Flush all the draw operations and flip the back buffer onto the screen.
-	glFlush();
+	// Render
+	mGameController->Render();	
+
+	// Flush all the draw operations and flip the back buffer onto the screen.	
 	mMainGLCanvas->SwapBuffers();
 	mMainGLCanvas->Refresh();
 }

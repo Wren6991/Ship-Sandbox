@@ -5,9 +5,9 @@
 ***************************************************************************************/
 #pragma once
 
-#include "Game2.h"
-#include "GameSettings.h"
-#include "RenderSettings.h"
+#include "Game.h"
+#include "GameParameters.h"
+#include "RenderParameters.h"
 #include "vec.h"
 
 #include <memory>
@@ -27,6 +27,13 @@ public:
     void AddShip(std::wstring const & filepath);
 
 	void DoStep();
+	void Render();
+
+	//
+	// Readers
+	//
+
+	bool IsRunning() const;
 
 	//
 	// Interactions
@@ -43,24 +50,24 @@ private:
 
 	GameController(
 		std::unique_ptr<Game> && game)
-		: mGameSettings()
-		, mRenderSettings()
+		: mGameParameters()
+		, mRenderParameters()
 		, mIsRunning(true)
 		, mGame(std::move(game))
 	{}
 	
 	static vec2 Screen2World(
 		vec2 const & screenCoordinates,
-		RenderSettings const & renderSettings);
+		RenderParameters const & renderParameters);
 
 	static vec2 ScreenOffset2WorldOffset(
 		vec2 const & screenOffset,
-		RenderSettings const & renderSettings);
+		RenderParameters const & renderParameters);
 
 private:
 
-	GameSettings mGameSettings;
-	RenderSettings mRenderSettings;
+	GameParameters mGameParameters;
+	RenderParameters mRenderParameters;
 
 	bool mIsRunning;
 

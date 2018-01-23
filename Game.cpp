@@ -5,7 +5,7 @@
 * Copyright:			Luke Wren (http://github.com/Wren6991),
 *						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
-#include "Game2.h"
+#include "Game.h"
 
 #include "Log.h"
 #include "util.h"
@@ -158,43 +158,43 @@ void Game::LoadShip(std::wstring const & filepath)
 
 void Game::Update(
 	double dt,
-	GameSettings gameSettings)
+	GameParameters gameParameters)
 {
 	assert(!!mWorld);
 
 	// TODO
-	mWorld->strength = gameSettings.Strength;
-	mWorld->buoyancy = gameSettings.Buoyancy;
-	mWorld->waterpressure = gameSettings.WaterPressure;
-	mWorld->waveheight = gameSettings.WaveHeight;
-	mWorld->seadepth = gameSettings.SeaDepth;
-	mWorld->quickwaterfix = gameSettings.QuickWaterFix;
+	mWorld->strength = gameParameters.Strength;
+	mWorld->buoyancy = gameParameters.Buoyancy;
+	mWorld->waterpressure = gameParameters.WaterPressure;
+	mWorld->waveheight = gameParameters.WaveHeight;
+	mWorld->seadepth = gameParameters.SeaDepth;
+	mWorld->quickwaterfix = gameParameters.QuickWaterFix;
 	mWorld->oceandepthbuffer = mOceanDepthBuffer;
 
 	mWorld->update(dt);
 }
 
-void Game::Render(RenderSettings renderSettings)
+void Game::Render(RenderParameters renderParameters)
 {
 	assert(!!mWorld);
 
 	// TODO
-	mWorld->showstress = renderSettings.ShowStress;
-	mWorld->xraymode = renderSettings.UseXRayMode;
+	mWorld->showstress = renderParameters.ShowStress;
+	mWorld->xraymode = renderParameters.UseXRayMode;
 
-	float halfHeight = renderSettings.Zoom;
-	float halfWidth = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * halfHeight;
+	float halfHeight = renderParameters.Zoom;
+	float halfWidth = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * halfHeight;
 
 	// Clear canvas (blue)
-	glViewport(0, 0, renderSettings.CanvasWidth, renderSettings.CanvasHeight);
+	glViewport(0, 0, renderParameters.CanvasWidth, renderParameters.CanvasHeight);
 	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// TODO: see if all of this may be cached (with SettingsGenerationSequenceNumber check)
+	// TODO: see if all of this may be cached (with ParametersGenerationSequenceNumber check)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glFrustum(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
-	glTranslatef(-renderSettings.CamX, -renderSettings.CamY, 0);
+	glTranslatef(-renderParameters.CamX, -renderParameters.CamY, 0);
 
 	glEnable(GL_LINE_SMOOTH);
 	glHint(GL_LINE_SMOOTH, GL_NICEST);
@@ -203,18 +203,20 @@ void Game::Render(RenderSettings renderSettings)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(0.15f * renderSettings.CanvasHeight / renderSettings.Zoom);
-	glLineWidth(0.1f * renderSettings.CanvasHeight / renderSettings.Zoom);
+	glPointSize(0.15f * renderParameters.CanvasHeight / renderParameters.Zoom);
+	glLineWidth(0.1f * renderParameters.CanvasHeight / renderParameters.Zoom);
 	glColor3f(0, 0, 0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	mWorld->render(
-		renderSettings.CamX - halfWidth, 
-		renderSettings.CamX + halfWidth, 
-		renderSettings.CamY - halfHeight, 
-		renderSettings.CamY + halfHeight);
+		renderParameters.CamX - halfWidth,
+		renderParameters.CamX + halfWidth,
+		renderParameters.CamY - halfHeight,
+		renderParameters.CamY + halfHeight);
+
+	glFlush();
 }
 
 void Game::LoadDepth(std::wstring const & filepath)

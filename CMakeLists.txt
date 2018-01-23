@@ -96,11 +96,11 @@ set  (SHIP_SANDBOX_SOURCES
 	Game.h
 	GameController.cpp
 	GameController.h
-	GameSettings.h
+	GameParameters.h
 	Log.cpp
 	Log.h
-	LoggingWindow.cpp
-	LoggingWindow.h
+	LoggingDialog.cpp
+	LoggingDialog.h
 	MainApp.cpp
 	MainFrame.cpp
 	MainFrame.h
@@ -110,7 +110,7 @@ set  (SHIP_SANDBOX_SOURCES
 	phys.h
 	render.cpp
 	render.h
-	RenderSettings.h
+	RenderParameters.h
 	Scheduler.cpp
 	Scheduler.h
 	SettingsDialog.cpp

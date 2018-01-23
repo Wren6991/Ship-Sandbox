@@ -6,9 +6,9 @@
 #pragma once
 
 /*
-* Settings that affect the game (physics, world).
+* Parameters that affect the game (physics, world).
 */
-struct GameSettings
+struct GameParameters
 {
 	float Strength;
 	float Buoyancy;
@@ -19,7 +19,7 @@ struct GameSettings
 	// TODO - here or render?
 	bool QuickWaterFix;
 
-	GameSettings()
+	GameParameters()
 		: Strength(0.01f)
 		, Buoyancy(4.0f)
 		, WaveHeight(1.0f)

@@ -43,14 +43,24 @@ void GameController::DoStep()
 
 	if (mIsRunning)
 	{
-		// Update game now, copying the settings
+		// Update game now, copying the parameters
 		mGame->Update(
 			0.02, // TODO: setting? if not, constant
-			mGameSettings);
+			mGameParameters);
 	}
+}
 
-	// Render game, copying the settings
-	mGame->Render(mRenderSettings);
+void GameController::Render()
+{
+	assert(!!mGame);
+
+	// Render game, copying the parameters
+	mGame->Render(mRenderParameters);
+}
+
+bool GameController::IsRunning() const
+{
+	return mIsRunning;
 }
 
 void GameController::SetRunningState(bool isRunning)
@@ -62,7 +72,7 @@ void GameController::DestroyAt(vec2 const & screenCoordinates)
 {
 	vec2 worldCoordinates = Screen2World(
 		screenCoordinates,
-		mRenderSettings);
+		mRenderParameters);
 
 	// Queue action, we'll apply it at the next Update()
 	// TODO
@@ -72,7 +82,7 @@ void GameController::DrawAt(vec2 const & screenCoordinates)
 {
 	vec2 worldCoordinates = Screen2World(
 		screenCoordinates,
-		mRenderSettings);
+		mRenderParameters);
 
 	// Queue action, we'll apply it at the next Update()
 	// TODO
@@ -82,43 +92,43 @@ void GameController::SetCanvasSize(
 	int width,
 	int height)
 {
-	mRenderSettings.CanvasWidth = width;
-	mRenderSettings.CanvasHeight = height;
+	mRenderParameters.CanvasWidth = width;
+	mRenderParameters.CanvasHeight = height;
 }
 
 void GameController::Pan(vec2 const & screenOffset)
 {
 	vec2 worldOffset = ScreenOffset2WorldOffset(
 		screenOffset,
-		mRenderSettings);
+		mRenderParameters);
 
-	mRenderSettings.CamX -= worldOffset.x;
-	mRenderSettings.CamY -= worldOffset.y;
+	mRenderParameters.CamX -= worldOffset.x;
+	mRenderParameters.CamY -= worldOffset.y;
 }
 
 void GameController::AdjustZoom(float amount)
 {
-	mRenderSettings.Zoom *= amount;
+	mRenderParameters.Zoom *= amount;
 }
 
 vec2 GameController::Screen2World(
 	vec2 const & screenCoordinates,
-	RenderSettings const & renderSettings)
+	RenderParameters const & renderParameters)
 {
-	float height = renderSettings.Zoom * 2.0f;
-	float width = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * height;
-	return vec2((screenCoordinates.x / static_cast<float>(renderSettings.CanvasWidth) - 0.5f) * width + renderSettings.CamX,
-		(screenCoordinates.y / static_cast<float>(renderSettings.CanvasHeight) - 0.5f) * -height + renderSettings.CamY);
+	float height = renderParameters.Zoom * 2.0f;
+	float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
+	return vec2((screenCoordinates.x / static_cast<float>(renderParameters.CanvasWidth) - 0.5f) * width + renderParameters.CamX,
+		(screenCoordinates.y / static_cast<float>(renderParameters.CanvasHeight) - 0.5f) * -height + renderParameters.CamY);
 }
 
 vec2 GameController::ScreenOffset2WorldOffset(
 	vec2 const & screenOffset,
-	RenderSettings const & renderSettings)
+	RenderParameters const & renderParameters)
 {
-	float height = renderSettings.Zoom * 2.0f;
-	float width = static_cast<float>(renderSettings.CanvasWidth) / static_cast<float>(renderSettings.CanvasHeight) * height;
+	float height = renderParameters.Zoom * 2.0f;
+	float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
 
 	return vec2(
-		screenOffset.x / static_cast<float>(renderSettings.CanvasWidth) * width,
-		screenOffset.y / static_cast<float>(renderSettings.CanvasHeight) * -height);
+		screenOffset.x / static_cast<float>(renderParameters.CanvasWidth) * width,
+		screenOffset.y / static_cast<float>(renderParameters.CanvasHeight) * -height);
 }

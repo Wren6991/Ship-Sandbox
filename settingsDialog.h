@@ -7,11 +7,12 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameController.h"
+
+#include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/dialog.h>
-#include <wx/sizer.h>
 #include <wx/slider.h>
-#include <wx/stattext.h>
 
 #include <memory>
 
@@ -19,20 +20,34 @@ class SettingsDialog : public wxDialog
 {
 public:
 
-	SettingsDialog(wxWindow* parent);
+	SettingsDialog(
+		wxWindow * parent,
+		std::shared_ptr<GameController> gameController);
+
 	virtual ~SettingsDialog();
 
-	std::unique_ptr<wxCheckBox> mChkQuickFix;
-	std::unique_ptr<wxSlider> mSldBuoyancy;
-	wxStaticText* StaticText2;
+	void Open();
+
+private:
+	
+	void OnGenericSliderScroll(wxScrollEvent & event);
+	void OnOkButton(wxCommandEvent & event);
+	void OnApplyButton(wxCommandEvent & event);
+
+private:
+
+	// Controls
+	wxButton * mOkButton;
+	wxButton * mCancelButton;
+	wxButton * mApplyButton;
+
+// TODOOLD
+	wxCheckBox * mChkQuickFix;
+	wxSlider * mSldBuoyancy;
 	wxCheckBox* chkShowStress;
 	wxSlider* sldStrength;
-	wxStaticText* StaticText1;
-	wxStaticText* StaticText3;
 	wxSlider* sldWaveHeight;
-	wxStaticText* StaticText5;
 	wxSlider* sldSeaDepth;
-	wxStaticText* StaticText4;
 	wxSlider* sldWaterPressure;
 	wxCheckBox* chkXRay;
 	//*)
@@ -62,7 +77,8 @@ private:
 	void OnCheckBox1Click(wxCommandEvent& event);
 	//*)
 
-	wxWindow *mParent;
+	wxWindow * const mParent;
+	std::shared_ptr<GameController> mGameController;
 
 	DECLARE_EVENT_TABLE()
 };

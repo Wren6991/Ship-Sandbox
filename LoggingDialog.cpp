@@ -9,22 +9,20 @@
 
 #include <cassert>
 
-wxBEGIN_EVENT_TABLE(LoggingWindow, wxFrame)
+wxBEGIN_EVENT_TABLE(LoggingWindow, wxDialog)
 	EVT_CLOSE(LoggingWindow::OnClose)
-	EVT_SHOW(LoggingWindow::OnShow)
 wxEND_EVENT_TABLE()
 
 LoggingWindow::LoggingWindow(wxWindow * parent)
 	: mParent(parent)
 {
 	Create(
-		parent, 
-		-1, 
+		mParent,
+		wxID_ANY,
 		_("Logging"), 
 		wxDefaultPosition, 
-		wxDefaultSize, 
-		wxSTAY_ON_TOP | wxRESIZE_BORDER | wxSYSTEM_MENU | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN 
-			| wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT,
+		wxSize(800, 200),
+		wxCAPTION | wxCLOSE_BOX | wxRESIZE_BORDER | wxMINIMIZE_BOX | wxFRAME_SHAPED,
 		_T("Logging Window"));
 
 	SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
@@ -33,7 +31,7 @@ LoggingWindow::LoggingWindow(wxWindow * parent)
 	// Create Text control
 	//
 
-	mTextCtrl = std::make_unique<wxTextCtrl>(
+	mTextCtrl = new wxTextCtrl(
 		this, 
 		wxID_ANY, 
 		wxEmptyString, 
@@ -49,29 +47,26 @@ LoggingWindow::~LoggingWindow()
 {
 }
 
-void LoggingWindow::OnClose(wxCloseEvent & /*event*/)
+void LoggingWindow::Open()
 {
-	this->Show(false);
+	Logger::Instance.RegisterListener(
+		[this](std::wstring const & message)
+		{
+			assert(this->mTextCtrl != nullptr);
+			this->mTextCtrl->WriteText(message);
+		});
+
+	this->Show();
 }
 
-void LoggingWindow::OnShow(wxShowEvent & event)
+void LoggingWindow::OnClose(wxCloseEvent & event)
 {
-	if (event.IsShown())
-	{
-		Logger::Instance.RegisterListener(
-			[this](std::wstring const & message)
-			{
-				assert(!!this->mTextCtrl);
-				this->mTextCtrl->WriteText(message);
-			});
-	}
-	else
-	{
-		Logger::Instance.UnregisterListener();
+	Logger::Instance.UnregisterListener();
 
-		// Be nice, clear the control
-		assert(!!this->mTextCtrl);
-		this->mTextCtrl->Clear();
-	}
+	// Be nice, clear the control
+	assert(this->mTextCtrl != nullptr);
+	this->mTextCtrl->Clear();
+
+	event.Skip();
 }
 

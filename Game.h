@@ -7,9 +7,9 @@
 ***************************************************************************************/
 #pragma once
 
-#include "GameSettings.h"
+#include "GameParameters.h"
 #include "phys.h"
-#include "RenderSettings.h"
+#include "RenderParameters.h"
 
 #include <memory>
 #include <vector>
@@ -26,21 +26,21 @@ public:
 	/*
 	 * Runs a game simulation step.
 	 *
-	 * Settings are copied on purpose so that the user may keep interacting with settings
+	 * Parameters are copied on purpose so that the user may keep interacting with parameters
 	 * while the game is being updated in a separate thread.
 	 */
 	void Update(
 		double dt,
-		GameSettings gameSettings);
+		GameParameters gameParameters);
 	
 	
 	/*
 	 * Renders the game.
 	 *
-	 * Settings are copied on purpose so that the user may keep interacting with settings
+	 * Parameters are copied on purpose so that the user may keep interacting with parameters
 	 * while the game is being rendered in a separate thread.
 	 */
-	void Render(RenderSettings renderSettings);
+	void Render(RenderParameters renderParameters);
 
 private:
 
