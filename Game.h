@@ -23,6 +23,9 @@ public:
 	void Reset();
 	void LoadShip(std::wstring const & filepath);
 
+	void DestroyAt(vec2 worldCoordinates);
+	void DrawTo(vec2 worldCoordinates);
+
 	/*
 	 * Runs a game simulation step.
 	 *
@@ -46,23 +49,22 @@ private:
 
 	Game(
 		std::vector<std::shared_ptr<material>> materials,
+		std::vector<float> oceanDepth,
 		std::unique_ptr<phys::world> world)
 		: mMaterials(std::move(materials))
+		, mOceanDepth(std::move(oceanDepth))
 		, mWorld(std::move(world))
 	{
 	}
 
-	void LoadDepth(std::wstring const & filepath);
-
-	// TODOç make it a wstring once we have jsoncpp in unicode
+	// TODO: make filepath a wstring once we have jsoncpp in unicode
 	static std::vector<std::shared_ptr<material>> LoadMaterials(std::string const & filepath);
+	static std::vector<float> LoadOceanDepth(std::wstring const & filepath);
 
 private:
 
 	std::vector<std::shared_ptr<material>> const mMaterials;
-
-	// TODO
-    float *mOceanDepthBuffer;
+	std::vector<float> const mOceanDepth;
 
     std::unique_ptr<phys::world> mWorld;
 };

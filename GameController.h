@@ -23,25 +23,23 @@ public:
 
 	static std::unique_ptr<GameController> Create();
 
-	void Reset(std::wstring const & filepath);
+	void ResetAndLoadShip(std::wstring const & filepath);
     void AddShip(std::wstring const & filepath);
+	void ReloadLastShip();
 
 	void DoStep();
 	void Render();
 
-	//
-	// Readers
-	//
-
-	bool IsRunning() const;
 
 	//
 	// Interactions
 	//
 
-	void SetRunningState(bool isRunning);
 	void DestroyAt(vec2 const & screenCoordinates);
-	void DrawAt(vec2 const & screenCoordinates);
+	void DrawTo(vec2 const & screenCoordinates);
+
+	bool IsRunning() const;
+	void SetRunningState(bool isRunning);
 	void SetCanvasSize(int width, int height);
 	void Pan(vec2 const & screenOffset);
 	void AdjustZoom(float amount);
@@ -83,10 +81,12 @@ public:
 private:
 
 	GameController(
-		std::unique_ptr<Game> && game)
+		std::unique_ptr<Game> && game,
+		std::wstring const & initialShipLoaded)
 		: mGameParameters()
 		, mRenderParameters()
 		, mIsRunning(true)
+		, mLastShipLoaded(initialShipLoaded)
 		, mGame(std::move(game))
 	{}
 	
@@ -104,6 +104,8 @@ private:
 	RenderParameters mRenderParameters;
 
 	bool mIsRunning;
+
+	std::wstring mLastShipLoaded;
 
 	std::unique_ptr<Game> mGame;
 };

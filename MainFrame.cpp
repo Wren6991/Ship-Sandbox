@@ -114,7 +114,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
 	// Take context for this canvas
 	mMainGLCanvasContext = std::make_unique<wxGLContext>(mMainGLCanvas.get());
-
+	mMainGLCanvasContext->SetCurrent(*mMainGLCanvas);
 
 	//
 	// Build menu
@@ -297,8 +297,6 @@ void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
 
 void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 {
-	LogDebug("MainFrame::OnMainGLCanvasResize");
-
 	assert(!!mGameController);
 
 	mGameController->SetCanvasSize(
@@ -310,24 +308,7 @@ void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 
 void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
 {
-	assert(!!mGameController);
-
-	// Action depends on current tool
-	switch (mCurrentToolType)
-	{
-		case ToolType::Grab:
-		{
-			mGameController->DrawAt(vec2(mMouseInfo.x, mMouseInfo.y));
-			break;
-		}
-
-		case ToolType::Smash:
-		{
-			mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y));
-			break;
-		}
-
-	}
+	ApplyCurrentMouseTool();
 	
 	// Remember the mouse button is down
 	mMouseInfo.ldown = true;
@@ -362,6 +343,11 @@ void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
 		// Pan
 		vec2 screenOffset = vec2(mMouseInfo.x, mMouseInfo.y) - vec2(oldx, oldy);
 		mGameController->Pan(screenOffset);
+	}
+	else if (mMouseInfo.ldown)
+	{
+		// Tool
+		ApplyCurrentMouseTool();
 	}
 }
 
@@ -400,19 +386,14 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 		std::wstring filename = mFileOpenDialog->GetPath().ToStdWstring();
 
 		assert(!!mGameController);
-
-		mGameController->Reset(filename);
+		mGameController->ResetAndLoadShip(filename);
 	}
 }
 
 void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	/* TODO
-	delete gm.wld;
-	gm.wld = new phys::world;
-	gm.assertSettings();
-	gm.loadShip(gm.lastFilename);
-	*/
+	assert(!!mGameController);
+	mGameController->ReloadLastShip();
 }
 
 void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
@@ -472,7 +453,26 @@ void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 	wxMessageBox(GetVersionInfo(VersionFormat::Long), L"Welcome to...");
 }
 
+void MainFrame::ApplyCurrentMouseTool()
+{
+	assert(!!mGameController);
 
+	// Action depends on current tool
+	switch (mCurrentToolType)
+	{
+		case ToolType::Grab:
+		{
+			mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y));
+			break;
+		}
+
+		case ToolType::Smash:
+		{
+			mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y));
+			break;
+		}
+	}
+}
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS
 //  GG      R   RR     A A    P   PP   H     H     I      CC CC   SS   SS
@@ -486,10 +486,6 @@ void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::RenderGame()
 {
-	// Set the context
-	// TODO: see if all of this can be done once and for all
-	mMainGLCanvasContext->SetCurrent(*mMainGLCanvas);
-
 	// Render
 	mGameController->Render();	
 

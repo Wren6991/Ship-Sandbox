@@ -17,6 +17,7 @@
 #include <IL/ilu.h>
 
 #include <wx/app.h>
+#include <wx/msgdlg.h>
 
 class MainApp : public wxApp
 {
@@ -35,7 +36,16 @@ bool MainApp::OnInit()
 
 	// Create Game controller
 	// TODO: splash screen and game controller progress
-	auto gameController = GameController::Create();
+	std::unique_ptr<GameController> gameController;
+	try
+	{
+		gameController = GameController::Create();
+	}
+	catch (std::exception const & e)
+	{
+		wxMessageBox(L"Error during initialization: " + std::wstring(reinterpret_cast<wchar_t const *>(e.what())), wxT("Error"), wxICON_ERROR);
+		return false;
+	}
 
 	MainFrame* frame = new MainFrame(std::move(gameController));
 	frame->Show();

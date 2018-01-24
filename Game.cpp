@@ -33,15 +33,14 @@ const int directions[8][2] = {
 std::unique_ptr<Game> Game::Create()
 {
 	auto materials = LoadMaterials("data/materials.json");
+	auto oceanDepth = LoadOceanDepth(L"data/depth.png");
 
 	std::unique_ptr<phys::world> world = std::make_unique<phys::world>();
-	
-	// TODO
-	// loadDepth(L"data/depth.png");
 
 	return std::unique_ptr<Game>(
 		new Game(
 			std::move(materials),
+			std::move(oceanDepth),
 			std::move(world)));
 }
 
@@ -66,10 +65,11 @@ void Game::LoadShip(std::wstring const & filepath)
 	if (!ilLoadImage(ilFilename))
 	{
 		ILint devilError = ilGetError();
-		// TODO: throw exc
-		std::wcout << L"Error: could not load image \"" << filepath << L"\":";
-		std::wstring errstr(iluErrorString(devilError));
-		std::wcout << devilError << L": " << errstr << L"\n";
+		std::wstring devilErrorMessage(iluErrorString(devilError));
+
+		std::wstring errorMessage = L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage;
+
+		throw std::runtime_error(reinterpret_cast<char const *>(errorMessage.c_str()));
 	}
 
 	ILubyte *data = ilGetData();
@@ -88,9 +88,9 @@ void Game::LoadShip(std::wstring const & filepath)
 		{
 			// assume R G B:
 			vec3f colour(
-				data[(x + (height - y) * width) * 3 + 0] / 255.f,
-				data[(x + (height - y) * width) * 3 + 1] / 255.f,
-				data[(x + (height - y) * width) * 3 + 2] / 255.f);
+				data[(x + (height - y - 1) * width) * 3 + 0] / 255.f,
+				data[(x + (height - y - 1) * width) * 3 + 1] / 255.f,
+				data[(x + (height - y - 1) * width) * 3 + 2] / 255.f);
 
 			if (colourdict.find(colour) != colourdict.end())
 			{
@@ -156,6 +156,22 @@ void Game::LoadShip(std::wstring const & filepath)
 	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", nodecount, L" points, ", springcount, L" springs.");
 }
 
+void Game::DestroyAt(vec2 worldCoordinates)
+{
+	assert(!!mWorld);
+	mWorld->destroyAt(worldCoordinates);
+
+	// TODO: publish game event
+}
+
+void Game::DrawTo(vec2 worldCoordinates)
+{
+	assert(!!mWorld);
+	mWorld->drawTo(worldCoordinates);
+
+	// TODO: publish game event
+}
+
 void Game::Update(
 	double dt,
 	GameParameters gameParameters)
@@ -168,7 +184,7 @@ void Game::Update(
 	mWorld->waterpressure = gameParameters.WaterPressure;
 	mWorld->waveheight = gameParameters.WaveHeight;
 	mWorld->seadepth = gameParameters.SeaDepth;
-	mWorld->oceandepthbuffer = mOceanDepthBuffer;
+	mWorld->oceandepthbuffer = mOceanDepth.data();
 
 	mWorld->update(dt);
 }
@@ -219,19 +235,6 @@ void Game::Render(RenderParameters renderParameters)
 	glFlush();
 }
 
-void Game::LoadDepth(std::wstring const & filepath)
-{
-	/*wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
-	oceandepthbuffer = new float[2048];
-	for (unsigned i = 0; i < 2048; i++)
-	{
-	float xpos = i / 16.f;
-	oceandepthbuffer[i] = depthimage.GetRed(floorf(xpos), 0) * (floorf(xpos) - xpos) + depthimage.GetRed(ceilf(xpos), 0) * (1 - (floorf(xpos) - xpos))
-	;//+ depthimage.GetGreen(i % 256, 0) * 0.0625f;
-	oceandepthbuffer[i] = oceandepthbuffer[i] * 1.f - 180.f;
-	}*/
-}
-
 std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::string const & filepath)
 {
 	std::vector<std::shared_ptr<material>> materials;
@@ -242,3 +245,18 @@ std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::string const & f
 
 	return materials;
 }
+
+std::vector<float> Game::LoadOceanDepth(std::wstring const & filepath)
+{
+	/*wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
+	oceandepthbuffer = new float[2048];
+	for (unsigned i = 0; i < 2048; i++)
+	{
+	float xpos = i / 16.f;
+	oceandepthbuffer[i] = depthimage.GetRed(floorf(xpos), 0) * (floorf(xpos) - xpos) + depthimage.GetRed(ceilf(xpos), 0) * (1 - (floorf(xpos) - xpos))
+	;//+ depthimage.GetGreen(i % 256, 0) * 0.0625f;
+	oceandepthbuffer[i] = oceandepthbuffer[i] * 1.f - 180.f;
+	}*/
+	return std::vector<float>();
+}
+

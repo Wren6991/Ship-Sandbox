@@ -30,7 +30,7 @@ namespace phys
         vec2 gravity;
         void buildBVHTree(bool splitInX, std::vector<point*> &pointlist, BVHNode *thisnode, int depth = 1);
     public:
-        float *oceandepthbuffer;
+        float const * oceandepthbuffer;
         float buoyancy;
         float strength;
         float waterpressure;

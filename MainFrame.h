@@ -91,6 +91,7 @@ private:
 
 private:
 
+	void ApplyCurrentMouseTool();
 	void RenderGame();
 
 private:

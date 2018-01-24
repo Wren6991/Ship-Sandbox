@@ -12,19 +12,28 @@ std::unique_ptr<GameController> GameController::Create()
 	// Create game
 	std::unique_ptr<Game> game = Game::Create();
 
+	//
 	// Initialize game
-	game->LoadShip(L"ship.png");
+	//
+
+	// Load initial ship
+	std::wstring initialShipFilename = L"ship.png";
+	game->LoadShip(initialShipFilename);
 
 	return std::unique_ptr<GameController>(
-		new GameController(std::move(game)));
+		new GameController(
+			std::move(game),
+			initialShipFilename));
 }
 
-void GameController::Reset(std::wstring const & filepath)
+void GameController::ResetAndLoadShip(std::wstring const & filepath)
 {
 	assert(!!mGame);
 
 	mGame->Reset();
 	mGame->LoadShip(filepath);
+
+	mLastShipLoaded = filepath;
 }
 
 void GameController::AddShip(std::wstring const & filepath)
@@ -32,18 +41,29 @@ void GameController::AddShip(std::wstring const & filepath)
 	assert(!!mGame);
 
 	mGame->LoadShip(filepath);
+
+	mLastShipLoaded = filepath;
+}
+
+void GameController::ReloadLastShip()
+{
+	if (mLastShipLoaded.empty())
+	{
+		throw std::runtime_error("No ship has been loaded yet");
+	}
+
+	assert(!!mGame);
+
+	mGame->Reset();
+	mGame->LoadShip(mLastShipLoaded);
 }
 
 void GameController::DoStep()
 {
-	assert(!!mGame);
-
-	// Apply queued actions
-	// TODO
-
 	if (mIsRunning)
 	{
 		// Update game now, copying the parameters
+		assert(!!mGame);
 		mGame->Update(
 			0.02, // TODO: setting? if not, constant
 			mGameParameters);
@@ -52,10 +72,35 @@ void GameController::DoStep()
 
 void GameController::Render()
 {
-	assert(!!mGame);
-
 	// Render game, copying the parameters
+	assert(!!mGame);
 	mGame->Render(mRenderParameters);
+}
+
+/////////////////////////////////////////////////////////////
+// Interactions
+/////////////////////////////////////////////////////////////
+
+void GameController::DestroyAt(vec2 const & screenCoordinates)
+{
+	vec2 worldCoordinates = Screen2World(
+		screenCoordinates,
+		mRenderParameters);
+
+	// Apply action
+	assert(!!mGame);
+	mGame->DestroyAt(worldCoordinates);
+}
+
+void GameController::DrawTo(vec2 const & screenCoordinates)
+{
+	vec2 worldCoordinates = Screen2World(
+		screenCoordinates,
+		mRenderParameters);
+
+	// Apply action
+	assert(!!mGame);
+	mGame->DrawTo(worldCoordinates);
 }
 
 bool GameController::IsRunning() const
@@ -66,26 +111,6 @@ bool GameController::IsRunning() const
 void GameController::SetRunningState(bool isRunning)
 {
 	mIsRunning = isRunning;
-}
-
-void GameController::DestroyAt(vec2 const & screenCoordinates)
-{
-	vec2 worldCoordinates = Screen2World(
-		screenCoordinates,
-		mRenderParameters);
-
-	// Queue action, we'll apply it at the next Update()
-	// TODO
-}
-
-void GameController::DrawAt(vec2 const & screenCoordinates)
-{
-	vec2 worldCoordinates = Screen2World(
-		screenCoordinates,
-		mRenderParameters);
-
-	// Queue action, we'll apply it at the next Update()
-	// TODO
 }
 
 void GameController::SetCanvasSize(
