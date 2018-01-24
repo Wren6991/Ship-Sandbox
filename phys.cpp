@@ -331,17 +331,46 @@ phys::world::~world()
 {
     // DESTROY THE WORLD??? Y/N
 
+	for (std::set<spring *>::iterator it = allSprings.begin(); it != allSprings.end();)
+	{
+		spring * sp = *it;
+		it = allSprings.erase(it);
+
+		delete sp;
+	}
+
+	/*
 	std::vector<spring *> sps(allSprings.begin(), allSprings.end());
 	for (spring * sp : sps)
         delete sp;
-    
+    */
+
+	for (std::set<point *>::iterator it = allPoints.begin(); it != allPoints.end();)
+	{
+		point * pt = *it;
+		it = allPoints.erase(it);
+
+		delete pt;
+	}
+
+	/*
 	std::vector<point *> pts(allPoints.begin(), allPoints.end());
 	for (point * pt : pts)
 		delete pt;
+	*/
 
+	for (std::set<ship *>::iterator it = allShips.begin(); it != allShips.end();)
+	{
+		ship * sh = *it;
+		it = allShips.erase(it);
+
+		delete sh;
+	}
+	/*
 	std::vector<ship *> shs(allShips.begin(), allShips.end());
     for (ship * sh : shs)
         delete sh;
+	*/
 }
 
 // PPPP       OOO    IIIIIII  N     N  TTTTTTT

@@ -24,6 +24,14 @@ const long ID_QUICK_WATER_FIX_CHECKBOX = wxNewId();
 const long ID_SHOW_STRESS_CHECKBOX = wxNewId();
 const long ID_XRAY_CHECKBOX = wxNewId();
 
+wxBEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
+	EVT_COMMAND_SCROLL(ID_STRENGTH_SLIDER, SettingsDialog::OnStrengthSliderScroll)
+	EVT_COMMAND_SCROLL(ID_BUOYANCY_SLIDER, SettingsDialog::OnBuoyancySliderScroll)
+	EVT_COMMAND_SCROLL(ID_WATER_PRESSURE_SLIDER, SettingsDialog::OnWaterPressureSliderScroll)
+	EVT_COMMAND_SCROLL(ID_WAVE_HEIGHT_SLIDER, SettingsDialog::OnWaveHeightSliderScroll)
+	EVT_COMMAND_SCROLL(ID_SEA_DEPTH_SLIDER, SettingsDialog::OnSeaDepthSliderScroll)
+wxEND_EVENT_TABLE()
+
 SettingsDialog::SettingsDialog(
 	wxWindow* parent,
 	std::shared_ptr<GameController> gameController)
@@ -62,8 +70,7 @@ SettingsDialog::SettingsDialog(
 
 	mStrengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Strength Slider"));
-	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnStrengthSliderScroll);
-	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnStrengthSliderScroll);	
+	mStrengthSlider->SetTickFreq(4);
 	strengthSizer->Add(mStrengthSlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
@@ -85,8 +92,7 @@ SettingsDialog::SettingsDialog(
 
 	mBuoyancySlider = new wxSlider(this, ID_BUOYANCY_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200), 
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Buoyancy Slider"));
-	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnBuoyancySliderScroll);
-	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnBuoyancySliderScroll);
+	mBuoyancySlider->SetTickFreq(4);
 	buoyancySizer->Add(mBuoyancySlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
@@ -108,8 +114,7 @@ SettingsDialog::SettingsDialog(
 
 	mWaterPressureSlider = new wxSlider(this, ID_WATER_PRESSURE_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Water Pressure Slider"));
-	Connect(ID_WATER_PRESSURE_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnWaterPressureSliderScroll);
-	Connect(ID_WATER_PRESSURE_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnWaterPressureSliderScroll);
+	mWaterPressureSlider->SetTickFreq(4);
 	waterPressureSizer->Add(mWaterPressureSlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * waterPressureLabel = new wxStaticText(this, wxID_ANY, _("Water Pressure"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Pressure Label"));
@@ -131,8 +136,7 @@ SettingsDialog::SettingsDialog(
 
 	mWaveHeightSlider = new wxSlider(this, ID_WAVE_HEIGHT_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Wave Height Slider"));
-	Connect(ID_WAVE_HEIGHT_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnWaveHeightSliderScroll);
-	Connect(ID_WAVE_HEIGHT_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnWaveHeightSliderScroll);
+	mWaveHeightSlider->SetTickFreq(4);
 	waveHeightSizer->Add(mWaveHeightSlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * waveHeightLabel = new wxStaticText(this, wxID_ANY, _("Wave Height"), wxDefaultPosition, wxDefaultSize, 0, _T("Wave Height Label"));
@@ -154,8 +158,7 @@ SettingsDialog::SettingsDialog(
 
 	mSeaDepthSlider = new wxSlider(this, ID_SEA_DEPTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Sea Depth Slider"));
-	Connect(ID_SEA_DEPTH_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSeaDepthSliderScroll);
-	Connect(ID_SEA_DEPTH_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSeaDepthSliderScroll);
+	mSeaDepthSlider->SetTickFreq(4);
 	seaDepthSizer->Add(mSeaDepthSlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * seaDepthLabel = new wxStaticText(this, wxID_ANY, _("Ocean Depth"), wxDefaultPosition, wxDefaultSize, 0, _T("Sea Depth Label"));

@@ -87,4 +87,6 @@ private:
 
 	wxWindow * const mParent;
 	std::shared_ptr<GameController> mGameController;
+
+	DECLARE_EVENT_TABLE()
 };

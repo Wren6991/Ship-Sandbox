@@ -1,0 +1,3 @@
+SHIP_ICON ICON Ship.ico
+
+#include <wx/msw/wx.rc>

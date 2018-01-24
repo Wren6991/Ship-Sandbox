@@ -123,6 +123,11 @@ set  (SHIP_SANDBOX_SOURCES
 	Version.h
 	)
 
+if (MSVC)
+	list(APPEND SHIP_SANDBOX_SOURCES
+		ShipSandbox.rc)	
+endif(MSVC)
+
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
 
 add_executable (ShipSandbox ${SHIP_SANDBOX_SOURCES})
