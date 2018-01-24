@@ -21,14 +21,14 @@
 #include <string>
 
 const int directions[8][2] = {
-{ 1,  0},
-{ 1, -1},
-{ 0, -1},
-{-1, -1},
-{-1,  0},
-{-1,  1},
-{ 0,  1},
-{ 1,  1}
+{ 1,  0},	// E
+{ 1, -1},	// NE
+{ 0, -1},	// N
+{-1, -1},	// NW
+{-1,  0},	// W
+{-1,  1},	// SW
+{ 0,  1},	// S
+{ 1,  1}	// SE
 };
 
 std::unique_ptr<Game> Game::Create()
@@ -78,10 +78,12 @@ void Game::LoadShip(std::wstring const & filepath)
 
 	phys::ship *shp = new phys::ship(mWorld.get());
 
-	std::map<int, std::map <int, phys::point*> > points;
+	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[width]);
 
 	for (int x = 0; x < width; ++x)
 	{
+		points[x] = std::unique_ptr<phys::point *[]>(new phys::point *[height]);
+
 		for (int y = 0; y < height; ++y)
 		{
 			// assume R G B:
@@ -94,18 +96,19 @@ void Game::LoadShip(std::wstring const & filepath)
 			{
 				auto mtl = colourdict[colour];
 
-				points[x][y] = new phys::point(
+				phys::point * pt = new phys::point(
 					mWorld.get(), 
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl.get(), 
 					mtl->isHull ? 0 : 1);  // no buoyancy if it's a hull section
 
-				shp->points.insert(points[x][y]);
+				points[x][y] = pt;
+				shp->points.insert(pt);
 				nodecount++;
 			}
 			else
 			{
-				points[x][y] = 0;
+				points[x][y] = nullptr;
 			}
 		}
 	}
@@ -114,36 +117,74 @@ void Game::LoadShip(std::wstring const & filepath)
 	// If beam joins two hull nodes, it is a hull beam.
 	// If a non-hull node has empty space on one of its four sides, it is automatically leaking.
 
-	for (int x = 0; x < width; x++)
+	for (int x = 0; x < width; ++x)
 	{
-		for (int y = 0; y < height; y++)
+		for (int y = 0; y < height; ++y)
 		{
 			phys::point *a = points[x][y];
-			if (!a)
+			if (nullptr == a)
 				continue;
-			// First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y) - this covers each pair of points in each direction
-			for (int i = 0; i < 4; i++)
+
+			bool aIsHull = a->mtl->isHull;
+
+			// Check if a is leaking; a is leaking if:
+			// - a is not hull, AND
+			// - there is at least a hole at E, S, W, N
+			if (!aIsHull)
 			{
-				phys::point *b = points[x + directions[i][0]][y + directions[i][1]];                        // adjacent point in direction (i)
-				phys::point *c = points[x + directions[(i + 1) % 8][0]][y + directions[(i + 1) % 8][1]];    // adjacent point in next CW direction (for constructing triangles)
-				if (b)
+				if ((x < width - 1 && !points[x + 1][y])
+					|| (y < height - 1 && !points[x][y + 1])
+					|| (x > 0 && !points[x - 1][y])
+					|| (y > 0 && !points[x][y - 1]))
 				{
-					bool pointIsHull = a->mtl->isHull;
-					bool isHull = pointIsHull && b->mtl->isHull;
-					material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
-					shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
-					if (!isHull)
+					a->isLeaking = true;
+				}
+			}
+
+			// First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y),
+			// i.e. E, NE, N, NW - this covers each pair of points in each direction
+			for (int i = 0; i < 4; ++i)
+			{
+				int adjx1 = x + directions[i][0];
+				int adjy1 = y + directions[i][1];
+				if (adjx1 >= 0 && adjx1 < width && adjy1 >= 0)
+				{
+					assert(adjy1 < height); // The four directions we're checking do not include S
+
+					phys::point * b = points[adjx1][adjy1]; // adjacent point in direction (i)				
+					if (b)
 					{
-						shp->adjacentnodes[a].insert(b);
-						shp->adjacentnodes[b].insert(a);
+						// b is adjacent to a at one of E, NE, N, NW						
+
+						//
+						// Create a<->b spring
+						// 
+
+						bool springIsHull = aIsHull && b->mtl->isHull;
+						material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
+						shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
+
+						// TODO:?
+						if (!springIsHull)
+						{
+							shp->adjacentnodes[a].insert(b);
+							shp->adjacentnodes[b].insert(a);
+						}
+
+						// Check adjacent point in next CW direction (for constructing triangles)
+						int adjx2 = x + directions[i + 1][0];
+						int adjy2 = y + directions[i + 1][1];
+						if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0 && adjy2 < height)
+						{
+							phys::point *c = points[adjx2][adjy2]; 
+							if (c)
+							{
+								shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
+							}
+						}
+
+						springcount++;
 					}
-					if (!(pointIsHull || (points[x + 1][y] && points[x][y + 1] && points[x - 1][y] && points[x][y - 1])))   // check for gaps next to non-hull areas:
-					{
-						a->isLeaking = true;
-					}
-					if (c)
-						shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
-					springcount++;
 				}
 			}
 		}
@@ -154,10 +195,12 @@ void Game::LoadShip(std::wstring const & filepath)
 	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", nodecount, L" points, ", springcount, L" springs.");
 }
 
-void Game::DestroyAt(vec2 worldCoordinates)
+void Game::DestroyAt(
+	vec2 worldCoordinates,
+	float radius)
 {
 	assert(!!mWorld);
-	mWorld->destroyAt(worldCoordinates);
+	mWorld->destroyAt(worldCoordinates, radius);
 
 	// TODO: publish game event
 }

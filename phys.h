@@ -44,7 +44,7 @@ namespace phys
         void render(double left, double right, double bottom, double top);
         void renderLand(double left, double right, double bottom, double top);
         void renderWater(double left, double right, double bottom, double top);
-        void destroyAt(vec2 pos);
+        void destroyAt(vec2 pos, float radius);
         void drawTo(vec2 target);
         world(vec2 _gravity = vec2(0.0f, -9.8f), double _buoyancy = 4, double _strength = 0.01);
         ~world();

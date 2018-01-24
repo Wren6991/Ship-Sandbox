@@ -56,6 +56,7 @@ My plan is roughly as follows:
 - Add a logger to have better visibility into the effects of code changes
 ### Phase 2
 - Better interaction between the UI and the game, splitting settings between physics-related settings and render-related settings
+- Fix lifetime management of points, springs, and triangles - at this moment elements are removed from vectors while these are being iterated, and the entire points-to graph is a tad too complex IMHO
 - Low-hanging speedups (e.g. inline functions)
 ### Phase 3
 - Investigate feasibility of new features:

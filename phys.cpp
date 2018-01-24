@@ -233,16 +233,16 @@ float phys::world::waterheight(float x)
     return (sinf(x * 0.1f + time) * 0.5f + sinf(x * 0.3f - time * 1.1f) * 0.3f) * waveheight;
 }
 
-// Destroy all points within a 0.5m radius (could parameterise the radius but...)
-void phys::world::destroyAt(vec2f pos)
+// Destroy all points within radius
+void phys::world::destroyAt(vec2f pos, float radius)
 {
     for (std::vector<point*>::iterator iter = points.begin(); iter != points.end();)
     {
         point *p = *iter;
         iter++;
-        if ((p->pos - pos).length() < 0.5f)
+        if ((p->pos - pos).length() < radius)
         {
-            delete p;           // have to remove reference before deleting, else other cleanup code will use bad memory!
+            delete p; // have to remove reference before deleting, else other cleanup code will use bad memory!
             iter--;
         }
     }

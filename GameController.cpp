@@ -89,7 +89,9 @@ void GameController::DestroyAt(vec2 const & screenCoordinates)
 
 	// Apply action
 	assert(!!mGame);
-	mGame->DestroyAt(worldCoordinates);
+	mGame->DestroyAt(
+		worldCoordinates,
+		mGameParameters.DestroyRadius);
 }
 
 void GameController::DrawTo(vec2 const & screenCoordinates)

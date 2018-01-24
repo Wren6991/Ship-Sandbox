@@ -8,16 +8,20 @@
 #include <stdexcept>
 #include <string>
 
-class GameException : public std::runtime_error
+class GameException : public std::exception
 {
 public:
 
 	GameException(std::wstring const & errorMessage)
-		: std::runtime_error(reinterpret_cast<char const *>(errorMessage.c_str()))
+		: mErrorMessage(errorMessage)
 	{}
 
 	std::wstring GetErrorMessage() const
 	{
-		return std::wstring(reinterpret_cast<wchar_t const *>(this->what()));
+		return mErrorMessage;
 	}
+
+private:
+
+	std::wstring const mErrorMessage;
 };
