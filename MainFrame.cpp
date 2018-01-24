@@ -30,15 +30,23 @@ namespace /* anonymous */ {
 }
 
 const long ID_MAIN_CANVAS = wxNewId();
+
 const long ID_LOAD_SHIP_MENUITEM = wxNewId();
 const long ID_RELOAD_LAST_SHIP_MENUITEM = wxNewId();
 const long ID_QUIT_MENUITEM = wxNewId();
+
+const long ID_ZOOM_IN_MENUITEM = wxNewId();
+const long ID_ZOOM_OUT_MENUITEM = wxNewId();
+const long ID_PAUSE_MENUITEM = wxNewId();
+
 const long ID_SMASH_MENUITEM = wxNewId();
 const long ID_GRAB_MENUITEM = wxNewId();
+
 const long ID_OPEN_SETTINGS_WINDOW_MENUITEM = wxNewId();
 const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
-const long ID_PAUSE_MENUITEM = wxNewId();
+
 const long ID_ABOUT_MENUITEM = wxNewId();
+
 const long ID_GAME_TIMER = wxNewId();
 const long ID_STATS_REFRESH_TIMER = wxNewId();
 
@@ -134,6 +142,26 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	mainMenuBar->Append(fileMenu, _("&File"));
 
 
+	// Control
+
+	wxMenu * controlMenu = new wxMenu();
+
+	wxMenuItem * zoomInMenuItem = new wxMenuItem(controlMenu, ID_ZOOM_IN_MENUITEM, _("Zoom In\t+"), wxEmptyString, wxITEM_NORMAL);
+	controlMenu->Append(zoomInMenuItem);
+	Connect(ID_ZOOM_IN_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomInMenuItemSelected);
+
+	wxMenuItem * zoomOutMenuItem = new wxMenuItem(controlMenu, ID_ZOOM_OUT_MENUITEM, _("Zoom Out\t-"), wxEmptyString, wxITEM_NORMAL);
+	controlMenu->Append(zoomOutMenuItem);
+	Connect(ID_ZOOM_OUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomOutMenuItemSelected);
+
+	wxMenuItem * pauseMenuItem = new wxMenuItem(controlMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);
+	controlMenu->Append(pauseMenuItem);
+	pauseMenuItem->Check(!mGameController->IsRunning());
+	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
+
+	mainMenuBar->Append(controlMenu, _("Control"));
+
+
 	// Tools
 
 	wxMenu * toolsMenu = new wxMenu();
@@ -162,11 +190,6 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	wxMenuItem * openLogWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_LOG_WINDOW_MENUITEM, _("Open Log Window\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
 	optionsMenu->Append(openLogWindowMenuItem);
 	Connect(ID_OPEN_LOG_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenLogWindowMenuItemSelected);
-
-	wxMenuItem * pauseMenuItem = new wxMenuItem(optionsMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);	
-	optionsMenu->Append(pauseMenuItem);
-	pauseMenuItem->Check(!mGameController->IsRunning());
-	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
 	
 	mainMenuBar->Append(optionsMenu, _("Options"));
 
@@ -235,19 +258,9 @@ void MainFrame::OnPaint(wxPaintEvent& event)
 	event.Skip();
 }
 
-void MainFrame::OnKeyDown(wxKeyEvent& event)
+void MainFrame::OnKeyDown(wxKeyEvent & event)
 {
-	assert(!!mGameController);
-
-	if ('+' == event.GetKeyCode())
-	{
-		mGameController->AdjustZoom(0.66f);
-	}
-	else if ('-' == event.GetKeyCode())
-	{
-		mGameController->AdjustZoom(1.5f);
-	}
-
+	// Nothing now
 	event.Skip();
 }
 
@@ -402,6 +415,26 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 	*/
 }
 
+void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
+{
+	assert(!!mGameController);
+	mGameController->SetRunningState(!event.IsChecked());
+}
+
+void MainFrame::OnZoomInMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	mGameController->AdjustZoom(0.66f);
+}
+
+void MainFrame::OnZoomOutMenuItemSelected(wxCommandEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	mGameController->AdjustZoom(1.5f);
+}
+
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	mCurrentToolType = ToolType::Smash;
@@ -432,12 +465,6 @@ void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
 	}
 
 	mLoggingDialog->Open();
-}
-
-void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
-{
-	assert(!!mGameController);
-	mGameController->SetRunningState(!event.IsChecked());
 }
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)

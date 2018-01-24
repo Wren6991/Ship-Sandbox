@@ -11,13 +11,24 @@
 struct GameParameters
 {
 	float Strength;
-	float Buoyancy;
-	float WaveHeight;
-	float WaterPressure;
-	float SeaDepth;
+	static constexpr float MinStrength = 0.0025f;
+	static constexpr float MaxStrength = 0.5f;
 
-	// TODO - here or render?
-	bool QuickWaterFix;
+	float Buoyancy;
+	static constexpr float MinBuoyancy = 0.0f;
+	static constexpr float MaxBuoyancy = 10.0f; 
+
+	float WaveHeight;
+	static constexpr float MinWaveHeight = 0.0f;
+	static constexpr float MaxWaveHeight = 30.0f;
+
+	float WaterPressure;
+	static constexpr float MinWaterPressure = 0.0f;
+	static constexpr float MaxWaterPressure = 1.0f;
+
+	float SeaDepth;
+	static constexpr float MinSeaDepth = 50.0f;
+	static constexpr float MaxSeaDepth = 1000.0f;
 
 	GameParameters()
 		: Strength(0.01f)
@@ -25,7 +36,6 @@ struct GameParameters
 		, WaveHeight(1.0f)
 		, WaterPressure(0.3f)
 		, SeaDepth(150.0f)
-		, QuickWaterFix(false)
 	{
 	}
 };

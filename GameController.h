@@ -46,6 +46,40 @@ public:
 	void Pan(vec2 const & screenOffset);
 	void AdjustZoom(float amount);
 
+	float GetStrength() const { return mGameParameters.Strength; }
+	void SetStrength(float strength);	
+	float GetMinStrength() const { return GameParameters::MinStrength;  }
+	float GetMaxStrength() const { return GameParameters::MaxStrength; }
+
+	float GetBuoyancy() const { return mGameParameters.Buoyancy; }
+	void SetBuoyancy(float value);
+	float GetMinBuoyancy() const { return GameParameters::MinBuoyancy; }
+	float GetMaxBuoyancy() const { return GameParameters::MaxBuoyancy; }
+
+	float GetWaterPressure() const { return mGameParameters.WaterPressure; }
+	void SetWaterPressure(float value);
+	float GetMinWaterPressure() const { return GameParameters::MinWaterPressure; }
+	float GetMaxWaterPressure() const { return GameParameters::MaxWaterPressure; }
+
+	float GetWaveHeight() const { return mGameParameters.WaveHeight; }
+	void SetWaveHeight(float value);
+	float GetMinWaveHeight() const { return GameParameters::MinWaveHeight; }
+	float GetMaxWaveHeight() const { return GameParameters::MaxWaveHeight; }
+
+	float GetSeaDepth() const { return mGameParameters.SeaDepth; }
+	void SetSeaDepth(float value);
+	float GetMinSeaDepth() const { return GameParameters::MinSeaDepth; }
+	float GetMaxSeaDepth() const { return GameParameters::MaxSeaDepth; }
+
+	bool GetDoQuickWaterFix() const { return mRenderParameters.QuickWaterFix;  }
+	void SetDoQuickWaterFix(bool value);
+
+	bool GetDoShowStress() const { return mRenderParameters.ShowStress; }
+	void SetDoShowStress(bool value);
+
+	bool GetDoUseXRayMode() const { return mRenderParameters.UseXRayMode; }
+	void SetDoUseXRayMode(bool value);
+
 private:
 
 	GameController(

@@ -10,9 +10,6 @@
 */
 struct RenderParameters
 {
-	bool ShowStress;
-	bool UseXRayMode;
-
 	float Zoom;
 	float CamX;
 	float CamY;
@@ -20,14 +17,19 @@ struct RenderParameters
 	int CanvasWidth;
 	int CanvasHeight;
 
+	bool ShowStress;
+	bool UseXRayMode;
+	bool QuickWaterFix;
+
 	RenderParameters()
-		: ShowStress(false)
-		, UseXRayMode(false)
-		, Zoom(75.0f)
+		: Zoom(75.0f)
 		, CamX(0.0f)
 		, CamY(0.0f)
 		, CanvasWidth()
 		, CanvasHeight()
+		, ShowStress(false)
+		, UseXRayMode(false)
+		, QuickWaterFix(false)
 	{
 	}
 };

@@ -13,6 +13,7 @@
 #include <wx/checkbox.h>
 #include <wx/dialog.h>
 #include <wx/slider.h>
+#include <wx/textctrl.h>
 
 #include <memory>
 
@@ -30,55 +31,60 @@ public:
 
 private:
 	
-	void OnGenericSliderScroll(wxScrollEvent & event);
+	void OnStrengthSliderScroll(wxScrollEvent & event);
+	void OnBuoyancySliderScroll(wxScrollEvent & event);
+	void OnWaterPressureSliderScroll(wxScrollEvent & event);
+	void OnWaveHeightSliderScroll(wxScrollEvent & event);
+	void OnSeaDepthSliderScroll(wxScrollEvent & event);
+	void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
+	void OnShowStressCheckBoxClick(wxCommandEvent & event);
+	void OnXRayCheckBoxClick(wxCommandEvent & event);
+
 	void OnOkButton(wxCommandEvent & event);
 	void OnApplyButton(wxCommandEvent & event);
 
 private:
 
 	// Controls
+
+	wxSlider * mStrengthSlider;
+	wxTextCtrl * mStrengthTextCtrl;
+	wxSlider * mBuoyancySlider;
+	wxTextCtrl * mBuoyancyTextCtrl;
+	wxSlider * mWaterPressureSlider;
+	wxTextCtrl * mWaterPressureTextCtrl;
+	wxSlider * mWaveHeightSlider;
+	wxTextCtrl * mWaveHeightTextCtrl;
+	wxSlider * mSeaDepthSlider;
+	wxTextCtrl * mSeaDepthTextCtrl;
+
+	wxCheckBox * mQuickWaterFixCheckBox;
+	wxCheckBox* mShowStressCheckBox;
+	wxCheckBox* mXRayCheckBox;
+
 	wxButton * mOkButton;
 	wxButton * mCancelButton;
 	wxButton * mApplyButton;
 
-// TODOOLD
-	wxCheckBox * mChkQuickFix;
-	wxSlider * mSldBuoyancy;
-	wxCheckBox* chkShowStress;
-	wxSlider* sldStrength;
-	wxSlider* sldWaveHeight;
-	wxSlider* sldSeaDepth;
-	wxSlider* sldWaterPressure;
-	wxCheckBox* chkXRay;
-	//*)
+private:
 
-protected:
+	void ApplySettings();
 
-	//(*Identifiers(settingsDialog)
-	static const long ID_STATICTEXT1;
-	static const long ID_SLIDER1;
-	static const long ID_STATICTEXT2;
-	static const long ID_SLIDER2;
-	static const long ID_STATICTEXT3;
-	static const long ID_SLIDER4;
-	static const long ID_STATICTEXT4;
-	static const long ID_SLIDER5;
-	static const long ID_STATICTEXT5;
-	static const long ID_SLIDER3;
-	static const long ID_CHECKBOX2;
-	static const long ID_CHECKBOX1;
-	static const long ID_CHECKBOX3;
-	//*)
+	void ReadSettings();
+
+	float SliderToRealValue(
+		wxSlider * const slider,
+		float minValue,
+		float maxValue) const;
+
+	void RealValueToSlider(
+		float value,
+		float minValue,
+		float maxValue,
+		wxSlider * slider) const;
 
 private:
 
-	//(*Handlers(settingsDialog)
-	void OnSlider1CmdScroll(wxScrollEvent& event);
-	void OnCheckBox1Click(wxCommandEvent& event);
-	//*)
-
 	wxWindow * const mParent;
 	std::shared_ptr<GameController> mGameController;
-
-	DECLARE_EVENT_TABLE()
 };

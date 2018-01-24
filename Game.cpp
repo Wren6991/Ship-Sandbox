@@ -168,7 +168,6 @@ void Game::Update(
 	mWorld->waterpressure = gameParameters.WaterPressure;
 	mWorld->waveheight = gameParameters.WaveHeight;
 	mWorld->seadepth = gameParameters.SeaDepth;
-	mWorld->quickwaterfix = gameParameters.QuickWaterFix;
 	mWorld->oceandepthbuffer = mOceanDepthBuffer;
 
 	mWorld->update(dt);
@@ -179,6 +178,7 @@ void Game::Render(RenderParameters renderParameters)
 	assert(!!mWorld);
 
 	// TODO
+	mWorld->quickwaterfix = renderParameters.QuickWaterFix;
 	mWorld->showstress = renderParameters.ShowStress;
 	mWorld->xraymode = renderParameters.UseXRayMode;
 

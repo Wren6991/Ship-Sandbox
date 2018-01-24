@@ -16,11 +16,13 @@
 
 const long ID_STRENGTH_SLIDER = wxNewId();
 const long ID_BUOYANCY_SLIDER = wxNewId();
+const long ID_WATER_PRESSURE_SLIDER = wxNewId();
+const long ID_WAVE_HEIGHT_SLIDER = wxNewId();
+const long ID_SEA_DEPTH_SLIDER = wxNewId();
 
-
-BEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
-END_EVENT_TABLE()
-
+const long ID_QUICK_WATER_FIX_CHECKBOX = wxNewId();
+const long ID_SHOW_STRESS_CHECKBOX = wxNewId();
+const long ID_XRAY_CHECKBOX = wxNewId();
 
 SettingsDialog::SettingsDialog(
 	wxWindow* parent,
@@ -39,13 +41,14 @@ SettingsDialog::SettingsDialog(
 
 
 	//
-	// Lay out the controls
+	// Lay out the dialog
 	//
 
 	wxBoxSizer * mainSizer = new wxBoxSizer(wxVERTICAL);
 
 	mainSizer->AddSpacer(10);
 	
+
 	// Controls
 
 	wxBoxSizer* controlsSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -57,44 +60,135 @@ SettingsDialog::SettingsDialog(
 
 	wxBoxSizer* strengthSizer = new wxBoxSizer(wxVERTICAL);
 
-	wxSlider * strengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
-		wxSL_VERTICAL | wxSL_LEFT | wxSL_LABELS | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Strength Slider"));
-	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnGenericSliderScroll);
-	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnGenericSliderScroll);
-	
-	strengthSizer->Add(strengthSlider, 0, wxALIGN_CENTRE);
+	mStrengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Strength Slider"));
+	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnStrengthSliderScroll);
+	Connect(ID_STRENGTH_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnStrengthSliderScroll);	
+	strengthSizer->Add(mStrengthSlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));
-	
+	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
 	strengthSizer->Add(strengthLabel, 0, wxALIGN_CENTRE);
-	
+
+	mStrengthTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	strengthSizer->Add(mStrengthTextCtrl, 0, wxALIGN_CENTRE);
+
 	strengthSizer->AddSpacer(20);
 
 	controlsSizer->Add(strengthSizer, 0);
 	
 	controlsSizer->AddSpacer(40);
 
+
 	// Buoyancy
 	
 	wxBoxSizer* buoyancySizer = new wxBoxSizer(wxVERTICAL);
 
-	wxSlider * buoyancySlider = new wxSlider(this, ID_BUOYANCY_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200), 
-		wxSL_VERTICAL | wxSL_LEFT | wxSL_LABELS | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Buoyancy Slider"));
-	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnGenericSliderScroll);
-	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnGenericSliderScroll);
-
-	buoyancySizer->Add(buoyancySlider, 0, wxALIGN_CENTRE);
+	mBuoyancySlider = new wxSlider(this, ID_BUOYANCY_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200), 
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Buoyancy Slider"));
+	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnBuoyancySliderScroll);
+	Connect(ID_BUOYANCY_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnBuoyancySliderScroll);
+	buoyancySizer->Add(mBuoyancySlider, 0, wxALIGN_CENTRE);
 
 	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
 	buoyancySizer->Add(buoyancyLabel, 0, wxALIGN_CENTRE);
 	
+	mBuoyancyTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	buoyancySizer->Add(mBuoyancyTextCtrl, 0, wxALIGN_CENTRE);
+
 	buoyancySizer->AddSpacer(20);
 
 	controlsSizer->Add(buoyancySizer, 0);
 	
-	// TODO: add spacer (40)
+	controlsSizer->AddSpacer(40);
 
-	// TODO: others
+
+	// Water Pressure
+
+	wxBoxSizer* waterPressureSizer = new wxBoxSizer(wxVERTICAL);
+
+	mWaterPressureSlider = new wxSlider(this, ID_WATER_PRESSURE_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Water Pressure Slider"));
+	Connect(ID_WATER_PRESSURE_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnWaterPressureSliderScroll);
+	Connect(ID_WATER_PRESSURE_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnWaterPressureSliderScroll);
+	waterPressureSizer->Add(mWaterPressureSlider, 0, wxALIGN_CENTRE);
+
+	wxStaticText * waterPressureLabel = new wxStaticText(this, wxID_ANY, _("Water Pressure"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Pressure Label"));
+	waterPressureSizer->Add(waterPressureLabel, 0, wxALIGN_CENTRE);
+
+	mWaterPressureTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	waterPressureSizer->Add(mWaterPressureTextCtrl, 0, wxALIGN_CENTRE);
+
+	waterPressureSizer->AddSpacer(20);
+
+	controlsSizer->Add(waterPressureSizer, 0);
+
+	controlsSizer->AddSpacer(40);
+
+
+	// Wave Height
+
+	wxBoxSizer* waveHeightSizer = new wxBoxSizer(wxVERTICAL);
+
+	mWaveHeightSlider = new wxSlider(this, ID_WAVE_HEIGHT_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Wave Height Slider"));
+	Connect(ID_WAVE_HEIGHT_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnWaveHeightSliderScroll);
+	Connect(ID_WAVE_HEIGHT_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnWaveHeightSliderScroll);
+	waveHeightSizer->Add(mWaveHeightSlider, 0, wxALIGN_CENTRE);
+
+	wxStaticText * waveHeightLabel = new wxStaticText(this, wxID_ANY, _("Wave Height"), wxDefaultPosition, wxDefaultSize, 0, _T("Wave Height Label"));
+	waveHeightSizer->Add(waveHeightLabel, 0, wxALIGN_CENTRE);
+
+	mWaveHeightTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	waveHeightSizer->Add(mWaveHeightTextCtrl, 0, wxALIGN_CENTRE);
+
+	waveHeightSizer->AddSpacer(20);
+
+	controlsSizer->Add(waveHeightSizer, 0);
+
+	controlsSizer->AddSpacer(40);
+
+
+	// Sea Depth
+
+	wxBoxSizer* seaDepthSizer = new wxBoxSizer(wxVERTICAL);
+
+	mSeaDepthSlider = new wxSlider(this, ID_SEA_DEPTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Sea Depth Slider"));
+	Connect(ID_SEA_DEPTH_SLIDER, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSeaDepthSliderScroll);
+	Connect(ID_SEA_DEPTH_SLIDER, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSeaDepthSliderScroll);
+	seaDepthSizer->Add(mSeaDepthSlider, 0, wxALIGN_CENTRE);
+
+	wxStaticText * seaDepthLabel = new wxStaticText(this, wxID_ANY, _("Ocean Depth"), wxDefaultPosition, wxDefaultSize, 0, _T("Sea Depth Label"));
+	seaDepthSizer->Add(seaDepthLabel, 0, wxALIGN_CENTRE);
+
+	mSeaDepthTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	seaDepthSizer->Add(mSeaDepthTextCtrl, 0, wxALIGN_CENTRE);
+
+	seaDepthSizer->AddSpacer(20);
+
+	controlsSizer->Add(seaDepthSizer, 0);
+
+	controlsSizer->AddSpacer(40);
+
+	
+	// Check boxes
+
+	wxStaticBoxSizer* checkboxesSizer = new wxStaticBoxSizer(wxVERTICAL, this);
+	
+	mQuickWaterFixCheckBox = new wxCheckBox(this, ID_QUICK_WATER_FIX_CHECKBOX, _("See Ship Through Water"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Quick Water Fix Checkbox"));
+	Connect(ID_QUICK_WATER_FIX_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnQuickWaterFixCheckBoxClick);
+	checkboxesSizer->Add(mQuickWaterFixCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
+
+	mShowStressCheckBox = new wxCheckBox(this, ID_SHOW_STRESS_CHECKBOX, _("Show Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Show Stress Checkbox"));
+	Connect(ID_SHOW_STRESS_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnShowStressCheckBoxClick);
+	checkboxesSizer->Add(mShowStressCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
+
+	mXRayCheckBox = new wxCheckBox(this, ID_XRAY_CHECKBOX, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Use XRay Checkbox"));
+	Connect(ID_XRAY_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnXRayCheckBoxClick);
+	checkboxesSizer->Add(mXRayCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
+
+	controlsSizer->Add(checkboxesSizer, 0);
+
 
 
 	controlsSizer->AddSpacer(20);
@@ -112,69 +206,25 @@ SettingsDialog::SettingsDialog(
 
 	mOkButton = new wxButton(this, wxID_OK);
 	Connect(wxID_OK, wxEVT_BUTTON, (wxObjectEventFunction)&SettingsDialog::OnOkButton);
-	buttonsSizer->Add(mOkButton);
+	buttonsSizer->Add(mOkButton, 0);
 
 	buttonsSizer->AddSpacer(20);
 
 	mCancelButton = new wxButton(this, wxID_CANCEL);
-	buttonsSizer->Add(mCancelButton);
+	buttonsSizer->Add(mCancelButton, 0);
 
 	buttonsSizer->AddSpacer(20);
 
 	mApplyButton = new wxButton(this, wxID_APPLY);
 	mApplyButton->Enable(false);
 	Connect(wxID_APPLY, wxEVT_BUTTON, (wxObjectEventFunction)&SettingsDialog::OnApplyButton);
-	buttonsSizer->Add(mApplyButton);
+	buttonsSizer->Add(mApplyButton, 0);
 	
 	buttonsSizer->AddSpacer(20);
 
-	mainSizer->Add(buttonsSizer);
+	mainSizer->Add(buttonsSizer, 0, wxALIGN_RIGHT);
 	
 	mainSizer->AddSpacer(20);
-
-
-	// TODOHERE
-
-	/*
-	StaticText2 = new wxStaticText(this, ID_STATICTEXT2, _("Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT2"));
-	BoxSizer1->Add(StaticText2, 0, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	sldBuoyancy = new wxSlider(this, ID_SLIDER2, 4, 0, 10, wxDefaultPosition, wxDefaultSize, wxSL_LABELS, wxDefaultValidator, _T("ID_SLIDER2"));
-	BoxSizer1->Add(sldBuoyancy, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	StaticText3 = new wxStaticText(this, ID_STATICTEXT3, _("Wave Height"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT3"));
-	BoxSizer1->Add(StaticText3, 0, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	sldWaveHeight = new wxSlider(this, ID_SLIDER4, 2, 0, 10, wxDefaultPosition, wxDefaultSize, wxSL_LABELS, wxDefaultValidator, _T("ID_SLIDER4"));
-	BoxSizer1->Add(sldWaveHeight, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	StaticText4 = new wxStaticText(this, ID_STATICTEXT4, _("Water Pressure"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT4"));
-	BoxSizer1->Add(StaticText4, 0, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	sldWaterPressure = new wxSlider(this, ID_SLIDER5, 5, 0, 10, wxDefaultPosition, wxDefaultSize, wxSL_LABELS, wxDefaultValidator, _T("ID_SLIDER5"));
-	BoxSizer1->Add(sldWaterPressure, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	StaticText5 = new wxStaticText(this, ID_STATICTEXT5, _("Ocean Depth"), wxDefaultPosition, wxDefaultSize, 0, _T("ID_STATICTEXT5"));
-	BoxSizer1->Add(StaticText5, 0, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	sldSeaDepth = new wxSlider(this, ID_SLIDER3, 150, 50, 1000, wxDefaultPosition, wxDefaultSize, wxSL_LABELS, wxDefaultValidator, _T("ID_SLIDER3"));
-	sldSeaDepth->SetTickFreq(50);
-	BoxSizer1->Add(sldSeaDepth, 1, wxALL | wxEXPAND | wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL, 5);
-	chkShowStress = new wxCheckBox(this, ID_CHECKBOX2, _("Highlight Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX2"));
-	chkShowStress->SetValue(false);
-	BoxSizer1->Add(chkShowStress, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-	mChkQuickFix = new wxCheckBox(this, ID_CHECKBOX1, _("Quick Water Fix"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX1"));
-	mChkQuickFix->SetValue(false);
-	BoxSizer1->Add(chkQuickFix, 0, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-	chkXRay = new wxCheckBox(this, ID_CHECKBOX3, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("ID_CHECKBOX3"));
-	chkXRay->SetValue(false);
-	BoxSizer1->Add(chkXRay, 0, wxALL | wxEXPAND | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, 5);
-
-	Connect(ID_SLIDER2, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER2, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER4, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER4, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER5, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER5, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER3, wxEVT_SCROLL_TOP | wxEVT_SCROLL_BOTTOM | wxEVT_SCROLL_LINEUP | wxEVT_SCROLL_LINEDOWN | wxEVT_SCROLL_PAGEUP | wxEVT_SCROLL_PAGEDOWN | wxEVT_SCROLL_THUMBTRACK | wxEVT_SCROLL_THUMBRELEASE | wxEVT_SCROLL_CHANGED, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_SLIDER3, wxEVT_SCROLL_THUMBTRACK, (wxObjectEventFunction)&SettingsDialog::OnSlider1CmdScroll);
-	Connect(ID_CHECKBOX2, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
-	Connect(ID_CHECKBOX1, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
-	Connect(ID_CHECKBOX3, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnCheckBox1Click);
-	*/
 
 
 
@@ -193,7 +243,8 @@ void SettingsDialog::Open()
 {
 	assert(!!mGameController);
 
-	// TODO: populate controls with controller values
+	// Populate ourselves with current settings
+	ReadSettings();
 
 	// We're not dirty
 	mApplyButton->Enable(false);
@@ -201,7 +252,94 @@ void SettingsDialog::Open()
 	this->Show();
 }
 
-void SettingsDialog::OnGenericSliderScroll(wxScrollEvent & /*event*/)
+void SettingsDialog::OnStrengthSliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mStrengthSlider,
+		mGameController->GetMinStrength(),
+		mGameController->GetMaxStrength());
+
+	mStrengthTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnBuoyancySliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mBuoyancySlider,
+		mGameController->GetMinBuoyancy(),
+		mGameController->GetMaxBuoyancy());
+
+	mBuoyancyTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnWaterPressureSliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mWaterPressureSlider,
+		mGameController->GetMinWaterPressure(),
+		mGameController->GetMaxWaterPressure());
+
+	mWaterPressureTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnWaveHeightSliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mWaveHeightSlider,
+		mGameController->GetMinWaveHeight(),
+		mGameController->GetMaxWaveHeight());
+
+	mWaveHeightTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnSeaDepthSliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mSeaDepthSlider,
+		mGameController->GetMinSeaDepth(),
+		mGameController->GetMaxSeaDepth());
+
+	mSeaDepthTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnQuickWaterFixCheckBoxClick(wxCommandEvent & /*event*/)
+{
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnShowStressCheckBoxClick(wxCommandEvent & /*event*/)
+{
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
+void SettingsDialog::OnXRayCheckBoxClick(wxCommandEvent & /*event*/)
 {
 	// Remember we're dirty now
 	mApplyButton->Enable(true);
@@ -209,8 +347,10 @@ void SettingsDialog::OnGenericSliderScroll(wxScrollEvent & /*event*/)
 
 void SettingsDialog::OnOkButton(wxCommandEvent & /*event*/)
 {
-	// TODO: read values from controls and set into controller
 	assert(!!mGameController);
+
+	// Write settings back to controller
+	ApplySettings();
 
 	// Close ourselves
 	this->Close();
@@ -218,34 +358,125 @@ void SettingsDialog::OnOkButton(wxCommandEvent & /*event*/)
 
 void SettingsDialog::OnApplyButton(wxCommandEvent & /*event*/)
 {
-	// TODO: read values from controls and set into controller
 	assert(!!mGameController);
+
+	// Write settings back to controller
+	ApplySettings();
 
 	// We're not dirty anymore
 	mApplyButton->Enable(false);
 }
 
-// TODOOLD
-void SettingsDialog::OnSlider1CmdScroll(wxScrollEvent& event)
+void SettingsDialog::ApplySettings()
 {
-	
-	/* TODO
-	MainFrame *frame = dynamic_cast<MainFrame *>(mParent);
-	frame->gm.strength = (sldStrength->GetValue() ? sldStrength->GetValue() : 0.5) * 0.005;
-	frame->gm.buoyancy = mSldBuoyancy->GetValue();
-	frame->gm.waveheight = sldWaveHeight->GetValue() * 0.5;
-	frame->gm.waterpressure = sldWaterPressure->GetValue() * 0.06;
-	frame->gm.seadepth = sldSeaDepth->GetValue();
-	frame->gm.showstress = chkShowStress->GetValue();
-	frame->gm.quickwaterfix = mChkQuickFix->GetValue();
-	frame->gm.xraymode = chkXRay->GetValue();
-	frame->gm.assertSettings();
-	*/
-	LogDebug("SettingsDialog::Slider moved");
+	assert(!!mGameController);
+
+	mGameController->SetStrength(
+		SliderToRealValue(
+			mStrengthSlider,
+			mGameController->GetMinStrength(),
+			mGameController->GetMaxStrength()));
+
+	mGameController->SetBuoyancy(
+		SliderToRealValue(
+			mBuoyancySlider,
+			mGameController->GetMinBuoyancy(),
+			mGameController->GetMaxBuoyancy()));
+
+	mGameController->SetWaterPressure(
+		SliderToRealValue(
+			mWaterPressureSlider,
+			mGameController->GetMinWaterPressure(),
+			mGameController->GetMaxWaterPressure()));
+
+	mGameController->SetWaveHeight(
+		SliderToRealValue(
+			mWaveHeightSlider,
+			mGameController->GetMinWaveHeight(),
+			mGameController->GetMaxWaveHeight()));
+
+	mGameController->SetSeaDepth(
+		SliderToRealValue(
+			mSeaDepthSlider,
+			mGameController->GetMinSeaDepth(),
+			mGameController->GetMaxSeaDepth()));
+
+	mGameController->SetDoQuickWaterFix(mQuickWaterFixCheckBox->IsChecked());
+
+	mGameController->SetDoShowStress(mShowStressCheckBox->IsChecked());
+
+	mGameController->SetDoUseXRayMode(mXRayCheckBox->IsChecked());
 }
 
-void SettingsDialog::OnCheckBox1Click(wxCommandEvent& event)
+void SettingsDialog::ReadSettings()
 {
-	wxScrollEvent evt;
-	OnSlider1CmdScroll(evt);
+	assert(!!mGameController);
+
+	RealValueToSlider(
+		mGameController->GetStrength(),
+		mGameController->GetMinStrength(),
+		mGameController->GetMaxStrength(),
+		mStrengthSlider);
+
+	mStrengthTextCtrl->SetValue(std::to_string(mGameController->GetStrength()));
+
+	RealValueToSlider(
+		mGameController->GetBuoyancy(),
+		mGameController->GetMinBuoyancy(),
+		mGameController->GetMaxBuoyancy(),
+		mBuoyancySlider);
+
+	mBuoyancyTextCtrl->SetValue(std::to_string(mGameController->GetBuoyancy()));
+
+	RealValueToSlider(
+		mGameController->GetWaterPressure(),
+		mGameController->GetMinWaterPressure(),
+		mGameController->GetMaxWaterPressure(),
+		mWaterPressureSlider);
+
+	mWaterPressureTextCtrl->SetValue(std::to_string(mGameController->GetWaterPressure()));
+
+	RealValueToSlider(
+		mGameController->GetWaveHeight(),
+		mGameController->GetMinWaveHeight(),
+		mGameController->GetMaxWaveHeight(),
+		mWaveHeightSlider);
+
+	mWaveHeightTextCtrl->SetValue(std::to_string(mGameController->GetWaveHeight()));
+
+	RealValueToSlider(
+		mGameController->GetSeaDepth(),
+		mGameController->GetMinSeaDepth(),
+		mGameController->GetMaxSeaDepth(),
+		mSeaDepthSlider);
+
+	mSeaDepthTextCtrl->SetValue(std::to_string(mGameController->GetSeaDepth()));
+
+	mQuickWaterFixCheckBox->SetValue(mGameController->GetDoQuickWaterFix());
+
+	mShowStressCheckBox->SetValue(mGameController->GetDoShowStress());
+
+	mXRayCheckBox->SetValue(mGameController->GetDoUseXRayMode());
+}
+
+float SettingsDialog::SliderToRealValue(
+	wxSlider * const slider,
+	float minValue,
+	float maxValue) const
+{
+	int sliderValue = slider->GetValue();
+	float realValue = minValue + (static_cast<float>(sliderValue) / 100.0f) * (maxValue - minValue);
+
+	return realValue;
+}
+
+void SettingsDialog::RealValueToSlider(
+	float value,
+	float minValue,
+	float maxValue,
+	wxSlider * slider) const
+{
+	int sliderValue = static_cast<int>(roundf((value - minValue) / (maxValue - minValue) * 100.0f));
+
+	slider->SetValue(sliderValue);
 }

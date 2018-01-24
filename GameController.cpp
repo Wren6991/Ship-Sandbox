@@ -111,6 +111,62 @@ void GameController::AdjustZoom(float amount)
 	mRenderParameters.Zoom *= amount;
 }
 
+void GameController::SetStrength(float value)
+{
+	LogDebug("GameController::SetStrength(", value, ")");
+
+	mGameParameters.Strength = value;
+}
+
+void GameController::SetBuoyancy(float value)
+{
+	LogDebug("GameController::SetBuoyancy(", value, ")");
+
+	mGameParameters.Buoyancy = value;
+}
+
+void GameController::SetWaterPressure(float value)
+{
+	LogDebug("GameController::SetWaterPressure(", value, ")");
+
+	mGameParameters.WaterPressure = value;
+}
+
+void GameController::SetWaveHeight(float value)
+{
+	LogDebug("GameController::SetWaveHeight(", value, ")");
+
+	mGameParameters.WaveHeight = value;
+}
+
+void GameController::SetSeaDepth(float value)
+{
+	LogDebug("GameController::SetSeaDepth(", value, ")");
+
+	mGameParameters.SeaDepth = value;
+}
+
+void GameController::SetDoQuickWaterFix(bool value)
+{
+	LogDebug("GameController::SetDoQuickWaterFix(", value, ")");
+
+	mRenderParameters.QuickWaterFix = value;
+}
+
+void GameController::SetDoShowStress(bool value)
+{
+	LogDebug("GameController::SetDoShowStress(", value, ")");
+
+	mRenderParameters.ShowStress = value;
+}
+
+void GameController::SetDoUseXRayMode(bool value)
+{
+	LogDebug("GameController::SetDoUseXRayMode(", value, ")");
+
+	mRenderParameters.UseXRayMode = value;
+}
+
 vec2 GameController::Screen2World(
 	vec2 const & screenCoordinates,
 	RenderParameters const & renderParameters)

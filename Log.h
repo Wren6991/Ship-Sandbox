@@ -82,10 +82,6 @@ public:
 		{
 			mCurrentListener(message);
 		}
-
-#ifdef WIN32
-		OutputDebugStringW(message.c_str());
-#endif
 	}
 
 public:

@@ -78,13 +78,15 @@ private:
 	void OnMainGLCanvasMouseWheel(wxMouseEvent& event);
 
 	// Menu
+	void OnZoomInMenuItemSelected(wxCommandEvent& event);
+	void OnZoomOutMenuItemSelected(wxCommandEvent& event);
+	void OnPauseMenuItemSelected(wxCommandEvent& event);
 	void OnLoadShipMenuItemSelected(wxCommandEvent& event);
 	void OnReloadLastShipMenuItemSelected(wxCommandEvent& event);
 	void OnSmashMenuItemSelected(wxCommandEvent& event);
 	void OnGrabMenuItemSelected(wxCommandEvent& event);
 	void OnOpenSettingsWindowMenuItemSelected(wxCommandEvent& event);
-	void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);
-	void OnPauseMenuItemSelected(wxCommandEvent& event);
+	void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);	
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
 private:

@@ -3,17 +3,17 @@
 * Created:				2018-01-19
 * Copyright:			Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
-#include "LoggingWindow.h"
+#include "LoggingDialog.h"
 
 #include "Log.h"
 
 #include <cassert>
 
-wxBEGIN_EVENT_TABLE(LoggingWindow, wxDialog)
-	EVT_CLOSE(LoggingWindow::OnClose)
+wxBEGIN_EVENT_TABLE(LoggingDialog, wxDialog)
+	EVT_CLOSE(LoggingDialog::OnClose)
 wxEND_EVENT_TABLE()
 
-LoggingWindow::LoggingWindow(wxWindow * parent)
+LoggingDialog::LoggingDialog(wxWindow * parent)
 	: mParent(parent)
 {
 	Create(
@@ -43,11 +43,11 @@ LoggingWindow::LoggingWindow(wxWindow * parent)
 	mTextCtrl->SetFont(font);
 }
 
-LoggingWindow::~LoggingWindow()
+LoggingDialog::~LoggingDialog()
 {
 }
 
-void LoggingWindow::Open()
+void LoggingDialog::Open()
 {
 	Logger::Instance.RegisterListener(
 		[this](std::wstring const & message)
@@ -59,7 +59,7 @@ void LoggingWindow::Open()
 	this->Show();
 }
 
-void LoggingWindow::OnClose(wxCloseEvent & event)
+void LoggingDialog::OnClose(wxCloseEvent & event)
 {
 	Logger::Instance.UnregisterListener();
 

@@ -10,13 +10,13 @@
 
 #include <memory>
 
-class LoggingWindow : public wxDialog
+class LoggingDialog : public wxDialog
 {
 public:
 
-	LoggingWindow(wxWindow* parent);
+	LoggingDialog(wxWindow* parent);
 	
-	virtual ~LoggingWindow();
+	virtual ~LoggingDialog();
 
 	void Open();
 
