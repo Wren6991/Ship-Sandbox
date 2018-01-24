@@ -52,8 +52,6 @@ void Game::Reset()
 
 void Game::LoadShip(std::wstring const & filepath)
 {
-	int nodecount = 0, springcount = 0;
-
 	std::map<vec3f, std::shared_ptr<material>> colourdict;
 	for (unsigned int i = 0; i < mMaterials.size(); i++)
 		colourdict[mMaterials[i]->colour] = mMaterials[i];
@@ -69,7 +67,7 @@ void Game::LoadShip(std::wstring const & filepath)
 		std::wstring devilErrorMessage(iluErrorString(devilError));
 		throw GameException(L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage);
 	}
-
+	
 	ILubyte *data = ilGetData();
 
 	int const width = ilGetInteger(IL_IMAGE_WIDTH);
@@ -79,6 +77,15 @@ void Game::LoadShip(std::wstring const & filepath)
 	phys::ship *shp = new phys::ship(mWorld.get());
 
 	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[width]);
+
+	//
+	// Process image points and create points, springs, and triangles for this ship
+	//
+
+	size_t nodeCount = 0;
+	size_t leakingNodeCount = 0;
+	size_t springCount = 0;
+	size_t trianglesCount = 0;
 
 	for (int x = 0; x < width; ++x)
 	{
@@ -104,7 +111,7 @@ void Game::LoadShip(std::wstring const & filepath)
 
 				points[x][y] = pt;
 				shp->points.insert(pt);
-				nodecount++;
+				++nodeCount;
 			}
 			else
 			{
@@ -138,6 +145,8 @@ void Game::LoadShip(std::wstring const & filepath)
 					|| (y > 0 && !points[x][y - 1]))
 				{
 					a->isLeaking = true;
+
+					++leakingNodeCount;
 				}
 			}
 
@@ -163,8 +172,9 @@ void Game::LoadShip(std::wstring const & filepath)
 						bool springIsHull = aIsHull && b->mtl->isHull;
 						material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
 						shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
+						++springCount;
 
-						// TODO:?
+						// TODO: rename to AdjacentNonHullNodes
 						if (!springIsHull)
 						{
 							shp->adjacentnodes[a].insert(b);
@@ -176,14 +186,14 @@ void Game::LoadShip(std::wstring const & filepath)
 						int adjy2 = y + directions[i + 1][1];
 						if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0 && adjy2 < height)
 						{
-							phys::point *c = points[adjx2][adjy2]; 
+							phys::point *c = points[adjx2][adjy2];
 							if (c)
 							{
 								shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
+
+								++trianglesCount;
 							}
 						}
-
-						springcount++;
 					}
 				}
 			}
@@ -192,7 +202,7 @@ void Game::LoadShip(std::wstring const & filepath)
 
 	ilDeleteImage(imghandle);
 
-	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", nodecount, L" points, ", springcount, L" springs.");
+	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount, L" springs, and ", trianglesCount, L" triangles.");
 }
 
 void Game::DestroyAt(

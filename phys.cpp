@@ -537,7 +537,7 @@ void phys::ship::leakWater(double dt)
 
 void phys::ship::gravitateWater(double dt)
 {
-    // Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
+    // Water flows into adjacent nodes (from a into b) in a quantity proportional to the cos of angle the beam makes
     // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
     for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
          iter != adjacentnodes.end(); iter++)
@@ -560,15 +560,15 @@ void phys::ship::gravitateWater(double dt)
 
 void phys::ship::balancePressure(double dt)
 {
-    // If there's too much water in this node, try and push it into the others
+    // If there's too much water in a node, try and push it into the others
     // (This needs to iterate over multiple frames for pressure waves to spread through water)
     for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
-         iter != adjacentnodes.end(); iter++)
+         iter != adjacentnodes.end(); ++iter)
     {
         point *a = iter->first;
         if (a->water < 1)   // if water content is not above threshold, no need to force water out
             continue;
-        for (std::set<point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+        for (std::set<point*>::iterator second = iter->second.begin(); second != iter->second.end(); ++second)
         {
             point *b = *second;
             double correction = (b->water - a->water) * 8 * dt; // can tune this number; value of 1 means will equalise in 1 second.
