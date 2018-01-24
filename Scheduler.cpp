@@ -17,6 +17,8 @@
 Scheduler::Scheduler()
 	: mNThreads(std::thread::hardware_concurrency())
 {
+	LogMessage("Number of threads: ", mNThreads);
+
     for (int i = 0; i < mNThreads; i++)
     {
         mThreadPool.push_back(new Thread(this, i + 1));

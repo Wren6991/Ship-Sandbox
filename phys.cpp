@@ -11,6 +11,7 @@
 #include <GL/gl.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <iostream>
 
@@ -38,71 +39,104 @@ int imax(int a, int b)
 void phys::world::update(double dt)
 {
     time += dt;
-    // Advance simulation for points: (velocity and forces)
-    for (unsigned int i = 0; i < points.size(); i++)
-        points[i]->update(dt);
+
+    // Advance simulation for points (velocity and forces)
+	for (point * pt : allPoints)
+	{
+		pt->update(dt);
+	}
+
     // Iterate the spring relaxation (can tune this parameter, or make it scale automatically depending on free time)
     doSprings(dt);
-    // Check if any springs exceed their breaking strain:
-    for (std::vector<spring*>::iterator iter = springs.begin(); iter != springs.end();)
+
+    // Get set of springs that exceed their breaking strain (broken springs)
+	std::vector<spring *> brokenSprings;
+	for (spring * sp : allSprings)
     {
-        spring *spr = *iter;
-        iter++;
-        if (spr->isBroken())        // have to delete after erasure - else there is a possibility of
-            delete spr;             // other objects accessing a bad pointer during this cleanup
+		if (sp->isBroken())
+		{
+			brokenSprings.push_back(sp);
+		}
     }
+
+	// Remove broken springs
+	for (spring * sp : brokenSprings)
+	{
+		delete sp;
+	}
+
     // Tell each ship to update all of its water stuff
-    for (unsigned int i = 0; i < ships.size(); i++)
-        ships[i]->update(dt);
+	for (ship * sh : allShips)
+	{
+		sh->update(dt);
+	}
 }
 
 void phys::world::doSprings(double dt)
 {
-    int nchunks = springScheduler.GetNumberOfThreads();
-    int springchunk = springs.size() / nchunks + 1;
+    int nChunks = springScheduler.GetNumberOfThreads();
+    size_t springChunkSize = allSprings.size() / (springScheduler.GetNumberOfThreads() + 1);
+
     for (int outiter = 0; outiter < 3; outiter++)
     {
         for (int iteration = 0; iteration < 8; iteration++)
         {
-            for (int i = springs.size() - 1; i > 0; i -= springchunk)
-            {
-                springScheduler.Schedule(new springCalculateTask(this, imax(i - springchunk, 0), i));
-            }
+			std::set<spring *>::iterator springIt = allSprings.begin();
+			for (size_t i = 0; i < allSprings.size(); i += springChunkSize)
+			{
+				size_t thisChunkSize = std::min(springChunkSize, allSprings.size() - i);
+
+				springScheduler.Schedule(
+					new springCalculateTask(
+						springIt,
+						thisChunkSize));
+				
+				std::advance(springIt, thisChunkSize);
+			}
+
+			assert(springIt == allSprings.end());
 
             springScheduler.WaitForAllTasks();
         }
+
+		// Damp all springs
         float dampingamount = (1 - pow(0.0, dt)) * 0.5;
-        for (unsigned int i = 0; i < springs.size(); i++)
-            springs[i]->damping(dampingamount);
+		for (spring * sp : allSprings)
+		{
+			sp->damping(dampingamount);
+		}
     }
 }
 
-phys::world::springCalculateTask::springCalculateTask(world *_wld, int _first, int _last)
+phys::world::springCalculateTask::springCalculateTask(std::set<spring*>::iterator _first, size_t _size)
 {
-    wld = _wld;
-    first = _first;
-    last = _last;
-}
-void phys::world::springCalculateTask::Process()
-{
-    for (int i = first; i <= last; i++)
-        wld->springs[i]->update();
+    curIterator = _first;
+    size = _size;
 }
 
-phys::world::pointIntegrateTask::pointIntegrateTask(world *_wld, int _first, int _last, float _dt)
+void phys::world::springCalculateTask::Process()
 {
-    wld = _wld;
-    first = _first;
-    last = _last;
+	for (size_t i = 0; i < size; ++i, ++curIterator)
+	{
+		spring * const sp = *curIterator;
+		sp->update();
+	}
+}
+
+phys::world::pointIntegrateTask::pointIntegrateTask(std::set<point *>::iterator _first, size_t _size, float _dt)
+{
+	curIterator = _first;
+    size = _size;
     dt = _dt;
 }
 
 void phys::world::pointIntegrateTask::Process()
 {
-    for (int i = first; i <= last; i++)
-    {
-        wld->points[i]->pos += wld->points[i]->force * dt;
-        wld->points[i]->force = vec2(0, 0);
+	for (size_t i = 0; i < size; ++i, ++curIterator)
+	{
+		point * const pt = *curIterator;
+		pt->pos += pt->force * dt;
+		pt->force = vec2(0, 0);
     }
 }
 
@@ -110,25 +144,42 @@ void phys::world::render(double left, double right, double bottom, double top)
 {
     // Draw the ocean floor
     renderLand(left, right, bottom, top);
+
+	// Draw the water now if it needs to be behind the ship
     if (quickwaterfix)
         renderWater(left, right, bottom, top);
-    // Draw all the points and springs
-    for (unsigned int i = 0; i < points.size(); i++)
-        points[i]->render();
-    for (unsigned int i = 0; i < springs.size(); i++)
-        springs[i]->render();
-    if (!xraymode)
-        for (unsigned int i = 0; i < ships.size(); i++)
-            ships[i]->render();
-    if (showstress)
-        for (unsigned int i = 0; i < springs.size(); i++)
-            if (springs[i]->isStressed())
-                springs[i]->render(true);
+
+	// Draw all the points
+    for (point * pt : allPoints)
+        pt->render();
+    
+	// Draw all the springs
+	for (spring * sp : allSprings)
+        sp->render(false);
+
+	// Draw all the ships, unless we are in X-Ray mode
+	if (!xraymode)
+	{
+		for (ship * sh : allShips)
+			sh->render();
+	}
+
+	if (showstress)
+	{
+		// Draw stressed springs
+		for (spring * sp : allSprings)
+			if (sp->isStressed())
+				sp->render(true);
+	}
+
+	// Draw the water now if it needs to be in front of the ship
     if (!quickwaterfix)
         renderWater(left, right, bottom, top);
+
     glBegin(GL_LINES);
     glLineWidth(1.f);
     glEnd();
+
     //buildBVHTree(true, points, collisionTree);
 }
 
@@ -236,27 +287,29 @@ float phys::world::waterheight(float x)
 // Destroy all points within radius
 void phys::world::destroyAt(vec2f pos, float radius)
 {
-    for (std::vector<point*>::iterator iter = points.begin(); iter != points.end();)
+	std::vector<point *> pointsToDelete;
+	for (point * pt : allPoints)
     {
-        point *p = *iter;
-        iter++;
-        if ((p->pos - pos).length() < radius)
+        if ((pt->pos - pos).length() < radius)
         {
-            delete p; // have to remove reference before deleting, else other cleanup code will use bad memory!
-            iter--;
+			pointsToDelete.push_back(pt);
         }
     }
+
+	for (point * pt : pointsToDelete)
+	{
+		delete pt;
+	}
 }
 
 // Attract all points to a single position
 void phys::world::drawTo(vec2f target)
 {
-    for (std::vector<point*>::iterator iter = points.begin(); iter != points.end(); iter++)
+	for (point * pt : allPoints)
     {
-        vec2f &pos = (*iter)->pos;
-        vec2f dir = (target - pos);
+        vec2f dir = (target - pt->pos);
         double magnitude = 50000 / sqrt(0.1 + dir.length());
-        (*iter)->applyForce(dir.normalise() * magnitude);
+        pt->applyForce(dir.normalise() * magnitude);
     }
 }
 
@@ -277,13 +330,18 @@ phys::world::world(vec2f _gravity, double _buoyancy, double _strength)
 phys::world::~world()
 {
     // DESTROY THE WORLD??? Y/N
-    for (unsigned int i = 0; i < springs.size(); i++)
-        delete springs[i];
-    springs.clear();
-    for (unsigned int i = 0; i < points.size(); i++)
-        delete points[i];
-    for (unsigned int i = 0; i < ships.size(); i++)
-        delete ships[i];
+
+	std::vector<spring *> sps(allSprings.begin(), allSprings.end());
+	for (spring * sp : sps)
+        delete sp;
+    
+	std::vector<point *> pts(allPoints.begin(), allPoints.end());
+	for (point * pt : pts)
+		delete pt;
+
+	std::vector<ship *> shs(allShips.begin(), allShips.end());
+    for (ship * sh : shs)
+        delete sh;
 }
 
 // PPPP       OOO    IIIIIII  N     N  TTTTTTT
@@ -300,7 +358,7 @@ phys::world::~world()
 phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
 {
     wld = _parent;
-    wld->points.push_back(this);
+    wld->allPoints.insert(this);
     pos = _pos;
     lastpos = pos;
     mtl = _mtl;
@@ -352,11 +410,12 @@ vec3f phys::point::getColour(vec3f basecolour)
 void phys::point::breach()
 {
     isLeaking = true;
-    for (std::set<ship::triangle*>::iterator iter = tris.begin(); iter != tris.end();)
+
+	// Remove all triangles that have this point in it
+	std::vector<ship::triangle *> trs(triangles.begin(), triangles.end());
+	for (ship::triangle * tr : trs)
     {
-        ship::triangle *t = *iter;
-        iter++;
-        delete t;
+        delete tr;
     }
 }
 
@@ -384,25 +443,28 @@ phys::AABB phys::point::getAABB()
 
 phys::point::~point()
 {
-    // get rid of any attached triangles:
+    // get rid of any attached triangles
     breach();
-    // remove any springs attached to this point:
-    for (std::vector<spring*>::iterator iter = wld->springs.begin(); iter != wld->springs.end();)
+
+    // remove any springs attached to this point
+	std::vector<spring *> springsToDelete;
+    for (spring * sp : wld->allSprings)
     {
-        spring *spr = *iter;
-        iter++;
-        if (spr->a == this || spr->b == this)
+        if (sp->a == this || sp->b == this)
         {
-            delete spr;
-            iter--;
+			springsToDelete.push_back(sp);
         }
     }
-    // remove any references:
-    for (unsigned int i = 0; i < wld->ships.size(); i++)
-        wld->ships[i]->points.erase(this);
-    std::vector<point*>::iterator iter = std::find(wld->points.begin(), wld->points.end(), this);
-    if (iter != wld->points.end())
-        wld->points.erase(iter);
+
+	for (spring * sp : springsToDelete)
+		delete sp;
+
+    // remove from ships
+    for (ship * sh : wld->allShips)
+        sh->points.erase(this);
+
+	// remove from world
+	wld->allPoints.erase(this);
 }
 
 //   SSS    PPPP     RRRR     IIIIIII  N     N    GGGGG
@@ -418,7 +480,7 @@ phys::point::~point()
 phys::spring::spring(world *_parent, point *_a, point *_b, material *_mtl, double _length)
 {
     wld = _parent;
-    _parent->springs.push_back(this);
+    _parent->allSprings.insert(this);
     a = _a;
     b = _b;
     if (_length == -1)
@@ -433,18 +495,18 @@ phys::spring::~spring()
     // Used to do more complicated checks, but easier (and better) to make everything leak when it breaks
     a->breach();
     b->breach();
+
     // Scour out any references to this spring
-    for (unsigned int i = 0; i < wld->ships.size(); i++)
+    for (ship * shp : wld->allShips)
     {
-        ship *shp = wld->ships[i];
         if (shp->adjacentnodes.find(a) != shp->adjacentnodes.end())
             shp->adjacentnodes[a].erase(b);
+
         if (shp->adjacentnodes.find(b) != shp->adjacentnodes.end())
             shp->adjacentnodes[b].erase(a);
     }
-    std::vector <spring*>::iterator iter = std::find(wld->springs.begin(), wld->springs.end(), this);
-    if (iter != wld->springs.end())
-        wld->springs.erase(iter);
+
+	wld->allSprings.erase(this);
 }
 
 void phys::spring::update()
@@ -506,7 +568,7 @@ bool phys::spring::isBroken()
 phys::ship::ship(world *_parent)
 {
     wld = _parent;
-    wld->ships.push_back(this);
+    wld->allShips.insert(this);
 }
 
 void phys::ship::update(double dt)
@@ -602,17 +664,17 @@ phys::ship::triangle::triangle(phys::ship *_parent, point *_a, point *_b, point 
     a = _a;
     b = _b;
     c = _c;
-    a->tris.insert(this);
-    b->tris.insert(this);
-    c->tris.insert(this);
+    a->triangles.insert(this);
+    b->triangles.insert(this);
+    c->triangles.insert(this);
 }
 
 phys::ship::triangle::~triangle()
 {
     parent->triangles.erase(this);
-    a->tris.erase(this);
-    b->tris.erase(this);
-    c->tris.erase(this);
+    a->triangles.erase(this);
+    b->triangles.erase(this);
+    c->triangles.erase(this);
 }
 
 phys::AABB::AABB(vec2 _bottomleft, vec2 _topright)

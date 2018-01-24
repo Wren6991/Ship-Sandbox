@@ -20,9 +20,9 @@ namespace phys
         struct springCalculateTask;
         struct pointIntegrateTask;
         Scheduler springScheduler;
-        std::vector <point*> points;
-        std::vector <spring*> springs;
-        std::vector <ship*> ships;
+        std::set<point*> allPoints;
+        std::set<spring*> allSprings;
+        std::set<ship*> allShips;
         BVHNode *collisionTree;
         float waterheight(float x);
         float oceanfloorheight(float x);
@@ -52,21 +52,20 @@ namespace phys
 
     struct world::springCalculateTask: Scheduler::ITask
     {
-        springCalculateTask(world *_wld, int _first, int _last);
-        world *wld;
-        int first, last;
+        springCalculateTask(std::set<spring*>::iterator _first, size_t _size);
+		typename std::set<spring*>::iterator curIterator;
+		size_t size;
         virtual void Process() override;
     };
 
     struct world::pointIntegrateTask: Scheduler::ITask
     {
-        pointIntegrateTask(world *_wld, int _first, int _last, float _dt);
-        world *wld;
+        pointIntegrateTask(std::set<point *>::iterator _first, size_t _size, float _dt);
         float dt;
-        int first, last;
+		typename std::set<point *>::iterator curIterator;
+		size_t size;
         virtual void Process() override;
     };
-
 
     class ship
     {
@@ -106,7 +105,7 @@ namespace phys
         double water;
         double getPressure();
     public:
-        std::set<ship::triangle*> tris;
+        std::set<ship::triangle*> triangles;
         material *mtl;
         bool isLeaking;
         point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy);
@@ -134,7 +133,7 @@ namespace phys
         ~spring();
         void update();
         void damping(float amount);
-        void render(bool isStressed = false);
+        void render(bool isStressed);
         bool isStressed();
         bool isBroken();
     };
