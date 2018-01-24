@@ -52,9 +52,9 @@ void Game::Reset()
 
 void Game::LoadShip(std::wstring const & filepath)
 {
-	std::map<vec3f, std::shared_ptr<material>> colourdict;
+	std::map<vec3f, material*> colourdict;
 	for (unsigned int i = 0; i < mMaterials.size(); i++)
-		colourdict[mMaterials[i]->colour] = mMaterials[i];
+		colourdict[mMaterials[i]->colour] = mMaterials[i].get();
 
 	ILuint imghandle;
 	ilGenImages(1, &imghandle);
@@ -106,7 +106,7 @@ void Game::LoadShip(std::wstring const & filepath)
 				phys::point * pt = new phys::point(
 					mWorld.get(), 
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
-					mtl.get(), 
+					mtl, 
 					mtl->isHull ? 0 : 1);  // no buoyancy if it's a hull section
 
 				points[x][y] = pt;
@@ -288,9 +288,9 @@ void Game::Render(RenderParameters renderParameters)
 	glFlush();
 }
 
-std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::wstring const & filepath)
+std::vector<std::unique_ptr<material>> Game::LoadMaterials(std::wstring const & filepath)
 {
-	std::vector<std::shared_ptr<material>> materials;
+	std::vector<std::unique_ptr<material>> materials;
 
 	Json::Value matroot = jsonParseFile(filepath);
 	for (unsigned int i = 0; i < matroot.size(); i++)

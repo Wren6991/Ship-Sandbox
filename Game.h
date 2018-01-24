@@ -48,7 +48,7 @@ public:
 private:
 
 	Game(
-		std::vector<std::shared_ptr<material>> materials,
+		std::vector<std::unique_ptr<material>> materials,
 		std::vector<float> oceanDepth,
 		std::unique_ptr<phys::world> world)
 		: mMaterials(std::move(materials))
@@ -57,12 +57,12 @@ private:
 	{
 	}
 
-	static std::vector<std::shared_ptr<material>> LoadMaterials(std::wstring const & filepath);
+	static std::vector<std::unique_ptr<material>> LoadMaterials(std::wstring const & filepath);
 	static std::vector<float> LoadOceanDepth(std::wstring const & filepath);
 
 private:
 
-	std::vector<std::shared_ptr<material>> const mMaterials;
+	std::vector<std::unique_ptr<material>> const mMaterials;
 	std::vector<float> const mOceanDepth;
 
     std::unique_ptr<phys::world> mWorld;
