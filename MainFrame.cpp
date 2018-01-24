@@ -144,22 +144,22 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
 	// Control
 
-	wxMenu * controlMenu = new wxMenu();
+	wxMenu * controlsMenu = new wxMenu();
 
-	wxMenuItem * zoomInMenuItem = new wxMenuItem(controlMenu, ID_ZOOM_IN_MENUITEM, _("Zoom In\t+"), wxEmptyString, wxITEM_NORMAL);
-	controlMenu->Append(zoomInMenuItem);
+	wxMenuItem * zoomInMenuItem = new wxMenuItem(controlsMenu, ID_ZOOM_IN_MENUITEM, _("Zoom In\t+"), wxEmptyString, wxITEM_NORMAL);
+	controlsMenu->Append(zoomInMenuItem);
 	Connect(ID_ZOOM_IN_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomInMenuItemSelected);
 
-	wxMenuItem * zoomOutMenuItem = new wxMenuItem(controlMenu, ID_ZOOM_OUT_MENUITEM, _("Zoom Out\t-"), wxEmptyString, wxITEM_NORMAL);
-	controlMenu->Append(zoomOutMenuItem);
+	wxMenuItem * zoomOutMenuItem = new wxMenuItem(controlsMenu, ID_ZOOM_OUT_MENUITEM, _("Zoom Out\t-"), wxEmptyString, wxITEM_NORMAL);
+	controlsMenu->Append(zoomOutMenuItem);
 	Connect(ID_ZOOM_OUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomOutMenuItemSelected);
 
-	wxMenuItem * pauseMenuItem = new wxMenuItem(controlMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);
-	controlMenu->Append(pauseMenuItem);
+	wxMenuItem * pauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);
+	controlsMenu->Append(pauseMenuItem);
 	pauseMenuItem->Check(!mGameController->IsRunning());
 	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
 
-	mainMenuBar->Append(controlMenu, _("Control"));
+	mainMenuBar->Append(controlsMenu, _("Controls"));
 
 
 	// Tools
