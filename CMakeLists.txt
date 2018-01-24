@@ -96,6 +96,7 @@ set  (SHIP_SANDBOX_SOURCES
 	Game.h
 	GameController.cpp
 	GameController.h
+	GameException.h
 	GameParameters.h
 	Log.cpp
 	Log.h

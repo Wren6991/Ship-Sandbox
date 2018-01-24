@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #include "Game.h"
 
+#include "GameException.h"
 #include "Log.h"
 #include "util.h"
 
@@ -32,7 +33,7 @@ const int directions[8][2] = {
 
 std::unique_ptr<Game> Game::Create()
 {
-	auto materials = LoadMaterials("data/materials.json");
+	auto materials = LoadMaterials(L"data/materials.json");
 	auto oceanDepth = LoadOceanDepth(L"data/depth.png");
 
 	std::unique_ptr<phys::world> world = std::make_unique<phys::world>();
@@ -66,10 +67,7 @@ void Game::LoadShip(std::wstring const & filepath)
 	{
 		ILint devilError = ilGetError();
 		std::wstring devilErrorMessage(iluErrorString(devilError));
-
-		std::wstring errorMessage = L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage;
-
-		throw std::runtime_error(reinterpret_cast<char const *>(errorMessage.c_str()));
+		throw GameException(L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage);
 	}
 
 	ILubyte *data = ilGetData();
@@ -209,7 +207,9 @@ void Game::Render(RenderParameters renderParameters)
 	// TODO: see if all of this may be cached (with ParametersGenerationSequenceNumber check)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
+	glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
+	// TODO
+	// glFrustum(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
 	glTranslatef(-renderParameters.CamX, -renderParameters.CamY, 0);
 
 	glEnable(GL_LINE_SMOOTH);
@@ -235,7 +235,7 @@ void Game::Render(RenderParameters renderParameters)
 	glFlush();
 }
 
-std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::string const & filepath)
+std::vector<std::shared_ptr<material>> Game::LoadMaterials(std::wstring const & filepath)
 {
 	std::vector<std::shared_ptr<material>> materials;
 

@@ -7,10 +7,11 @@
  ***************************************************************************************/
 
 //
-// The main application. Everything begins from here.
+// The main application. This journey begins from here.
 //
 
 #include "GameController.h"
+#include "GameException.h"
 #include "MainFrame.h"
 
 #include <IL/il.h>
@@ -41,9 +42,9 @@ bool MainApp::OnInit()
 	{
 		gameController = GameController::Create();
 	}
-	catch (std::exception const & e)
+	catch (GameException const & e)
 	{
-		wxMessageBox(L"Error during initialization: " + std::wstring(reinterpret_cast<wchar_t const *>(e.what())), wxT("Error"), wxICON_ERROR);
+		wxMessageBox(L"Error during initialization: " + e.GetErrorMessage(), wxT("Error"), wxICON_ERROR);
 		return false;
 	}
 

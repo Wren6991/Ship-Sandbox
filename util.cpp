@@ -1,18 +1,18 @@
 #include "util.h"
 
+#include "GameException.h"
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 
-// TODO: see if can have jsoncpp in unicode
-Json::Value jsonParseFile(std::string const & filename)
+Json::Value jsonParseFile(std::wstring const & filename)
 {
     std::fstream file(filename.c_str(), std::ios::in | std::ios::binary);
     if (!file.is_open())
     {
-        std::cout << "Error: could not open file " << filename << "\n";
-        return Json::Value();
+		throw GameException(L"Cannot open JSON file \"" + filename + L"\"");
     }
 
     file.seekg(0, std::ios::end);
@@ -32,8 +32,7 @@ Json::Value jsonParseFile(std::string const & filename)
     }
     else
     {
-		std::cout << "In file " << filename << ": Parsing error(s):\n" << errors;
-        return Json::Value();
+		throw GameException(L"Cannot parse JSON file \"" + filename + L"\"");
     }
 }
 
