@@ -5,6 +5,8 @@
 
 #include <map>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "material.h"
 #include "vec.h"
@@ -20,7 +22,7 @@ namespace phys
         struct springCalculateTask;
         struct pointIntegrateTask;
         Scheduler springScheduler;
-        std::set<point*> allPoints;
+        std::unordered_set<point*> allPoints;
         std::set<spring*> allSprings;
         std::set<ship*> allShips;
         BVHNode *collisionTree;
@@ -77,10 +79,10 @@ namespace phys
             triangle(phys::ship *_parent, point *_a, point *_b, point *_c);
             ~triangle();
             };
-        std::set<point*> points;
+        std::unordered_set<point*> points;
         std::set<spring*> springs;
-        std::map<point*, std::set<point*> > adjacentnodes;
-        std::set<triangle*> triangles;
+        std::unordered_map<point*, std::set<point*> > adjacentnodes;
+        std::unordered_set<triangle*> triangles;
         void render();
         void leakWater(double dt);
         void gravitateWater(double dt);

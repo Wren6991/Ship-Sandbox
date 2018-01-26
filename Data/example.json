@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Steel Hull",		// Set the name of the material.
+        "strength": 80,				// Maximum value of stress due to Pression
+        "Density": 7.5,				// Density of the material.
+        "Colour": "#A0A0A0",		// Set the colour of the material - Must be Hexadecimal
+        "IsHull": true				// Prevent water from passing through, but not not float.
+    }
+]
+
+// When creating a material list, it is important that the last line ( in this case it is "IsHull": true ) never have a coma in the end. 
+// If this is a suit of materials, you must keep the comas. 
+// Example:
+
+//[
+//    {
+//        "name": "Steel Hull",	
+//        "strength": 80,
+//        "Density": 7.5,
+//       "Colour": "#A0A0A0",
+//        "IsHull": true, 			----- This line has a coma. It indicate that there is an other material below
+//    }
+//]
+//[
+//    {
+//        "name": "Steel Hull",	
+//        "strength": 80,
+//        "Density": 7.5,
+//       "Colour": "#A0A0A0",
+//        "IsHull": true 			----- This line do not have a coma. It indicate that it is the last material to load in the file
+//    }
+//]

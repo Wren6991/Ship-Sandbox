@@ -17,7 +17,7 @@ std::unique_ptr<GameController> GameController::Create()
 	//
 
 	// Load initial ship
-	std::wstring initialShipFilename = L"ship.png";
+	std::wstring initialShipFilename = L"Data/default_ship.png";
 	game->LoadShip(initialShipFilename);
 
 	return std::unique_ptr<GameController>(

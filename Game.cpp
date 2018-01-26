@@ -33,8 +33,8 @@ const int directions[8][2] = {
 
 std::unique_ptr<Game> Game::Create()
 {
-	auto materials = LoadMaterials(L"data/materials.json");
-	auto oceanDepth = LoadOceanDepth(L"data/depth.png");
+	auto materials = LoadMaterials(L"Data/materials.json");
+	auto oceanDepth = LoadOceanDepth(L"Data/depth.png");
 
 	std::unique_ptr<phys::world> world = std::make_unique<phys::world>();
 
@@ -202,7 +202,9 @@ void Game::LoadShip(std::wstring const & filepath)
 
 	ilDeleteImage(imghandle);
 
-	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount, L" springs, and ", trianglesCount, L" triangles.");
+	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", 
+		nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount, 
+		L" springs, ", trianglesCount, L" triangles, and ", shp->adjacentnodes.size(), " adjacency entries.");
 }
 
 void Game::DestroyAt(

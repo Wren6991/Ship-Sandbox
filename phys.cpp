@@ -345,7 +345,7 @@ phys::world::~world()
         delete sp;
     */
 
-	for (std::set<point *>::iterator it = allPoints.begin(); it != allPoints.end();)
+	for (auto it = allPoints.begin(); it != allPoints.end();)
 	{
 		point * pt = *it;
 		it = allPoints.erase(it);
@@ -615,7 +615,7 @@ void phys::ship::update(double dt)
 void phys::ship::leakWater(double dt)
 {
     // Stuff some water into all the leaking nodes, if they're not under too much pressure
-   for (std::set<point*>::iterator iter = points.begin(); iter != points.end(); iter++)
+   for (auto iter = points.begin(); iter != points.end(); iter++)
    {
         point *p = *iter;
         double pressure = p->getPressure();
@@ -630,7 +630,7 @@ void phys::ship::gravitateWater(double dt)
 {
     // Water flows into adjacent nodes (from a into b) in a quantity proportional to the cos of angle the beam makes
     // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-    for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
+    for (std::unordered_map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
          iter != adjacentnodes.end(); iter++)
     {
         point *a = iter->first;
@@ -653,7 +653,7 @@ void phys::ship::balancePressure(double dt)
 {
     // If there's too much water in a node, try and push it into the others
     // (This needs to iterate over multiple frames for pressure waves to spread through water)
-    for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
+    for (std::unordered_map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
          iter != adjacentnodes.end(); ++iter)
     {
         point *a = iter->first;
@@ -671,9 +671,9 @@ void phys::ship::balancePressure(double dt)
 
 void phys::ship::render()
 {
-    for (std::set<ship::triangle*>::iterator iter = triangles.begin(); iter != triangles.end(); iter++)
+    for (auto iter = triangles.begin(); iter != triangles.end(); ++iter)
     {
-        triangle *t = *iter;
+        triangle const *t = *iter;
         render::triangle(t->a->pos, t->b->pos, t->c->pos,
                          t->a->getColour(t->a->mtl->colour),
                          t->b->getColour(t->b->mtl->colour),

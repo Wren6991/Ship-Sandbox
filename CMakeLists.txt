@@ -4,6 +4,7 @@ project (ShipSandbox)
  
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+
 # 
 # External libraries 
 #
@@ -15,15 +16,11 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set (JSONCPP_SDK_ROOT "C:/Users/Neurodancer/source/repos/jsoncpp")
 
-set (JSONCPP_INCLUDE_DIRS "${JSONCPP_SDK_ROOT}/include")
+set (JSONCPP_INCLUDE_DIRS 
+	"${JSONCPP_SDK_ROOT}/include")
 
-IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-	find_library(JSONCPP_LIBRARY NAMES lib_json
-		HINTS "${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Release")
-ELSE()
-	find_library(JSONCPP_LIBRARY NAMES lib_json
-		HINTS "${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Debug")
-ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
+set (JSONCPP_LIBRARY
+	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/$(ConfigurationName)/lib_json.lib")
 
 
 #
@@ -34,27 +31,20 @@ set (WXWIDGETS_SDK_ROOT "C:/Users/Neurodancer/source/repos/wxWidgets")
 
 set (WXWIDGETS_INCLUDE_DIRS 
 	"${WXWIDGETS_SDK_ROOT}/include" 
-	"${WXWIDGETS_SDK_ROOT}/include/msvc")
+	"${WXWIDGETS_SDK_ROOT}/include/msvc"
+	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/mswu")
 
 link_directories("${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib")
 
-IF(CMAKE_BUILD_TYPE MATCHES RELEASE)
-	set (WXWIDGETS_INCLUDE_DIRS 
-		${WXWIDGETS_INCLUDE_DIRS}
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/mswu")
-	set (WXWIDGETS_WXMSW_LIBRARY
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31u_core.lib")
-	set (WXWIDGETS_WXBASE_LIBRARY
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31u.lib")
-ELSE()
-	set (WXWIDGETS_INCLUDE_DIRS 
-		${WXWIDGETS_INCLUDE_DIRS}
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/mswud")
-	set (WXWIDGETS_WXMSW_LIBRARY
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31ud_core.lib")
-	set (WXWIDGETS_WXBASE_LIBRARY
-		"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31ud.lib")
-ENDIF(CMAKE_BUILD_TYPE MATCHES RELEASE)
+set (WXWIDGETS_WXMSW_LIBRARY_DEBUG
+	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31ud_core.lib")
+set (WXWIDGETS_WXBASE_LIBRARY_DEBUG
+	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31ud.lib")
+set (WXWIDGETS_WXMSW_LIBRARY_RELEASE
+	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31u_core.lib")
+set (WXWIDGETS_WXBASE_LIBRARY_RELEASE
+	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31u.lib")
+
 
 
 #
@@ -65,12 +55,48 @@ set (DEVIL_SDK_ROOT "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK")
 
 set (DEVIL_INCLUDE_DIRS "${DEVIL_SDK_ROOT}/include")
 
+# For Visual Studio using Release is fine for all build types
 find_library(DEVIL_DEVIL_LIBRARY NAMES DevIL
        HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
 find_library(DEVIL_ILU_LIBRARY NAMES ILU
        HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
 find_library(DEVIL_ILUT_LIBRARY NAMES ILUT
        HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
+
+set (DEVIL_RUNTIME_LIBRARIES
+       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/DevIL.dll"
+       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/ILU.dll"
+       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/ILUT.dll")
+
+
+#
+# Flags
+#
+
+if (MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
+
+	foreach(flag_var
+		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+		CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+		if(${flag_var} MATCHES "/MD")
+			string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+		endif(${flag_var} MATCHES "/MD")
+		if(${flag_var} MATCHES "/W3")
+			string(REGEX REPLACE "/W3" "" ${flag_var} "${${flag_var}}")
+		endif(${flag_var} MATCHES "/W3")
+		set(${flag_var} "${${flag_var}} /W4")
+	endforeach(flag_var)
+
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
+else(MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+endif(MSVC)
+ 
+message ("cxx Flags:" ${CMAKE_CXX_FLAGS})
+message ("cxx Flags Release:" ${CMAKE_CXX_FLAGS_RELEASE})
+message ("cxx Flags Debug:" ${CMAKE_CXX_FLAGS_DEBUG})
+
 
 
 #
@@ -125,7 +151,9 @@ set  (SHIP_SANDBOX_SOURCES
 
 if (MSVC)
 	list(APPEND SHIP_SANDBOX_SOURCES
-		ShipSandbox.rc)	
+		Resources/ShipSandbox.rc
+		Resources/Ship.ico
+		)
 endif(MSVC)
 
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
@@ -143,8 +171,10 @@ target_link_libraries (
 	ShipSandbox
 	${JSONCPP_LIBRARY}
 	${OPENGL_LIBRARIES}
-	${WXWIDGETS_WXMSW_LIBRARY}
-	${WXWIDGETS_WXBASE_LIBRARY}
+	debug ${WXWIDGETS_WXMSW_LIBRARY_DEBUG}
+	optimized ${WXWIDGETS_WXMSW_LIBRARY_RELEASE}
+	debug ${WXWIDGETS_WXBASE_LIBRARY_DEBUG}
+	optimized ${WXWIDGETS_WXBASE_LIBRARY_RELEASE}
 	${DEVIL_DEVIL_LIBRARY}
 	${DEVIL_ILU_LIBRARY}
 	${DEVIL_ILUT_LIBRARY}
@@ -153,35 +183,47 @@ target_link_libraries (
 if (MSVC)
 	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 else (MSVC)
-endif(MSVC)
+endif (MSVC)
 
 
 #
-# Flags
+# Copy files
+#
+
+message (STATUS "Copying files")
+
+foreach(build_type ${CMAKE_CONFIGURATION_TYPES})
+
+	# Copy Data files
+	file(COPY Data
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
+
+	# Copy runtime libraries
+	if (WIN32)
+		file(COPY ${DEVIL_RUNTIME_LIBRARIES}
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
+	endif (WIN32)
+
+endforeach(build_type)
+
+
+
+#
+# Set VS properties
 #
 
 if (MSVC)
-	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
 
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
+	set (VS_STARTUP_PROJECT ShipSandbox)
+	
+	set_target_properties(
+		ShipSandbox
+		PROPERTIES
+			# Set debugger working directory to binary output directory
+			VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/$(ConfigurationName)
 
-	foreach(flag_var
-		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-		CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-		if(${flag_var} MATCHES "/MD")
-			string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-		endif(${flag_var} MATCHES "/MD")
-		if(${flag_var} MATCHES "/W3")
-			string(REGEX REPLACE "/W3" "" ${flag_var} "${${flag_var}}")
-		endif(${flag_var} MATCHES "/W3")
-		set(${flag_var} "${${flag_var}} /W4")
-	endforeach(flag_var)
+			# Set output directory to binary output directory - VS will add the configuration type
+			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	)
 
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
-else(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-endif(MSVC)
- 
-message ("cxx Flags:" ${CMAKE_CXX_FLAGS})
-message ("cxx Flags Release:" ${CMAKE_CXX_FLAGS_RELEASE})
-message ("cxx Flags Debug:" ${CMAKE_CXX_FLAGS_DEBUG})
+endif (MSVC)
