@@ -5,9 +5,9 @@ project (ShipSandbox)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 
-####################################################
+# 
 # External libraries 
-####################################################
+#
 
 
 #
@@ -46,6 +46,7 @@ set (WXWIDGETS_WXBASE_LIBRARY_RELEASE
 	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31u.lib")
 
 
+
 #
 # DevIL
 #
@@ -68,9 +69,9 @@ set (DEVIL_RUNTIME_LIBRARIES
        "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/ILUT.dll")
 
 
-####################################################
+#
 # Flags
-####################################################
+#
 
 if (MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
@@ -98,9 +99,9 @@ message ("cxx Flags Debug:" ${CMAKE_CXX_FLAGS_DEBUG})
 
 
 
-####################################################
+#
 # Misc
-####################################################
+#
 
 if (MSVC)
 	set(ADDITIONAL_LIBRARIES "comctl32;rpcrt4;advapi32") # winmm.lib wsock32.lib
@@ -112,17 +113,117 @@ endif(MSVC)
 find_package(OpenGL REQUIRED)
 
 
+#
+# ShipSandbox
+#
+
+set  (SHIP_SANDBOX_SOURCES
+	Game.cpp
+	Game.h
+	GameController.cpp
+	GameController.h
+	GameException.h
+	GameParameters.h
+	Log.cpp
+	Log.h
+	LoggingDialog.cpp
+	LoggingDialog.h
+	MainApp.cpp
+	MainFrame.cpp
+	MainFrame.h
+	material.cpp
+	material.h
+	phys.cpp
+	phys.h
+	render.cpp
+	render.h
+	RenderParameters.h
+	Scheduler.cpp
+	Scheduler.h
+	SettingsDialog.cpp
+	SettingsDialog.h
+	util.cpp
+	util.h
+	vec.cpp
+	vec.h
+	Version.h
+	)
+
+if (MSVC)
+	list(APPEND SHIP_SANDBOX_SOURCES
+		Resources/ShipSandbox.rc
+		Resources/Ship.ico
+		)
+endif(MSVC)
+
+source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
+
+add_executable (ShipSandbox ${SHIP_SANDBOX_SOURCES})
+
+target_include_directories(
+	ShipSandbox
+	PRIVATE
+	${JSONCPP_INCLUDE_DIRS}
+	${WXWIDGETS_INCLUDE_DIRS}
+	${DEVIL_INCLUDE_DIRS})
+
+target_link_libraries (
+	ShipSandbox
+	${JSONCPP_LIBRARY}
+	${OPENGL_LIBRARIES}
+	debug ${WXWIDGETS_WXMSW_LIBRARY_DEBUG}
+	optimized ${WXWIDGETS_WXMSW_LIBRARY_RELEASE}
+	debug ${WXWIDGETS_WXBASE_LIBRARY_DEBUG}
+	optimized ${WXWIDGETS_WXBASE_LIBRARY_RELEASE}
+	${DEVIL_DEVIL_LIBRARY}
+	${DEVIL_ILU_LIBRARY}
+	${DEVIL_ILUT_LIBRARY}
+	${ADDITIONAL_LIBRARIES})
+
+if (MSVC)
+	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+else (MSVC)
+endif (MSVC)
 
 
-####################################################
-# Sub-projects
-####################################################
+#
+# Copy files
+#
 
-add_subdirectory(GameLib)
-add_subdirectory(Resources)
-add_subdirectory(ShipSandbox)
-#add_subdirectory(UnitTests)
+message (STATUS "Copying files")
+
+foreach(build_type ${CMAKE_CONFIGURATION_TYPES})
+
+	# Copy Data files
+	file(COPY Data
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
+
+	# Copy runtime libraries
+	if (WIN32)
+		file(COPY ${DEVIL_RUNTIME_LIBRARIES}
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
+	endif (WIN32)
+
+endforeach(build_type)
 
 
 
+#
+# Set VS properties
+#
 
+if (MSVC)
+
+	set (VS_STARTUP_PROJECT ShipSandbox)
+	
+	set_target_properties(
+		ShipSandbox
+		PROPERTIES
+			# Set debugger working directory to binary output directory
+			VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/$(ConfigurationName)
+
+			# Set output directory to binary output directory - VS will add the configuration type
+			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+	)
+
+endif (MSVC)

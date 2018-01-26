@@ -10,9 +10,10 @@
 // The main application. This journey begins from here.
 //
 
-#include "GameController.h"
-#include "GameException.h"
 #include "MainFrame.h"
+
+#include <GameLib/GameController.h>
+#include <GameLib/GameException.h>
 
 #include <IL/il.h>
 #include <IL/ilu.h>

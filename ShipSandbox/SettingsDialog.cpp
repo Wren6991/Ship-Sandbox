@@ -7,7 +7,7 @@
 ***************************************************************************************/
 #include "SettingsDialog.h"
 
-#include "Log.h"
+#include <GameLib/Log.h>
 
 #include <wx/intl.h>
 #include <wx/sizer.h>

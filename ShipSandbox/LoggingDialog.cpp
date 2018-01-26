@@ -5,7 +5,7 @@
 ***************************************************************************************/
 #include "LoggingDialog.h"
 
-#include "Log.h"
+#include <GameLib/Log.h>
 
 #include <cassert>
 

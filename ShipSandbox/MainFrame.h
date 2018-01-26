@@ -7,9 +7,10 @@
 ***************************************************************************************/
 #pragma once
 
-#include "GameController.h"
 #include "LoggingDialog.h"
 #include "SettingsDialog.h"
+
+#include <GameLib/GameController.h>
 
 #include <wx/filedlg.h>
 #include <wx/frame.h>
