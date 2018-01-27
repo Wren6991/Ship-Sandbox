@@ -263,8 +263,6 @@ void Game::Render(RenderParameters renderParameters)
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
-	// TODO
-	// glFrustum(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
 	glTranslatef(-renderParameters.CamX, -renderParameters.CamY, 0);
 
 	glEnable(GL_LINE_SMOOTH);
