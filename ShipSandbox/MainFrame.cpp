@@ -223,7 +223,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	
 	mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
 	Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);	
-	mGameTimer->Start(0, true);
+	mGameTimer->Start(0, true); 
 
 	mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
 	Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);	
@@ -268,6 +268,9 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
 	assert(!!mGameController);
 
+	// Make the timer for the next step start now
+	mGameTimer->Start(0, true);
+
 	// Main timing event!
 	mFrameCount++;
 
@@ -275,9 +278,7 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 	mGameController->DoStep();
 
 	// Render
-	RenderGame();
-
-	mGameTimer->Start(0, true);
+	RenderGame();	
 }
 
 void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)

@@ -19,8 +19,10 @@ set (JSONCPP_SDK_ROOT "C:/Users/Neurodancer/source/repos/jsoncpp")
 set (JSONCPP_INCLUDE_DIRS 
 	"${JSONCPP_SDK_ROOT}/include")
 
-set (JSONCPP_LIBRARY
-	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/$(ConfigurationName)/lib_json.lib")
+set (JSONCPP_LIBRARY_DEBUG
+	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Debug/lib_json.lib")
+set (JSONCPP_LIBRARY_RELEASE
+	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Release/lib_json.lib")
 
 
 #
@@ -121,7 +123,7 @@ find_package(OpenGL REQUIRED)
 add_subdirectory(GameLib)
 add_subdirectory(Resources)
 add_subdirectory(ShipSandbox)
-#add_subdirectory(UnitTests)
+add_subdirectory(UnitTests)
 
 
 

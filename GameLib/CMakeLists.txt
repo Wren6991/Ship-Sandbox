@@ -40,7 +40,8 @@ target_include_directories(GameLib INTERFACE
 	..)
 
 target_link_libraries (GameLib
-	${JSONCPP_LIBRARY}
+	debug ${JSONCPP_LIBRARY_DEBUG}
+	optimized ${JSONCPP_LIBRARY_RELEASE}
 	${OPENGL_LIBRARIES}
 	${DEVIL_DEVIL_LIBRARY}
 	${DEVIL_ILU_LIBRARY}
