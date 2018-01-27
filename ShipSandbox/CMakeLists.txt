@@ -33,7 +33,7 @@ target_link_libraries (ShipSandbox
 	${ADDITIONAL_LIBRARIES})
 
 if (MSVC)
-	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+	set_target_properties(ShipSandbox PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /LTCG")
 else (MSVC)
 endif (MSVC)
 

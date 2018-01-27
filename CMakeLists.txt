@@ -89,11 +89,16 @@ if (MSVC)
 		set(${flag_var} "${${flag_var}} /W4")
 	endforeach(flag_var)
 
+	string(REGEX REPLACE "/O2" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /fp:fast /Ox /GS-")
+
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
 else(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 endif(MSVC)
  
+
+
 message ("cxx Flags:" ${CMAKE_CXX_FLAGS})
 message ("cxx Flags Release:" ${CMAKE_CXX_FLAGS_RELEASE})
 message ("cxx Flags Debug:" ${CMAKE_CXX_FLAGS_DEBUG})

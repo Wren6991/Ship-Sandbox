@@ -10,3 +10,14 @@ Game:
 		Ship: 18.67%
 		Spring: 16.72%
 	
+----------------------------------------------
+phys changes (un/ordered sets and maps)
+----------------------------------------------
+Game:
+	GameStep: 36.89%
+		World::Update: 36.89%
+			World::doSprings: 24.09%
+			Ship::Update: 10.61%
+				GravitateWater: 11.11%
+	Render: 23.42%
+	
