@@ -262,10 +262,12 @@ void phys::world::drawTo(vec2f target)
 }
 
 // Copy parameters and set up initial params:
-phys::world::world(vec2f _gravity, double _buoyancy, double _strength)
+phys::world::world(vec2f gravity, double _buoyancy, double _strength)
+	: mGravity(gravity)
+	, mGravityNormal(mGravity.normalise())
+	, mGravityLength(mGravity.length())
 {
 	time = 0;
-	gravity = _gravity;
 	buoyancy = _buoyancy;
 	strength = _strength;
 	waterpressure = 0.3;
@@ -318,10 +320,10 @@ void phys::point::applyForce(vec2f f)
 void phys::point::update(double dt)
 {
 	double mass = mtl->mass;
-	this->applyForce(wld->gravity * (mass * (1 + fmin(water, 1) * wld->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
+	this->applyForce(wld->mGravity * (mass * (1 + fmin(water, 1) * wld->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
 																								  // Buoyancy:
 	if (pos.y < wld->waterheight(pos.x))
-		this->applyForce(wld->gravity * (-wld->buoyancy * buoyancy * mass));
+		this->applyForce(wld->mGravity * (-wld->buoyancy * buoyancy * mass));
 	vec2f newlastpos = pos;
 	// Water drag:
 	if (pos.y < wld->waterheight(pos.x))
@@ -375,7 +377,7 @@ void phys::point::render()
 
 double phys::point::getPressure()
 {
-	return wld->gravity.length() * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
+	return wld->mGravityLength * fmax(-pos.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
 }
 
 phys::AABB phys::point::getAABB()
@@ -547,7 +549,7 @@ void phys::ship::gravitateWater(double dt)
 		for (std::set<point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
 		{
 			point *b = *second;
-			double cos_theta = (b->pos - a->pos).normalise().dot(wld->gravity.normalise());
+			double cos_theta = (b->pos - a->pos).normalise().dot(wld->mGravityNormal);
 			if (cos_theta > 0)
 			{
 				double correction = std::min(0.5 * cos_theta * dt, a->water);   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...

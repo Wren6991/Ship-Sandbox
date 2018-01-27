@@ -23,8 +23,8 @@ set  (GAME_SOURCES
 	Scheduler.h
 	util.cpp
 	util.h
-	vec.cpp
-	vec.h)
+	Vectors.cpp
+	Vectors.h)
 
 source_group(" " FILES ${GAME_SOURCES})
 

@@ -8,7 +8,7 @@
 #include "Game.h"
 #include "GameParameters.h"
 #include "RenderParameters.h"
-#include "vec.h"
+#include "Vectors.h"
 
 #include <memory>
 #include <string>

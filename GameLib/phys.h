@@ -9,11 +9,11 @@
 #include <unordered_set>
 #include <vector>
 #include "material.h"
-#include "vec.h"
+#include "Vectors.h"
 
 namespace phys
 {
-	class point; class spring; struct ship; class game; struct AABB; struct BVHNode;
+	class point; class spring; class ship; class game; struct AABB; struct BVHNode;
 	class world
 	{
 		friend class point;
@@ -29,7 +29,9 @@ namespace phys
 		float waterheight(float x);
 		float oceanfloorheight(float x);
 		void doSprings(double dt);
-		vec2 gravity;
+		vec2 const mGravity;
+		vec2 const mGravityNormal;
+		float const mGravityLength;
 		void buildBVHTree(bool splitInX, std::vector<point*> &pointlist, BVHNode *thisnode, int depth = 1);
 	public:
 		float const *oceandepthbuffer;
@@ -48,7 +50,7 @@ namespace phys
 		void renderWater(double left, double right, double bottom, double top);
 		void destroyAt(vec2 pos, float radius);
 		void drawTo(vec2 target);
-		world(vec2 _gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
+		world(vec2 gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
 		~world();
 	};
 
@@ -70,8 +72,9 @@ namespace phys
 	};
 
 
-	struct ship
+	class ship
 	{
+	public:
 		world *wld;
 		struct triangle {
 			ship *parent;
