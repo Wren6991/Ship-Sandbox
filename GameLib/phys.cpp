@@ -61,15 +61,16 @@ void phys::world::update(double dt)
 void phys::world::doSprings(double dt)
 {
 	int nchunks = springScheduler.GetNumberOfThreads();
-	int springchunk = springs.size() / nchunks + 1;
+	int springChunkSize = springs.size() / nchunks + 1;
 	for (int outiter = 0; outiter < 3; outiter++)
 	{
 		for (int iteration = 0; iteration < 8; iteration++)
 		{
-			for (int i = springs.size() - 1; i > 0; i -= springchunk)
+			for (int i = springs.size() - 1; i > 0; i -= springChunkSize)
 			{
-				springScheduler.Schedule(new springCalculateTask(this, imax(i - springchunk, 0), i));
+				springScheduler.Schedule(new springCalculateTask(this, imax(i - springChunkSize, 0), i));
 			}
+
 			springScheduler.WaitForAllTasks();
 		}
 		float dampingamount = (1 - pow(0.0, dt)) * 0.5;
@@ -107,7 +108,7 @@ void phys::world::pointIntegrateTask::Process()
 
 }
 
-void phys::world::render(double left, double right, double bottom, double top)
+void phys::world::render(double left, double right, double bottom, double top) const
 {
 	// Draw the ocean floor
 	renderLand(left, right, bottom, top);
@@ -188,7 +189,7 @@ void phys::world::buildBVHTree(bool splitInX, std::vector<point*> &pointlist, BV
 	}
 }
 
-void phys::world::renderLand(double left, double right, double bottom, double top)
+void phys::world::renderLand(double left, double right, double bottom, double top) const
 {
 	glColor4f(0.5, 0.5, 0.5, 1);
 	double slicewidth = (right - left) / 200.0;
@@ -203,7 +204,7 @@ void phys::world::renderLand(double left, double right, double bottom, double to
 	}
 }
 
-void phys::world::renderWater(double left, double right, double bottom, double top)
+void phys::world::renderWater(double left, double right, double bottom, double top) const
 {
 	// Cut the water into vertical slices (to get the different heights of waves) and draw it
 	glColor4f(0, 0.25, 1, 0.5);
@@ -219,7 +220,7 @@ void phys::world::renderWater(double left, double right, double bottom, double t
 	}
 }
 
-float phys::world::oceanfloorheight(float x)
+float phys::world::oceanfloorheight(float x) const
 {
 	/*x += 1024.f;
 	x = x - 2048.f * floorf(x / 2048.f);
@@ -229,7 +230,7 @@ float phys::world::oceanfloorheight(float x)
 }
 
 // Function of time and x (though time is constant during the update step, so no need to parameterise it)
-float phys::world::waterheight(float x)
+float phys::world::waterheight(float x) const
 {
 	return (sinf(x * 0.1f + time) * 0.5f + sinf(x * 0.3f - time * 1.1f) * 0.3f) * waveheight;
 }
@@ -363,7 +364,7 @@ void phys::point::breach()
 	}
 }
 
-void phys::point::render()
+void phys::point::render() const
 {
 	// Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
 	if (isLeaking)
@@ -468,7 +469,7 @@ void phys::spring::damping(float amount)
 	b->lastpos -= springdir;
 }
 
-void phys::spring::render(bool showStress)
+void phys::spring::render(bool showStress) const
 {
 	// If member is heavily stressed, highlight it in red (ignored if world's showstress field is false)
 	glBegin(GL_LINES);
@@ -581,7 +582,7 @@ void phys::ship::balancePressure(double dt)
 	}
 }
 
-void phys::ship::render()
+void phys::ship::render() const
 {
 	for (std::set<ship::triangle*>::iterator iter = triangles.begin(); iter != triangles.end(); iter++)
 	{
@@ -636,7 +637,7 @@ void phys::AABB::extendTo(phys::AABB other)
 		topright.y = other.topright.y;
 }
 
-void phys::AABB::render()
+void phys::AABB::render() const
 {
 	render::box(bottomleft, topright);
 }

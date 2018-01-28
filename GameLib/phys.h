@@ -26,8 +26,8 @@ namespace phys
 		std::vector <spring*> springs;
 		std::vector <ship*> ships;
 		BVHNode *collisionTree;
-		float waterheight(float x);
-		float oceanfloorheight(float x);
+		float waterheight(float x) const;
+		float oceanfloorheight(float x) const;
 		void doSprings(double dt);
 		vec2 const mGravity;
 		vec2 const mGravityNormal;
@@ -45,9 +45,9 @@ namespace phys
 		bool xraymode;
 		float time;
 		void update(double dt);
-		void render(double left, double right, double bottom, double top);
-		void renderLand(double left, double right, double bottom, double top);
-		void renderWater(double left, double right, double bottom, double top);
+		void render(double left, double right, double bottom, double top) const;
+		void renderLand(double left, double right, double bottom, double top) const;
+		void renderWater(double left, double right, double bottom, double top) const;
 		void destroyAt(vec2 pos, float radius);
 		void drawTo(vec2 target);
 		world(vec2 gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
@@ -86,7 +86,7 @@ namespace phys
 		std::set<spring*> springs;
 		std::map<point*, std::set<point*> > adjacentnodes;
 		std::set<triangle*> triangles;
-		void render();
+		void render() const;
 		void leakWater(double dt);
 		void gravitateWater(double dt);
 		void balancePressure(double dt);
@@ -121,7 +121,7 @@ namespace phys
 		vec2 getPos();
 		vec3f getColour(vec3f basecolour);
 		AABB getAABB();
-		void render();
+		void render() const;
 	};
 
 	class spring
@@ -138,7 +138,7 @@ namespace phys
 		~spring();
 		void update();
 		void damping(float amount);
-		void render(bool isStressed = false);
+		void render(bool isStressed = false) const;
 		bool isStressed();
 		bool isBroken();
 	};
@@ -149,7 +149,7 @@ namespace phys
 		AABB() {}
 		AABB(vec2 _bottomleft, vec2 _topright);
 		void extendTo(AABB other);
-		void render();
+		void render() const;
 	};
 
 	struct BVHNode
