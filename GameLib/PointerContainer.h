@@ -91,6 +91,10 @@ public:
 		pointers.clear();
 	}
 
+	// No copy!
+	PointerContainer(PointerContainer const & other) = delete;
+	PointerContainer & operator=(PointerContainer const & other) = delete;
+
 	~PointerContainer()
 	{
 		// Delete all pointers we own
@@ -98,6 +102,8 @@ public:
 		{
 			delete mPointers[i];
 		}
+
+		delete[] mPointers;
 	}
 
 	//
@@ -145,9 +151,71 @@ public:
 	// Modifiers
 	//
 
+	/*
+	 * Scavenges deleted elements (those flagged with IsDeleted=true),
+	 * frees them, and removes them from the container.
+	 *
+	 * After this call, the new size of the container will be equal to the
+	 * old size minus the number of elements removed.
+	 */
 	void shrink_to_fit()
 	{
-		// TODO
+		//
+		// The idea is to minimize memmove's by identifying strides
+		// of deleted elements and then memmove'ing left everything afterwards
+		// by the size of the stride.
+		//
+		// As a further optimization, we could also identify strides
+		// of non-deleted elements afterwards and memmove just these; this would
+		// guarantee that each element is only memmove'd once. For later.
+		//
+
+		//
+		// 1. Compact array
+		//
+
+		TElement ** pEnd = mPointers + mSize;
+
+		for (TElement ** p1 = mPointers; p1 < pEnd; /*incremented in loop*/)
+		{
+			if ((*p1)->IsDeleted)
+			{
+				delete *p1;
+
+				// Find first pointer of non-deleted element, deleting elements
+				// in the meantime
+				TElement ** p2;
+				for (
+					p2 = p1 + 1; 
+					p2 < pEnd && (*p2)->IsDeleted; 
+					delete *p2, ++p2);
+
+				// Move back everything from p2 onwards
+				std::memmove(p1, p2, (pEnd - p2) * sizeof(TElement *));
+
+				// Adjust size 
+				mSize -= (p2 - p1);
+				pEnd = mPointers + mSize;
+
+				// Continue from here
+			}
+			else
+			{
+				// Skip
+				++p1;
+			}
+		}
+		
+
+
+		//
+		// 2. Shrink array
+		//
+
+		TElement **pNewPointers = new TElement*[mSize];
+		memcpy(pNewPointers, mPointers, mSize * sizeof(TElement *));
+		delete[] mPointers;
+		mPointers = pNewPointers;
 	}
 
 private:
