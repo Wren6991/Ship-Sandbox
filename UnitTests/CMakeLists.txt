@@ -20,6 +20,7 @@ set (GTEST_LIBRARY_RELEASE
 
 set  (UNIT_TEST_SOURCES
 	Main.cpp
+	PointerContainerTests.cpp
 	VectorsTests.cpp)
 
 add_executable (UnitTests ${UNIT_TEST_SOURCES})
@@ -33,3 +34,7 @@ target_link_libraries (UnitTests
 	debug ${GTEST_LIBRARY_DEBUG}
 	optimized ${GTEST_LIBRARY_RELEASE}
 	${ADDITIONAL_LIBRARIES})
+
+if(MSVC)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
+endif(MSVC)

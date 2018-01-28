@@ -16,6 +16,8 @@ set  (GAME_SOURCES
 	material.h
 	phys.cpp
 	phys.h
+	PointerContainer.cpp
+	PointerContainer.h
 	render.cpp
 	render.h
 	RenderParameters.h
