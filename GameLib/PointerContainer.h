@@ -103,6 +103,7 @@ public:
 			delete mPointers[i];
 		}
 
+		// ...and now delete the array of pointers
 		delete[] mPointers;
 	}
 
@@ -161,9 +162,9 @@ public:
 	void shrink_to_fit()
 	{
 		//
-		// The idea is to minimize memmove's by identifying strides
-		// of deleted elements and then memmove'ing left everything afterwards
-		// by the size of the stride.
+		// The idea is to minimize the number of memmove's by identifying strides
+		// of deleted elements and then memmove'ing towards the left everything 
+		// after each deleted stride.
 		//
 		// As a further optimization, we could also identify strides
 		// of non-deleted elements afterwards and memmove just these; this would
@@ -174,12 +175,15 @@ public:
 		// 1. Compact array
 		//
 
+		size_t const mAllocatedSize = mSize;
+
 		TElement ** pEnd = mPointers + mSize;
 
 		for (TElement ** p1 = mPointers; p1 < pEnd; /*incremented in loop*/)
 		{
 			if ((*p1)->IsDeleted)
 			{
+				// Free this pointer
 				delete *p1;
 
 				// Find first pointer of non-deleted element, deleting elements
@@ -195,9 +199,9 @@ public:
 
 				// Adjust size 
 				mSize -= (p2 - p1);
-				pEnd = mPointers + mSize;
+				pEnd -= (p2 - p1);
 
-				// Continue from here
+				// Keep going from here
 			}
 			else
 			{
@@ -209,13 +213,16 @@ public:
 
 
 		//
-		// 2. Shrink array
+		// 2. Shrink array (if needed)
 		//
 
-		TElement **pNewPointers = new TElement*[mSize];
-		memcpy(pNewPointers, mPointers, mSize * sizeof(TElement *));
-		delete[] mPointers;
-		mPointers = pNewPointers;
+		if (mAllocatedSize != mSize)
+		{
+			TElement **pNewPointers = new TElement*[mSize];
+			memcpy(pNewPointers, mPointers, mSize * sizeof(TElement *));
+			delete[] mPointers;
+			mPointers = pNewPointers;
+		}
 	}
 
 private:

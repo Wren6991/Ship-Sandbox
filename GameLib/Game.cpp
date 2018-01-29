@@ -76,7 +76,6 @@ void Game::LoadShip(std::wstring const & filepath)
 
 	phys::ship *shp = new phys::ship(mWorld.get());
 
-	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[width]);
 
 	//
 	// Process image points and create points, springs, and triangles for this ship
@@ -87,13 +86,15 @@ void Game::LoadShip(std::wstring const & filepath)
 	size_t springCount = 0;
 	size_t trianglesCount = 0;
 
+	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[width]);
+
 	for (int x = 0; x < width; ++x)
 	{
 		points[x] = std::unique_ptr<phys::point *[]>(new phys::point *[height]);
 
 		for (int y = 0; y < height; ++y)
 		{
-			// assume R G B:
+			// R G B
 			vec3f colour(
 				data[(x + (height - y - 1) * width) * 3 + 0] / 255.f,
 				data[(x + (height - y - 1) * width) * 3 + 1] / 255.f,
@@ -156,12 +157,13 @@ void Game::LoadShip(std::wstring const & filepath)
 			{
 				int adjx1 = x + directions[i][0];
 				int adjy1 = y + directions[i][1];
+				// Valid coordinates?
 				if (adjx1 >= 0 && adjx1 < width && adjy1 >= 0)
 				{
 					assert(adjy1 < height); // The four directions we're checking do not include S
 
 					phys::point * b = points[adjx1][adjy1]; // adjacent point in direction (i)				
-					if (b)
+					if (nullptr != b)
 					{
 						// b is adjacent to a at one of E, NE, N, NW						
 
@@ -170,7 +172,7 @@ void Game::LoadShip(std::wstring const & filepath)
 						// 
 
 						bool springIsHull = aIsHull && b->mtl->isHull;
-						material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if so we use the hull material.
+						material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
 						shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
 						++springCount;
 
@@ -184,10 +186,13 @@ void Game::LoadShip(std::wstring const & filepath)
 						// Check adjacent point in next CW direction (for constructing triangles)
 						int adjx2 = x + directions[i + 1][0];
 						int adjy2 = y + directions[i + 1][1];
-						if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0 && adjy2 < height)
+						// Valid coordinates?
+						if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0)
 						{
+							assert(adjy2 < height); // The five directions we're checking do not include S
+
 							phys::point *c = points[adjx2][adjy2];
-							if (c)
+							if (nullptr != c)
 							{
 								shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
 
