@@ -6,7 +6,12 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 
 ####################################################
-# External libraries 
+#                External libraries 
+#
+# The library paths I'm using are from my MSVC build
+# environment; just replace my paths with yours.
+# For platforms with no difference between Debug and
+# Release builds, just use the same library for both.
 ####################################################
 
 
@@ -52,22 +57,25 @@ set (WXWIDGETS_WXBASE_LIBRARY_RELEASE
 # DevIL
 #
 
-set (DEVIL_SDK_ROOT "C:/Users/Neurodancer/source/SDK/DevIL Windows SDK")
+set (DEVIL_SDK_ROOT "C:/Users/Neurodancer/source/SDK/DevIL")
 
 set (DEVIL_INCLUDE_DIRS "${DEVIL_SDK_ROOT}/include")
 
-# For Visual Studio using Release is fine for all build types
-find_library(DEVIL_DEVIL_LIBRARY NAMES DevIL
-       HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
-find_library(DEVIL_ILU_LIBRARY NAMES ILU
-       HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
-find_library(DEVIL_ILUT_LIBRARY NAMES ILUT
-       HINTS "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release")
+set (DEVIL_DEVIL_LIBRARY_DEBUG
+	"${DEVIL_SDK_ROOT}/lib/x64/Debug/DevIL.lib")
+set (DEVIL_ILU_LIBRARY_DEBUG
+	"${DEVIL_SDK_ROOT}/lib/x64/Debug/ILU.lib")
+set (DEVIL_DEVIL_LIBRARY_RELEASE
+	"${DEVIL_SDK_ROOT}/lib/x64/Release/DevIL.lib")
+set (DEVIL_ILU_LIBRARY_RELEASE
+	"${DEVIL_SDK_ROOT}/lib/x64/Release/ILU.lib")
 
-set (DEVIL_RUNTIME_LIBRARIES
-       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/DevIL.dll"
-       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/ILU.dll"
-       "${DEVIL_SDK_ROOT}/lib/x64/unicode/Release/ILUT.dll")
+set (DEVIL_RUNTIME_LIBRARIES_DEBUG
+       "${DEVIL_SDK_ROOT}/lib/x64/Debug/DevIL.dll"
+       "${DEVIL_SDK_ROOT}/lib/x64/Debug/ILU.dll")
+set (DEVIL_RUNTIME_LIBRARIES_RELEASE
+       "${DEVIL_SDK_ROOT}/lib/x64/Release/DevIL.dll"
+       "${DEVIL_SDK_ROOT}/lib/x64/Release/ILU.dll")
 
 
 ####################################################

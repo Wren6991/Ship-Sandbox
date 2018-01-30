@@ -66,14 +66,14 @@ endif (MSVC)
 
 message (STATUS "Copying data files and DevIL runtime files...")
 
-foreach(build_type ${CMAKE_CONFIGURATION_TYPES})
+file(COPY "${CMAKE_SOURCE_DIR}/Data"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
+file(COPY "${CMAKE_SOURCE_DIR}/Data"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
 
-	file(COPY "${CMAKE_SOURCE_DIR}/Data"
-		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
-
-	if (WIN32)
-		file(COPY ${DEVIL_RUNTIME_LIBRARIES}
-			DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/${build_type}")
-	endif (WIN32)
-
-endforeach(build_type)
+if (WIN32)
+	file(COPY ${DEVIL_RUNTIME_LIBRARIES_DEBUG}
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
+	file(COPY ${DEVIL_RUNTIME_LIBRARIES_RELEASE}
+		DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
+endif (WIN32)
