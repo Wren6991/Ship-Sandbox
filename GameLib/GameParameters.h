@@ -31,6 +31,8 @@ struct GameParameters
 	static constexpr float MaxSeaDepth = 1000.0f;
 
 	float DestroyRadius;
+	static constexpr float MinDestroyRadius = 0.1f;
+	static constexpr float MaxDestroyRadius = 10.0f;
 
 	GameParameters()
 		: Strength(0.01f)

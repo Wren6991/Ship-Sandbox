@@ -19,6 +19,7 @@ const long ID_BUOYANCY_SLIDER = wxNewId();
 const long ID_WATER_PRESSURE_SLIDER = wxNewId();
 const long ID_WAVE_HEIGHT_SLIDER = wxNewId();
 const long ID_SEA_DEPTH_SLIDER = wxNewId();
+const long ID_DESTROY_RADIUS_SLIDER = wxNewId();
 
 const long ID_QUICK_WATER_FIX_CHECKBOX = wxNewId();
 const long ID_SHOW_STRESS_CHECKBOX = wxNewId();
@@ -30,6 +31,7 @@ wxBEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
 	EVT_COMMAND_SCROLL(ID_WATER_PRESSURE_SLIDER, SettingsDialog::OnWaterPressureSliderScroll)
 	EVT_COMMAND_SCROLL(ID_WAVE_HEIGHT_SLIDER, SettingsDialog::OnWaveHeightSliderScroll)
 	EVT_COMMAND_SCROLL(ID_SEA_DEPTH_SLIDER, SettingsDialog::OnSeaDepthSliderScroll)
+	EVT_COMMAND_SCROLL(ID_DESTROY_RADIUS_SLIDER, SettingsDialog::OnDestroyRadiusSliderScroll)
 wxEND_EVENT_TABLE()
 
 SettingsDialog::SettingsDialog(
@@ -73,7 +75,7 @@ SettingsDialog::SettingsDialog(
 	mStrengthSlider->SetTickFreq(4);
 	strengthSizer->Add(mStrengthSlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
+	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("World Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
 	strengthSizer->Add(strengthLabel, 0, wxALIGN_CENTRE);
 
 	mStrengthTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
@@ -95,7 +97,7 @@ SettingsDialog::SettingsDialog(
 	mBuoyancySlider->SetTickFreq(4);
 	buoyancySizer->Add(mBuoyancySlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
+	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("World Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
 	buoyancySizer->Add(buoyancyLabel, 0, wxALIGN_CENTRE);
 	
 	mBuoyancyTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
@@ -170,6 +172,28 @@ SettingsDialog::SettingsDialog(
 	seaDepthSizer->AddSpacer(20);
 
 	controlsSizer->Add(seaDepthSizer, 0);
+
+	controlsSizer->AddSpacer(40);
+
+
+	// Destroy Radius
+
+	wxBoxSizer* destroyRadiusSizer = new wxBoxSizer(wxVERTICAL);
+
+	mDestroyRadiusSlider = new wxSlider(this, ID_DESTROY_RADIUS_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Destroy Radius Slider"));
+	mDestroyRadiusSlider->SetTickFreq(4);
+	destroyRadiusSizer->Add(mDestroyRadiusSlider, 0, wxALIGN_CENTRE);
+
+	wxStaticText * destroyRadiusLabel = new wxStaticText(this, wxID_ANY, _("Destroy Radius"), wxDefaultPosition, wxDefaultSize, 0, _T("Destroy Radius Label"));
+	destroyRadiusSizer->Add(destroyRadiusLabel, 0, wxALIGN_CENTRE);
+
+	mDestroyRadiusTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+	destroyRadiusSizer->Add(mDestroyRadiusTextCtrl, 0, wxALIGN_CENTRE);
+
+	destroyRadiusSizer->AddSpacer(20);
+
+	controlsSizer->Add(destroyRadiusSizer, 0);
 
 	controlsSizer->AddSpacer(40);
 
@@ -330,6 +354,21 @@ void SettingsDialog::OnSeaDepthSliderScroll(wxScrollEvent & /*event*/)
 	mApplyButton->Enable(true);
 }
 
+void SettingsDialog::OnDestroyRadiusSliderScroll(wxScrollEvent & /*event*/)
+{
+	assert(!!mGameController);
+
+	float realValue = SliderToRealValue(
+		mDestroyRadiusSlider,
+		mGameController->GetMinDestroyRadius(),
+		mGameController->GetMaxDestroyRadius());
+
+	mDestroyRadiusTextCtrl->SetValue(std::to_string(realValue));
+
+	// Remember we're dirty now
+	mApplyButton->Enable(true);
+}
+
 void SettingsDialog::OnQuickWaterFixCheckBoxClick(wxCommandEvent & /*event*/)
 {
 	// Remember we're dirty now
@@ -404,6 +443,12 @@ void SettingsDialog::ApplySettings()
 			mGameController->GetMinSeaDepth(),
 			mGameController->GetMaxSeaDepth()));
 
+	mGameController->SetDestroyRadius(
+		SliderToRealValue(
+			mDestroyRadiusSlider,
+			mGameController->GetMinDestroyRadius(),
+			mGameController->GetMaxDestroyRadius()));
+
 	mGameController->SetDoQuickWaterFix(mQuickWaterFixCheckBox->IsChecked());
 
 	mGameController->SetDoShowStress(mShowStressCheckBox->IsChecked());
@@ -423,6 +468,7 @@ void SettingsDialog::ReadSettings()
 
 	mStrengthTextCtrl->SetValue(std::to_string(mGameController->GetStrength()));
 
+
 	RealValueToSlider(
 		mGameController->GetBuoyancy(),
 		mGameController->GetMinBuoyancy(),
@@ -430,6 +476,7 @@ void SettingsDialog::ReadSettings()
 		mBuoyancySlider);
 
 	mBuoyancyTextCtrl->SetValue(std::to_string(mGameController->GetBuoyancy()));
+
 
 	RealValueToSlider(
 		mGameController->GetWaterPressure(),
@@ -439,6 +486,7 @@ void SettingsDialog::ReadSettings()
 
 	mWaterPressureTextCtrl->SetValue(std::to_string(mGameController->GetWaterPressure()));
 
+
 	RealValueToSlider(
 		mGameController->GetWaveHeight(),
 		mGameController->GetMinWaveHeight(),
@@ -447,6 +495,7 @@ void SettingsDialog::ReadSettings()
 
 	mWaveHeightTextCtrl->SetValue(std::to_string(mGameController->GetWaveHeight()));
 
+
 	RealValueToSlider(
 		mGameController->GetSeaDepth(),
 		mGameController->GetMinSeaDepth(),
@@ -454,6 +503,16 @@ void SettingsDialog::ReadSettings()
 		mSeaDepthSlider);
 
 	mSeaDepthTextCtrl->SetValue(std::to_string(mGameController->GetSeaDepth()));
+
+
+	RealValueToSlider(
+		mGameController->GetDestroyRadius(),
+		mGameController->GetMinDestroyRadius(),
+		mGameController->GetMaxDestroyRadius(),
+		mDestroyRadiusSlider);
+
+	mDestroyRadiusTextCtrl->SetValue(std::to_string(mGameController->GetDestroyRadius()));
+
 
 	mQuickWaterFixCheckBox->SetValue(mGameController->GetDoQuickWaterFix());
 

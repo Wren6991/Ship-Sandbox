@@ -16,12 +16,14 @@ public:
 		: mErrorMessage(errorMessage)
 	{}
 
+	GameException(std::string const & errorMessage);
+
 	std::wstring GetErrorMessage() const
 	{
 		return mErrorMessage;
 	}
 
 private:
-
+	
 	std::wstring const mErrorMessage;
 };

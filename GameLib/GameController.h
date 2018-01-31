@@ -45,7 +45,7 @@ public:
 	void AdjustZoom(float amount);
 
 	float GetStrength() const { return mGameParameters.Strength; }
-	void SetStrength(float strength);	
+	void SetStrength(float value);	
 	float GetMinStrength() const { return GameParameters::MinStrength;  }
 	float GetMaxStrength() const { return GameParameters::MaxStrength; }
 
@@ -68,6 +68,11 @@ public:
 	void SetSeaDepth(float value);
 	float GetMinSeaDepth() const { return GameParameters::MinSeaDepth; }
 	float GetMaxSeaDepth() const { return GameParameters::MaxSeaDepth; }
+
+	float GetDestroyRadius() const { return mGameParameters.DestroyRadius; }
+	void SetDestroyRadius(float value);
+	float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
+	float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
 
 	bool GetDoQuickWaterFix() const { return mRenderParameters.QuickWaterFix;  }
 	void SetDoQuickWaterFix(bool value);

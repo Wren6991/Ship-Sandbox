@@ -116,7 +116,7 @@ void Game::LoadShip(std::wstring const & filepath)
 					mWorld.get(), 
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl, 
-					mtl->IsHull ? 0 : 1);  // no buoyancy if it's a hull section
+					mtl->IsHull ? 0.0 : 1.0);  // no buoyancy if it's a hull section
 
 				points[x][y] = pt;
 				shp->points.insert(pt);
@@ -319,7 +319,7 @@ std::vector<std::unique_ptr<Material>> Game::LoadMaterials(std::wstring const & 
 			throw GameException(L"File \"" + filepath + L"\" does not contain a JSON array of objects");
 		}
 
-		materials.emplace_back(new Material(rootElem.get<picojson::object>()));
+		materials.emplace_back(Material::Create(rootElem.get<picojson::object>()));
 	}
 
 	return materials;

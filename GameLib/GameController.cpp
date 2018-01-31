@@ -181,6 +181,13 @@ void GameController::SetSeaDepth(float value)
 	mGameParameters.SeaDepth = value;
 }
 
+void GameController::SetDestroyRadius(float value)
+{
+	LogDebug("GameController::SetDestroyRadius(", value, ")");
+
+	mGameParameters.DestroyRadius = value;
+}
+
 void GameController::SetDoQuickWaterFix(bool value)
 {
 	LogDebug("GameController::SetDoQuickWaterFix(", value, ")");

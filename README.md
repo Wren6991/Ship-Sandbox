@@ -1,15 +1,13 @@
-
-
 Ship Sandbox
 ============
-This game was originally written by Luke Wren. After becoming fascinated by it, I (Gabriele Giuseppini) forked the GitHub repo
+This game was originally written in 2013 by Luke Wren. After becoming fascinated by it, I (Gabriele Giuseppini) forked the GitHub repo
 and started playing with the source code.
 
 My background is in C++ development, mostly of low-latency ETL pipelines for ingesting multi-terabyte data in real time. 
 After stumbling upon Luke's simulator, I became fascinated with the idea of messing up with a virtual world
 modeled in terms of elementary physics. More on this later.
 
-Following is the original README.md:
+Some interesting background on the original project can be found at <a href="http://sinkingshipdev.tumblr.com/">Luke's blog</a>. Following is the original README.md:
 
 ---
 Written for Francis Racicot
@@ -37,8 +35,8 @@ Ship Sandbox is a physics simulator for ships, written in C++. wxWidgets is used
 ### Youtube Video
 <a href="http://www.youtube.com/watch?v=LQ0XHRIoQe0">Link</a>.
 
-----------
-Some interesting background on the original project can be found at <a href="http://sinkingshipdev.tumblr.com/">Luke's blog</a>.
+---
+Back to Gabe's version now.
 
 My goal with this playing pen is to learn the physics modeling from Luke and start messing with it. Of course I have great ambitions, so the very first step
 is to make the current simulator as fast as possible, so to minimize the impact of my new features on the performance of the game.
@@ -50,8 +48,7 @@ After cleaning up the code a bit and making it CMake- and VS2017-friendly, the i
 My plan is roughly as follows:
 ### Phase 1
 - Revert Luke's code to use wxWidgets, as GLFW is too bare-bones for my liking (can't really make dialogs and common UI controls)
-- Cleanup all compiler warnings and memory leaks
--- As of now the game has a ton of memory leaks, though not on the repeated steps so they don't hurt, but still they show up in Visual Studio and it'd be nice to get rid of them so to have better visibility on future accidentally-introduced leaks
+- Cleanup all compiler warnings and little bugs
 - Cleanup naming conventions
 - Add a logger to have better visibility into the effects of code changes
 ### Phase 2
@@ -60,6 +57,15 @@ My plan is roughly as follows:
 - Low-hanging speedups (e.g. inline functions)
 ### Phase 3
 - Investigate feasibility of new features:
+-- Add sounds
 -- Add time-of-day (i.e. sink at night vs. during the day)
--- Add lights that would turn off on when generator is wet
+-- Add lights that would turn off on when generator is wet or when electrical cables break
 -- Add ability to raise ship from bottom of the sea via ropes
+## How to Build
+I tried to do my best to craft the CMake files in a platform-independent way, but I'm working on this exclusively in Visual Studio, hence I'm sure some unportable features have slipped in. Feel free to send pull requests for CMake edits for other platforms.
+You'll need the following libraries in order to build the game:
+- <a href="https://www.wxwidgets.org/">WxWidgets</a> (cross-platform GUI library)
+- <a href="http://openil.sourceforge.net/">DevIL</a> (cross-platform image library)
+-- I've actually built my own DevIL with a statically-linked CRT, as the DevIL DLL's come only with a dynamically-linked CRT
+- <a href="https://github.com/kazuho/picojson">picojson</a> (header-only JSON parser and serializer)
+The top of the main CMakeFiles.txt contains a section with hardcoded paths to these three libraries; you'll have to edit your CMakeFiles to match your environment.

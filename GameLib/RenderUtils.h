@@ -18,13 +18,15 @@
 
 #include<GL/gl.h> 
 
-namespace RenderUtils {
+class RenderUtils 
+{
+public:
 
 	//
 	// Render primitives
 	//
 
-	inline void RenderTriangle(
+	static inline void RenderTriangle(
 		vec2 const & a,
 		vec2 const & b,
 		vec2 const & c)
@@ -36,7 +38,7 @@ namespace RenderUtils {
 		glEnd();
 	}
 
-	inline void RenderTriangle(
+	static inline void RenderTriangle(
 		vec2 const & posa,
 		vec2 const & posb,
 		vec2 const & posc,
@@ -54,7 +56,7 @@ namespace RenderUtils {
 		glEnd();
 	}
 
-	inline void RenderBox(
+	static inline void RenderBox(
 		vec2 const & bottomleft,
 		vec2 const & topright)
 	{
@@ -67,7 +69,7 @@ namespace RenderUtils {
 		glEnd();
 	}
 
-	inline void SetColour(vec3f const & c)
+	static inline void SetColour(vec3f const & c)
 	{
 		glColor3f(c.x, c.y, c.z);
 	}
@@ -76,26 +78,31 @@ namespace RenderUtils {
 	// World<->Screen
 	//
 
-	inline vec2 Screen2World(
+	static inline float ZoomToWorldY(float zoom)
+	{
+		return zoom * 2.0f;
+	}
+
+	static inline vec2 Screen2World(
 		vec2 const & screenCoordinates,
 		RenderParameters const & renderParameters)
 	{
-		float height = renderParameters.Zoom * 2.0f;
+		float height = ZoomToWorldY(renderParameters.Zoom);
 		float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
-		return vec2((screenCoordinates.x / static_cast<float>(renderParameters.CanvasWidth) - 0.5f) * width + renderParameters.CamX,
+		return vec2(
+			(screenCoordinates.x / static_cast<float>(renderParameters.CanvasWidth) - 0.5f) * width + renderParameters.CamX,
 			(screenCoordinates.y / static_cast<float>(renderParameters.CanvasHeight) - 0.5f) * -height + renderParameters.CamY);
 	}
 
-	inline vec2 ScreenOffset2WorldOffset(
+	static inline vec2 ScreenOffset2WorldOffset(
 		vec2 const & screenOffset,
 		RenderParameters const & renderParameters)
 	{
-		float height = renderParameters.Zoom * 2.0f;
+		float height = ZoomToWorldY(renderParameters.Zoom);
 		float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
 
 		return vec2(
 			screenOffset.x / static_cast<float>(renderParameters.CanvasWidth) * width,
 			screenOffset.y / static_cast<float>(renderParameters.CanvasHeight) * -height);
 	}
-
 };

@@ -9,6 +9,7 @@
 
 #include "GameException.h"
 
+#include <cwchar>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -32,20 +33,28 @@ namespace /* anonymous */ {
 	}
 }
 
-namespace Utils {
+std::wstring Utils::ConvertAsciiString(std::string const & asciiStr)
+{
+	std::mbstate_t state = std::mbstate_t();
+	char const * asciiStrData = asciiStr.data();
+	std::size_t len = 1 + std::mbsrtowcs(NULL, &asciiStrData, asciiStr.size(), &state);
+	std::wstring wstr;
+	wstr.resize(len);
+	std::mbsrtowcs(&(wstr[0]), &asciiStrData, wstr.size(), &state);
 
-	picojson::value ParseJSONFile(std::wstring const & filename)
+	return wstr;
+}
+
+picojson::value Utils::ParseJSONFile(std::wstring const & filename)
+{
+	std::string fileContents = GetFileContents(filename);
+
+	picojson::value jsonContent;
+	std::string parseError = picojson::parse(jsonContent, fileContents);
+	if (!parseError.empty())
 	{
-		std::string fileContents = GetFileContents(filename);
-
-		picojson::value jsonContent;
-		std::string parseError = picojson::parse(jsonContent, fileContents);
-		if (!parseError.empty())
-		{
-			throw GameException(L"File \"" + filename + L"\" does not contain valid JSON");
-		}
-
-		return jsonContent;
+		throw GameException(L"Error parsing JSON file \"" + filename + L"\": " + ConvertAsciiString(parseError));
 	}
 
+	return jsonContent;
 }

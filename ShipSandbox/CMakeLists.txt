@@ -16,14 +16,19 @@ set  (SHIP_SANDBOX_SOURCES
 
 source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
 
-add_executable (ShipSandbox ${SHIP_SANDBOX_SOURCES})
+set  (RESOURCE_FILES
+	Resources/ShipSandbox.rc
+	Resources/Ship.ico)
+
+source_group("Resources" FILES ${RESOURCE_FILES})
+
+add_executable (ShipSandbox ${SHIP_SANDBOX_SOURCES} ${RESOURCE_FILES})
 
 target_include_directories (ShipSandbox	PRIVATE	
 	${WXWIDGETS_INCLUDE_DIRS})
 
 target_link_libraries (ShipSandbox
 	GameLib
-	Resources
 	${OPENGL_LIBRARIES}
 	debug ${WXWIDGETS_WXMSW_LIBRARY_DEBUG}
 	optimized ${WXWIDGETS_WXMSW_LIBRARY_RELEASE}

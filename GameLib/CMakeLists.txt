@@ -8,6 +8,7 @@ set  (GAME_SOURCES
 	Game.h
 	GameController.cpp
 	GameController.h
+	GameException.cpp
 	GameException.h
 	GameParameters.h
 	Log.cpp

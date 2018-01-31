@@ -77,7 +77,7 @@ set (DEVIL_RUNTIME_LIBRARIES_RELEASE
 ####################################################
 
 if (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS /D_HAS_CXX17")
 
 	foreach(flag_var
 		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -90,6 +90,10 @@ if (MSVC)
 		endif(${flag_var} MATCHES "/W3")
 		set(${flag_var} "${${flag_var}} /W4")
 	endforeach(flag_var)
+
+	if(CMAKE_EXE_LINKER_FLAGS_DEBUG MATCHES "/INCREMENTAL")
+		string(REGEX REPLACE "/INCREMENTAL" "" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+	endif(CMAKE_EXE_LINKER_FLAGS_DEBUG MATCHES "/INCREMENTAL")
 
 	string(REGEX REPLACE "/O2" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /fp:fast /Ox /GS-")
@@ -128,7 +132,6 @@ find_package(OpenGL REQUIRED)
 ####################################################
 
 add_subdirectory(GameLib)
-add_subdirectory(Resources)
 add_subdirectory(ShipSandbox)
 add_subdirectory(UnitTests)
 

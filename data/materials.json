@@ -496,5 +496,38 @@
         "mass": 1600,
         "colour": "#9B3012",
         "isHull": true
+    },
+    {
+        "name": "Standard Lamp",
+        "strength": 5,
+        "mass": 30,
+        "colour": "#FFFF00",
+	"electrical_properties": {
+		"element_type": "Lamp",
+		"resistance": 0,
+		"generated_voltage": 0
+	}
+    },
+    {
+        "name": "Standard Generator",
+        "strength": 20,
+        "mass": 900,
+        "colour": "#FC0808",
+	"electrical_properties": {
+		"element_type": "Generator",
+		"resistance": 0,
+		"generated_voltage": 12
+	}
+    },
+    {
+        "name": "Standard Electrical Cable",
+        "strength": 20,
+        "mass": 30,
+        "colour": "#700000",
+	"electrical_properties": {
+		"element_type": "Cable",
+		"resistance": 1000,
+		"generated_voltage": 0
+	}
     }
 ]
