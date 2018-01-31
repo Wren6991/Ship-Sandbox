@@ -17,7 +17,7 @@
 
 namespace /* anonymous */ {
 
-	std::string GetFileContents(std::wstring const & filename)
+	std::string GetTextFileContents(std::wstring const & filename)
 	{
 		
 		std::ifstream file(filename.c_str(), std::ios::in);
@@ -47,7 +47,7 @@ std::wstring Utils::ConvertAsciiString(std::string const & asciiStr)
 
 picojson::value Utils::ParseJSONFile(std::wstring const & filename)
 {
-	std::string fileContents = GetFileContents(filename);
+	std::string fileContents = GetTextFileContents(filename);
 
 	picojson::value jsonContent;
 	std::string parseError = picojson::parse(jsonContent, fileContents);
