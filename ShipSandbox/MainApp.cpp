@@ -15,9 +15,6 @@
 #include <GameLib/GameController.h>
 #include <GameLib/GameException.h>
 
-#include <IL/il.h>
-#include <IL/ilu.h>
-
 #include <wx/app.h>
 #include <wx/msgdlg.h>
 
@@ -31,9 +28,6 @@ IMPLEMENT_APP(MainApp);
 
 bool MainApp::OnInit()
 {
-	ilInit();
-	iluInit();
-
 	wxInitAllImageHandlers();
 
 	// Create Game controller

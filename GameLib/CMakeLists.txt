@@ -18,8 +18,8 @@ set  (GAME_SOURCES
 	phys.h
 	PointerContainer.cpp
 	PointerContainer.h
-	render.cpp
-	render.h
+	Renderer.cpp
+	Renderer.h
 	RenderParameters.h
 	Scheduler.cpp
 	Scheduler.h
@@ -32,10 +32,10 @@ source_group(" " FILES ${GAME_SOURCES})
 
 add_library (GameLib ${GAME_SOURCES})
 
-target_include_directories(GameLib PRIVATE
-	${JSONCPP_INCLUDE_DIRS})
-
+# TODO: temporary, until we hide picojson into material
 target_include_directories(GameLib PUBLIC
+	${JSONCPP_INCLUDE_DIRS})
+target_include_directories(GameLib PRIVATE
 	${DEVIL_INCLUDE_DIRS})
 
 target_include_directories(GameLib INTERFACE 

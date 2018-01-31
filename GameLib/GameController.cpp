@@ -6,9 +6,17 @@
 #include "GameController.h"
 
 #include "Log.h"
+#include "Renderer.h"
+
+#include <IL/il.h>
+#include <IL/ilu.h>
 
 std::unique_ptr<GameController> GameController::Create()
 {
+	// Initialize DevIL
+	ilInit();
+	iluInit();
+
 	// Create game
 	std::unique_ptr<Game> game = Game::Create();
 
@@ -83,7 +91,7 @@ void GameController::Render()
 
 void GameController::DestroyAt(vec2 const & screenCoordinates)
 {
-	vec2 worldCoordinates = Screen2World(
+	vec2 worldCoordinates = Renderer::Screen2World(
 		screenCoordinates,
 		mRenderParameters);
 
@@ -96,7 +104,7 @@ void GameController::DestroyAt(vec2 const & screenCoordinates)
 
 void GameController::DrawTo(vec2 const & screenCoordinates)
 {
-	vec2 worldCoordinates = Screen2World(
+	vec2 worldCoordinates = Renderer::Screen2World(
 		screenCoordinates,
 		mRenderParameters);
 
@@ -125,7 +133,7 @@ void GameController::SetCanvasSize(
 
 void GameController::Pan(vec2 const & screenOffset)
 {
-	vec2 worldOffset = ScreenOffset2WorldOffset(
+	vec2 worldOffset = Renderer::ScreenOffset2WorldOffset(
 		screenOffset,
 		mRenderParameters);
 
@@ -192,26 +200,4 @@ void GameController::SetDoUseXRayMode(bool value)
 	LogDebug("GameController::SetDoUseXRayMode(", value, ")");
 
 	mRenderParameters.UseXRayMode = value;
-}
-
-vec2 GameController::Screen2World(
-	vec2 const & screenCoordinates,
-	RenderParameters const & renderParameters)
-{
-	float height = renderParameters.Zoom * 2.0f;
-	float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
-	return vec2((screenCoordinates.x / static_cast<float>(renderParameters.CanvasWidth) - 0.5f) * width + renderParameters.CamX,
-		(screenCoordinates.y / static_cast<float>(renderParameters.CanvasHeight) - 0.5f) * -height + renderParameters.CamY);
-}
-
-vec2 GameController::ScreenOffset2WorldOffset(
-	vec2 const & screenOffset,
-	RenderParameters const & renderParameters)
-{
-	float height = renderParameters.Zoom * 2.0f;
-	float width = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * height;
-
-	return vec2(
-		screenOffset.x / static_cast<float>(renderParameters.CanvasWidth) * width,
-		screenOffset.y / static_cast<float>(renderParameters.CanvasHeight) * -height);
 }

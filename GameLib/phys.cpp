@@ -1,6 +1,6 @@
 ﻿#include "phys.h"
 
-#include "render.h"
+#include "Renderer.h"
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -476,10 +476,10 @@ void phys::spring::render(bool showStress) const
 	if (showStress)
 		glColor3f(1, 0, 0);
 	else
-		render::setColour(a->getColour(mtl->colour));
+		Renderer::SetColour(a->getColour(mtl->colour));
 	glVertex3f(a->pos.x, a->pos.y, -1);
 	if (!showStress)
-		render::setColour(b->getColour(mtl->colour));
+		Renderer::SetColour(b->getColour(mtl->colour));
 	glVertex3f(b->pos.x, b->pos.y, -1);
 	glEnd();
 }
@@ -584,10 +584,13 @@ void phys::ship::balancePressure(double dt)
 
 void phys::ship::render() const
 {
-	for (std::set<ship::triangle*>::iterator iter = triangles.begin(); iter != triangles.end(); iter++)
+	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter)
 	{
-		triangle *t = *iter;
-		render::triangle(t->a->pos, t->b->pos, t->c->pos,
+		triangle const * t = *iter;
+		Renderer::RenderTriangle(
+			t->a->pos, 
+			t->b->pos, 
+			t->c->pos,
 			t->a->getColour(t->a->mtl->colour),
 			t->b->getColour(t->b->mtl->colour),
 			t->c->getColour(t->c->mtl->colour));
@@ -639,7 +642,9 @@ void phys::AABB::extendTo(phys::AABB other)
 
 void phys::AABB::render() const
 {
-	render::box(bottomleft, topright);
+	Renderer::RenderBox(
+		bottomleft, 
+		topright);
 }
 
 phys::BVHNode* phys::BVHNode::allocateTree(int depth)

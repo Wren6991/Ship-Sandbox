@@ -18,8 +18,7 @@ source_group(" " FILES ${SHIP_SANDBOX_SOURCES})
 
 add_executable (ShipSandbox ${SHIP_SANDBOX_SOURCES})
 
-target_include_directories (ShipSandbox	PRIVATE
-	${JSONCPP_INCLUDE_DIRS}
+target_include_directories (ShipSandbox	PRIVATE	
 	${WXWIDGETS_INCLUDE_DIRS})
 
 target_link_libraries (ShipSandbox

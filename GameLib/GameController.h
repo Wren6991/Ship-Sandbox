@@ -90,14 +90,6 @@ private:
 		, mGame(std::move(game))
 	{}
 	
-	static vec2 Screen2World(
-		vec2 const & screenCoordinates,
-		RenderParameters const & renderParameters);
-
-	static vec2 ScreenOffset2WorldOffset(
-		vec2 const & screenOffset,
-		RenderParameters const & renderParameters);
-
 private:
 
 	GameParameters mGameParameters;
