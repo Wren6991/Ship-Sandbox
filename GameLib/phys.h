@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "material.h"
+#include "_Material.h"
 #include "Vectors.h"
 
 namespace phys
@@ -111,9 +111,9 @@ namespace phys
 		double getPressure();
 	public:
 		std::set<ship::triangle*> tris;
-		material *mtl;
+		Material const *mtl;
 		bool isLeaking;
-		point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy);
+		point(world *_parent, vec2 _pos, Material const *_mtl, double _buoyancy);
 		~point();
 		void applyForce(vec2 f);
 		void breach();  // set to leaking and remove any incident triangles
@@ -132,9 +132,9 @@ namespace phys
 		world *wld;
 		point *a, *b;
 		double length;
-		material *mtl;
+		Material const * mtl;
 	public:
-		spring(world *_parent, point *_a, point *_b, material *_mtl, double _length = -1);
+		spring(world *_parent, point *_a, point *_b, Material const *_mtl, double _length = -1);
 		~spring();
 		void update();
 		void damping(float amount);

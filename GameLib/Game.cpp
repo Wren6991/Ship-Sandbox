@@ -9,14 +9,22 @@
 
 #include "GameException.h"
 #include "Log.h"
-#include "util.h"
+#include "Utils.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
-#include <json/json.h>
+#include <picojson/picojson.h>
+
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
+#include<GL/gl.h> 
 
 #include <cassert>
-#include <iostream>
+#include <iostream>// TODO: nuke
 #include <map>
 #include <string>
 
@@ -52,9 +60,9 @@ void Game::Reset()
 
 void Game::LoadShip(std::wstring const & filepath)
 {
-	std::map<vec3f, material*> colourdict;
+	std::map<vec3f, Material *> colourdict;
 	for (unsigned int i = 0; i < mMaterials.size(); i++)
-		colourdict[mMaterials[i]->colour] = mMaterials[i].get();
+		colourdict[mMaterials[i]->Colour] = mMaterials[i].get();
 
 	ILuint imghandle;
 	ilGenImages(1, &imghandle);
@@ -108,7 +116,7 @@ void Game::LoadShip(std::wstring const & filepath)
 					mWorld.get(), 
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl, 
-					mtl->isHull ? 0 : 1);  // no buoyancy if it's a hull section
+					mtl->IsHull ? 0 : 1);  // no buoyancy if it's a hull section
 
 				points[x][y] = pt;
 				shp->points.insert(pt);
@@ -133,7 +141,7 @@ void Game::LoadShip(std::wstring const & filepath)
 			if (nullptr == a)
 				continue;
 
-			bool aIsHull = a->mtl->isHull;
+			bool aIsHull = a->mtl->IsHull;
 
 			// Check if a is leaking; a is leaking if:
 			// - a is not hull, AND
@@ -171,8 +179,8 @@ void Game::LoadShip(std::wstring const & filepath)
 						// Create a<->b spring
 						// 
 
-						bool springIsHull = aIsHull && b->mtl->isHull;
-						material *mtl = b->mtl->isHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
+						bool springIsHull = aIsHull && b->mtl->IsHull;
+						Material const * const mtl = b->mtl->IsHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
 						shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
 						++springCount;
 
@@ -293,13 +301,26 @@ void Game::Render(RenderParameters renderParameters)
 	glFlush();
 }
 
-std::vector<std::unique_ptr<material>> Game::LoadMaterials(std::wstring const & filepath)
+std::vector<std::unique_ptr<Material>> Game::LoadMaterials(std::wstring const & filepath)
 {
-	std::vector<std::unique_ptr<material>> materials;
+	std::vector<std::unique_ptr<Material>> materials;
 
-	Json::Value matroot = jsonParseFile(filepath);
-	for (unsigned int i = 0; i < matroot.size(); i++)
-		materials.emplace_back(new material(matroot[i]));
+	picojson::value root = Utils::ParseJSONFile(filepath);
+	if (!root.is<picojson::array>())
+	{
+		throw GameException(L"File \"" + filepath + L"\" does not contain a JSON array");
+	}
+	
+	picojson::array rootArray = root.get<picojson::array>();
+	for (auto const & rootElem : rootArray)
+	{
+		if (!rootElem.is<picojson::object>())
+		{
+			throw GameException(L"File \"" + filepath + L"\" does not contain a JSON array of objects");
+		}
+
+		materials.emplace_back(new Material(rootElem.get<picojson::object>()));
+	}
 
 	return materials;
 }

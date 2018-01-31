@@ -18,15 +18,13 @@
 
 #include<GL/gl.h> 
 
-class Renderer
-{
-public:
+namespace RenderUtils {
 
 	//
 	// Render primitives
 	//
 
-	static inline void RenderTriangle(
+	inline void RenderTriangle(
 		vec2 const & a,
 		vec2 const & b,
 		vec2 const & c)
@@ -38,7 +36,7 @@ public:
 		glEnd();
 	}
 
-	static inline void RenderTriangle(
+	inline void RenderTriangle(
 		vec2 const & posa,
 		vec2 const & posb,
 		vec2 const & posc,
@@ -56,7 +54,7 @@ public:
 		glEnd();
 	}
 
-	static inline void RenderBox(
+	inline void RenderBox(
 		vec2 const & bottomleft,
 		vec2 const & topright)
 	{
@@ -69,7 +67,7 @@ public:
 		glEnd();
 	}
 
-	static inline void SetColour(vec3f const & c)
+	inline void SetColour(vec3f const & c)
 	{
 		glColor3f(c.x, c.y, c.z);
 	}
@@ -78,7 +76,7 @@ public:
 	// World<->Screen
 	//
 
-	static vec2 Screen2World(
+	inline vec2 Screen2World(
 		vec2 const & screenCoordinates,
 		RenderParameters const & renderParameters)
 	{
@@ -88,7 +86,7 @@ public:
 			(screenCoordinates.y / static_cast<float>(renderParameters.CanvasHeight) - 0.5f) * -height + renderParameters.CamY);
 	}
 
-	static vec2 ScreenOffset2WorldOffset(
+	inline vec2 ScreenOffset2WorldOffset(
 		vec2 const & screenOffset,
 		RenderParameters const & renderParameters)
 	{
@@ -99,4 +97,5 @@ public:
 			screenOffset.x / static_cast<float>(renderParameters.CanvasWidth) * width,
 			screenOffset.y / static_cast<float>(renderParameters.CanvasHeight) * -height);
 	}
+
 };

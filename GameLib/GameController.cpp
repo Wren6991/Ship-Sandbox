@@ -6,7 +6,7 @@
 #include "GameController.h"
 
 #include "Log.h"
-#include "Renderer.h"
+#include "RenderUtils.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
@@ -91,7 +91,7 @@ void GameController::Render()
 
 void GameController::DestroyAt(vec2 const & screenCoordinates)
 {
-	vec2 worldCoordinates = Renderer::Screen2World(
+	vec2 worldCoordinates = RenderUtils::Screen2World(
 		screenCoordinates,
 		mRenderParameters);
 
@@ -104,7 +104,7 @@ void GameController::DestroyAt(vec2 const & screenCoordinates)
 
 void GameController::DrawTo(vec2 const & screenCoordinates)
 {
-	vec2 worldCoordinates = Renderer::Screen2World(
+	vec2 worldCoordinates = RenderUtils::Screen2World(
 		screenCoordinates,
 		mRenderParameters);
 
@@ -133,7 +133,7 @@ void GameController::SetCanvasSize(
 
 void GameController::Pan(vec2 const & screenOffset)
 {
-	vec2 worldOffset = Renderer::ScreenOffset2WorldOffset(
+	vec2 worldOffset = RenderUtils::ScreenOffset2WorldOffset(
 		screenOffset,
 		mRenderParameters);
 

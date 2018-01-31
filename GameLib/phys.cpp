@@ -1,6 +1,6 @@
 ﻿#include "phys.h"
 
-#include "Renderer.h"
+#include "RenderUtils.h"
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -301,7 +301,7 @@ phys::world::~world()
 // P          OOO    IIIIIII  N     N     T
 
 // Just copies parameters into relevant fields:
-phys::point::point(world *_parent, vec2 _pos, material *_mtl, double _buoyancy)
+phys::point::point(world *_parent, vec2 _pos, Material const *_mtl, double _buoyancy)
 {
 	wld = _parent;
 	wld->points.push_back(this);
@@ -320,7 +320,7 @@ void phys::point::applyForce(vec2f f)
 
 void phys::point::update(double dt)
 {
-	double mass = mtl->mass;
+	double mass = mtl->Mass;
 	this->applyForce(wld->mGravity * (mass * (1 + fmin(water, 1) * wld->buoyancy * buoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
 																								  // Buoyancy:
 	if (pos.y < wld->waterheight(pos.x))
@@ -419,7 +419,7 @@ phys::point::~point()
 // SS   SS  P        R    R      I     N    NN   GG  GG
 //   SSS    P        R     R  IIIIIII  N     N    GGGG
 
-phys::spring::spring(world *_parent, point *_a, point *_b, material *_mtl, double _length)
+phys::spring::spring(world *_parent, point *_a, point *_b, Material const *_mtl, double _length)
 {
 	wld = _parent;
 	_parent->springs.push_back(this);
@@ -456,9 +456,9 @@ void phys::spring::update()
 	// Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
 	vec2f correction_dir = (b->pos - a->pos);
 	float currentlength = correction_dir.length();
-	correction_dir *= (length - currentlength) / (length * (a->mtl->mass + b->mtl->mass) * 0.85); // * 0.8 => 25% overcorrection (stiffer, converges faster)
-	a->pos -= correction_dir * b->mtl->mass;    // if b is heavier, a moves more.
-	b->pos += correction_dir * a->mtl->mass;    // (and vice versa...)
+	correction_dir *= (length - currentlength) / (length * (a->mtl->Mass + b->mtl->Mass) * 0.85); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+	a->pos -= correction_dir * b->mtl->Mass;    // if b is heavier, a moves more.
+	b->pos += correction_dir * a->mtl->Mass;    // (and vice versa...)
 }
 
 void phys::spring::damping(float amount)
@@ -476,10 +476,10 @@ void phys::spring::render(bool showStress) const
 	if (showStress)
 		glColor3f(1, 0, 0);
 	else
-		Renderer::SetColour(a->getColour(mtl->colour));
+		RenderUtils::SetColour(a->getColour(mtl->Colour));
 	glVertex3f(a->pos.x, a->pos.y, -1);
 	if (!showStress)
-		Renderer::SetColour(b->getColour(mtl->colour));
+		RenderUtils::SetColour(b->getColour(mtl->Colour));
 	glVertex3f(b->pos.x, b->pos.y, -1);
 	glEnd();
 }
@@ -487,13 +487,13 @@ void phys::spring::render(bool showStress) const
 bool phys::spring::isStressed()
 {
 	// Check whether strain is more than the word's base strength * this object's relative strength
-	return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength) * 0.25;
+	return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->Strength) * 0.25;
 }
 
 bool phys::spring::isBroken()
 {
 	// Check whether strain is more than the word's base strength * this object's relative strength
-	return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->strength);
+	return (a->pos - b->pos).length() / this->length > 1 + (wld->strength * mtl->Strength);
 }
 
 
@@ -587,13 +587,13 @@ void phys::ship::render() const
 	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter)
 	{
 		triangle const * t = *iter;
-		Renderer::RenderTriangle(
+		RenderUtils::RenderTriangle(
 			t->a->pos, 
 			t->b->pos, 
 			t->c->pos,
-			t->a->getColour(t->a->mtl->colour),
-			t->b->getColour(t->b->mtl->colour),
-			t->c->getColour(t->c->mtl->colour));
+			t->a->getColour(t->a->mtl->Colour),
+			t->b->getColour(t->b->mtl->Colour),
+			t->c->getColour(t->c->mtl->Colour));
 	}
 }
 
@@ -642,7 +642,7 @@ void phys::AABB::extendTo(phys::AABB other)
 
 void phys::AABB::render() const
 {
-	Renderer::RenderBox(
+	RenderUtils::RenderBox(
 		bottomleft, 
 		topright);
 }

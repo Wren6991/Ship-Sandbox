@@ -14,20 +14,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Release builds, just use the same library for both.
 ####################################################
 
-
 #
-# JsonCPP
+# Picojson
 #
 
-set (JSONCPP_SDK_ROOT "C:/Users/Neurodancer/source/repos/jsoncpp")
+set (PICOJSON_SDK_ROOT "C:/Users/Neurodancer/source/SDK/PicoJSON")
 
-set (JSONCPP_INCLUDE_DIRS 
-	"${JSONCPP_SDK_ROOT}/include")
-
-set (JSONCPP_LIBRARY_DEBUG
-	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Debug/lib_json.lib")
-set (JSONCPP_LIBRARY_RELEASE
-	"${JSONCPP_SDK_ROOT}/makefiles/msvc2010/x64/Release/lib_json.lib")
+set (PICOJSON_INCLUDE_DIRS 
+	"${PICOJSON_SDK_ROOT}/include")
 
 
 #
