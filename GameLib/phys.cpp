@@ -1,5 +1,6 @@
 ﻿#include "phys.h"
 
+#include "Log.h"
 #include "RenderUtils.h"
 
 #ifdef WIN32
@@ -262,6 +263,11 @@ void phys::world::drawTo(vec2f target)
 	}
 }
 
+void phys::world::AddShip(std::unique_ptr<phys::ship> && newShip)
+{
+	ships.push_back(std::move(newShip));
+}
+
 // Copy parameters and set up initial params:
 phys::world::world(vec2f gravity, double _buoyancy, double _strength)
 	: mGravity(gravity)
@@ -286,8 +292,10 @@ phys::world::~world()
 	springs.clear();
 	for (unsigned int i = 0; i < points.size(); i++)
 		delete points[i];
+	/*
 	for (unsigned int i = 0; i < ships.size(); i++)
 		delete ships[i];
+	*/
 }
 
 // PPPP       OOO    IIIIIII  N     N  TTTTTTT
@@ -440,7 +448,7 @@ phys::spring::~spring()
 	// Scour out any references to this spring
 	for (unsigned int i = 0; i < wld->ships.size(); i++)
 	{
-		ship *shp = wld->ships[i];
+		ship *shp = wld->ships[i].get();
 		if (shp->adjacentnodes.find(a) != shp->adjacentnodes.end())
 			shp->adjacentnodes[a].erase(b);
 		if (shp->adjacentnodes.find(b) != shp->adjacentnodes.end())
@@ -507,10 +515,172 @@ bool phys::spring::isBroken()
 // SS   SS  H     H     I     P
 //   SSS    H     H  IIIIIII  P
 
+std::unique_ptr<phys::ship> phys::ship::Create(
+	phys::world * wld,
+	unsigned char const * structureImageData,
+	int structureImageWidth,
+	int structureImageHeight,
+	std::vector<std::unique_ptr<Material const>> const & allMaterials)
+{
+	// Prepare materials dictionary
+	std::map<vec3f, Material const *> colourdict;
+	for (auto const & material: allMaterials)
+		colourdict[material->Colour] = material.get();
+
+	//
+	// Process image points and create points, springs, and triangles for this ship
+	//
+
+	phys::ship *shp = new phys::ship(wld);
+
+	size_t nodeCount = 0;
+	size_t leakingNodeCount = 0;
+	size_t springCount = 0;
+	size_t trianglesCount = 0;
+
+	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[structureImageWidth]);
+
+	float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
+
+	for (int x = 0; x < structureImageWidth; ++x)
+	{
+		points[x] = std::unique_ptr<phys::point *[]>(new phys::point *[structureImageHeight]);
+
+		for (int y = 0; y < structureImageHeight; ++y)
+		{
+			// R G B
+			vec3f colour(
+				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0] / 255.f,
+				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1] / 255.f,
+				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2] / 255.f);
+
+			if (colourdict.find(colour) != colourdict.end())
+			{
+				auto mtl = colourdict[colour];
+
+				phys::point * pt = new phys::point(
+					wld,
+					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
+					mtl,
+					mtl->IsHull ? 0.0 : 1.0);  // no buoyancy if it's a hull section
+
+				points[x][y] = pt;
+				shp->points.insert(pt);
+				++nodeCount;
+			}
+			else
+			{
+				points[x][y] = nullptr;
+			}
+		}
+	}
+
+	// Points have been generated, so fill in all the beams between them.
+	// If beam joins two hull nodes, it is a hull beam.
+	// If a non-hull node has empty space on one of its four sides, it is automatically leaking.
+
+	static const int Directions[8][2] = {
+		{ 1,  0 },	// E
+		{ 1, -1 },	// NE
+		{ 0, -1 },	// N
+		{ -1, -1 },	// NW
+		{ -1,  0 },	// W
+		{ -1,  1 },	// SW
+		{ 0,  1 },	// S
+		{ 1,  1 }	// SE
+	};
+
+	for (int x = 0; x < structureImageWidth; ++x)
+	{
+		for (int y = 0; y < structureImageHeight; ++y)
+		{
+			phys::point *a = points[x][y];
+			if (nullptr == a)
+				continue;
+
+			bool aIsHull = a->mtl->IsHull;
+
+			// Check if a is leaking; a is leaking if:
+			// - a is not hull, AND
+			// - there is at least a hole at E, S, W, N
+			if (!aIsHull)
+			{
+				if ((x < structureImageWidth - 1 && !points[x + 1][y])
+					|| (y < structureImageHeight - 1 && !points[x][y + 1])
+					|| (x > 0 && !points[x - 1][y])
+					|| (y > 0 && !points[x][y - 1]))
+				{
+					a->isLeaking = true;
+
+					++leakingNodeCount;
+				}
+			}
+
+			// First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y),
+			// i.e. E, NE, N, NW - this covers each pair of points in each direction
+			for (int i = 0; i < 4; ++i)
+			{
+				int adjx1 = x + Directions[i][0];
+				int adjy1 = y + Directions[i][1];
+				// Valid coordinates?
+				if (adjx1 >= 0 && adjx1 < structureImageWidth && adjy1 >= 0)
+				{
+					assert(adjy1 < structureImageHeight); // The four directions we're checking do not include S
+
+					phys::point * b = points[adjx1][adjy1]; // adjacent point in direction (i)				
+					if (nullptr != b)
+					{
+						// b is adjacent to a at one of E, NE, N, NW						
+
+						//
+						// Create a<->b spring
+						// 
+
+						bool springIsHull = aIsHull && b->mtl->IsHull;
+						Material const * const mtl = b->mtl->IsHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
+						shp->springs.insert(new phys::spring(wld, a, b, mtl, -1));
+						++springCount;
+
+						// TODO: rename to AdjacentNonHullNodes
+						if (!springIsHull)
+						{
+							shp->adjacentnodes[a].insert(b);
+							shp->adjacentnodes[b].insert(a);
+						}
+
+						// Check adjacent point in next CW direction (for constructing triangles)
+						int adjx2 = x + Directions[i + 1][0];
+						int adjy2 = y + Directions[i + 1][1];
+						// Valid coordinates?
+						if (adjx2 >= 0 && adjx2 < structureImageWidth && adjy2 >= 0)
+						{
+							assert(adjy2 < structureImageHeight); // The five directions we're checking do not include S
+
+							phys::point *c = points[adjx2][adjy2];
+							if (nullptr != c)
+							{
+								shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
+
+								++trianglesCount;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	LogMessage(L"Created ship: W=", structureImageWidth, L", H=", structureImageHeight, ", ",
+		nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount,
+		L" springs, ", trianglesCount, L" triangles, and ", shp->adjacentnodes.size(), " adjacency entries.");
+
+	return std::unique_ptr<phys::ship>(shp);
+}
+
+
 phys::ship::ship(world *_parent)
 {
 	wld = _parent;
-	wld->ships.push_back(this);
 }
 
 void phys::ship::update(double dt)

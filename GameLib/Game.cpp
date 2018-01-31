@@ -28,17 +28,6 @@
 #include <map>
 #include <string>
 
-const int directions[8][2] = {
-{ 1,  0},	// E
-{ 1, -1},	// NE
-{ 0, -1},	// N
-{-1, -1},	// NW
-{-1,  0},	// W
-{-1,  1},	// SW
-{ 0,  1},	// S
-{ 1,  1}	// SE
-};
-
 std::unique_ptr<Game> Game::Create()
 {
 	auto materials = LoadMaterials(L"Data/materials.json");
@@ -60,9 +49,9 @@ void Game::Reset()
 
 void Game::LoadShip(std::wstring const & filepath)
 {
-	std::map<vec3f, Material *> colourdict;
-	for (unsigned int i = 0; i < mMaterials.size(); i++)
-		colourdict[mMaterials[i]->Colour] = mMaterials[i].get();
+	//
+	// Load image
+	//
 
 	ILuint imghandle;
 	ilGenImages(1, &imghandle);
@@ -76,148 +65,29 @@ void Game::LoadShip(std::wstring const & filepath)
 		throw GameException(L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage);
 	}
 	
-	ILubyte *data = ilGetData();
-
+	ILubyte const * imageData = ilGetData();
 	int const width = ilGetInteger(IL_IMAGE_WIDTH);
 	int const height = ilGetInteger(IL_IMAGE_HEIGHT);
-	float const halfWidth = static_cast<float>(width) / 2.0f;
-
-	phys::ship *shp = new phys::ship(mWorld.get());
 
 
 	//
-	// Process image points and create points, springs, and triangles for this ship
+	// Create ship and add to world
 	//
 
-	size_t nodeCount = 0;
-	size_t leakingNodeCount = 0;
-	size_t springCount = 0;
-	size_t trianglesCount = 0;
+	std::unique_ptr<phys::ship> shp = phys::ship::Create(
+		mWorld.get(),
+		imageData,
+		width,
+		height,
+		mMaterials);
 
-	std::unique_ptr<std::unique_ptr<phys::point *[]>[]> points(new std::unique_ptr<phys::point *[]>[width]);
+	mWorld->AddShip(std::move(shp));
 
-	for (int x = 0; x < width; ++x)
-	{
-		points[x] = std::unique_ptr<phys::point *[]>(new phys::point *[height]);
-
-		for (int y = 0; y < height; ++y)
-		{
-			// R G B
-			vec3f colour(
-				data[(x + (height - y - 1) * width) * 3 + 0] / 255.f,
-				data[(x + (height - y - 1) * width) * 3 + 1] / 255.f,
-				data[(x + (height - y - 1) * width) * 3 + 2] / 255.f);
-
-			if (colourdict.find(colour) != colourdict.end())
-			{
-				auto mtl = colourdict[colour];
-
-				phys::point * pt = new phys::point(
-					mWorld.get(), 
-					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
-					mtl, 
-					mtl->IsHull ? 0.0 : 1.0);  // no buoyancy if it's a hull section
-
-				points[x][y] = pt;
-				shp->points.insert(pt);
-				++nodeCount;
-			}
-			else
-			{
-				points[x][y] = nullptr;
-			}
-		}
-	}
-
-	// Points have been generated, so fill in all the beams between them.
-	// If beam joins two hull nodes, it is a hull beam.
-	// If a non-hull node has empty space on one of its four sides, it is automatically leaking.
-
-	for (int x = 0; x < width; ++x)
-	{
-		for (int y = 0; y < height; ++y)
-		{
-			phys::point *a = points[x][y];
-			if (nullptr == a)
-				continue;
-
-			bool aIsHull = a->mtl->IsHull;
-
-			// Check if a is leaking; a is leaking if:
-			// - a is not hull, AND
-			// - there is at least a hole at E, S, W, N
-			if (!aIsHull)
-			{
-				if ((x < width - 1 && !points[x + 1][y])
-					|| (y < height - 1 && !points[x][y + 1])
-					|| (x > 0 && !points[x - 1][y])
-					|| (y > 0 && !points[x][y - 1]))
-				{
-					a->isLeaking = true;
-
-					++leakingNodeCount;
-				}
-			}
-
-			// First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y),
-			// i.e. E, NE, N, NW - this covers each pair of points in each direction
-			for (int i = 0; i < 4; ++i)
-			{
-				int adjx1 = x + directions[i][0];
-				int adjy1 = y + directions[i][1];
-				// Valid coordinates?
-				if (adjx1 >= 0 && adjx1 < width && adjy1 >= 0)
-				{
-					assert(adjy1 < height); // The four directions we're checking do not include S
-
-					phys::point * b = points[adjx1][adjy1]; // adjacent point in direction (i)				
-					if (nullptr != b)
-					{
-						// b is adjacent to a at one of E, NE, N, NW						
-
-						//
-						// Create a<->b spring
-						// 
-
-						bool springIsHull = aIsHull && b->mtl->IsHull;
-						Material const * const mtl = b->mtl->IsHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
-						shp->springs.insert(new phys::spring(mWorld.get(), a, b, mtl, -1));
-						++springCount;
-
-						// TODO: rename to AdjacentNonHullNodes
-						if (!springIsHull)
-						{
-							shp->adjacentnodes[a].insert(b);
-							shp->adjacentnodes[b].insert(a);
-						}
-
-						// Check adjacent point in next CW direction (for constructing triangles)
-						int adjx2 = x + directions[i + 1][0];
-						int adjy2 = y + directions[i + 1][1];
-						// Valid coordinates?
-						if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0)
-						{
-							assert(adjy2 < height); // The five directions we're checking do not include S
-
-							phys::point *c = points[adjx2][adjy2];
-							if (nullptr != c)
-							{
-								shp->triangles.insert(new phys::ship::triangle(shp, a, b, c));
-
-								++trianglesCount;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+	//
+	// Delete image
+	//
 
 	ilDeleteImage(imghandle);
-
-	LogMessage(L"Loaded ship \"", filepath, L"\": W=", width, L", H=", height, ", ", 
-		nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount, 
-		L" springs, ", trianglesCount, L" triangles, and ", shp->adjacentnodes.size(), " adjacency entries.");
 }
 
 void Game::DestroyAt(
@@ -301,9 +171,9 @@ void Game::Render(RenderParameters renderParameters)
 	glFlush();
 }
 
-std::vector<std::unique_ptr<Material>> Game::LoadMaterials(std::wstring const & filepath)
+std::vector<std::unique_ptr<Material const>> Game::LoadMaterials(std::wstring const & filepath)
 {
-	std::vector<std::unique_ptr<Material>> materials;
+	std::vector<std::unique_ptr<Material const>> materials;
 
 	picojson::value root = Utils::ParseJSONFile(filepath);
 	if (!root.is<picojson::array>())

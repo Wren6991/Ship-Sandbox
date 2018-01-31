@@ -24,7 +24,7 @@ namespace phys
 		Scheduler springScheduler;
 		std::vector <point*> points;
 		std::vector <spring*> springs;
-		std::vector <ship*> ships;
+		std::vector <std::unique_ptr<ship>> ships;
 		BVHNode *collisionTree;
 		float waterheight(float x) const;
 		float oceanfloorheight(float x) const;
@@ -50,6 +50,9 @@ namespace phys
 		void renderWater(double left, double right, double bottom, double top) const;
 		void destroyAt(vec2 pos, float radius);
 		void drawTo(vec2 target);
+
+		void AddShip(std::unique_ptr<ship> && newShip);
+
 		world(vec2 gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
 		~world();
 	};
@@ -90,6 +93,14 @@ namespace phys
 		void leakWater(double dt);
 		void gravitateWater(double dt);
 		void balancePressure(double dt);
+
+
+		static std::unique_ptr<ship> Create(
+			phys::world * wld,
+			unsigned char const * structureImageData,
+			int structureImageWidth,
+			int structureImageHeight,
+			std::vector<std::unique_ptr<Material const>> const & allMaterials);
 
 		ship(world *_parent);
 		~ship();
