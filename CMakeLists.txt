@@ -90,8 +90,8 @@ if (MSVC)
 		endif(${flag_var} MATCHES "/W3")
 		set(${flag_var} "${${flag_var}} /W4")
 	endforeach(flag_var)
-
-	if(CMAKE_EXE_LINKER_FLAGS_DEBUG MATCHES "/INCREMENTAL")
+	
+	if(CMAKE_EXE_LINKER_FLAGS_DEBUG MATCHES "/INCREMENTAL")		
 		string(REGEX REPLACE "/INCREMENTAL" "" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
 	endif(CMAKE_EXE_LINKER_FLAGS_DEBUG MATCHES "/INCREMENTAL")
 
@@ -108,6 +108,7 @@ endif()
 message ("cxx Flags:" ${CMAKE_CXX_FLAGS})
 message ("cxx Flags Release:" ${CMAKE_CXX_FLAGS_RELEASE})
 message ("cxx Flags Debug:" ${CMAKE_CXX_FLAGS_DEBUG})
+message ("exe Linker Flags Debug:" ${CMAKE_EXE_LINKER_FLAGS_DEBUG})
 
 
 

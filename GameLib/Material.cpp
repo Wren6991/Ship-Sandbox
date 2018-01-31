@@ -5,7 +5,7 @@
 * Copyright:			Luke Wren (http://github.com/Wren6991),
 *						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
-#include "_Material.h"
+#include "Material.h"
 
 #include "GameException.h"
 #include "Utils.h"

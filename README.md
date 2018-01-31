@@ -51,6 +51,7 @@ My plan is roughly as follows:
 - Cleanup all compiler warnings and little bugs
 - Cleanup naming conventions
 - Add a logger to have better visibility into the effects of code changes
+- Add unit tests
 ### Phase 2
 - Better interaction between the UI and the game, splitting settings between physics-related settings and render-related settings
 - Fix lifetime management of points, springs, and triangles - at this moment elements are removed from vectors while these are being iterated, and the entire points-to graph is a tad too complex IMHO

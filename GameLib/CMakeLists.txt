@@ -13,8 +13,8 @@ set  (GAME_SOURCES
 	GameParameters.h
 	Log.cpp
 	Log.h
-	_Material.cpp
-	_Material.h
+	Material.cpp
+	Material.h
 	phys.cpp
 	phys.h
 	PointerContainer.cpp

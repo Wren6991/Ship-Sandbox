@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "_Material.h"
+#include "Material.h"
 #include "Vectors.h"
 
 namespace phys
