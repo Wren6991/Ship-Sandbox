@@ -16,13 +16,13 @@
 
 Scheduler::Scheduler()
 	: mNThreads(std::thread::hardware_concurrency())
+	, mThreadPool()
+	, mAvailable()
+	, mCompleted()
+	, mTasks()
+	, mCritical()
 {
 	LogMessage("Number of threads: ", mNThreads);
-
-    for (int i = 0; i < mNThreads; i++)
-    {
-        mThreadPool.push_back(new Thread(this, i + 1));
-    }
 }
 
 Scheduler::~Scheduler()
@@ -35,6 +35,15 @@ Scheduler::~Scheduler()
 
 void Scheduler::Schedule(ITask *t)
 {
+	if (mThreadPool.empty())
+	{
+		assert(mNThreads > 0);
+		for (int i = 0; i < mNThreads; i++)
+		{
+			mThreadPool.push_back(new Thread(this, i + 1));
+		}
+	}
+
 	std::lock_guard<std::mutex> lock(mCritical);
 
     mTasks.push(t);

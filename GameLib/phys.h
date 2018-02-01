@@ -87,7 +87,7 @@ namespace phys
 		};
 		std::set<point*> points;
 		std::set<spring*> springs;
-		std::map<point*, std::set<point*> > adjacentnodes;
+		std::map<point *, std::set<point*> > adjacentnodes;
 		std::set<triangle*> triangles;
 		void render() const;
 		void leakWater(double dt);
@@ -96,15 +96,18 @@ namespace phys
 
 
 		static std::unique_ptr<ship> Create(
-			phys::world * wld,
+			phys::world * parentWorld,
 			unsigned char const * structureImageData,
 			int structureImageWidth,
 			int structureImageHeight,
 			std::vector<std::unique_ptr<Material const>> const & allMaterials);
-
-		ship(world *_parent);
+		
 		~ship();
+
 		void update(double dt);
+
+	private:
+		ship(world *_parent);
 	};
 
 	class point
@@ -129,8 +132,8 @@ namespace phys
 		void applyForce(vec2 f);
 		void breach();  // set to leaking and remove any incident triangles
 		void update(double dt);
-		vec2 getPos();
-		vec3f getColour(vec3f basecolour);
+		vec2 getPos() const;
+		vec3f getColour(vec3f basecolour) const;
 		AABB getAABB();
 		void render() const;
 	};
@@ -152,6 +155,9 @@ namespace phys
 		void render(bool isStressed = false) const;
 		bool isStressed();
 		bool isBroken();
+		point const * GetPointA() const { return a;  }
+		point const * GetPointB() const { return b; }
+		Material const * GetMaterial() const { return mtl; };
 	};
 
 	struct AABB

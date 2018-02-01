@@ -350,12 +350,12 @@ void phys::point::update(double dt)
 	force = vec2f(0, 0);
 }
 
-vec2f phys::point::getPos()
+vec2f phys::point::getPos() const
 {
 	return pos;
 }
 
-vec3f phys::point::getColour(vec3f basecolour)
+vec3f phys::point::getColour(vec3f basecolour) const
 {
 	double wetness = fmin(water, 1) * 0.7;
 	return basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness;
@@ -516,7 +516,7 @@ bool phys::spring::isBroken()
 //   SSS    H     H  IIIIIII  P
 
 std::unique_ptr<phys::ship> phys::ship::Create(
-	phys::world * wld,
+	phys::world * parentWorld,
 	unsigned char const * structureImageData,
 	int structureImageWidth,
 	int structureImageHeight,
@@ -531,7 +531,7 @@ std::unique_ptr<phys::ship> phys::ship::Create(
 	// Process image points and create points, springs, and triangles for this ship
 	//
 
-	phys::ship *shp = new phys::ship(wld);
+	phys::ship *shp = new phys::ship(parentWorld);
 
 	size_t nodeCount = 0;
 	size_t leakingNodeCount = 0;
@@ -559,7 +559,7 @@ std::unique_ptr<phys::ship> phys::ship::Create(
 				auto mtl = colourdict[colour];
 
 				phys::point * pt = new phys::point(
-					wld,
+					parentWorld,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
 					mtl->IsHull ? 0.0 : 1.0);  // no buoyancy if it's a hull section
@@ -638,7 +638,7 @@ std::unique_ptr<phys::ship> phys::ship::Create(
 
 						bool springIsHull = aIsHull && b->mtl->IsHull;
 						Material const * const mtl = b->mtl->IsHull ? a->mtl : b->mtl;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
-						shp->springs.insert(new phys::spring(wld, a, b, mtl, -1));
+						shp->springs.insert(new phys::spring(parentWorld, a, b, mtl, -1));
 						++springCount;
 
 						// TODO: rename to AdjacentNonHullNodes
@@ -713,7 +713,7 @@ void phys::ship::gravitateWater(double dt)
 {
 	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
 	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-	for (std::map<point*, std::set<point*> >::iterator iter = adjacentnodes.begin();
+	for (std::map<point *, std::set<point*> >::iterator iter = adjacentnodes.begin();
 		iter != adjacentnodes.end(); iter++)
 	{
 		point *a = iter->first;

@@ -21,6 +21,7 @@ set (GTEST_LIBRARY_RELEASE
 set  (UNIT_TEST_SOURCES
 	Main.cpp
 	PointerContainerTests.cpp
+	ShipTests.cpp
 	VectorsTests.cpp)
 
 add_executable (UnitTests ${UNIT_TEST_SOURCES})

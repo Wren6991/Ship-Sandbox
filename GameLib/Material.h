@@ -60,8 +60,6 @@ public:
 
 	static std::unique_ptr<Material> Create(picojson::object const & materialJson);
 
-private:
-
 	Material(
 		std::string name,
 		float strength,
@@ -69,12 +67,12 @@ private:
 		vec3f colour,
 		bool isHull,
 		std::optional<_ElectricalProperties> electricalProperties)
-		: Name(name)
+		: Name(std::move(name))
 		, Strength(strength)
 		, Mass(mass)
-		, Colour(colour)
+		, Colour(std::move(colour))
 		, IsHull(isHull)
-		, ElectricalProperties(electricalProperties)
+		, ElectricalProperties(std::move(electricalProperties))
 	{
 	}
 };
