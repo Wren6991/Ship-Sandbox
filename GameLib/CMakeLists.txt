@@ -4,6 +4,8 @@
 #
 
 set  (GAME_SOURCES
+	AABB.cpp
+	AABB.h
 	Game.cpp
 	Game.h
 	GameController.cpp
@@ -15,8 +17,6 @@ set  (GAME_SOURCES
 	Log.h
 	Material.cpp
 	Material.h
-	phys.cpp
-	phys.h
 	PointerContainer.cpp
 	PointerContainer.h
 	RenderParameters.h
@@ -25,13 +25,28 @@ set  (GAME_SOURCES
 	Scheduler.cpp
 	Scheduler.h
 	Utils.cpp
-	Utils.h
+	Utils.h	
 	Vectors.cpp
 	Vectors.h)
 
+set  (PHYSICS_SOURCES
+	Physics.h
+	Point.cpp
+	Point.h
+	Ship.cpp
+	Ship.h
+	Spring.cpp
+	Spring.h
+	Triangle.cpp
+	Triangle.h
+	World.cpp
+	World.h)
+
 source_group(" " FILES ${GAME_SOURCES})
 
-add_library (GameLib ${GAME_SOURCES})
+source_group("Physics" FILES ${PHYSICS_SOURCES})
+
+add_library (GameLib ${GAME_SOURCES} ${PHYSICS_SOURCES})
 
 target_include_directories(GameLib PUBLIC
 	${PICOJSON_INCLUDE_DIRS})

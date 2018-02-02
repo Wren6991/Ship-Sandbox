@@ -9,7 +9,6 @@
 #include "Version.h"
 
 #include <GameLib/Log.h>
-#include <GameLib/phys.h>
 
 #include <wx/intl.h>
 #include <wx/msgdlg.h>

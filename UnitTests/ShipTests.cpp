@@ -1,4 +1,4 @@
-#include <GameLib/phys.h>
+#include <GameLib/Physics.h>
 
 #include <initializer_list>
 
@@ -25,7 +25,7 @@ protected:
 
 TEST_F(ShipTests, BuildsPoints_OnePoint)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -42,7 +42,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
-	auto ship = phys::ship::Create(
+	auto ship = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -53,18 +53,18 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	ASSERT_EQ(1u, ship->points.size());
 
-	phys::point const * pt = *(ship->points.begin());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->getPos());
-	EXPECT_EQ(materials[1].get(), pt->mtl);
-	EXPECT_EQ(0u, pt->tris.size());
-	EXPECT_TRUE(pt->isLeaking);
+	Physics::Point const * pt = *(ship->points.begin());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->GetPos());
+	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
+	EXPECT_EQ(0u, pt->GetTriangles().size());
+	EXPECT_TRUE(pt->GetIsLeaking());
 
 	EXPECT_EQ(0u, ship->adjacentnodes.size());
 }
 
 TEST_F(ShipTests, BuildsPoints_TwoPoints)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -81,7 +81,7 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
-	auto ship = phys::ship::Create(
+	auto ship = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -92,34 +92,34 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
 	ASSERT_EQ(2u, ship->points.size());
 
-	phys::point const * pt1 = *(ship->points.begin());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->getPos());
-	EXPECT_EQ(materials[1].get(), pt1->mtl);
-	EXPECT_EQ(0u, pt1->tris.size());
-	EXPECT_TRUE(pt1->isLeaking);
+	Physics::Point const * pt1 = *(ship->points.begin());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->GetPos());
+	EXPECT_EQ(materials[1].get(), pt1->GetMaterial());
+	EXPECT_EQ(0u, pt1->GetTriangles().size());
+	EXPECT_TRUE(pt1->GetIsLeaking());
 
-	phys::point const * pt2 = *std::next((ship->points.begin()));
-	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->getPos());
-	EXPECT_EQ(materials[0].get(), pt2->mtl);
-	EXPECT_EQ(0u, pt2->tris.size());
-	EXPECT_FALSE(pt2->isLeaking);
+	Physics::Point const * pt2 = *std::next((ship->points.begin()));
+	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->GetPos());
+	EXPECT_EQ(materials[0].get(), pt2->GetMaterial());
+	EXPECT_EQ(0u, pt2->GetTriangles().size());
+	EXPECT_FALSE(pt2->GetIsLeaking());
 
 	// Adjacent nodes
 
 	EXPECT_EQ(2u, ship->adjacentnodes.size());
 
-	ASSERT_EQ(1u, ship->adjacentnodes.count(const_cast<phys::point *>(pt1)));
-	ASSERT_EQ(1u, ship->adjacentnodes[const_cast<phys::point *>(pt1)].size());
-	EXPECT_EQ(pt2, *(ship->adjacentnodes[const_cast<phys::point *>(pt1)].begin()));
+	ASSERT_EQ(1u, ship->adjacentnodes.count(const_cast<Physics::Point *>(pt1)));
+	ASSERT_EQ(1u, ship->adjacentnodes[const_cast<Physics::Point *>(pt1)].size());
+	EXPECT_EQ(pt2, *(ship->adjacentnodes[const_cast<Physics::Point *>(pt1)].begin()));
 
-	ASSERT_EQ(1u, ship->adjacentnodes.count(const_cast<phys::point *>(pt2)));
-	ASSERT_EQ(1u, ship->adjacentnodes[const_cast<phys::point *>(pt2)].size());
-	EXPECT_EQ(pt1, *(ship->adjacentnodes[const_cast<phys::point *>(pt2)].begin()));
+	ASSERT_EQ(1u, ship->adjacentnodes.count(const_cast<Physics::Point *>(pt2)));
+	ASSERT_EQ(1u, ship->adjacentnodes[const_cast<Physics::Point *>(pt2)].size());
+	EXPECT_EQ(pt1, *(ship->adjacentnodes[const_cast<Physics::Point *>(pt2)].begin()));
 }
 
 TEST_F(ShipTests, BuildsPoints_EmptyShip)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -134,7 +134,7 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
-	auto ship = phys::ship::Create(
+	auto ship = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -152,7 +152,7 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 
 TEST_F(ShipTests, BuildsSprings_OneSpring)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -169,7 +169,7 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
-	auto ship = phys::ship::Create(
+	auto ship = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -180,11 +180,11 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 	ASSERT_EQ(1u, ship->springs.size());
 
-	phys::spring const * sp1 = *(ship->springs.begin());
+	Physics::Spring const * sp1 = *(ship->springs.begin());
 	ASSERT_NE(nullptr, sp1->GetPointA());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1->GetPointA()->getPos());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1->GetPointA()->GetPos());
 	ASSERT_NE(nullptr, sp1->GetPointB());
-	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1->GetPointB()->getPos());
+	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1->GetPointB()->GetPos());
 	EXPECT_EQ(materials[0].get(), sp1->GetMaterial());
 }
 
@@ -194,7 +194,7 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -212,7 +212,7 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 	};
 
 	// TODOTEST
-	auto shipTODO = phys::ship::Create(
+	auto shipTODO = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -222,21 +222,21 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 	ASSERT_TRUE(!!shipTODO);
 
 	// TODOTEST
-	phys::ship * ship = shipTODO.get();
+	Physics::Ship * ship = shipTODO.get();
 	wld.AddShip(std::move(shipTODO));
 
 	ASSERT_EQ(1u, ship->triangles.size());
 
-	phys::ship::triangle const * tr1 = *(ship->triangles.begin());
+	Physics::Triangle const * tr1 = *(ship->triangles.begin());
 
-	ASSERT_NE(nullptr, tr1->a);
-	ASSERT_NE(nullptr, tr1->b);
-	ASSERT_NE(nullptr, tr1->c);
+	ASSERT_NE(nullptr, tr1->GetA());
+	ASSERT_NE(nullptr, tr1->GetB());
+	ASSERT_NE(nullptr, tr1->GetC());
 
-	std::set<phys::point *> distinctPoints;
-	distinctPoints.insert(tr1->a);
-	distinctPoints.insert(tr1->b);
-	distinctPoints.insert(tr1->c);
+	std::set<Physics::Point const *> distinctPoints;
+	distinctPoints.insert(tr1->GetA());
+	distinctPoints.insert(tr1->GetB());
+	distinctPoints.insert(tr1->GetC());
 
 	ASSERT_EQ(3u, distinctPoints.size());
 }
@@ -247,7 +247,7 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 TEST_F(ShipTests, DestroyAt)
 {
-	phys::world wld;
+	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -265,7 +265,7 @@ TEST_F(ShipTests, DestroyAt)
 	};
 
 	// TODOTEST
-	auto shipTODO = phys::ship::Create(
+	auto shipTODO = Physics::Ship::Create(
 		&wld,
 		imageData,
 		4,
@@ -275,7 +275,7 @@ TEST_F(ShipTests, DestroyAt)
 	ASSERT_TRUE(!!shipTODO);
 
 	// TODOTEST
-	phys::ship * ship = shipTODO.get();
+	Physics::Ship * ship = shipTODO.get();
 	wld.AddShip(std::move(shipTODO));
 
 	EXPECT_EQ(6u, ship->points.size());

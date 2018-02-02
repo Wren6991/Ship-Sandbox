@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GameParameters.h"
-#include "phys.h"
+#include "Physics.h"
 #include "RenderParameters.h"
 
 #include <memory>
@@ -50,7 +50,7 @@ private:
 	Game(
 		std::vector<std::unique_ptr<Material const>> materials,
 		std::vector<float> oceanDepth,
-		std::unique_ptr<phys::world> world)
+		std::unique_ptr<Physics::World> world)
 		: mMaterials(std::move(materials))
 		, mOceanDepth(std::move(oceanDepth))
 		, mWorld(std::move(world))
@@ -65,5 +65,5 @@ private:
 	std::vector<std::unique_ptr<Material const>> const mMaterials;
 	std::vector<float> const mOceanDepth;
 
-    std::unique_ptr<phys::world> mWorld;
+    std::unique_ptr<Physics::World> mWorld;
 };
