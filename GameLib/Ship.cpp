@@ -7,15 +7,9 @@
 ***************************************************************************************/
 #include "Physics.h"
 
+#include "GameOpenGL.h"
 #include "Log.h"
 #include "RenderUtils.h"
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-#include <GL/gl.h>
 
 #include <algorithm>
 #include <cassert>
@@ -81,10 +75,10 @@ std::unique_ptr<Ship> Ship::Create(
 					parentWorld,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
-					mtl->IsHull ? 0.0 : 1.0);  // no buoyancy if it's a hull section
+					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
 
 				points[x][y] = pt;
-				shp->points.insert(pt);
+				shp->mPoints.insert(pt);
 				++nodeCount;
 			}
 			else
@@ -117,7 +111,7 @@ std::unique_ptr<Ship> Ship::Create(
 			if (nullptr == a)
 				continue;
 
-			bool aIsHull = a->mMaterial->IsHull;
+			bool aIsHull = a->GetMaterial()->IsHull;
 
 			// Check if a is leaking; a is leaking if:
 			// - a is not hull, AND
@@ -129,7 +123,7 @@ std::unique_ptr<Ship> Ship::Create(
 					|| (x > 0 && !points[x - 1][y])
 					|| (y > 0 && !points[x][y - 1]))
 				{
-					a->mIsLeaking = true;
+					a->SetLeaking();
 
 					++leakingNodeCount;
 				}
@@ -155,16 +149,16 @@ std::unique_ptr<Ship> Ship::Create(
 						// Create a<->b spring
 						// 
 
-						bool springIsHull = aIsHull && b->mMaterial->IsHull;
-						Material const * const mtl = b->mMaterial->IsHull ? a->mMaterial : b->mMaterial;    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
-						shp->springs.insert(new Spring(parentWorld, a, b, mtl, -1));
+						bool springIsHull = aIsHull && b->GetMaterial()->IsHull;
+						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
+						shp->mSprings.insert(new Spring(parentWorld, a, b, mtl));
 						++springCount;
 
 						// TODO: rename to AdjacentNonHullNodes
 						if (!springIsHull)
 						{
-							shp->adjacentnodes[a].insert(b);
-							shp->adjacentnodes[b].insert(a);
+							shp->mAdjacentnodes[a].insert(b);
+							shp->mAdjacentnodes[b].insert(a);
 						}
 
 						// Check adjacent point in next CW direction (for constructing triangles)
@@ -178,7 +172,7 @@ std::unique_ptr<Ship> Ship::Create(
 							Point *c = points[adjx2][adjy2];
 							if (nullptr != c)
 							{
-								shp->triangles.insert(new Triangle(shp, a, b, c));
+								shp->mTriangles.insert(new Triangle(shp, a, b, c));
 
 								++trianglesCount;
 							}
@@ -191,105 +185,101 @@ std::unique_ptr<Ship> Ship::Create(
 
 	LogMessage(L"Created ship: W=", structureImageWidth, L", H=", structureImageHeight, ", ",
 		nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount,
-		L" springs, ", trianglesCount, L" triangles, and ", shp->adjacentnodes.size(), " adjacency entries.");
+		L" springs, ", trianglesCount, L" triangles, and ", shp->mAdjacentnodes.size(), " adjacency entries.");
 
 	return std::unique_ptr<Ship>(shp);
-}
-
-
-Ship::Ship(World *_parent)
-{
-	wld = _parent;
-}
-
-void Ship::update(double dt)
-{
-	leakWater(dt);
-	for (int i = 0; i < 4; i++)
-	{
-		gravitateWater(dt);
-		balancePressure(dt);
-	}
-	for (int i = 0; i < 4; i++)
-		balancePressure(dt);
-}
-
-void Ship::leakWater(double dt)
-{
-	// Stuff some water into all the leaking nodes, if they're not under too much pressure
-	for (std::set<Point*>::iterator iter = points.begin(); iter != points.end(); iter++)
-	{
-		Point *p = *iter;
-		double pressure = p->GetPressure();
-		if (p->mIsLeaking && p->mPosition.y < wld->waterheight(p->mPosition.x) && p->mWater < 1.5)
-		{
-			p->mWater += dt * wld->waterpressure * (pressure - p->mWater);
-		}
-	}
-}
-
-void Ship::gravitateWater(double dt)
-{
-	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
-	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-	for (std::map<Point *, std::set<Point*> >::iterator iter = adjacentnodes.begin();
-		iter != adjacentnodes.end(); iter++)
-	{
-		Point *a = iter->first;
-		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-		{
-			Point *b = *second;
-			double cos_theta = (b->mPosition - a->mPosition).normalise().dot(wld->mGravityNormal);
-			if (cos_theta > 0)
-			{
-				double correction = std::min(0.5 * cos_theta * dt, a->mWater);   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
-				a->mWater -= correction;
-				b->mWater += correction;
-			}
-		}
-	}
-
-}
-
-void Ship::balancePressure(double dt)
-{
-	// If there's too much water in this node, try and push it into the others
-	// (This needs to iterate over multiple frames for pressure waves to spread through water)
-	for (std::map<Point*, std::set<Point*> >::iterator iter = adjacentnodes.begin();
-		iter != adjacentnodes.end(); iter++)
-	{
-		Point *a = iter->first;
-		if (a->mWater < 1)   // if water content is not above threshold, no need to force water out
-			continue;
-		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-		{
-			Point *b = *second;
-			double correction = (b->mWater - a->mWater) * 8 * dt; // can tune this number; value of 1 means will equalise in 1 second.
-			a->mWater += correction;
-			b->mWater -= correction;
-		}
-	}
-}
-
-void Ship::render() const
-{
-	for (auto iter = triangles.begin(); iter != triangles.end(); ++iter)
-	{
-		Triangle const * t = *iter;
-		RenderUtils::RenderTriangle(
-			t->a->mPosition,
-			t->b->mPosition,
-			t->c->mPosition,
-			t->a->GetColour(t->a->mMaterial->Colour),
-			t->b->GetColour(t->b->mMaterial->Colour),
-			t->c->GetColour(t->c->mMaterial->Colour));
-	}
 }
 
 Ship::~Ship()
 {
 	/*for (unsigned int i = 0; i < triangles.size(); i++)
 	delete triangles[i];*/
+}
+
+void Ship::LeakWater(
+	float dt,
+	GameParameters const & gameParameters)
+{
+	// Stuff some water into all the leaking nodes, if they're not under too much pressure
+	for (Point * p : mPoints)
+	{
+		float const pressure = p->GetPressure();
+		if (p->GetIsLeaking()
+			&& p->GetPosition().y < mParentWorld->GetWaterHeight(p->GetPosition().x, gameParameters) // p is in water
+			&& p->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
+		{
+			p->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - p->GetWater()));
+		}
+	}
+}
+
+void Ship::GravitateWater(float dt)
+{
+	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
+	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
+	for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentnodes.begin();
+		iter != mAdjacentnodes.end(); iter++)
+	{
+		Point *a = iter->first;
+		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+		{
+			Point *b = *second;
+			float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(mParentWorld->GetGravityNormal());
+			if (cos_theta > 0.0f)
+			{
+				float correction = std::min(0.5f * cos_theta * dt, a->GetWater());   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
+				a->AdjustWater(-correction);
+				b->AdjustWater(correction);
+			}
+		}
+	}
+}
+
+void Ship::BalancePressure(float dt)
+{
+	// If there's too much water in this node, try and push it into the others
+	// (This needs to iterate over multiple frames for pressure waves to spread through water)
+	for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentnodes.begin();
+		iter != mAdjacentnodes.end(); iter++)
+	{
+		Point *a = iter->first;
+		if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
+			continue;
+
+		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+		{
+			Point *b = *second;
+			float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+			a->AdjustWater(correction);
+			b->AdjustWater(-correction);
+		}
+	}
+}
+
+void Ship::Update(
+	float dt,
+	GameParameters const & gameParameters)
+{
+	LeakWater(dt, gameParameters);
+
+	for (int i = 0; i < 4; i++)
+	{
+		GravitateWater(dt);
+		BalancePressure(dt);
+	}
+
+	for (int i = 0; i < 4; i++)
+		BalancePressure(dt);
+}
+
+
+void Ship::Render() const
+{
+	// Render triangles
+	for (auto t: mTriangles)
+	{
+		t->Render();
+	}
 }
 
 }

@@ -73,7 +73,7 @@ void GameController::DoStep()
 		// Update game now, copying the parameters
 		assert(!!mGame);
 		mGame->Update(
-			0.02, // TODO: setting? if not, constant
+			0.02f, // TODO: setting? if not, constant
 			mGameParameters);
 	}
 }
@@ -82,7 +82,7 @@ void GameController::Render()
 {
 	// Render game, copying the parameters
 	assert(!!mGame);
-	mGame->Render(mRenderParameters);
+	mGame->Render(mGameParameters, mRenderParameters);
 }
 
 /////////////////////////////////////////////////////////////
@@ -146,25 +146,25 @@ void GameController::AdjustZoom(float amount)
 	mRenderParameters.Zoom *= amount;
 }
 
-void GameController::SetStrength(float value)
+void GameController::SetStrengthAdjustment(float value)
 {
-	LogDebug("GameController::SetStrength(", value, ")");
+	LogDebug("GameController::SetStrengthAdjustment(", value, ")");
 
-	mGameParameters.Strength = value;
+	mGameParameters.StrengthAdjustment = value;
 }
 
-void GameController::SetBuoyancy(float value)
+void GameController::SetBuoyancyAdjustment(float value)
 {
-	LogDebug("GameController::SetBuoyancy(", value, ")");
+	LogDebug("GameController::SetBuoyancyAdjustment(", value, ")");
 
-	mGameParameters.Buoyancy = value;
+	mGameParameters.BuoyancyAdjustment = value;
 }
 
-void GameController::SetWaterPressure(float value)
+void GameController::SetWaterPressureAdjustment(float value)
 {
-	LogDebug("GameController::SetWaterPressure(", value, ")");
+	LogDebug("GameController::SetWaterPressureAdjustment(", value, ")");
 
-	mGameParameters.WaterPressure = value;
+	mGameParameters.WaterPressureAdjustment = value;
 }
 
 void GameController::SetWaveHeight(float value)

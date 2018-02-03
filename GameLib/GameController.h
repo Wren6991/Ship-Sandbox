@@ -44,20 +44,20 @@ public:
 	void Pan(vec2 const & screenOffset);
 	void AdjustZoom(float amount);
 
-	float GetStrength() const { return mGameParameters.Strength; }
-	void SetStrength(float value);	
-	float GetMinStrength() const { return GameParameters::MinStrength;  }
-	float GetMaxStrength() const { return GameParameters::MaxStrength; }
+	float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
+	void SetStrengthAdjustment(float value);
+	float GetMinStrengthAdjustment() const { return GameParameters::MinStrengthAdjustment;  }
+	float GetMaxStrengthAdjustment() const { return GameParameters::MaxStrengthAdjustment; }
 
-	float GetBuoyancy() const { return mGameParameters.Buoyancy; }
-	void SetBuoyancy(float value);
-	float GetMinBuoyancy() const { return GameParameters::MinBuoyancy; }
-	float GetMaxBuoyancy() const { return GameParameters::MaxBuoyancy; }
+	float GetBuoyancyAdjustment() const { return mGameParameters.BuoyancyAdjustment; }
+	void SetBuoyancyAdjustment(float value);
+	float GetMinBuoyancyAdjustment() const { return GameParameters::MinBuoyancyAdjustment; }
+	float GetMaxBuoyancyAdjustment() const { return GameParameters::MaxBuoyancyAdjustment; }
 
-	float GetWaterPressure() const { return mGameParameters.WaterPressure; }
-	void SetWaterPressure(float value);
-	float GetMinWaterPressure() const { return GameParameters::MinWaterPressure; }
-	float GetMaxWaterPressure() const { return GameParameters::MaxWaterPressure; }
+	float GetWaterPressureAdjustment() const { return mGameParameters.WaterPressureAdjustment; }
+	void SetWaterPressureAdjustment(float value);
+	float GetMinWaterPressureAdjustment() const { return GameParameters::MinWaterPressureAdjustment; }
+	float GetMaxWaterPressureAdjustment() const { return GameParameters::MaxWaterPressureAdjustment; }
 
 	float GetWaveHeight() const { return mGameParameters.WaveHeight; }
 	void SetWaveHeight(float value);

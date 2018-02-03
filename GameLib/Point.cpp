@@ -7,19 +7,8 @@
 ***************************************************************************************/
 #include "Physics.h"
 
-#include "RenderUtils.h"
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-#include <GL/gl.h>
-
-#include <algorithm>
 #include <cassert>
-// TODO
-//#include <cmath>
+#include <cmath>
 
 namespace Physics {
 
@@ -33,12 +22,13 @@ namespace Physics {
 // P         O   O      I     N    NN     T
 // P          OOO    IIIIIII  N     N     T
 
-// Just copies parameters into relevant fields:
+vec2 const Point::AABBRadius = vec2(0.4f, 0.4f);
+
 Point::Point(
 	World * parentWorld,
-	vec2 position,
+	vec2 const & position,
 	Material const * material,
-	double buoyancy)
+	float buoyancy)
 	: mParentWorld(parentWorld)
 	, mTriangles()
 	, mPosition(position)
@@ -46,55 +36,54 @@ Point::Point(
 	, mMaterial(material)
 	, mForce()
 	, mBuoyancy(buoyancy)
-	, mWater(0.0)
+	, mWater(0.0f)
 	, mIsLeaking(false)
 {
-	mParentWorld->points.push_back(this);
+	// TODO: NUKE and make this inline
+	mParentWorld->mPoints.push_back(this);
 }
 
 Point::~Point()
 {
-	// get rid of any attached triangles:
+	// Get rid of attached triangles and start leaking
 	Breach();
+
 	// remove any springs attached to this point:
-	for (std::vector<Spring*>::iterator iter = mParentWorld->springs.begin(); iter != mParentWorld->springs.end();)
+	for (auto iter = mParentWorld->mSprings.begin(); iter != mParentWorld->mSprings.end();)
 	{
 		Spring *spr = *iter;
 		iter++;
-		if (spr->a == this || spr->b == this)
+		if (spr->GetPointA() == this || spr->GetPointB() == this)
 		{
 			delete spr;
 			iter--;
 		}
 	}
 	// remove any references:
-	for (unsigned int i = 0; i < mParentWorld->ships.size(); i++)
-		mParentWorld->ships[i]->points.erase(this);
-	std::vector<Point*>::iterator iter = std::find(mParentWorld->points.begin(), mParentWorld->points.end(), this);
-	if (iter != mParentWorld->points.end())
-		mParentWorld->points.erase(iter);
+	for (unsigned int i = 0; i < mParentWorld->mShips.size(); i++)
+		mParentWorld->mShips[i]->mPoints.erase(this);
+	std::vector<Point*>::iterator iter = std::find(mParentWorld->mPoints.begin(), mParentWorld->mPoints.end(), this);
+	if (iter != mParentWorld->mPoints.end())
+		mParentWorld->mPoints.erase(iter);
 }
 
-vec3f Point::GetColour(vec3f basecolour) const
+vec3f Point::GetColour(vec3f baseColour) const
 {
-	double wetness = fmin(mWater, 1) * 0.7;
-	return basecolour * (1 - wetness) + vec3f(0, 0, 0.8) * wetness;
+	float colorWetness = fminf(mWater, 1.0f) * 0.7f;
+	return baseColour * (1.0f - colorWetness) + vec3f(0.0f, 0.0f, 0.8f) * colorWetness;
 }
 
-double Point::GetPressure()
+float Point::GetPressure() const
 {
-	return mParentWorld->mGravityLength * fmax(-mPosition.y, 0) * 0.1;  // 0.1 = scaling constant, represents 1/ship width
-}
-
-AABB Point::GetAABB()
-{
-	return AABB(mPosition - vec2(Radius, Radius), mPosition + vec2(Radius, Radius));
+	// TBD: pressure is always zero? 
+	return mParentWorld->GetGravityMagnitude() * fmaxf(-mPosition.y, 0.0f) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
 }
 
 void Point::Breach()
 {
 	mIsLeaking = true;
-	for (std::set<Triangle*>::iterator iter = mTriangles.begin(); iter != mTriangles.end();)
+
+	for (auto iter = mTriangles.begin(); iter != mTriangles.end();)
 	{
 		Triangle *t = *iter;
 		iter++;
@@ -102,40 +91,37 @@ void Point::Breach()
 	}
 }
 
-void Point::Update(double dt)
+void Point::Update(
+	float dt,
+	GameParameters const & gameParameters)
 {
-	double mass = mMaterial->Mass;
-	this->ApplyForce(mParentWorld->mGravity * (mass * (1 + fmin(mWater, 1) * mParentWorld->buoyancy * mBuoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
-																								  // Buoyancy:
-	if (mPosition.y < mParentWorld->waterheight(mPosition.x))
-		this->ApplyForce(mParentWorld->mGravity * (-mParentWorld->buoyancy * mBuoyancy * mass));
+	// TODO: potential to optimize by calculating/invoking things only once
+
+	float mass = mMaterial->Mass;
+	this->ApplyForce(mParentWorld->mGravity * (mass * (1.0f + fminf(mWater, 1.0f) * gameParameters.BuoyancyAdjustment * mBuoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
+	// Buoyancy:
+	if (mPosition.y < mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+		this->ApplyForce(mParentWorld->mGravity * (-gameParameters.BuoyancyAdjustment * mBuoyancy * mass));
 	vec2f newLastPosition = mPosition;
 	// Water drag:
-	if (mPosition.y < mParentWorld->waterheight(mPosition.x))
-		mLastPosition += (mPosition - mLastPosition) * (1 - pow(0.6, dt));
+	if (mPosition.y < mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+		mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
 	// Apply verlet integration:
 	mPosition += (mPosition - mLastPosition) + mForce * (dt * dt / mass);
 	// Collision with seafloor:
-	float floorheight = mParentWorld->oceanfloorheight(mPosition.x);
+	float floorheight = mParentWorld->GetOceanFloorHeight(mPosition.x, gameParameters);
 	if (mPosition.y < floorheight)
 	{
-		vec2f dir = vec2f(floorheight - mParentWorld->oceanfloorheight(mPosition.x + 0.01f), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
+		vec2f dir = vec2f(floorheight - mParentWorld->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
 		mPosition += dir * (floorheight - mPosition.y);
 	}
 	mLastPosition = newLastPosition;
-	mForce = vec2f(0, 0);
-}
 
-void Point::Render() const
-{
-	// Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
-	if (mIsLeaking)
-	{
-		glColor3f(0, 0, 1);
-		glBegin(GL_POINTS);
-		glVertex3f(mPosition.x, mPosition.y, -1);
-		glEnd();
-	}
+	//
+	// Reset force
+	//
+
+	mForce = vec2f(0, 0);
 }
 
 }

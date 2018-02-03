@@ -8,8 +8,11 @@
 #pragma once
 
 #include "AABB.h"
+#include "GameOpenGL.h"
+#include "GameParameters.h"
 #include "Material.h"
 #include "Physics.h"
+#include "RenderUtils.h"
 #include "Vectors.h"
 
 #include <set>
@@ -17,55 +20,95 @@
 namespace Physics
 {	
 
-class Ship; 
-class Spring; 
-class Triangle;
-class World;
-
 class Point
 {
 public:
 
 	Point(
-		World * parentWorld, 
-		vec2 position, 
-		Material const * material, 
-		double buoyancy);
+		World * parentWorld,
+		vec2 const & position,
+		Material const * material,
+		float buoyancy);
 
 	~Point();
 
-	vec2 const & GetPos() const { return mPosition; }
-	vec3f GetColour(vec3f basecolour) const;
-	Material const * GetMaterial() const { return mMaterial; }
-	double GetPressure();
-	bool GetIsLeaking() const { return mIsLeaking;  }
-	std::set<Triangle *> const & GetTriangles() const { return mTriangles; }
-	AABB GetAABB();
+	inline World const * GetParentWorld() const { return mParentWorld;  }
+	inline World * GetParentWorld() { return mParentWorld; }
 
-	void ApplyForce(vec2 const & force) { mForce += force; }
-	void Breach();  // set to leaking and remove any incident triangles
-	void Update(double dt);
-	void Render() const;
+	inline auto const & GetTriangles() const { return mTriangles;  }
+	inline void AddTriangle(Triangle * triangle) { mTriangles.insert(triangle); }
+	inline void RemoveTriangle(Triangle * triangle) { mTriangles.erase(triangle); }
+
+	inline vec2 const & GetPosition() const { return mPosition; }
+	inline vec2 & GetPosition() { return mPosition; }
+	inline void AdjustPosition(vec2 const & dPosition) { mPosition += dPosition; }
+	
+	inline vec2 const & GetLastPosition() const { return mLastPosition; }
+	inline vec2 & GetLastPosition() { return mLastPosition; }
+
+	inline Material const * GetMaterial() const { return mMaterial; }
+
+	inline float GetMass() const { return mMaterial->Mass; }
+
+	inline vec2 const & GetForce() const { return mForce; }
+	inline void ZeroForce() { mForce = vec2(0, 0); }
+
+	inline float GetBuoyancy() const { return mBuoyancy;  }
+
+	// TBD: WaterPressure?
+	inline float GetWater() const { return mWater; }
+	inline void AdjustWater(float dWater) { mWater += dWater; }
+
+	inline bool GetIsLeaking() const { return mIsLeaking;  }
+	inline void SetLeaking() { mIsLeaking = true; }
+
+	vec3f GetColour(vec3f baseColour) const;
+
+	float GetPressure() const;
+
+	inline AABB GetAABB() const
+	{
+		return AABB(mPosition - AABBRadius, mPosition + AABBRadius);
+	}
+
+	inline void ApplyForce(vec2 const & force)
+	{ 
+		mForce += force; 
+	}	
+
+	void Breach();
+
+	void Update(
+		float dt,
+		GameParameters const & gameParameters);
+
+	inline void Render() const
+	{
+		// Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
+		if (mIsLeaking)
+		{
+			glColor3f(0, 0, 1);
+			glBegin(GL_POINTS);
+			glVertex3f(mPosition.x, mPosition.y, -1);
+			glEnd();
+		}
+	}
 
 private:
-		
-	friend class Ship;
-	friend class Spring;
-	friend class Triangle;
-	friend class World;
+
+	static vec2 const AABBRadius;	
 
 	World * const mParentWorld;
 	std::set<Triangle *> mTriangles;
 
-	static constexpr float Radius = 0.4f;
-		
 	vec2 mPosition;
 	vec2 mLastPosition;
+
 	Material const * mMaterial;
 	vec2 mForce;
-
-	double mBuoyancy;
-	double mWater;
+	float mBuoyancy;
+	// TBD: WaterPressure?
+	float mWater;
 	bool mIsLeaking;
 };
 

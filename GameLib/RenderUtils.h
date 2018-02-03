@@ -7,16 +7,9 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameOpenGL.h"
 #include "RenderParameters.h"
 #include "Vectors.h"
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#include<GL/gl.h> 
 
 class RenderUtils 
 {
@@ -76,6 +69,14 @@ public:
 
 	//
 	// World<->Screen
+	//
+	// Screen:
+	//		0 <= X <= CanvasWidth
+	//		0 <= Y <= CanvasHeight
+	//
+	// World:
+	//		-Zoom * WHRatio <= X <= Zoom * WHRatio
+	//		-Zoom <= Y <= Zoom
 	//
 
 	static inline float ZoomToWorldY(float zoom)

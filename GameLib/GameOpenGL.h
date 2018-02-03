@@ -5,17 +5,9 @@
 ***************************************************************************************/
 #pragma once
 
-namespace Physics
-{
-	class Point;
-	class Ship;
-	class Spring;
-	class Triangle;
-	class World;
-}
-
-#include "Point.h"
-#include "Ship.h"
-#include "Spring.h"
-#include "Triangle.h"
-#include "World.h"
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+#include <GL/gl.h>

@@ -34,7 +34,7 @@ public:
 
 	void WaitForAllTasks();
 
-	size_t GetNumberOfThreads() const { return mNThreads; }
+	int GetNumberOfThreads() const { return static_cast<int>(mNThreads); }
 
 private:
 

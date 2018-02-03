@@ -7,14 +7,8 @@
 ***************************************************************************************/
 #include "AABB.h"
 
+#include "GameOpenGL.h"
 #include "RenderUtils.h"
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-#include <GL/gl.h>
 
 AABB::AABB(vec2 _bottomleft, vec2 _topright)
 {

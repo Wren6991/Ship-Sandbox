@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameParameters.h"
 #include "Material.h"
 #include "Physics.h"
 #include "Vectors.h"
@@ -16,24 +17,14 @@
 namespace Physics
 {
 
-class Point;
-class Spring;
-class Triangle;
-class World;
-
 class Ship
 {
 public:
-	World *wld;
-	std::set<Point*> points;
-	std::set<Spring*> springs;
-	std::map<Point *, std::set<Point*>> adjacentnodes;
-	std::set<Triangle*> triangles;
-	void render() const;
-	void leakWater(double dt);
-	void gravitateWater(double dt);
-	void balancePressure(double dt);
 
+	// TODO: nuke
+	friend class Point;
+	friend class Spring;
+	friend class Triangle;
 
 	static std::unique_ptr<Ship> Create(
 		World * parentWorld,
@@ -41,13 +32,39 @@ public:
 		int structureImageWidth,
 		int structureImageHeight,
 		std::vector<std::unique_ptr<Material const>> const & allMaterials);
-		
+
 	~Ship();
 
-	void update(double dt);
+	auto const & GetPoints() const { return mPoints; }
+	auto const & GetPointAdjencyMap() const { return mAdjacentnodes; }
+	auto const & GetSprings() const { return mSprings; }
+	auto const & GetTriangles() const { return mTriangles; }
+
+	void LeakWater(
+		float dt,
+		GameParameters const & gameParameters);
+
+	void GravitateWater(float dt);
+	void BalancePressure(float dt);
+
+	void Update(
+		float dt,
+		GameParameters const & gameParameters);
+
+	void Render() const;
 
 private:
-	Ship(World *_parent);
+
+	Ship(World * parentWorld)
+		: mParentWorld(parentWorld)
+	{
+	}
+
+	World * const mParentWorld;
+	std::set<Point*> mPoints;
+	std::set<Spring*> mSprings;
+	std::map<Point *, std::set<Point*>> mAdjacentnodes;
+	std::set<Triangle*> mTriangles;
 };
 
 }

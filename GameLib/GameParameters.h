@@ -10,21 +10,21 @@
 */
 struct GameParameters
 {
-	float Strength;
-	static constexpr float MinStrength = 0.0025f;
-	static constexpr float MaxStrength = 0.5f;
+	float StrengthAdjustment;
+	static constexpr float MinStrengthAdjustment = 0.0025f;
+	static constexpr float MaxStrengthAdjustment = 0.5f;
 
-	float Buoyancy;
-	static constexpr float MinBuoyancy = 0.0f;
-	static constexpr float MaxBuoyancy = 10.0f; 
+	float BuoyancyAdjustment;
+	static constexpr float MinBuoyancyAdjustment = 0.0f;
+	static constexpr float MaxBuoyancyAdjustment = 10.0f;
+
+	float WaterPressureAdjustment;
+	static constexpr float MinWaterPressureAdjustment = 0.0f;
+	static constexpr float MaxWaterPressureAdjustment = 1.0f;
 
 	float WaveHeight;
 	static constexpr float MinWaveHeight = 0.0f;
 	static constexpr float MaxWaveHeight = 30.0f;
-
-	float WaterPressure;
-	static constexpr float MinWaterPressure = 0.0f;
-	static constexpr float MaxWaterPressure = 1.0f;
 
 	float SeaDepth;
 	static constexpr float MinSeaDepth = 50.0f;
@@ -35,10 +35,10 @@ struct GameParameters
 	static constexpr float MaxDestroyRadius = 10.0f;
 
 	GameParameters()
-		: Strength(0.01f)
-		, Buoyancy(4.0f)
+		: StrengthAdjustment(0.01f)
+		, BuoyancyAdjustment(4.0f)
+		, WaterPressureAdjustment(0.3f)
 		, WaveHeight(1.0f)
-		, WaterPressure(0.3f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.5f)
 	{

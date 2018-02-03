@@ -8,40 +8,100 @@
 #pragma once
 
 #include "Material.h"
+#include "GameOpenGL.h"
+#include "GameParameters.h"
 #include "Physics.h"
+#include "RenderUtils.h"
 #include "Vectors.h"
-
-#include <set>
 
 namespace Physics
 {
 
-class Point;
-class Ship; 
-class Triangle;
-class World;
-
 class Spring
 {
-	friend class World;
-	friend class Point;
-	friend class Ship;
-
-	World *wld;
-	Point *a, *b;
-	double length;
-	Material const * mtl;
 public:
-	Spring(World *_parent, Point *_a, Point *_b, Material const *_mtl, double _length = -1);
+
+	Spring(
+		World * parentWorld,
+		Point * a,
+		Point * b,
+		Material const * material)
+		: Spring(
+			parentWorld,
+			a,
+			b,			
+			(a->GetPosition() - b->GetPosition()).length(),
+			material)
+	{
+	}
+
+	Spring(
+		World * parentWorld,
+		Point * a,
+		Point * b,
+		float length,
+		Material const *material);
+
 	~Spring();
-	void update();
-	void damping(float amount);
-	void render(bool isStressed = false) const;
-	bool isStressed();
-	bool isBroken();
-	Point const * GetPointA() const { return a;  }
-	Point const * GetPointB() const { return b; }
-	Material const * GetMaterial() const { return mtl; };
+
+	inline bool GetIsStressed(float strengthAdjustment) const
+	{
+		// Check whether strain is more than a fraction of the word's base strength * this object's relative strength
+		return GetTensionStrain() > 1 + 0.25f * (strengthAdjustment * mMaterial->Strength);
+	}
+
+	inline bool GetIsBroken(float strengthAdjustment) const
+	{
+		// Check whether strain is more than the whole word's base strength * this object's relative strength
+		return GetTensionStrain() > 1 + (strengthAdjustment * mMaterial->Strength);
+	}
+
+	// Tension strain: <1=no stress, >1=stressed
+	inline float GetTensionStrain() const
+	{
+		return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mLength;
+	}
+
+	inline Point const * GetPointA() const { return mPointA; }
+
+	inline Point const * GetPointB() const { return mPointB; }
+
+	inline Material const * GetMaterial() const { return mMaterial; };
+
+	void Update();
+
+	void DoDamping(float amount);
+
+	inline void Render(bool isStressed) const
+	{
+		//
+		// If member is stressed, highlight it in red
+		//
+
+		glBegin(GL_LINES);
+
+		if (isStressed)
+			glColor3f(1, 0, 0);
+		else
+			RenderUtils::SetColour(mPointA->GetColour(mMaterial->Colour));
+
+		glVertex3f(mPointA->GetPosition().x, mPointA->GetPosition().y, -1);
+
+		if (!isStressed)
+			RenderUtils::SetColour(mPointB->GetColour(mMaterial->Colour));
+
+		glVertex3f(mPointB->GetPosition().x, mPointB->GetPosition().y, -1);
+
+		glEnd();
+	}
+
+private:
+
+	World * const mParentWorld;
+	Point * const mPointA;
+	Point * const mPointB;
+	float mLength;
+	Material const * const mMaterial;
 };
 
 }

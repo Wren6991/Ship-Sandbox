@@ -8,20 +8,13 @@
 #include "Game.h"
 
 #include "GameException.h"
+#include "GameOpenGL.h"
 #include "Log.h"
 #include "Utils.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
 #include <picojson/picojson.h>
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#endif
-
-#include<GL/gl.h> 
 
 #include <cassert>
 #include <iostream>// TODO: nuke
@@ -95,7 +88,7 @@ void Game::DestroyAt(
 	float radius)
 {
 	assert(!!mWorld);
-	mWorld->destroyAt(worldCoordinates, radius);
+	mWorld->DestroyAt(worldCoordinates, radius);
 
 	// TODO: publish game event
 }
@@ -103,36 +96,27 @@ void Game::DestroyAt(
 void Game::DrawTo(vec2 worldCoordinates)
 {
 	assert(!!mWorld);
-	mWorld->drawTo(worldCoordinates);
+	mWorld->DrawTo(worldCoordinates);
 
 	// TODO: publish game event
 }
 
 void Game::Update(
-	double dt,
-	GameParameters gameParameters)
+	float dt,
+	GameParameters const & gameParameters)
 {
 	assert(!!mWorld);
 
-	// TODO
-	mWorld->strength = gameParameters.Strength;
-	mWorld->buoyancy = gameParameters.Buoyancy;
-	mWorld->waterpressure = gameParameters.WaterPressure;
-	mWorld->waveheight = gameParameters.WaveHeight;
-	mWorld->seadepth = gameParameters.SeaDepth;
-	mWorld->oceandepthbuffer = mOceanDepth.data();
-
-	mWorld->update(dt);
+	mWorld->Update(
+		dt,
+		gameParameters);
 }
 
-void Game::Render(RenderParameters renderParameters)
+void Game::Render(
+	GameParameters const & gameParameters,
+	RenderParameters const & renderParameters) const
 {
 	assert(!!mWorld);
-
-	// TODO
-	mWorld->quickwaterfix = renderParameters.QuickWaterFix;
-	mWorld->showstress = renderParameters.ShowStress;
-	mWorld->xraymode = renderParameters.UseXRayMode;
 
 	float halfHeight = renderParameters.Zoom;
 	float halfWidth = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * halfHeight;
@@ -162,11 +146,13 @@ void Game::Render(RenderParameters renderParameters)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	mWorld->render(
+	mWorld->Render(
 		renderParameters.CamX - halfWidth,
 		renderParameters.CamX + halfWidth,
 		renderParameters.CamY - halfHeight,
-		renderParameters.CamY + halfHeight);
+		renderParameters.CamY + halfHeight,
+		gameParameters,
+		renderParameters);
 
 	glFlush();
 }

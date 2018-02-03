@@ -75,7 +75,7 @@ SettingsDialog::SettingsDialog(
 	mStrengthSlider->SetTickFreq(4);
 	strengthSizer->Add(mStrengthSlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("World Strength"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
+	wxStaticText * strengthLabel = new wxStaticText(this, wxID_ANY, _("Strength Adjust"), wxDefaultPosition, wxDefaultSize, 0, _T("Strength Label"));	
 	strengthSizer->Add(strengthLabel, 0, wxALIGN_CENTRE);
 
 	mStrengthTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
@@ -97,7 +97,7 @@ SettingsDialog::SettingsDialog(
 	mBuoyancySlider->SetTickFreq(4);
 	buoyancySizer->Add(mBuoyancySlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("World Buoyancy"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
+	wxStaticText * buoyancyLabel = new wxStaticText(this, wxID_ANY, _("Buoyancy Adjust"), wxDefaultPosition, wxDefaultSize, 0, _T("Buoyancy Label"));
 	buoyancySizer->Add(buoyancyLabel, 0, wxALIGN_CENTRE);
 	
 	mBuoyancyTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
@@ -119,7 +119,7 @@ SettingsDialog::SettingsDialog(
 	mWaterPressureSlider->SetTickFreq(4);
 	waterPressureSizer->Add(mWaterPressureSlider, 0, wxALIGN_CENTRE);
 
-	wxStaticText * waterPressureLabel = new wxStaticText(this, wxID_ANY, _("Water Pressure"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Pressure Label"));
+	wxStaticText * waterPressureLabel = new wxStaticText(this, wxID_ANY, _("Water Pressure Adjust"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Pressure Label"));
 	waterPressureSizer->Add(waterPressureLabel, 0, wxALIGN_CENTRE);
 
 	mWaterPressureTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
@@ -285,8 +285,8 @@ void SettingsDialog::OnStrengthSliderScroll(wxScrollEvent & /*event*/)
 
 	float realValue = SliderToRealValue(
 		mStrengthSlider,
-		mGameController->GetMinStrength(),
-		mGameController->GetMaxStrength());
+		mGameController->GetMinStrengthAdjustment(),
+		mGameController->GetMaxStrengthAdjustment());
 
 	mStrengthTextCtrl->SetValue(std::to_string(realValue));
 
@@ -300,8 +300,8 @@ void SettingsDialog::OnBuoyancySliderScroll(wxScrollEvent & /*event*/)
 
 	float realValue = SliderToRealValue(
 		mBuoyancySlider,
-		mGameController->GetMinBuoyancy(),
-		mGameController->GetMaxBuoyancy());
+		mGameController->GetMinBuoyancyAdjustment(),
+		mGameController->GetMaxBuoyancyAdjustment());
 
 	mBuoyancyTextCtrl->SetValue(std::to_string(realValue));
 
@@ -315,8 +315,8 @@ void SettingsDialog::OnWaterPressureSliderScroll(wxScrollEvent & /*event*/)
 
 	float realValue = SliderToRealValue(
 		mWaterPressureSlider,
-		mGameController->GetMinWaterPressure(),
-		mGameController->GetMaxWaterPressure());
+		mGameController->GetMinWaterPressureAdjustment(),
+		mGameController->GetMaxWaterPressureAdjustment());
 
 	mWaterPressureTextCtrl->SetValue(std::to_string(realValue));
 
@@ -413,23 +413,23 @@ void SettingsDialog::ApplySettings()
 {
 	assert(!!mGameController);
 
-	mGameController->SetStrength(
+	mGameController->SetStrengthAdjustment(
 		SliderToRealValue(
 			mStrengthSlider,
-			mGameController->GetMinStrength(),
-			mGameController->GetMaxStrength()));
+			mGameController->GetMinStrengthAdjustment(),
+			mGameController->GetMaxStrengthAdjustment()));
 
-	mGameController->SetBuoyancy(
+	mGameController->SetBuoyancyAdjustment(
 		SliderToRealValue(
 			mBuoyancySlider,
-			mGameController->GetMinBuoyancy(),
-			mGameController->GetMaxBuoyancy()));
+			mGameController->GetMinBuoyancyAdjustment(),
+			mGameController->GetMaxBuoyancyAdjustment()));
 
-	mGameController->SetWaterPressure(
+	mGameController->SetWaterPressureAdjustment(
 		SliderToRealValue(
 			mWaterPressureSlider,
-			mGameController->GetMinWaterPressure(),
-			mGameController->GetMaxWaterPressure()));
+			mGameController->GetMinWaterPressureAdjustment(),
+			mGameController->GetMaxWaterPressureAdjustment()));
 
 	mGameController->SetWaveHeight(
 		SliderToRealValue(
@@ -461,30 +461,30 @@ void SettingsDialog::ReadSettings()
 	assert(!!mGameController);
 
 	RealValueToSlider(
-		mGameController->GetStrength(),
-		mGameController->GetMinStrength(),
-		mGameController->GetMaxStrength(),
+		mGameController->GetStrengthAdjustment(),
+		mGameController->GetMinStrengthAdjustment(),
+		mGameController->GetMaxStrengthAdjustment(),
 		mStrengthSlider);
 
-	mStrengthTextCtrl->SetValue(std::to_string(mGameController->GetStrength()));
+	mStrengthTextCtrl->SetValue(std::to_string(mGameController->GetStrengthAdjustment()));
 
 
 	RealValueToSlider(
-		mGameController->GetBuoyancy(),
-		mGameController->GetMinBuoyancy(),
-		mGameController->GetMaxBuoyancy(),
+		mGameController->GetBuoyancyAdjustment(),
+		mGameController->GetMinBuoyancyAdjustment(),
+		mGameController->GetMaxBuoyancyAdjustment(),
 		mBuoyancySlider);
 
-	mBuoyancyTextCtrl->SetValue(std::to_string(mGameController->GetBuoyancy()));
+	mBuoyancyTextCtrl->SetValue(std::to_string(mGameController->GetBuoyancyAdjustment()));
 
 
 	RealValueToSlider(
-		mGameController->GetWaterPressure(),
-		mGameController->GetMinWaterPressure(),
-		mGameController->GetMaxWaterPressure(),
+		mGameController->GetWaterPressureAdjustment(),
+		mGameController->GetMinWaterPressureAdjustment(),
+		mGameController->GetMaxWaterPressureAdjustment(),
 		mWaterPressureSlider);
 
-	mWaterPressureTextCtrl->SetValue(std::to_string(mGameController->GetWaterPressure()));
+	mWaterPressureTextCtrl->SetValue(std::to_string(mGameController->GetWaterPressureAdjustment()));
 
 
 	RealValueToSlider(

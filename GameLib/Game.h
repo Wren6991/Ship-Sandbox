@@ -28,22 +28,18 @@ public:
 
 	/*
 	 * Runs a game simulation step.
-	 *
-	 * Parameters are copied on purpose so that the user may keep interacting with parameters
-	 * while the game is being updated in a separate thread.
 	 */
 	void Update(
-		double dt,
-		GameParameters gameParameters);
+		float dt,
+		GameParameters const & gameParameters);
 	
 	
 	/*
 	 * Renders the game.
-	 *
-	 * Parameters are copied on purpose so that the user may keep interacting with parameters
-	 * while the game is being rendered in a separate thread.
 	 */
-	void Render(RenderParameters renderParameters);
+	void Render(
+		GameParameters const & gameParameters,
+		RenderParameters const & renderParameters) const;
 
 private:
 

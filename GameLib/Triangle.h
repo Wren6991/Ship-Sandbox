@@ -7,29 +7,55 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameOpenGL.h"
 #include "Physics.h"
+#include "RenderUtils.h"
 
 namespace Physics
 {
 
-class Point;
-class Ship;
-
 class Triangle 
 {
-	friend class Point;
-	friend class Ship;
+public:
 
-	Ship *parent;
-	Point *a, *b, *c;
-	Triangle(Ship *_parent, Point *_a, Point *_b, Point *_c);
+	Triangle(
+		Ship * parentShip,
+		Point * a,
+		Point * b,
+		Point * c)
+		: mParentShip(parentShip)
+		, mPointA(a)
+		, mPointB(b)
+		, mPointC(c)
+	{
+		a->AddTriangle(this);
+		b->AddTriangle(this);
+		c->AddTriangle(this);
+	}
+
 	~Triangle();
 
-public:
+	inline Point const * GetPointA() const { return mPointA; }
+	inline Point const * GetPointB() const { return mPointB; }
+	inline Point const * GetPointC() const { return mPointC; }
+
+	inline void Render() const
+	{
+		RenderUtils::RenderTriangle(
+			mPointA->GetPosition(),
+			mPointB->GetPosition(),
+			mPointC->GetPosition(),
+			mPointA->GetColour(mPointA->GetMaterial()->Colour),
+			mPointB->GetColour(mPointB->GetMaterial()->Colour),
+			mPointC->GetColour(mPointC->GetMaterial()->Colour));
+	}
+
+private:
 	
-	Point const * GetA() const { return a; }
-	Point const * GetB() const { return b; }
-	Point const * GetC() const { return c; }
+	Ship * const mParentShip;
+	Point * const mPointA;
+	Point * const mPointB;
+	Point * const mPointC;
 };
 
 }

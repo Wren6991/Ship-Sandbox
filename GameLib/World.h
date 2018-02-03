@@ -7,43 +7,159 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameParameters.h"
 #include "Material.h"
 #include "Physics.h"
+#include "RenderParameters.h"
 #include "Scheduler.h"
 #include "Vectors.h"
 
+#include <memory>
 #include <set>
+#include <vector>
 
 namespace Physics
 {
 
-class Point;
-class Ship;
-class Spring;
-class Triangle;
-
 class World
 {
+public:
+
+	World(vec2 gravity = vec2(0.0f, -9.8f));
+
+	~World();
+
+	vec2 const & GetGravity() const { return mGravity; };
+	vec2 const & GetGravityNormal() const { return mGravityNormal; };
+	float const GetGravityMagnitude() const { return mGravityMagnitude;  };
+
+	float GetWaterHeight(		
+		float x,
+		GameParameters const & gameParameters) const;
+
+	float GetOceanFloorHeight(
+		float x,
+		GameParameters const & gameParameters) const;
+
+	void AddShip(std::unique_ptr<Ship> && newShip);
+
+	void DestroyAt(vec2 const & targetPos, float radius);
+	void DrawTo(vec2 const & targetPos);
+
+	void Update(
+		float dt,
+		GameParameters const & gameParameters);
+
+	void Render(		
+		float left,
+		float right,
+		float bottom,
+		float top,
+		GameParameters const & gameParameters,
+		RenderParameters const & renderParameters) const;
+
+private:
+
+	// TODO: nuke
 	friend class Point;
 	friend class Spring;
-	friend class Ship;
 
-	struct springCalculateTask : Scheduler::ITask
+	struct SpringCalculateTask : Scheduler::ITask
 	{
-		springCalculateTask(World *_wld, int _first, int _last);
-		World *wld;
-		int first, last;
+	public:
+
+		SpringCalculateTask(
+			World * parentWorld,
+			size_t firstSpringIndex,
+			size_t lastSpringIndex)
+			: mParentWorld(parentWorld)
+			, mFirstSpringIndex(firstSpringIndex)
+			, mLastSpringIndex(lastSpringIndex)
+		{
+		}
+
+		virtual ~SpringCalculateTask()
+		{
+		}
+
 		virtual void Process();
+
+	private:
+
+		World * const mParentWorld;
+		size_t const mFirstSpringIndex;
+		size_t const mLastSpringIndex;
 	};
 
-	struct pointIntegrateTask : Scheduler::ITask
+	struct PointIntegrateTask : Scheduler::ITask
 	{
-		pointIntegrateTask(World *_wld, int _first, int _last, float _dt);
-		World *wld;
-		float dt;
-		int first, last;
+	public:
+
+		PointIntegrateTask(
+			World * parentWorld,
+			size_t firstPointIndex,
+			size_t lastPointIndex,
+			float dt)
+			: mParentWorld(parentWorld)
+			, mFirstPointIndex(firstPointIndex)
+			, mLastPointIndex(lastPointIndex)
+			, mDt(dt)
+		{
+		}
+
+		virtual ~PointIntegrateTask()
+		{
+		}
+
 		virtual void Process();
+
+	private:
+
+		World * const mParentWorld;
+		size_t const mFirstPointIndex;
+		size_t const mLastPointIndex;
+		float const mDt;
 	};
+
+	vec2 const mGravity;
+	vec2 const mGravityNormal;
+	float const mGravityMagnitude;
+
+	float mCurrentTime;
+
+	// Repository
+	std::vector<Point*> mPoints;
+	std::vector<Spring*> mSprings;
+	std::vector<std::unique_ptr<Ship>> mShips;
+
+	Scheduler mScheduler;
+
+	void DoSprings(float dt);
+	
+	void RenderLand(
+		float left,
+		float right,
+		float bottom,
+		float top,
+		GameParameters const & gameParameters,
+		RenderParameters const & renderParameters) const;
+
+	void RenderWater(
+		float left,
+		float right,
+		float bottom,
+		float top,
+		GameParameters const & gameParameters,
+		RenderParameters const & renderParameters) const;
+
+	// TODO: public or private?
+	float const *oceandepthbuffer;
+
+private:
+
+	//
+	// TODO: experimental
+	//
 
 	struct BVHNode
 	{
@@ -54,44 +170,12 @@ class World
 		static const int MAX_DEPTH = 15;
 		static const int MAX_N_POINTS = 10;
 		Point* points[MAX_N_POINTS];
-		static BVHNode *allocateTree(int depth = MAX_DEPTH);
+		static BVHNode * AllocateTree(int depth = MAX_DEPTH);
 	};
 
+	void BuildBVHTree(bool splitInX, std::vector<Point*> &pointlist, BVHNode *thisnode, int depth = 1);
 
-	Scheduler springScheduler;
-	std::vector<Point*> points;
-	std::vector<Spring*> springs;
-	std::vector<std::unique_ptr<Ship>> ships;
-	BVHNode *collisionTree;
-	float waterheight(float x) const;
-	float oceanfloorheight(float x) const;
-	void doSprings(double dt);
-	vec2 const mGravity;
-	vec2 const mGravityNormal;
-	float const mGravityLength;
-	void buildBVHTree(bool splitInX, std::vector<Point*> &pointlist, BVHNode *thisnode, int depth = 1);
-public:
-	float const *oceandepthbuffer;
-	float buoyancy;
-	float strength;
-	float waterpressure;
-	float waveheight;
-	float seadepth;
-	bool showstress;
-	bool quickwaterfix;
-	bool xraymode;
-	float time;
-	void update(double dt);
-	void render(double left, double right, double bottom, double top) const;
-	void renderLand(double left, double right, double bottom, double top) const;
-	void renderWater(double left, double right, double bottom, double top) const;
-	void destroyAt(vec2 pos, float radius);
-	void drawTo(vec2 target);
-
-	void AddShip(std::unique_ptr<Ship> && newShip);
-
-	World(vec2 gravity = vec2(0, -9.8), double _buoyancy = 4, double _strength = 0.01);
-	~World();
+	BVHNode * mCollisionTree;
 };
 
 }
