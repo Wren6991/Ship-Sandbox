@@ -67,10 +67,12 @@ Point::~Point()
 		mParentWorld->mPoints.erase(iter);
 }
 
-vec3f Point::GetColour(vec3f baseColour) const
+vec3f Point::GetColour(vec3f const & baseColour) const
 {
+	static const vec3f WetColour(0.0f, 0.0f, 0.8f);
+
 	float colorWetness = fminf(mWater, 1.0f) * 0.7f;
-	return baseColour * (1.0f - colorWetness) + vec3f(0.0f, 0.0f, 0.8f) * colorWetness;
+	return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
 }
 
 float Point::GetPressure() const

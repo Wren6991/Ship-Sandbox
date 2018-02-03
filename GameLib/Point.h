@@ -62,7 +62,7 @@ public:
 	inline bool GetIsLeaking() const { return mIsLeaking;  }
 	inline void SetLeaking() { mIsLeaking = true; }
 
-	vec3f GetColour(vec3f baseColour) const;
+	vec3f GetColour(vec3f const & baseColour) const;
 
 	float GetPressure() const;
 
