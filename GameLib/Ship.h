@@ -44,7 +44,10 @@ public:
 		float dt,
 		GameParameters const & gameParameters);
 
-	void GravitateWater(float dt);
+	void GravitateWater(
+		float dt,
+		GameParameters const & gameParameters);
+
 	void BalancePressure(float dt);
 
 	void Update(
@@ -52,6 +55,18 @@ public:
 		GameParameters const & gameParameters);
 
 	void Render() const;
+
+public:
+
+	/*
+	 * Invoked when an elements has been destroyed. Notifies the ship that the element
+	 * can be removed (at the most appropriate time) from the ship's main container
+	 * of element pointers, and that the pointer can be deleted.
+	 *
+	 * Implemented differently for the different elements.
+	 */
+	template<typename TElement>
+	void RegisterDestruction(TElement * element);
 
 private:
 
@@ -66,5 +81,17 @@ private:
 	std::map<Point *, std::set<Point*>> mAdjacentnodes;
 	std::set<Triangle*> mTriangles;
 };
+
+template<>
+void Ship::RegisterDestruction(Point * element)
+{
+	// TODO
+}
+
+template<>
+void Ship::RegisterDestruction(Spring * element)
+{
+	// TODO
+}
 
 }

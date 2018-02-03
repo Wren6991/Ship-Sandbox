@@ -14,7 +14,7 @@
 namespace Physics
 {
 
-class Triangle 
+class Triangle : public ShipElement<Triangle>
 {
 public:
 
@@ -23,7 +23,7 @@ public:
 		Point * a,
 		Point * b,
 		Point * c)
-		: mParentShip(parentShip)
+		: ShipElement(parentShip)
 		, mPointA(a)
 		, mPointB(b)
 		, mPointC(c)
@@ -52,7 +52,6 @@ public:
 
 private:
 	
-	Ship * const mParentShip;
 	Point * const mPointA;
 	Point * const mPointB;
 	Point * const mPointC;

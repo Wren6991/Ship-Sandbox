@@ -22,19 +22,19 @@ namespace Physics {
 //   SSS    P        R     R  IIIIIII  N     N    GGGG
 
 Spring::Spring(
-	World * parentWorld,
+	Ship * parentShip,
 	Point * a,
 	Point * b,
 	float length,
 	Material const *material)
-	: mParentWorld(parentWorld)
+	: ShipElement(parentShip)
 	, mPointA(a)
 	, mPointB(b)
 	, mLength(length)
 	, mMaterial(material)
 {
 	// TODO: NUKE and make this inline
-	mParentWorld->mSprings.push_back(this);
+	parentShip->mParentWorld->mSprings.push_back(this);
 }
 
 Spring::~Spring()
@@ -44,17 +44,14 @@ Spring::~Spring()
 	mPointB->Breach();
 
 	// Scour out any references to this spring
-	for (unsigned int i = 0; i < mParentWorld->mShips.size(); i++)
-	{
-		Ship *shp = mParentWorld->mShips[i].get();
-		if (shp->mAdjacentnodes.find(mPointA) != shp->mAdjacentnodes.end())
-			shp->mAdjacentnodes[mPointA].erase(mPointB);
-		if (shp->mAdjacentnodes.find(mPointB) != shp->mAdjacentnodes.end())
-			shp->mAdjacentnodes[mPointB].erase(mPointA);
-	}
-	std::vector <Spring*>::iterator iter = std::find(mParentWorld->mSprings.begin(), mParentWorld->mSprings.end(), this);
-	if (iter != mParentWorld->mSprings.end())
-		mParentWorld->mSprings.erase(iter);
+	if (GetParentShip()->mAdjacentnodes.find(mPointA) != GetParentShip()->mAdjacentnodes.end())
+		GetParentShip()->mAdjacentnodes[mPointA].erase(mPointB);
+	if (GetParentShip()->mAdjacentnodes.find(mPointB) != GetParentShip()->mAdjacentnodes.end())
+		GetParentShip()->mAdjacentnodes[mPointB].erase(mPointA);
+
+	std::vector <Spring*>::iterator iter = std::find(GetParentShip()->mParentWorld->mSprings.begin(), GetParentShip()->mParentWorld->mSprings.end(), this);
+	if (iter != GetParentShip()->mParentWorld->mSprings.end())
+		GetParentShip()->mParentWorld->mSprings.erase(iter);
 }
 
 void Spring::Update()

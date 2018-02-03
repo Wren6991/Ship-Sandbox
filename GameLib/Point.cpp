@@ -25,11 +25,11 @@ namespace Physics {
 vec2 const Point::AABBRadius = vec2(0.4f, 0.4f);
 
 Point::Point(
-	World * parentWorld,
+	Ship * parentShip,
 	vec2 const & position,
 	Material const * material,
 	float buoyancy)
-	: mParentWorld(parentWorld)
+	: ShipElement(parentShip)
 	, mTriangles()
 	, mPosition(position)
 	, mLastPosition(position)
@@ -40,7 +40,7 @@ Point::Point(
 	, mIsLeaking(false)
 {
 	// TODO: NUKE and make this inline
-	mParentWorld->mPoints.push_back(this);
+	parentShip->mParentWorld->mPoints.push_back(this);
 }
 
 Point::~Point()
@@ -49,7 +49,7 @@ Point::~Point()
 	Breach();
 
 	// remove any springs attached to this point:
-	for (auto iter = mParentWorld->mSprings.begin(); iter != mParentWorld->mSprings.end();)
+	for (auto iter = GetParentShip()->mParentWorld->mSprings.begin(); iter != GetParentShip()->mParentWorld->mSprings.end();)
 	{
 		Spring *spr = *iter;
 		iter++;
@@ -60,11 +60,10 @@ Point::~Point()
 		}
 	}
 	// remove any references:
-	for (unsigned int i = 0; i < mParentWorld->mShips.size(); i++)
-		mParentWorld->mShips[i]->mPoints.erase(this);
-	std::vector<Point*>::iterator iter = std::find(mParentWorld->mPoints.begin(), mParentWorld->mPoints.end(), this);
-	if (iter != mParentWorld->mPoints.end())
-		mParentWorld->mPoints.erase(iter);
+	GetParentShip()->mPoints.erase(this);
+	std::vector<Point*>::iterator iter = std::find(GetParentShip()->mParentWorld->mPoints.begin(), GetParentShip()->mParentWorld->mPoints.end(), this);
+	if (iter != GetParentShip()->mParentWorld->mPoints.end())
+		GetParentShip()->mParentWorld->mPoints.erase(iter);
 }
 
 vec3f Point::GetColour(vec3f const & baseColour) const
@@ -75,10 +74,10 @@ vec3f Point::GetColour(vec3f const & baseColour) const
 	return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
 }
 
-float Point::GetPressure() const
+float Point::GetPressure(float gravityMagnitude) const
 {
 	// TBD: pressure is always zero? 
-	return mParentWorld->GetGravityMagnitude() * fmaxf(-mPosition.y, 0.0f) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
+	return gravityMagnitude * fmaxf(-mPosition.y, 0.0f) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
 }
 
 void Point::Breach()
@@ -100,21 +99,21 @@ void Point::Update(
 	// TODO: potential to optimize by calculating/invoking things only once
 
 	float mass = mMaterial->Mass;
-	this->ApplyForce(mParentWorld->mGravity * (mass * (1.0f + fminf(mWater, 1.0f) * gameParameters.BuoyancyAdjustment * mBuoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
+	this->ApplyForce(gameParameters.Gravity * (mass * (1.0f + fminf(mWater, 1.0f) * gameParameters.BuoyancyAdjustment * mBuoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
 	// Buoyancy:
-	if (mPosition.y < mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
-		this->ApplyForce(mParentWorld->mGravity * (-gameParameters.BuoyancyAdjustment * mBuoyancy * mass));
+	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+		this->ApplyForce(gameParameters.Gravity * (-gameParameters.BuoyancyAdjustment * mBuoyancy * mass));
 	vec2f newLastPosition = mPosition;
 	// Water drag:
-	if (mPosition.y < mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
 		mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
 	// Apply verlet integration:
 	mPosition += (mPosition - mLastPosition) + mForce * (dt * dt / mass);
 	// Collision with seafloor:
-	float floorheight = mParentWorld->GetOceanFloorHeight(mPosition.x, gameParameters);
+	float floorheight = GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x, gameParameters);
 	if (mPosition.y < floorheight)
 	{
-		vec2f dir = vec2f(floorheight - mParentWorld->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
+		vec2f dir = vec2f(floorheight - GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
 		mPosition += dir * (floorheight - mPosition.y);
 	}
 	mLastPosition = newLastPosition;

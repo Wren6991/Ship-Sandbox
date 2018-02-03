@@ -57,7 +57,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->GetPosition());
 	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
 	EXPECT_EQ(0u, pt->GetTriangles().size());
-	EXPECT_TRUE(pt->GetIsLeaking());
+	EXPECT_TRUE(pt->IsLeaking());
 
 	EXPECT_EQ(0u, ship->GetPointAdjencyMap().size());
 }
@@ -96,13 +96,13 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->GetPosition());
 	EXPECT_EQ(materials[1].get(), pt1->GetMaterial());
 	EXPECT_EQ(0u, pt1->GetTriangles().size());
-	EXPECT_TRUE(pt1->GetIsLeaking());
+	EXPECT_TRUE(pt1->IsLeaking());
 
 	Physics::Point const * pt2 = *std::next((ship->GetPoints().begin()));
 	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->GetPosition());
 	EXPECT_EQ(materials[0].get(), pt2->GetMaterial());
 	EXPECT_EQ(0u, pt2->GetTriangles().size());
-	EXPECT_FALSE(pt2->GetIsLeaking());
+	EXPECT_FALSE(pt2->IsLeaking());
 
 	// Adjacent nodes
 

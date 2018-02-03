@@ -14,6 +14,7 @@ namespace Physics
 	class World;
 }
 
+#include "ShipElement.h"
 #include "Point.h"
 #include "Ship.h"
 #include "Spring.h"

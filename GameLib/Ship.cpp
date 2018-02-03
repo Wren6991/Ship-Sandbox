@@ -72,7 +72,7 @@ std::unique_ptr<Ship> Ship::Create(
 				auto mtl = colourdict[colour];
 
 				Point * pt = new Point(
-					parentWorld,
+					shp,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
 					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
@@ -151,7 +151,7 @@ std::unique_ptr<Ship> Ship::Create(
 
 						bool springIsHull = aIsHull && b->GetMaterial()->IsHull;
 						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
-						shp->mSprings.insert(new Spring(parentWorld, a, b, mtl));
+						shp->mSprings.insert(new Spring(shp, a, b, mtl));
 						++springCount;
 
 						// TODO: rename to AdjacentNonHullNodes
@@ -203,8 +203,8 @@ void Ship::LeakWater(
 	// Stuff some water into all the leaking nodes, if they're not under too much pressure
 	for (Point * p : mPoints)
 	{
-		float const pressure = p->GetPressure();
-		if (p->GetIsLeaking()
+		float const pressure = p->GetPressure(gameParameters.GravityMagnitude);
+		if (p->IsLeaking()
 			&& p->GetPosition().y < mParentWorld->GetWaterHeight(p->GetPosition().x, gameParameters) // p is in water
 			&& p->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
 		{
@@ -213,7 +213,9 @@ void Ship::LeakWater(
 	}
 }
 
-void Ship::GravitateWater(float dt)
+void Ship::GravitateWater(
+	float dt,
+	GameParameters const & gameParameters)
 {
 	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
 	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
@@ -224,7 +226,7 @@ void Ship::GravitateWater(float dt)
 		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
 		{
 			Point *b = *second;
-			float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(mParentWorld->GetGravityNormal());
+			float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
 			if (cos_theta > 0.0f)
 			{
 				float correction = std::min(0.5f * cos_theta * dt, a->GetWater());   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
@@ -264,7 +266,7 @@ void Ship::Update(
 
 	for (int i = 0; i < 4; i++)
 	{
-		GravitateWater(dt);
+		GravitateWater(dt, gameParameters);
 		BalancePressure(dt);
 	}
 

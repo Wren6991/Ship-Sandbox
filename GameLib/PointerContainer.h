@@ -18,8 +18,9 @@
  * all elements. 
  *
  * Removing individual elements from the container is achieved by means of setting an "IsDeleted" flag
- * on the element(s) to be removed and then invoking the container's ShrinkToFit() method. Removal of
- * elements is not optimized.
+ * on the element(s) to be removed, by calling the container's register_deletion() method, and then 
+ * by invoking the container's shrink_to_fit() method, which will scour elements flagged as deleted, 
+ * delete them, and shrink the container.
  */
 template<typename TElement>
 class PointerContainer
@@ -82,12 +83,14 @@ public:
 public:
 
 	explicit PointerContainer(std::vector<TElement *> && pointers)
+		: mDeletedElementsCount(0u)
 	{
 		// Allocate array of pointers and copy all pointers
 		mPointers = new TElement*[pointers.size()];
 		memcpy(mPointers, pointers.data(), pointers.size() * sizeof(TElement *));
 		mSize = pointers.size();
-
+		
+		// Empty the moved container
 		pointers.clear();
 	}
 
@@ -131,19 +134,19 @@ public:
 		return const_iterator(mPointers + mSize);
 	}
 
-	TElement * operator[](size_t index) noexcept
+	inline TElement * operator[](size_t index) noexcept
 	{
 		assert(index < mSize);
 		return mPointers[index];
 	}
 
-	TElement const * operator[](size_t index) const noexcept
+	inline TElement const * operator[](size_t index) const noexcept
 	{
 		assert(index < mSize);
 		return mPointers[index];
 	}
 
-	size_t size() const noexcept
+	inline size_t size() const noexcept
 	{
 		return mSize;
 	}
@@ -151,6 +154,11 @@ public:
 	//
 	// Modifiers
 	//
+
+	inline void register_deletion() noexcept
+	{
+		++mDeletedElementsCount;
+	}
 
 	/*
 	 * Scavenges deleted elements (those flagged with IsDeleted=true),
@@ -161,68 +169,43 @@ public:
 	 */
 	void shrink_to_fit()
 	{
-		//
-		// The idea is to minimize the number of memmove's by identifying strides
-		// of deleted elements and then memmove'ing towards the left everything 
-		// after each deleted stride.
-		//
-		// As a further optimization, we could also identify strides
-		// of non-deleted elements afterwards and memmove just these; this would
-		// guarantee that each element is only memmove'd once. For later.
-		//
-
-		//
-		// 1. Compact array
-		//
-
-		size_t const mAllocatedSize = mSize;
-
-		TElement ** pEnd = mPointers + mSize;
-
-		for (TElement ** p1 = mPointers; p1 < pEnd; /*incremented in loop*/)
+		if (0u == mDeletedElementsCount)
 		{
-			if ((*p1)->IsDeleted)
+			// Nothing to do!
+			return;
+		}
+
+		// Allocate new array
+		size_t newSize = mSize - mDeletedElementsCount;		
+		assert(newSize < mSize);
+		TElement **pNewPointers = new TElement*[newSize];
+
+		// Copy non-deleted items
+		TElement ** pEnd = mPointers + mSize;
+		TElement ** pNewPosition = pNewPointers;
+		for (TElement ** p1 = mPointers; p1 < pEnd; ++p1)
+		{
+			if ((*p1)->IsDeleted())
 			{
-				// Free this pointer
+				// Free it
 				delete *p1;
-
-				// Find first pointer of non-deleted element, deleting elements
-				// in the meantime
-				TElement ** p2;
-				for (
-					p2 = p1 + 1; 
-					p2 < pEnd && (*p2)->IsDeleted; 
-					delete *p2, ++p2);
-
-				// Move back everything from p2 onwards
-				std::memmove(p1, p2, (pEnd - p2) * sizeof(TElement *));
-
-				// Adjust size 
-				mSize -= (p2 - p1);
-				pEnd -= (p2 - p1);
-
-				// Keep going from here
 			}
 			else
 			{
-				// Skip
-				++p1;
+				// Copy it
+				*(pNewPosition++) = *p1;
 			}
 		}
-		
 
+		assert(pNewPointers + newSize == pNewPosition);
 
-		//
-		// 2. Shrink array (if needed)
-		//
+		// Swap pointers array
+		delete[] mPointers;
+		mPointers = pNewPointers;
+		mSize = newSize;
 
-		if (mAllocatedSize != mSize)
-		{
-			TElement **pNewPointers = new TElement*[mSize];
-			memcpy(pNewPointers, mPointers, mSize * sizeof(TElement *));
-			delete[] mPointers;
-			mPointers = pNewPointers;
-		}
+		// Reset deletion count
+		mDeletedElementsCount = 0u;
 	}
 
 private:
@@ -232,4 +215,7 @@ private:
 
 	// The size of the array
 	size_t mSize;
+
+	// The current number of deleted elements
+	size_t mDeletedElementsCount;
 };

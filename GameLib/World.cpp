@@ -46,11 +46,8 @@ namespace Physics {
 //  W W W    O   O   R    R   L        D  DDD
 //   W W      OOO    R     R  LLLLLLL  DDDD
 
-World::World(vec2f gravity)
-	: mGravity(gravity)
-	, mGravityNormal(mGravity.normalise())
-	, mGravityMagnitude(mGravity.length())
-	, mCurrentTime(0.0f)
+World::World()
+	: mCurrentTime(0.0f)
 	// Repository
 	, mPoints()
 	, mSprings()
@@ -152,7 +149,7 @@ void World::Update(
 	{
 		Spring *spr = *iter;
 		iter++;
-		if (spr->GetIsBroken(gameParameters.StrengthAdjustment)) // have to delete after erasure - else there is a possibility of
+		if (spr->GetBroken(gameParameters.StrengthAdjustment)) // have to delete after erasure - else there is a possibility of
 			delete spr;             // other objects accessing a bad pointer during this cleanup
 	}
 
@@ -184,7 +181,7 @@ void World::Render(
 			mShips[i]->Render();
 	if (renderParameters.ShowStress)
 		for (unsigned int i = 0; i < mSprings.size(); i++)
-			if (mSprings[i]->GetIsStressed(gameParameters.StrengthAdjustment))
+			if (mSprings[i]->GetStressed(gameParameters.StrengthAdjustment))
 				mSprings[i]->Render(true);
 
 	if (!renderParameters.QuickWaterFix)

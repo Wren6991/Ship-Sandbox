@@ -6,23 +6,25 @@
 
 struct TestElement
 {
-	size_t const Id;
-	bool IsDeleted;
+	static size_t DestructorInvocationCount;
 
-	static size_t DeletionCount;
+	size_t const Id;
+	bool IsDeletedFlag;
 
 	explicit TestElement(size_t id)
 		: Id(id)
-		, IsDeleted(false)
+		, IsDeletedFlag(false)
 	{}
 
 	~TestElement()
 	{
-		++DeletionCount;
+		++DestructorInvocationCount;
 	}
+
+	bool IsDeleted() const { return IsDeletedFlag; }
 };
 
-size_t TestElement::DeletionCount;
+size_t TestElement::DestructorInvocationCount;
 
 size_t GetSum(PointerContainer<TestElement> const & pc)
 {
@@ -186,7 +188,7 @@ TEST(PointerContainerTests, IteratesElements_Index_Const)
 
 TEST(PointerContainerTests, FreesPointersOnDestructor)
 {
-	TestElement::DeletionCount = 0;
+	TestElement::DestructorInvocationCount = 0;
 
 	std::vector<TestElement *> input;
 	input.push_back(new TestElement(1));
@@ -196,10 +198,10 @@ TEST(PointerContainerTests, FreesPointersOnDestructor)
 	{
 		PointerContainer<TestElement> pc(std::move(input));
 
-		EXPECT_EQ(0u, TestElement::DeletionCount);
+		EXPECT_EQ(0u, TestElement::DestructorInvocationCount);
 	}
 
-	EXPECT_EQ(3u, TestElement::DeletionCount);
+	EXPECT_EQ(3u, TestElement::DestructorInvocationCount);
 }
 
 ///////////////////////////////////////////
@@ -213,13 +215,13 @@ TEST(PointerContainerTests, ShrinkToFit_Empty)
 
 	EXPECT_EQ(0U, pc.size());
 
-	TestElement::DeletionCount = 0u;
+	TestElement::DestructorInvocationCount = 0u;
 
 	pc.shrink_to_fit();
 
 	EXPECT_EQ(0U, pc.size());
 
-	EXPECT_EQ(0u, TestElement::DeletionCount);
+	EXPECT_EQ(0u, TestElement::DestructorInvocationCount);
 }
 
 TEST(PointerContainerTests, ShrinkToFit_NoDeletions)
@@ -234,13 +236,52 @@ TEST(PointerContainerTests, ShrinkToFit_NoDeletions)
 
 	EXPECT_EQ(4U, pc.size());
 
-	TestElement::DeletionCount = 0u;
+	TestElement::DestructorInvocationCount = 0u;
 
 	pc.shrink_to_fit();
 
 	EXPECT_EQ(4U, pc.size());
 
-	EXPECT_EQ(0u, TestElement::DeletionCount);
+	EXPECT_EQ(0u, TestElement::DestructorInvocationCount);
+}
+
+TEST(PointerContainerTests, ShrinkToFit_BecomesEmpty)
+{
+	std::vector<TestElement *> input;
+	input.push_back(new TestElement(1));
+	PointerContainer<TestElement> pc(std::move(input));
+
+	EXPECT_EQ(1U, pc.size());
+
+	TestElement::DestructorInvocationCount = 0u;
+
+	pc[0]->IsDeletedFlag = true;
+	pc.register_deletion();
+
+	pc.shrink_to_fit();
+
+	EXPECT_EQ(0U, pc.size());
+
+	EXPECT_EQ(1u, TestElement::DestructorInvocationCount);
+}
+
+TEST(PointerContainerTests, ShrinkToFit_DoesNotShrinkWhenNoDeletionRegistered)
+{
+	std::vector<TestElement *> input;
+	input.push_back(new TestElement(1));
+	PointerContainer<TestElement> pc(std::move(input));
+
+	EXPECT_EQ(1U, pc.size());
+
+	TestElement::DestructorInvocationCount = 0u;
+
+	pc[0]->IsDeletedFlag = true;
+
+	pc.shrink_to_fit();
+
+	EXPECT_EQ(1U, pc.size());
+
+	EXPECT_EQ(0u, TestElement::DestructorInvocationCount);
 }
 
 TEST(PointerContainerTests, ShrinkToFit_1Deletion)
@@ -257,15 +298,16 @@ TEST(PointerContainerTests, ShrinkToFit_1Deletion)
 
 		EXPECT_EQ(4U, pc.size());
 
-		TestElement::DeletionCount = 0u;
+		TestElement::DestructorInvocationCount = 0u;
 
-		pc[i]->IsDeleted = true;
+		pc[i]->IsDeletedFlag = true;
+		pc.register_deletion();
 
 		pc.shrink_to_fit();
 
 		EXPECT_EQ(3U, pc.size());
 
-		EXPECT_EQ(1u, TestElement::DeletionCount);
+		EXPECT_EQ(1u, TestElement::DestructorInvocationCount);
 
 		EXPECT_EQ(10 - (i + 1), GetSum(pc));
 	}
@@ -285,16 +327,18 @@ TEST(PointerContainerTests, ShrinkToFit_2Deletions_Contiguous)
 
 		EXPECT_EQ(4U, pc.size());
 
-		TestElement::DeletionCount = 0u;
+		TestElement::DestructorInvocationCount = 0u;
 
-		pc[i]->IsDeleted = true;
-		pc[i + 1]->IsDeleted = true;
+		pc[i]->IsDeletedFlag = true;
+		pc.register_deletion();
+		pc[i + 1]->IsDeletedFlag = true;
+		pc.register_deletion();
 
 		pc.shrink_to_fit();
 
 		EXPECT_EQ(2U, pc.size());
 
-		EXPECT_EQ(2U, TestElement::DeletionCount);
+		EXPECT_EQ(2U, TestElement::DestructorInvocationCount);
 
 		EXPECT_EQ(10 - ((i + 1) + (i + 1 + 1)), GetSum(pc));
 	}
@@ -314,16 +358,18 @@ TEST(PointerContainerTests, ShrinkToFit_2Deletions_SpacedByOne)
 
 		EXPECT_EQ(4U, pc.size());
 
-		TestElement::DeletionCount = 0u;
+		TestElement::DestructorInvocationCount = 0u;
 
-		pc[i]->IsDeleted = true;
-		pc[i + 2]->IsDeleted = true;
+		pc[i]->IsDeletedFlag = true;
+		pc.register_deletion();
+		pc[i + 2]->IsDeletedFlag = true;
+		pc.register_deletion();
 
 		pc.shrink_to_fit();
 
 		EXPECT_EQ(2U, pc.size());
 
-		EXPECT_EQ(2U, TestElement::DeletionCount);
+		EXPECT_EQ(2U, TestElement::DestructorInvocationCount);
 
 		EXPECT_EQ(10 - ((i + 1) + (i + 2 + 1)), GetSum(pc));
 	}
@@ -341,16 +387,18 @@ TEST(PointerContainerTests, ShrinkToFit_2Deletions_SpacedByTwo)
 
 	EXPECT_EQ(4U, pc.size());
 
-	TestElement::DeletionCount = 0u;
+	TestElement::DestructorInvocationCount = 0u;
 
-	pc[0]->IsDeleted = true;
-	pc[3]->IsDeleted = true;
+	pc[0]->IsDeletedFlag = true;
+	pc.register_deletion();
+	pc[3]->IsDeletedFlag = true;
+	pc.register_deletion();
 
 	pc.shrink_to_fit();
 
 	EXPECT_EQ(2U, pc.size());
 
-	EXPECT_EQ(2U, TestElement::DeletionCount);
+	EXPECT_EQ(2U, TestElement::DestructorInvocationCount);
 
 	EXPECT_EQ(5u, GetSum(pc));
 }
@@ -369,17 +417,20 @@ TEST(PointerContainerTests, ShrinkToFit_3Deletions_Contiguous)
 
 		EXPECT_EQ(4U, pc.size());
 
-		TestElement::DeletionCount = 0u;
+		TestElement::DestructorInvocationCount = 0u;
 
-		pc[i]->IsDeleted = true;
-		pc[i + 1]->IsDeleted = true;
-		pc[i + 2]->IsDeleted = true;
+		pc[i]->IsDeletedFlag = true;
+		pc.register_deletion();
+		pc[i + 1]->IsDeletedFlag = true;
+		pc.register_deletion();
+		pc[i + 2]->IsDeletedFlag = true;
+		pc.register_deletion();
 
 		pc.shrink_to_fit();
 
 		EXPECT_EQ(1U, pc.size());
 
-		EXPECT_EQ(3U, TestElement::DeletionCount);
+		EXPECT_EQ(3U, TestElement::DestructorInvocationCount);
 
 		EXPECT_EQ(10 - ((i + 1) + (i + 1 + 1) + (i + 2 + 1)), GetSum(pc));
 	}
@@ -397,16 +448,20 @@ TEST(PointerContainerTests, ShrinkToFit_AllDeleted)
 
 	EXPECT_EQ(4U, pc.size());
 
-	TestElement::DeletionCount = 0u;
+	TestElement::DestructorInvocationCount = 0u;
 
-	pc[0]->IsDeleted = true;
-	pc[1]->IsDeleted = true;
-	pc[2]->IsDeleted = true;
-	pc[3]->IsDeleted = true;
+	pc[0]->IsDeletedFlag = true;
+	pc.register_deletion();
+	pc[1]->IsDeletedFlag = true;
+	pc.register_deletion();
+	pc[2]->IsDeletedFlag = true;
+	pc.register_deletion();
+	pc[3]->IsDeletedFlag = true;
+	pc.register_deletion();
 
 	pc.shrink_to_fit();
 
 	EXPECT_EQ(0U, pc.size());
 
-	EXPECT_EQ(4U, TestElement::DeletionCount);
+	EXPECT_EQ(4U, TestElement::DestructorInvocationCount);
 }

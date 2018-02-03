@@ -11,7 +11,7 @@ namespace Physics {
 
 Triangle::~Triangle()
 {
-	mParentShip->mTriangles.erase(this);
+	GetParentShip()->mTriangles.erase(this);
 	mPointA->RemoveTriangle(this);
 	mPointB->RemoveTriangle(this);
 	mPointC->RemoveTriangle(this);

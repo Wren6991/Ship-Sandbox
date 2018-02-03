@@ -20,20 +20,17 @@
 namespace Physics
 {	
 
-class Point
+class Point : public ShipElement<Point> 
 {
 public:
 
 	Point(
-		World * parentWorld,
+		Ship * parentShip,
 		vec2 const & position,
 		Material const * material,
 		float buoyancy);
 
 	~Point();
-
-	inline World const * GetParentWorld() const { return mParentWorld;  }
-	inline World * GetParentWorld() { return mParentWorld; }
 
 	inline auto const & GetTriangles() const { return mTriangles;  }
 	inline void AddTriangle(Triangle * triangle) { mTriangles.insert(triangle); }
@@ -59,12 +56,12 @@ public:
 	inline float GetWater() const { return mWater; }
 	inline void AdjustWater(float dWater) { mWater += dWater; }
 
-	inline bool GetIsLeaking() const { return mIsLeaking;  }
+	inline bool IsLeaking() const { return mIsLeaking;  }
 	inline void SetLeaking() { mIsLeaking = true; }
 
 	vec3f GetColour(vec3f const & baseColour) const;
 
-	float GetPressure() const;
+	float GetPressure(float gravityMagnitude) const;
 
 	inline AABB GetAABB() const
 	{
@@ -98,7 +95,6 @@ private:
 
 	static vec2 const AABBRadius;	
 
-	World * const mParentWorld;
 	std::set<Triangle *> mTriangles;
 
 	vec2 mPosition;

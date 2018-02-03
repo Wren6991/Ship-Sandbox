@@ -25,13 +25,9 @@ class World
 {
 public:
 
-	World(vec2 gravity = vec2(0.0f, -9.8f));
+	World();
 
 	~World();
-
-	vec2 const & GetGravity() const { return mGravity; };
-	vec2 const & GetGravityNormal() const { return mGravityNormal; };
-	float const GetGravityMagnitude() const { return mGravityMagnitude;  };
 
 	float GetWaterHeight(		
 		float x,
@@ -120,10 +116,6 @@ private:
 		size_t const mLastPointIndex;
 		float const mDt;
 	};
-
-	vec2 const mGravity;
-	vec2 const mGravityNormal;
-	float const mGravityMagnitude;
 
 	float mCurrentTime;
 

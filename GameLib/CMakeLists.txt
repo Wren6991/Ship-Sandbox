@@ -36,6 +36,7 @@ set  (PHYSICS_SOURCES
 	Point.h
 	Ship.cpp
 	Ship.h
+	ShipElement.h
 	Spring.cpp
 	Spring.h
 	Triangle.cpp

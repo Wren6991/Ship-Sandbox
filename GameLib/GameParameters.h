@@ -5,11 +5,17 @@
 ***************************************************************************************/
 #pragma once
 
+#include "Vectors.h"
+
 /*
 * Parameters that affect the game (physics, world).
 */
 struct GameParameters
 {
+	vec2 const Gravity;
+	vec2 const GravityNormal;
+	float const GravityMagnitude;
+
 	float StrengthAdjustment;
 	static constexpr float MinStrengthAdjustment = 0.0025f;
 	static constexpr float MaxStrengthAdjustment = 0.5f;
@@ -35,7 +41,10 @@ struct GameParameters
 	static constexpr float MaxDestroyRadius = 10.0f;
 
 	GameParameters()
-		: StrengthAdjustment(0.01f)
+		: Gravity(0.0f, -9.8f)
+		, GravityNormal(Gravity.normalise())
+		, GravityMagnitude(Gravity.length())
+		, StrengthAdjustment(0.01f)
 		, BuoyancyAdjustment(4.0f)
 		, WaterPressureAdjustment(0.3f)
 		, WaveHeight(1.0f)
