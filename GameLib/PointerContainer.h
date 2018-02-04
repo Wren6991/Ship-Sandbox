@@ -82,6 +82,13 @@ public:
 	
 public:
 
+	PointerContainer()
+		: mPointers(nullptr)
+		, mSize(0u)
+		, mDeletedElementsCount(0u)
+	{
+	}
+
 	explicit PointerContainer(std::vector<TElement *> && pointers)
 		: mDeletedElementsCount(0u)
 	{
@@ -100,14 +107,7 @@ public:
 
 	~PointerContainer()
 	{
-		// Delete all pointers we own
-		for (size_t i = 0; i < mSize; ++i)
-		{
-			delete mPointers[i];
-		}
-
-		// ...and now delete the array of pointers
-		delete[] mPointers;
+		reset();
 	}
 
 	//
@@ -151,9 +151,27 @@ public:
 		return mSize;
 	}
 
+	inline bool empty() const noexcept
+	{
+		return mSize == 0u;
+	}
+
 	//
 	// Modifiers
 	//
+
+	void initialize(std::vector<TElement *> && pointers)
+	{
+		reset();
+
+		// Allocate array of pointers and copy all pointers
+		mPointers = new TElement*[pointers.size()];
+		memcpy(mPointers, pointers.data(), pointers.size() * sizeof(TElement *));
+		mSize = pointers.size();
+
+		// Empty the moved container
+		pointers.clear();
+	}
 
 	inline void register_deletion() noexcept
 	{
@@ -206,6 +224,29 @@ public:
 
 		// Reset deletion count
 		mDeletedElementsCount = 0u;
+	}
+
+private:
+
+	void reset()
+	{
+		mDeletedElementsCount = 0u;
+
+		if (nullptr != mPointers)
+		{
+			// Delete all pointers we own
+			for (size_t i = 0; i < mSize; ++i)
+			{
+				delete mPointers[i];
+			}
+
+			// ...and now delete the array of pointers
+			delete[] mPointers;
+
+			mPointers = nullptr;
+		}
+		
+		mSize = 0;
 	}
 
 private:

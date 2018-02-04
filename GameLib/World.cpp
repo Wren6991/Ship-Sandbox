@@ -47,29 +47,10 @@ namespace Physics {
 //   W W      OOO    R     R  LLLLLLL  DDDD
 
 World::World()
-	: mCurrentTime(0.0f)
-	// Repository
-	, mPoints()
-	, mSprings()
-	, mShips()
-	, mScheduler()
+	: mAllShips()
+	, mCurrentTime(0.0f)
 	, mCollisionTree(BVHNode::AllocateTree())
 {
-}
-
-// Destroy everything in the set order
-World::~World()
-{
-	// DESTROY THE WORLD??? Y/N
-	for (unsigned int i = 0; i < mSprings.size(); i++)
-		delete mSprings[i];
-	mSprings.clear();
-	for (unsigned int i = 0; i < mPoints.size(); i++)
-		delete mPoints[i];
-	/*
-	for (unsigned int i = 0; i < mShips.size(); i++)
-		delete mShips[i];
-	*/
 }
 
 // Function of time and x (though time is constant during the update step, so no need to parameterise it)
@@ -99,36 +80,27 @@ float World::GetOceanFloorHeight(
 
 void World::AddShip(std::unique_ptr<Ship> && newShip)
 {
-	mShips.push_back(std::move(newShip));
+	mAllShips.push_back(std::move(newShip));
 }
 
-void World::DestroyAt(vec2 const & targetPos, float radius)
+void World::DestroyAt(
+    vec2 const & targetPos, 
+    float radius)
 {
-	// Destroy all points within the radius
-
-	for (std::vector<Point*>::iterator iter = mPoints.begin(); iter != mPoints.end();)
-	{
-		Point *p = *iter;
-		iter++;
-		if ((p->GetPosition() - targetPos).length() < radius)
-		{
-			delete p;           // have to remove reference before deleting, else other cleanup code will use bad memory!
-			iter--;
-		}
-	}
+    for (auto & ship : mAllShips)
+    {
+        ship->DestroyAt(
+            targetPos,
+            radius);
+    }
 }
 
 void World::DrawTo(vec2f const & targetPos)
 {
-	// Attract all points to a single position
-
-	for (std::vector<Point*>::iterator iter = mPoints.begin(); iter != mPoints.end(); iter++)
-	{
-		vec2f & position = (*iter)->GetPosition();
-		vec2f dir = (targetPos - position);
-		float magnitude = 50000.0f / sqrtf(0.1f + dir.length());
-		(*iter)->ApplyForce(dir.normalise() * magnitude);
-	}
+    for (auto & ship : mAllShips)
+    {
+        ship->DrawTo(targetPos);
+    }
 }
 
 void World::Update(
@@ -137,25 +109,12 @@ void World::Update(
 {
 	mCurrentTime += dt;
 
-	// Advance simulation for points: (velocity and forces)
-	for (unsigned int i = 0; i < mPoints.size(); i++)
-		mPoints[i]->Update(dt, gameParameters);
-
-	// Iterate the spring relaxation (can tune this parameter, or make it scale automatically depending on free time)
-	DoSprings(dt);
-
-	// Check if any springs exceed their breaking strain:
-	for (std::vector<Spring*>::iterator iter = mSprings.begin(); iter != mSprings.end();)
+	for (auto & ship : mAllShips)
 	{
-		Spring *spr = *iter;
-		iter++;
-		if (spr->GetBroken(gameParameters.StrengthAdjustment)) // have to delete after erasure - else there is a possibility of
-			delete spr;             // other objects accessing a bad pointer during this cleanup
+		ship->Update(
+			dt,
+			gameParameters);
 	}
-
-	// Tell each ship to update all of its water stuff
-	for (unsigned int i = 0; i < mShips.size(); i++)
-		mShips[i]->Update(dt, gameParameters);
 }
 
 void World::Render(	
@@ -171,18 +130,13 @@ void World::Render(
 	if (renderParameters.QuickWaterFix)
 		RenderWater(left, right, bottom, top, gameParameters, renderParameters);
 
-	// Draw all the points and springs
-	for (unsigned int i = 0; i < mPoints.size(); i++)
-		mPoints[i]->Render();
-	for (unsigned int i = 0; i < mSprings.size(); i++)
-		mSprings[i]->Render(false); 
-	if (!renderParameters.UseXRayMode)
-		for (unsigned int i = 0; i < mShips.size(); i++)
-			mShips[i]->Render();
-	if (renderParameters.ShowStress)
-		for (unsigned int i = 0; i < mSprings.size(); i++)
-			if (mSprings[i]->GetStressed(gameParameters.StrengthAdjustment))
-				mSprings[i]->Render(true);
+	// Render all ships
+	for (auto const & ship : mAllShips)
+	{
+		ship->Render(
+			gameParameters,
+			renderParameters);
+	}
 
 	if (!renderParameters.QuickWaterFix)
 		RenderWater(left, right, bottom, top, gameParameters, renderParameters);
@@ -196,62 +150,6 @@ void World::Render(
 ///////////////////////////////////////////////////////////////////////////////////
 // Private Helpers
 ///////////////////////////////////////////////////////////////////////////////////
-
-void World::DoSprings(float dt)
-{
-	if (mSprings.empty())
-	{
-		// Nothing to do!
-		return;
-	}
-
-	// Calculate number of parallel chunks and size of each chunk
-	int nParallelChunks = mScheduler.GetNumberOfThreads();
-	size_t parallelChunkSize = (mSprings.size() / nParallelChunks) + 1;
-
-	assert(parallelChunkSize > 0);
-
-	for (int outiter = 0; outiter < 3; outiter++)
-	{
-		for (int iteration = 0; iteration < 8; iteration++)
-		{
-			for (size_t i = mSprings.size() - 1; i > 0; /* decremented in loop */)
-			{
-				size_t thisChunkSize = (i >= parallelChunkSize) ? parallelChunkSize : i;
-				assert(thisChunkSize > 0);
-				
-				mScheduler.Schedule(
-					new SpringCalculateTask(
-						this, 
-						i - thisChunkSize, 
-						i));
-				
-				i -= thisChunkSize;
-			}
-
-			mScheduler.WaitForAllTasks();
-		}
-
-		float dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
-		for (size_t i = 0; i < mSprings.size(); i++)
-			mSprings[i]->DoDamping(dampingamount);
-	}
-}
-
-void World::SpringCalculateTask::Process()
-{
-	for (size_t i = mFirstSpringIndex; i <= mLastSpringIndex; i++)
-		mParentWorld->mSprings[i]->Update();
-}
-
-void World::PointIntegrateTask::Process()
-{
-	for (size_t i = mFirstPointIndex; i <= mLastPointIndex; i++)
-	{
-		mParentWorld->mPoints[i]->AdjustPosition(mParentWorld->mPoints[i]->GetForce() * mDt);
-		mParentWorld->mPoints[i]->ZeroForce();
-	}
-}
 
 void World::RenderLand(
 	float left,

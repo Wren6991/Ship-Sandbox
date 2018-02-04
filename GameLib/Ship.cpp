@@ -44,20 +44,25 @@ std::unique_ptr<Ship> Ship::Create(
 	// Process image points and create points, springs, and triangles for this ship
 	//
 
-	Ship *shp = new Ship(parentWorld);
+    Ship *shp = new Ship(parentWorld);
 
-	size_t nodeCount = 0;
-	size_t leakingNodeCount = 0;
-	size_t springCount = 0;
-	size_t trianglesCount = 0;
+    std::vector<Point*> shipPoints;
+    shipPoints.reserve(structureImageWidth * structureImageHeight / 10);
+    
+    std::vector<Spring*> shipSprings;
+    shipSprings.reserve(structureImageWidth * structureImageHeight / 10);
 
-	std::unique_ptr<std::unique_ptr<Point *[]>[]> points(new std::unique_ptr<Point *[]>[structureImageWidth]);
+    std::set<Triangle*> shipTriangles;
+
+	size_t leakingPointsCount = 0;
+
+	std::unique_ptr<std::unique_ptr<Point *[]>[]> pointMatrix(new std::unique_ptr<Point *[]>[structureImageWidth]);
 
 	float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
 
 	for (int x = 0; x < structureImageWidth; ++x)
 	{
-		points[x] = std::unique_ptr<Point *[]>(new Point *[structureImageHeight]);
+        pointMatrix[x] = std::unique_ptr<Point *[]>(new Point *[structureImageHeight]);
 
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
@@ -77,13 +82,12 @@ std::unique_ptr<Ship> Ship::Create(
 					mtl,
 					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
 
-				points[x][y] = pt;
-				shp->mPoints.insert(pt);
-				++nodeCount;
+                pointMatrix[x][y] = pt;
+                shipPoints.push_back(pt);
 			}
 			else
 			{
-				points[x][y] = nullptr;
+                pointMatrix[x][y] = nullptr;
 			}
 		}
 	}
@@ -107,7 +111,7 @@ std::unique_ptr<Ship> Ship::Create(
 	{
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
-			Point *a = points[x][y];
+			Point * a = pointMatrix[x][y];
 			if (nullptr == a)
 				continue;
 
@@ -118,14 +122,14 @@ std::unique_ptr<Ship> Ship::Create(
 			// - there is at least a hole at E, S, W, N
 			if (!aIsHull)
 			{
-				if ((x < structureImageWidth - 1 && !points[x + 1][y])
-					|| (y < structureImageHeight - 1 && !points[x][y + 1])
-					|| (x > 0 && !points[x - 1][y])
-					|| (y > 0 && !points[x][y - 1]))
+				if ((x < structureImageWidth - 1 && !pointMatrix[x + 1][y])
+					|| (y < structureImageHeight - 1 && !pointMatrix[x][y + 1])
+					|| (x > 0 && !pointMatrix[x - 1][y])
+					|| (y > 0 && !pointMatrix[x][y - 1]))
 				{
 					a->SetLeaking();
 
-					++leakingNodeCount;
+					++leakingPointsCount;
 				}
 			}
 
@@ -140,7 +144,7 @@ std::unique_ptr<Ship> Ship::Create(
 				{
 					assert(adjy1 < structureImageHeight); // The four directions we're checking do not include S
 
-					Point * b = points[adjx1][adjy1]; // adjacent point in direction (i)				
+					Point * b = pointMatrix[adjx1][adjy1]; // adjacent point in direction (i)				
 					if (nullptr != b)
 					{
 						// b is adjacent to a at one of E, NE, N, NW						
@@ -151,14 +155,19 @@ std::unique_ptr<Ship> Ship::Create(
 
 						bool springIsHull = aIsHull && b->GetMaterial()->IsHull;
 						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
-						shp->mSprings.insert(new Spring(shp, a, b, mtl));
-						++springCount;
 
-						// TODO: rename to AdjacentNonHullNodes
+						Spring * spr = new Spring(
+							shp,
+							a,
+							b,
+							mtl);
+
+						shipSprings.push_back(spr);
+
 						if (!springIsHull)
 						{
-							shp->mAdjacentnodes[a].insert(b);
-							shp->mAdjacentnodes[b].insert(a);
+							shp->mAdjacentNonHullPoints[a].insert(b);
+							shp->mAdjacentNonHullPoints[b].insert(a);
 						}
 
 						// Check adjacent point in next CW direction (for constructing triangles)
@@ -169,12 +178,16 @@ std::unique_ptr<Ship> Ship::Create(
 						{
 							assert(adjy2 < structureImageHeight); // The five directions we're checking do not include S
 
-							Point *c = points[adjx2][adjy2];
+							Point *c = pointMatrix[adjx2][adjy2];
 							if (nullptr != c)
 							{
-								shp->mTriangles.insert(new Triangle(shp, a, b, c));
+                                Triangle * triangle = new Triangle(
+                                    shp,
+                                    a,
+                                    b,
+                                    c);
 
-								++trianglesCount;
+                                shipTriangles.insert(triangle);
 							}
 						}
 					}
@@ -184,16 +197,65 @@ std::unique_ptr<Ship> Ship::Create(
 	}
 
 	LogMessage(L"Created ship: W=", structureImageWidth, L", H=", structureImageHeight, ", ",
-		nodeCount, L" points, of which ", leakingNodeCount, " leaking, ", springCount,
-		L" springs, ", trianglesCount, L" triangles, and ", shp->mAdjacentnodes.size(), " adjacency entries.");
+		shipPoints.size(), L" points, of which ", leakingPointsCount, " leaking, ", shipSprings.size(),
+		L" springs, ", shipTriangles.size(), L" triangles, and ", shp->mAdjacentNonHullPoints.size(), " adjacency entries.");
+
+	shp->Initialize(
+        std::move(shipPoints),
+        std::move(shipSprings),
+        std::move(shipTriangles));
 
 	return std::unique_ptr<Ship>(shp);
 }
 
+Ship::Ship(World * parentWorld)
+    : mParentWorld(parentWorld)
+    , mAllPoints()
+    , mAllSprings()
+    , mAllTriangles()
+    , mAdjacentNonHullPoints()
+    , mScheduler()
+{
+}
+
 Ship::~Ship()
 {
-	/*for (unsigned int i = 0; i < triangles.size(); i++)
-	delete triangles[i];*/
+    // Delete elements that are not unique_ptr's nor are kept
+    // in a PointerContainer
+
+    for (Triangle * triangle : mAllTriangles)
+    {
+        delete triangle;
+    }
+}
+
+void Ship::DestroyAt(vec2 const & targetPos, float radius)
+{
+    // Destroy all points within the radius
+    for (Point & point : mAllPoints)
+    {
+        if (!point.IsDeleted())
+        {
+            if ((point.GetPosition() - targetPos).length() < radius)
+            {
+                point.Destroy();
+            }
+        }
+    }
+}
+
+void Ship::DrawTo(vec2f const & targetPos)
+{
+    // Attract all points to a single position
+    for (Point & point : mAllPoints)
+    {
+        if (!point.IsDeleted())
+        {
+            vec2f displacement = (targetPos - point.GetPosition());
+            float forceMagnitude = 50000.0f / sqrtf(0.1f + displacement.length());
+            point.ApplyForce(displacement.normalise() * forceMagnitude);
+        }
+    }
 }
 
 void Ship::LeakWater(
@@ -201,15 +263,18 @@ void Ship::LeakWater(
 	GameParameters const & gameParameters)
 {
 	// Stuff some water into all the leaking nodes, if they're not under too much pressure
-	for (Point * p : mPoints)
+	for (Point & point : mAllPoints)
 	{
-		float const pressure = p->GetPressure(gameParameters.GravityMagnitude);
-		if (p->IsLeaking()
-			&& p->GetPosition().y < mParentWorld->GetWaterHeight(p->GetPosition().x, gameParameters) // p is in water
-			&& p->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
-		{
-			p->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - p->GetWater()));
-		}
+        if (!point.IsDeleted())
+        {            
+            if (point.IsLeaking()
+                && point.GetPosition().y < mParentWorld->GetWaterHeight(point.GetPosition().x, gameParameters) // point is in water
+                && point.GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
+            {
+                float const pressure = point.GetPressure(gameParameters.GravityMagnitude);
+                point.AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - point.GetWater()));
+            }
+        }
 	}
 }
 
@@ -219,8 +284,8 @@ void Ship::GravitateWater(
 {
 	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
 	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-	for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentnodes.begin();
-		iter != mAdjacentnodes.end(); iter++)
+	for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
+		iter != mAdjacentNonHullPoints.end(); iter++)
 	{
 		Point *a = iter->first;
 		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
@@ -241,8 +306,8 @@ void Ship::BalancePressure(float dt)
 {
 	// If there's too much water in this node, try and push it into the others
 	// (This needs to iterate over multiple frames for pressure waves to spread through water)
-	for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentnodes.begin();
-		iter != mAdjacentnodes.end(); iter++)
+	for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
+		iter != mAdjacentNonHullPoints.end(); iter++)
 	{
 		Point *a = iter->first;
 		if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
@@ -262,8 +327,36 @@ void Ship::Update(
 	float dt,
 	GameParameters const & gameParameters)
 {
-	LeakWater(dt, gameParameters);
+	// Advance simulation for points (velocity and forces)
+    for (Point & point : mAllPoints)
+    {
+        if (!point.IsDeleted())
+        {
+            point.Update(dt, gameParameters);
+        }
+    }
 
+	// Iterate the spring relaxation
+	DoSprings(dt);
+
+	// Check if any springs exceed their breaking strain
+	for (auto spring : mAllSprings)
+	{
+		if (!spring.IsDeleted())
+		{
+			if (spring.IsBroken(gameParameters.StrengthAdjustment))
+			{
+				spring.Destroy();
+			}
+		}
+	}
+
+
+    //
+	// Update all water stuff
+    //
+
+	LeakWater(dt, gameParameters);
 	for (int i = 0; i < 4; i++)
 	{
 		GravitateWater(dt, gameParameters);
@@ -272,15 +365,139 @@ void Ship::Update(
 
 	for (int i = 0; i < 4; i++)
 		BalancePressure(dt);
+
+
+    //
+    // Clear up pointer containers, in case there have been deletions
+    // during or before this update step
+    //
+
+    mAllPoints.shrink_to_fit();
+    mAllSprings.shrink_to_fit();
+
+    // The triangle container does not contain deleted items
+    assert(mAllTriangles.end() == std::find_if(
+        mAllTriangles.begin(),
+        mAllTriangles.end(),
+        [](Triangle * t)
+        {
+            return nullptr == t || t->IsDeleted();
+        }));
 }
 
 
-void Ship::Render() const
+void Ship::Render(
+	GameParameters const & gameParameters,
+	RenderParameters const & renderParameters) const
 {
-	// Render triangles
-	for (auto t: mTriangles)
+	// Draw all the points and springs
+    for (Point const & point : mAllPoints)
+    {
+        assert(!point.IsDeleted());
+        point.Render();
+    }
+
+    for (Spring const & spring : mAllSprings)
+    {
+        assert(!spring.IsDeleted());
+        spring.Render(false);
+    }
+
+	if (!renderParameters.UseXRayMode)
 	{
-		t->Render();
+		// Render triangles
+		for (Triangle const * triangle : mAllTriangles)
+		{
+            assert(!triangle->IsDeleted());
+			triangle->Render();
+		}
+	}
+
+    if (renderParameters.ShowStress)
+    {
+        for (Spring const & spring : mAllSprings)
+        {
+            assert(!spring.IsDeleted());
+            if (spring.IsStressed(gameParameters.StrengthAdjustment))
+            {
+                spring.Render(true);
+            }
+        }
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+// Private Helpers
+///////////////////////////////////////////////////////////////////////////////////
+
+void Ship::DoSprings(float dt)
+{
+	if (mAllSprings.empty())
+	{
+		// Nothing to do!
+		return;
+	}
+
+	// Calculate number of parallel chunks and size of each chunk
+	int nParallelChunks = mScheduler.GetNumberOfThreads();
+	size_t parallelChunkSize = (mAllSprings.size() / nParallelChunks) + 1;
+
+	assert(parallelChunkSize > 0);
+
+	for (int outiter = 0; outiter < 3; outiter++)
+	{
+		for (int iteration = 0; iteration < 8; iteration++)
+		{
+			for (size_t i = mAllSprings.size() - 1; i > 0; /* decremented in loop */)
+			{
+				size_t thisChunkSize = (i >= parallelChunkSize) ? parallelChunkSize : i;
+				assert(thisChunkSize > 0);
+
+				mScheduler.Schedule(
+					new SpringCalculateTask(
+						this,
+						i - thisChunkSize,
+						i));
+
+				i -= thisChunkSize;
+			}
+
+			mScheduler.WaitForAllTasks();
+		}
+
+		float dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
+        for (Spring & spring : mAllSprings)
+        {
+            if (!spring.IsDeleted())
+            {
+                spring.DoDamping(dampingamount);
+            }
+        }
+	}
+}
+
+void Ship::SpringCalculateTask::Process()
+{
+    for (size_t i = mFirstSpringIndex; i <= mLastSpringIndex; ++i)
+    {
+        Spring * const spring = mParentShip->mAllSprings[i];
+        if (!spring->IsDeleted())
+        {
+            spring->Update();
+        }
+    }
+}
+
+void Ship::PointIntegrateTask::Process()
+{
+	for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
+	{
+        Point * const point = mParentShip->mAllPoints[i];
+        if (!point->IsDeleted())
+        {
+            point->AdjustPosition(point->GetForce() * mDt);
+            point->ZeroForce();
+        }
 	}
 }
 

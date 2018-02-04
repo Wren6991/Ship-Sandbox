@@ -18,22 +18,13 @@ class Triangle : public ShipElement<Triangle>
 {
 public:
 
-	Triangle(
-		Ship * parentShip,
-		Point * a,
-		Point * b,
-		Point * c)
-		: ShipElement(parentShip)
-		, mPointA(a)
-		, mPointB(b)
-		, mPointC(c)
-	{
-		a->AddTriangle(this);
-		b->AddTriangle(this);
-		c->AddTriangle(this);
-	}
+    Triangle(
+        Ship * parentShip,
+        Point * a,
+        Point * b,
+        Point * c);
 
-	~Triangle();
+	void Destroy();
 
 	inline Point const * GetPointA() const { return mPointA; }
 	inline Point const * GetPointB() const { return mPointB; }

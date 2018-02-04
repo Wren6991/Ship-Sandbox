@@ -33,29 +33,36 @@ Spring::Spring(
 	, mLength(length)
 	, mMaterial(material)
 {
-	// TODO: NUKE and make this inline
-	parentShip->mParentWorld->mSprings.push_back(this);
 }
 
-Spring::~Spring()
+void Spring::Destroy()
 {
+    assert(!mPointA->IsDeleted());
+    assert(!mPointB->IsDeleted());
+
 	// Used to do more complicated checks, but easier (and better) to make everything leak when it breaks
+
+    // Make endpoints leak and destroy their triangles
+    // TODO: technically, should only destroy those triangles that contain the A-B side, and definitely
+    // make both A and B leak
 	mPointA->Breach();
 	mPointB->Breach();
 
 	// Scour out any references to this spring
-	if (GetParentShip()->mAdjacentnodes.find(mPointA) != GetParentShip()->mAdjacentnodes.end())
-		GetParentShip()->mAdjacentnodes[mPointA].erase(mPointB);
-	if (GetParentShip()->mAdjacentnodes.find(mPointB) != GetParentShip()->mAdjacentnodes.end())
-		GetParentShip()->mAdjacentnodes[mPointB].erase(mPointA);
+	if (GetParentShip()->mAdjacentNonHullPoints.find(mPointA) != GetParentShip()->mAdjacentNonHullPoints.end())
+		GetParentShip()->mAdjacentNonHullPoints[mPointA].erase(mPointB);
+	if (GetParentShip()->mAdjacentNonHullPoints.find(mPointB) != GetParentShip()->mAdjacentNonHullPoints.end())
+		GetParentShip()->mAdjacentNonHullPoints[mPointB].erase(mPointA);
 
-	std::vector <Spring*>::iterator iter = std::find(GetParentShip()->mParentWorld->mSprings.begin(), GetParentShip()->mParentWorld->mSprings.end(), this);
-	if (iter != GetParentShip()->mParentWorld->mSprings.end())
-		GetParentShip()->mParentWorld->mSprings.erase(iter);
+	// Remove ourselves
+	ShipElement::Destroy();
 }
 
 void Spring::Update()
 {
+    assert(!mPointA->IsDeleted());
+    assert(!mPointB->IsDeleted());
+
 	// Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
 	vec2f correction_dir = (mPointB->GetPosition() - mPointA->GetPosition());
 	float currentlength = correction_dir.length();
@@ -66,6 +73,9 @@ void Spring::Update()
 
 void Spring::DoDamping(float amount)
 {
+    assert(!mPointA->IsDeleted());
+    assert(!mPointB->IsDeleted());
+
 	vec2f springdir = (mPointA->GetPosition() - mPointB->GetPosition()).normalise();
 	springdir *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(springdir) * amount;   // relative velocity � spring direction = projected velocity, amount = amount of projected velocity that remains after damping
 	mPointA->GetLastPosition() += springdir;

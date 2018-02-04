@@ -30,7 +30,6 @@ Point::Point(
 	Material const * material,
 	float buoyancy)
 	: ShipElement(parentShip)
-	, mTriangles()
 	, mPosition(position)
 	, mLastPosition(position)
 	, mMaterial(material)
@@ -38,32 +37,33 @@ Point::Point(
 	, mBuoyancy(buoyancy)
 	, mWater(0.0f)
 	, mIsLeaking(false)
+    , mConnectedTriangles()
 {
-	// TODO: NUKE and make this inline
-	parentShip->mParentWorld->mPoints.push_back(this);
 }
 
-Point::~Point()
+void Point::Destroy()
 {
-	// Get rid of attached triangles and start leaking
-	Breach();
+	// Get rid of connected triangles
+    DestroyConnectedTriangles();
 
-	// remove any springs attached to this point:
-	for (auto iter = GetParentShip()->mParentWorld->mSprings.begin(); iter != GetParentShip()->mParentWorld->mSprings.end();)
+	// Remove all springs attached to this point
+    // TODO: if this is too slow, see whether it makes sence for a point
+    // to know his springs
+	for (Spring & spring : GetParentShip()->GetSprings())
 	{
-		Spring *spr = *iter;
-		iter++;
-		if (spr->GetPointA() == this || spr->GetPointB() == this)
+		if (!spring.IsDeleted())
 		{
-			delete spr;
-			iter--;
+			if (spring.GetPointA() == this || spring.GetPointB() == this)
+			{
+				spring.Destroy();
+			}
 		}
 	}
-	// remove any references:
-	GetParentShip()->mPoints.erase(this);
-	std::vector<Point*>::iterator iter = std::find(GetParentShip()->mParentWorld->mPoints.begin(), GetParentShip()->mParentWorld->mPoints.end(), this);
-	if (iter != GetParentShip()->mParentWorld->mPoints.end())
-		GetParentShip()->mParentWorld->mPoints.erase(iter);
+
+    // TODO: remove ourselves from adjacents
+
+    // Remove ourselves
+    ShipElement::Destroy();
 }
 
 vec3f Point::GetColour(vec3f const & baseColour) const
@@ -82,14 +82,11 @@ float Point::GetPressure(float gravityMagnitude) const
 
 void Point::Breach()
 {
+    // Start leaking
 	mIsLeaking = true;
 
-	for (auto iter = mTriangles.begin(); iter != mTriangles.end();)
-	{
-		Triangle *t = *iter;
-		iter++;
-		delete t;
-	}
+    // Destroy all of our connected triangles
+    DestroyConnectedTriangles();
 }
 
 void Point::Update(
@@ -123,6 +120,18 @@ void Point::Update(
 	//
 
 	mForce = vec2f(0, 0);
+}
+
+void Point::DestroyConnectedTriangles()
+{
+    for (auto it = mConnectedTriangles.begin(); it != mConnectedTriangles.end(); /* incremented in loop */)
+    {
+        Triangle * triangle = *(it++);
+        assert(!triangle->IsDeleted());
+        triangle->Destroy();
+    }
+
+    mConnectedTriangles.clear();
 }
 
 }

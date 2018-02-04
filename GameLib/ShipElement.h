@@ -36,7 +36,7 @@ protected:
 	inline void Destroy()
 	{
 		mIsDeleted = true;
-		mParentShip->RegisterDestruction<TElement>(static_cast<TElement *>this);
+		mParentShip->RegisterDestruction<TElement>(static_cast<TElement *>(this));
 	}
 
 public:

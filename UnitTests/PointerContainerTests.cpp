@@ -37,6 +37,8 @@ size_t GetSum(PointerContainer<TestElement> const & pc)
 	return sum;
 }
 
+/////////////////////////////////////////////////////////////////
+
 TEST(PointerContainerTests, ConstructsFromVector)
 {
 	std::vector<TestElement *> input;
@@ -184,6 +186,46 @@ TEST(PointerContainerTests, IteratesElements_Index_Const)
 	}
 
 	EXPECT_EQ(6u, sum);
+}
+
+TEST(PointerContainerTests, Initializes)
+{
+	std::vector<TestElement *> input;
+	input.push_back(new TestElement(1));
+	input.push_back(new TestElement(2));
+	input.push_back(new TestElement(3));
+
+	PointerContainer<TestElement> pc;
+
+	EXPECT_TRUE(pc.empty());
+
+	pc.initialize(std::move(input));
+
+	EXPECT_FALSE(pc.empty());
+
+	EXPECT_EQ(3u, pc.size());
+
+	auto it = pc.begin();
+
+	EXPECT_NE(it, pc.end());
+	EXPECT_EQ(1, it->Id);
+	EXPECT_EQ(1, (*it).Id);
+
+	++it;
+
+	EXPECT_NE(it, pc.end());
+	EXPECT_EQ(2, it->Id);
+	EXPECT_EQ(2, (*it).Id);
+
+	++it;
+
+	EXPECT_NE(it, pc.end());
+	EXPECT_EQ(3, it->Id);
+	EXPECT_EQ(3, (*it).Id);
+
+	++it;
+
+	EXPECT_EQ(it, pc.end());
 }
 
 TEST(PointerContainerTests, FreesPointersOnDestructor)

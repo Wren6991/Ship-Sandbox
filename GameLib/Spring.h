@@ -42,15 +42,15 @@ public:
 		float length,
 		Material const *material);
 
-	~Spring();
+	void Destroy();
 
-	inline bool GetStressed(float strengthAdjustment) const
+	inline bool IsStressed(float strengthAdjustment) const
 	{
 		// Check whether strain is more than a fraction of the word's base strength * this object's relative strength
 		return GetTensionStrain() > 1 + 0.25f * (strengthAdjustment * mMaterial->Strength);
 	}
 
-	inline bool GetBroken(float strengthAdjustment) const
+	inline bool IsBroken(float strengthAdjustment) const
 	{
 		// Check whether strain is more than the whole word's base strength * this object's relative strength
 		return GetTensionStrain() > 1 + (strengthAdjustment * mMaterial->Strength);

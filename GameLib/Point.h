@@ -30,11 +30,7 @@ public:
 		Material const * material,
 		float buoyancy);
 
-	~Point();
-
-	inline auto const & GetTriangles() const { return mTriangles;  }
-	inline void AddTriangle(Triangle * triangle) { mTriangles.insert(triangle); }
-	inline void RemoveTriangle(Triangle * triangle) { mTriangles.erase(triangle); }
+    void Destroy();
 
 	inline vec2 const & GetPosition() const { return mPosition; }
 	inline vec2 & GetPosition() { return mPosition; }
@@ -58,6 +54,10 @@ public:
 
 	inline bool IsLeaking() const { return mIsLeaking;  }
 	inline void SetLeaking() { mIsLeaking = true; }
+
+    inline auto const & GetConnectedTriangles() const { return mConnectedTriangles; }
+    inline void AddConnectedTriangle(Triangle * triangle) { mConnectedTriangles.insert(triangle); }
+    inline void RemoveConnectedTriangle(Triangle * triangle) { mConnectedTriangles.erase(triangle); }
 
 	vec3f GetColour(vec3f const & baseColour) const;
 
@@ -84,9 +84,9 @@ public:
 		// Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
 		if (mIsLeaking)
 		{
-			glColor3f(0, 0, 1);
+			glColor3f(0.0f, 0.0f, 1.0f);
 			glBegin(GL_POINTS);
-			glVertex3f(mPosition.x, mPosition.y, -1);
+			glVertex3f(mPosition.x, mPosition.y, -1.0f);
 			glEnd();
 		}
 	}
@@ -94,8 +94,6 @@ public:
 private:
 
 	static vec2 const AABBRadius;	
-
-	std::set<Triangle *> mTriangles;
 
 	vec2 mPosition;
 	vec2 mLastPosition;
@@ -106,6 +104,12 @@ private:
 	// TBD: WaterPressure?
 	float mWater;
 	bool mIsLeaking;
+
+    std::set<Triangle *> mConnectedTriangles;
+
+private:
+
+    void DestroyConnectedTriangles();
 };
 
 }
