@@ -73,6 +73,8 @@ private:
     std::vector <Thread*> mThreadPool;
     Semaphore mAvailable;
     Semaphore mCompleted;
-    std::queue<ITask*> mTasks;
-    std::mutex mCritical;
+    std::queue<ITask*> mTaskQueue;
+    std::mutex mTaskQueueMutex;
+
+    size_t mCurrentScheduledTasks;
 };

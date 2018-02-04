@@ -19,8 +19,9 @@ Scheduler::Scheduler()
 	, mThreadPool()
 	, mAvailable()
 	, mCompleted()
-	, mTasks()
-	, mCritical()
+	, mTaskQueue()
+	, mTaskQueueMutex()
+    , mCurrentScheduledTasks(0u)
 {
 	LogMessage("Number of threads: ", mNThreads);
 }
@@ -44,21 +45,19 @@ void Scheduler::Schedule(ITask *t)
 		}
 	}
 
-	std::lock_guard<std::mutex> lock(mCritical);
+    {
+        std::lock_guard<std::mutex> lock(mTaskQueueMutex);
+        mTaskQueue.push(t);               
+    }
 
-    mTasks.push(t);
     mAvailable.Signal();
+
+    ++mCurrentScheduledTasks;
 }
 
 void Scheduler::WaitForAllTasks()
 {
-	size_t tasksleft;
-	{
-		std::lock_guard<std::mutex> lock(mCritical);
-		tasksleft = mTasks.size();
-	}
-
-	for (size_t i = 0; i < tasksleft; ++i)
+	for (; mCurrentScheduledTasks > 0; --mCurrentScheduledTasks)
 	{
 		mCompleted.Wait();
 	}
@@ -80,7 +79,7 @@ void Scheduler::Semaphore::Wait()
 {
     std::unique_lock<std::mutex> lock(mMutex);
 
-	while (!mCount)
+	while (0 == mCount)
 	{
 		mCondition.wait(lock);
 	}
@@ -113,10 +112,10 @@ void Scheduler::Thread::Enter(void *arg)
 
 		// Deque the task
 		{
-			std::lock_guard<std::mutex> lock(thisThread->mParent->mCritical);
+			std::lock_guard<std::mutex> lock(thisThread->mParent->mTaskQueueMutex);
 			
-			thisThread->mCurrentTask = thisThread->mParent->mTasks.front();
-			thisThread->mParent->mTasks.pop();
+			thisThread->mCurrentTask = thisThread->mParent->mTaskQueue.front();
+			thisThread->mParent->mTaskQueue.pop();
 		}
 
         // Run the task
