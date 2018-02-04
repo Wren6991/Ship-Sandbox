@@ -50,7 +50,10 @@ public:
 
 	// TBD: WaterPressure?
 	inline float GetWater() const { return mWater; }
-	inline void AdjustWater(float dWater) { mWater += dWater; }
+	inline void AdjustWater(float dWater) 
+    { 
+        mWater += dWater; 
+    }
 
 	inline bool IsLeaking() const { return mIsLeaking;  }
 	inline void SetLeaking() { mIsLeaking = true; }

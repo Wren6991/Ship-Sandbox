@@ -439,8 +439,8 @@ void Ship::DoSprings(float dt)
 	}
 
 	// Calculate number of parallel chunks and size of each chunk
-	int nParallelChunks = mScheduler.GetNumberOfThreads();
-	size_t parallelChunkSize = (mAllSprings.size() / nParallelChunks) + 1;
+	size_t nParallelChunks = mScheduler.GetNumberOfThreads();
+    size_t parallelChunkSize = std::max((mAllSprings.size() / nParallelChunks), (size_t)1);
 
 	assert(parallelChunkSize > 0);
 

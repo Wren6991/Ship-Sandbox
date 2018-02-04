@@ -21,7 +21,6 @@ set  (GAME_SOURCES
 	PointerContainer.cpp
 	PointerContainer.h
 	RenderParameters.h
-	RenderUtils.cpp
 	RenderUtils.h
 	Scheduler.cpp
 	Scheduler.h

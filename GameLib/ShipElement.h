@@ -35,6 +35,8 @@ protected:
 	 */
 	inline void Destroy()
 	{
+        assert(!mIsDeleted);
+
 		mIsDeleted = true;
 		mParentShip->RegisterDestruction<TElement>(static_cast<TElement *>(this));
 	}
