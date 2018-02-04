@@ -49,13 +49,13 @@ void Point::Destroy()
 	// Remove all springs attached to this point
     // TODO: if this is too slow, see whether it makes sence for a point
     // to know his springs
-	for (Spring & spring : GetParentShip()->GetSprings())
+	for (Spring * spring : GetParentShip()->GetSprings())
 	{
-		if (!spring.IsDeleted())
+		if (!spring->IsDeleted())
 		{
-			if (spring.GetPointA() == this || spring.GetPointB() == this)
+			if (spring->GetPointA() == this || spring->GetPointB() == this)
 			{
-				spring.Destroy();
+				spring->Destroy();
 			}
 		}
 	}

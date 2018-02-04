@@ -48,6 +48,7 @@ After cleaning up the code a bit and making it CMake- and VS2017-friendly, the i
 My plan is roughly as follows:
 ### Phase 1
 - Revert Luke's code to use wxWidgets, as GLFW is too bare-bones for my liking (can't really make dialogs and common UI controls)
+- Upgrade to C++17
 - Cleanup all compiler warnings and little bugs
 - Cleanup naming conventions
 - Add a logger to have better visibility into the effects of code changes

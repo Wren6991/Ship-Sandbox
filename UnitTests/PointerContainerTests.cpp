@@ -31,7 +31,7 @@ size_t GetSum(PointerContainer<TestElement> const & pc)
 	size_t sum = 0;
 	for (auto const & elem : pc)
 	{
-		sum += elem.Id;
+		sum += elem->Id;
 	}
 
 	return sum;
@@ -65,19 +65,19 @@ TEST(PointerContainerTests, IteratesElements)
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(1, it->Id);
-	EXPECT_EQ(1, (*it).Id);
+	EXPECT_EQ(1, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(2, it->Id);
-	EXPECT_EQ(2, (*it).Id);
+	EXPECT_EQ(2, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(3, it->Id);
-	EXPECT_EQ(3, (*it).Id);
+	EXPECT_EQ(3, (*it)->Id);
 
 	++it;
 
@@ -97,19 +97,19 @@ TEST(PointerContainerTests, IteratesElements_Const)
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(1, it->Id);
-	EXPECT_EQ(1, (*it).Id);
+	EXPECT_EQ(1, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(2, it->Id);
-	EXPECT_EQ(2, (*it).Id);
+	EXPECT_EQ(2, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(3, it->Id);
-	EXPECT_EQ(3, (*it).Id);
+	EXPECT_EQ(3, (*it)->Id);
 
 	++it;
 
@@ -128,7 +128,7 @@ TEST(PointerContainerTests, IteratesElements_ForLoop)
 	size_t sum = 0;
 	for (auto it : pc)
 	{
-		sum += it.Id;
+		sum += it->Id;
 	}
 
 	EXPECT_EQ(6u, sum);
@@ -146,7 +146,7 @@ TEST(PointerContainerTests, IteratesElements_ForLoop_Const)
 	size_t sum = 0;
 	for (auto it : pc)
 	{
-		sum += it.Id;
+		sum += it->Id;
 	}
 
 	EXPECT_EQ(6u, sum);
@@ -209,19 +209,19 @@ TEST(PointerContainerTests, Initializes)
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(1, it->Id);
-	EXPECT_EQ(1, (*it).Id);
+	EXPECT_EQ(1, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(2, it->Id);
-	EXPECT_EQ(2, (*it).Id);
+	EXPECT_EQ(2, (*it)->Id);
 
 	++it;
 
 	EXPECT_NE(it, pc.end());
 	EXPECT_EQ(3, it->Id);
-	EXPECT_EQ(3, (*it).Id);
+	EXPECT_EQ(3, (*it)->Id);
 
 	++it;
 

@@ -54,11 +54,11 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	ASSERT_EQ(1u, ship->GetPoints().size());
 
-	Physics::Point const & pt = *(ship->GetPoints().begin());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt.GetPosition());
-	EXPECT_EQ(materials[1].get(), pt.GetMaterial());
-	EXPECT_EQ(0u, pt.GetConnectedTriangles().size());
-	EXPECT_TRUE(pt.IsLeaking());
+	Physics::Point const * pt = *(ship->GetPoints().begin());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->GetPosition());
+	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
+	EXPECT_EQ(0u, pt->GetConnectedTriangles().size());
+	EXPECT_TRUE(pt->IsLeaking());
 
 	EXPECT_EQ(0u, ship->GetPointAdjencyMap().size());
 }
@@ -95,31 +95,31 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
     auto pointIt = ship->GetPoints().begin();
 
-	Physics::Point const & pt1 = *pointIt;
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1.GetPosition());
-	EXPECT_EQ(materials[1].get(), pt1.GetMaterial());
-	EXPECT_EQ(0u, pt1.GetConnectedTriangles().size());
-	EXPECT_TRUE(pt1.IsLeaking());
+	Physics::Point const * pt1 = *pointIt;
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->GetPosition());
+	EXPECT_EQ(materials[1].get(), pt1->GetMaterial());
+	EXPECT_EQ(0u, pt1->GetConnectedTriangles().size());
+	EXPECT_TRUE(pt1->IsLeaking());
 
     ++pointIt;
 
-	Physics::Point const & pt2 = *pointIt;
-	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2.GetPosition());
-	EXPECT_EQ(materials[0].get(), pt2.GetMaterial());
-	EXPECT_EQ(0u, pt2.GetConnectedTriangles().size());
-	EXPECT_FALSE(pt2.IsLeaking());
+	Physics::Point const * pt2 = *pointIt;
+	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->GetPosition());
+	EXPECT_EQ(materials[0].get(), pt2->GetMaterial());
+	EXPECT_EQ(0u, pt2->GetConnectedTriangles().size());
+	EXPECT_FALSE(pt2->IsLeaking());
 
 	// Adjacent nodes
 
 	EXPECT_EQ(2u, ship->GetPointAdjencyMap().size());
 
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(&pt1)));
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(&pt1)).size());
-	EXPECT_EQ(&pt2, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(&pt1)).begin()));
+	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(pt1)));
+	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt1)).size());
+	EXPECT_EQ(pt2, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt1)).begin()));
 
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(&pt2)));
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(&pt2)).size());
-	EXPECT_EQ(&pt1, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(&pt2)).begin()));
+	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(pt2)));
+	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt2)).size());
+	EXPECT_EQ(pt1, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt2)).begin()));
 }
 
 TEST_F(ShipTests, BuildsPoints_EmptyShip)
@@ -185,12 +185,12 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 	ASSERT_EQ(1u, ship->GetSprings().size());
 
-	Physics::Spring const & sp1 = *(ship->GetSprings().begin());
-	ASSERT_NE(nullptr, sp1.GetPointA());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1.GetPointA()->GetPosition());
-	ASSERT_NE(nullptr, sp1.GetPointB());
-	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1.GetPointB()->GetPosition());
-	EXPECT_EQ(materials[0].get(), sp1.GetMaterial());
+	Physics::Spring const * sp1 = *(ship->GetSprings().begin());
+	ASSERT_NE(nullptr, sp1->GetPointA());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1->GetPointA()->GetPosition());
+	ASSERT_NE(nullptr, sp1->GetPointB());
+	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1->GetPointB()->GetPosition());
+	EXPECT_EQ(materials[0].get(), sp1->GetMaterial());
 }
 
 ///////////////////////////////////////////////////////////////////////

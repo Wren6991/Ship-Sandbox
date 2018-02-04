@@ -31,8 +31,7 @@ private:
 	 * Our iterator.
 	 */
 	template <
-		typename TIteratedPointer, 
-		typename TIteratedReference,
+        typename TIteratedPointer, 
 		typename TIteratedPointerPointer>
 	struct _iterator
 	{
@@ -53,9 +52,9 @@ private:
 			++mCurrent;
 		}
 
-		inline TIteratedReference operator*() noexcept
+		inline TIteratedPointer operator*() noexcept
 		{
-			return *(*mCurrent);
+			return *mCurrent;
 		}
 
 		inline TIteratedPointer operator->() noexcept
@@ -76,9 +75,9 @@ private:
 
 public:
 
-	typedef _iterator<TElement *, TElement &, TElement **> iterator;
+	typedef _iterator<TElement *, TElement **> iterator;
 	
-	typedef _iterator<TElement const *, TElement const &, TElement const * const *> const_iterator;
+	typedef _iterator<TElement const *, TElement const * const *> const_iterator;
 	
 public:
 

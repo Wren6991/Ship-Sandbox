@@ -18,7 +18,6 @@ set  (GAME_SOURCES
 	Log.h
 	Material.cpp
 	Material.h
-	PointerContainer.cpp
 	PointerContainer.h
 	RenderParameters.h
 	RenderUtils.h

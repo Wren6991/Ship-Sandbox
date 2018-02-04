@@ -232,13 +232,13 @@ Ship::~Ship()
 void Ship::DestroyAt(vec2 const & targetPos, float radius)
 {
     // Destroy all points within the radius
-    for (Point & point : mAllPoints)
+    for (Point * point : mAllPoints)
     {
-        if (!point.IsDeleted())
+        if (!point->IsDeleted())
         {
-            if ((point.GetPosition() - targetPos).length() < radius)
+            if ((point->GetPosition() - targetPos).length() < radius)
             {
-                point.Destroy();
+                point->Destroy();
             }
         }
     }
@@ -247,13 +247,13 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
 void Ship::DrawTo(vec2f const & targetPos)
 {
     // Attract all points to a single position
-    for (Point & point : mAllPoints)
+    for (Point * point : mAllPoints)
     {
-        if (!point.IsDeleted())
+        if (!point->IsDeleted())
         {
-            vec2f displacement = (targetPos - point.GetPosition());
+            vec2f displacement = (targetPos - point->GetPosition());
             float forceMagnitude = 50000.0f / sqrtf(0.1f + displacement.length());
-            point.ApplyForce(displacement.normalise() * forceMagnitude);
+            point->ApplyForce(displacement.normalise() * forceMagnitude);
         }
     }
 }
@@ -263,16 +263,16 @@ void Ship::LeakWater(
 	GameParameters const & gameParameters)
 {
 	// Stuff some water into all the leaking nodes, if they're not under too much pressure
-	for (Point & point : mAllPoints)
+	for (Point * point : mAllPoints)
 	{
-        if (!point.IsDeleted())
+        if (!point->IsDeleted())
         {            
-            if (point.IsLeaking()
-                && point.GetPosition().y < mParentWorld->GetWaterHeight(point.GetPosition().x, gameParameters) // point is in water
-                && point.GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
+            if (point->IsLeaking()
+                && point->GetPosition().y < mParentWorld->GetWaterHeight(point->GetPosition().x, gameParameters) // point is in water
+                && point->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
             {
-                float const pressure = point.GetPressure(gameParameters.GravityMagnitude);
-                point.AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - point.GetWater()));
+                float const pressure = point->GetPressure(gameParameters.GravityMagnitude);
+                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - point->GetWater()));
             }
         }
 	}
@@ -328,11 +328,11 @@ void Ship::Update(
 	GameParameters const & gameParameters)
 {
 	// Advance simulation for points (velocity and forces)
-    for (Point & point : mAllPoints)
+    for (Point * point : mAllPoints)
     {
-        if (!point.IsDeleted())
+        if (!point->IsDeleted())
         {
-            point.Update(dt, gameParameters);
+            point->Update(dt, gameParameters);
         }
     }
 
@@ -340,13 +340,13 @@ void Ship::Update(
 	DoSprings(dt);
 
 	// Check if any springs exceed their breaking strain
-	for (auto spring : mAllSprings)
+	for (Spring * spring : mAllSprings)
 	{
-		if (!spring.IsDeleted())
+		if (!spring->IsDeleted())
 		{
-			if (spring.IsBroken(gameParameters.StrengthAdjustment))
+			if (spring->IsBroken(gameParameters.StrengthAdjustment))
 			{
-				spring.Destroy();
+				spring->Destroy();
 			}
 		}
 	}
@@ -391,16 +391,16 @@ void Ship::Render(
 	RenderParameters const & renderParameters) const
 {
 	// Draw all the points and springs
-    for (Point const & point : mAllPoints)
+    for (Point const * point : mAllPoints)
     {
-        assert(!point.IsDeleted());
-        point.Render();
+        assert(!point->IsDeleted());
+        point->Render();
     }
 
-    for (Spring const & spring : mAllSprings)
+    for (Spring const * spring : mAllSprings)
     {
-        assert(!spring.IsDeleted());
-        spring.Render(false);
+        assert(!spring->IsDeleted());
+        spring->Render(false);
     }
 
 	if (!renderParameters.UseXRayMode)
@@ -415,12 +415,12 @@ void Ship::Render(
 
     if (renderParameters.ShowStress)
     {
-        for (Spring const & spring : mAllSprings)
+        for (Spring const * spring : mAllSprings)
         {
-            assert(!spring.IsDeleted());
-            if (spring.IsStressed(gameParameters.StrengthAdjustment))
+            assert(!spring->IsDeleted());
+            if (spring->IsStressed(gameParameters.StrengthAdjustment))
             {
-                spring.Render(true);
+                spring->Render(true);
             }
         }
     }
@@ -466,11 +466,11 @@ void Ship::DoSprings(float dt)
 		}
 
 		float dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
-        for (Spring & spring : mAllSprings)
+        for (Spring * spring : mAllSprings)
         {
-            if (!spring.IsDeleted())
+            if (!spring->IsDeleted())
             {
-                spring.DoDamping(dampingamount);
+                spring->DoDamping(dampingamount);
             }
         }
 	}
