@@ -57,15 +57,31 @@ void Game::LoadShip(std::wstring const & filepath)
 		std::wstring devilErrorMessage(iluErrorString(devilError));
 		throw GameException(L"Could not load ship \"" + filepath + L"\": " + devilErrorMessage);
 	}
-	
-	ILubyte const * imageData = ilGetData();
-	int const width = ilGetInteger(IL_IMAGE_WIDTH);
-	int const height = ilGetInteger(IL_IMAGE_HEIGHT);
 
+    //
+    // Check if we need to convert it
+    //
+
+    int imageFormat = ilGetInteger(IL_IMAGE_FORMAT);
+    int imageType = ilGetInteger(IL_IMAGE_TYPE);
+    if (IL_RGB != imageFormat || IL_UNSIGNED_BYTE != imageType)
+    {
+        if (!ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE))
+        {
+            ILint devilError = ilGetError();
+            std::wstring devilErrorMessage(iluErrorString(devilError));
+            throw GameException(L"Could not convert ship image \"" + filepath + L"\": " + devilErrorMessage);
+        }
+    }
+	
 
 	//
 	// Create ship and add to world
 	//
+
+    ILubyte const * imageData = ilGetData();
+    int const width = ilGetInteger(IL_IMAGE_WIDTH);
+    int const height = ilGetInteger(IL_IMAGE_HEIGHT);
 
 	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
 		mWorld.get(),
