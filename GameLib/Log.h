@@ -14,16 +14,16 @@
 namespace /* anonymous */ {
 
 	template<typename T>
-	std::wstringstream & _LogToStream(std::wstringstream & ss, T const & t)
+	std::wstringstream & _LogToStream(std::wstringstream & ss, T&& t)
 	{
-		ss << t << std::endl;
+		ss << std::forward<T>(t) << std::endl;
 		return ss;
 	}
 
 	template<typename T, typename... TArgs>
-	std::wstringstream & _LogToStream(std::wstringstream & ss, T const & t, TArgs&&... args)
+	std::wstringstream & _LogToStream(std::wstringstream & ss, T&& t, TArgs&&... args)
 	{
-		ss << t;
+		ss << std::forward<T>(t);
 		return _LogToStream(ss, std::forward<TArgs>(args)...);
 	}
 }

@@ -95,6 +95,8 @@ void GameController::DestroyAt(vec2 const & screenCoordinates)
 		screenCoordinates,
 		mRenderParameters);
 
+    LogDebug(L"DestroyAt: ", worldCoordinates.toString());
+
 	// Apply action
 	assert(!!mGame);
 	mGame->DestroyAt(

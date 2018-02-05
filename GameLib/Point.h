@@ -16,6 +16,7 @@
 #include "Vectors.h"
 
 #include <set>
+#include <vector>
 
 namespace Physics
 {	
@@ -32,19 +33,20 @@ public:
 
     void Destroy();
 
-	inline vec2 const & GetPosition() const { return mPosition; }
-	inline vec2 & GetPosition() { return mPosition; }
-	inline void AdjustPosition(vec2 const & dPosition) { mPosition += dPosition; }
+	inline vec2 const & GetPosition() const {  return mPosition;  }	
+    inline void AddToPosition(vec2 const & dPosition) { mPosition += dPosition; }    
+    inline void SubtractFromPosition(vec2 const & dPosition) { mPosition -= dPosition; }
 	
-	inline vec2 const & GetLastPosition() const { return mLastPosition; }
-	inline vec2 & GetLastPosition() { return mLastPosition; }
+	inline vec2 const & GetLastPosition() const { return mLastPosition; }    
+    inline void AddToLastPosition(vec2 const & dPosition) { mLastPosition += dPosition; }
+    inline void SubtractFromLastPosition(vec2 const & dPosition) { mLastPosition -= dPosition; }
 
 	inline Material const * GetMaterial() const { return mMaterial; }
 
 	inline float GetMass() const { return mMaterial->Mass; }
 
-	inline vec2 const & GetForce() const { return mForce; }
-	inline void ZeroForce() { mForce = vec2(0, 0); }
+	inline vec2 const & GetForce() const { return mForce; }	
+    inline void ZeroForce() { mForce = vec2(0, 0); }
 
 	inline float GetBuoyancy() const { return mBuoyancy;  }
 
@@ -58,9 +60,36 @@ public:
 	inline bool IsLeaking() const { return mIsLeaking;  }
 	inline void SetLeaking() { mIsLeaking = true; }
 
-    inline auto const & GetConnectedTriangles() const { return mConnectedTriangles; }
-    inline void AddConnectedTriangle(Triangle * triangle) { mConnectedTriangles.insert(triangle); }
-    inline void RemoveConnectedTriangle(Triangle * triangle) { mConnectedTriangles.erase(triangle); }
+    
+    /*
+    inline auto const & GetConnectedSprings() const { return mConnectedSprings; }
+
+    inline void AddConnectedSpring(Spring * spring) 
+    { 
+        mConnectedTriangles.insert(triangle); 
+    }
+
+    inline void RemoveConnectedSpring(Spring * spring) 
+    { 
+        mConnectedTriangles.erase(triangle); 
+    }
+    */
+
+
+    inline auto const & GetConnectedTriangles() const 
+    { 
+        return mConnectedTriangles; 
+    }
+
+    inline void AddConnectedTriangle(Triangle * triangle) 
+    { 
+        mConnectedTriangles.insert(triangle); 
+    }
+
+    inline void RemoveConnectedTriangle(Triangle * triangle) 
+    { 
+        mConnectedTriangles.erase(triangle); 
+    }
 
 	vec3f GetColour(vec3f const & baseColour) const;
 
@@ -108,7 +137,8 @@ private:
 	float mWater;
 	bool mIsLeaking;
 
-    std::set<Triangle *> mConnectedTriangles;
+    std::vector<Spring *> mConnectedSprings;
+    std::set<Triangle *> mConnectedTriangles;    
 
 private:
 

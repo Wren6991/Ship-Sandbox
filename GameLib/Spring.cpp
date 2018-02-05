@@ -67,8 +67,8 @@ void Spring::Update()
 	vec2f correction_dir = (mPointB->GetPosition() - mPointA->GetPosition());
 	float currentlength = correction_dir.length();
 	correction_dir *= (mLength - currentlength) / (mLength * (mPointA->GetMass() + mPointB->GetMass()) * 0.85f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
-	mPointA->GetPosition() -= correction_dir * mPointB->GetMass();    // if mPointB is heavier, mPointA moves more.
-	mPointB->GetPosition() += correction_dir * mPointA->GetMass();    // (and vice versa...)
+	mPointA->SubtractFromPosition(correction_dir * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
+	mPointB->AddToPosition(correction_dir * mPointA->GetMass());    // (and vice versa...)
 }
 
 void Spring::DoDamping(float amount)
@@ -78,8 +78,8 @@ void Spring::DoDamping(float amount)
 
 	vec2f springdir = (mPointA->GetPosition() - mPointB->GetPosition()).normalise();
 	springdir *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(springdir) * amount;   // relative velocity � spring direction = projected velocity, amount = amount of projected velocity that remains after damping
-	mPointA->GetLastPosition() += springdir;
-	mPointB->GetLastPosition() -= springdir;
+	mPointA->AddToLastPosition(springdir);
+	mPointB->SubtractFromLastPosition(springdir);
 }
 
 }

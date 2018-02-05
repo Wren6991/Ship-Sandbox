@@ -19,10 +19,10 @@
 //   VVV    E         CC CC    2       F
 //    V     EEEEEEE    CCC    2222222  F
 
-std::string vec2f::toString()
+std::wstring vec2f::toString()
 {
-    std::stringstream ss;
-    ss << "(" << x << ", " << y << ")";
+    std::wstringstream ss;
+    ss << L"(" << x << L", " << y << L")";
     return ss.str();
 }
 
@@ -36,10 +36,10 @@ std::string vec2f::toString()
 //   VVV    E         CC CC   33   33  F
 //    V     EEEEEEE    CCC      333    F
 
-std::string vec3f::toString()
+std::wstring vec3f::toString()
 {
-    std::stringstream ss;
-    ss << "(" << x << ", " << y << ", " << z << ")";
+    std::wstringstream ss;
+    ss << L"(" << x << L", " << y << L", " << z << L")";
     return ss.str();
 }
 

@@ -60,7 +60,11 @@ void Point::Destroy()
 		}
 	}
 
-    // TODO: remove ourselves from adjacents
+    // Remove ourselves from adjacents
+    assert(
+        GetParentShip()->mAdjacentNonHullPoints.end() == GetParentShip()->mAdjacentNonHullPoints.find(this)
+        || GetParentShip()->mAdjacentNonHullPoints[this].size() == 0);
+    GetParentShip()->mAdjacentNonHullPoints.erase(this);
 
     // Remove ourselves
     ShipElement::Destroy();
@@ -92,7 +96,7 @@ void Point::Breach()
 void Point::Update(
 	float dt,
 	GameParameters const & gameParameters)
-{
+{    
 	// TODO: potential to optimize by calculating/invoking things only once
 
 	float mass = mMaterial->Mass;
@@ -101,20 +105,22 @@ void Point::Update(
 	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
 		this->ApplyForce(gameParameters.Gravity * (-gameParameters.BuoyancyAdjustment * mBuoyancy * mass));
 	vec2f newLastPosition = mPosition;
+
 	// Water drag:
 	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
 		mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
+
 	// Apply verlet integration:
 	mPosition += (mPosition - mLastPosition) + mForce * (dt * dt / mass);
-	// Collision with seafloor:
+ 	// Collision with seafloor:
 	float floorheight = GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x, gameParameters);
 	if (mPosition.y < floorheight)
 	{
 		vec2f dir = vec2f(floorheight - GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
 		mPosition += dir * (floorheight - mPosition.y);
-	}
+ 	}
 	mLastPosition = newLastPosition;
-
+ 
 	//
 	// Reset force
 	//

@@ -288,17 +288,21 @@ void Ship::GravitateWater(
 		iter != mAdjacentNonHullPoints.end(); iter++)
 	{
 		Point *a = iter->first;
-		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-		{
-			Point *b = *second;
-			float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
-			if (cos_theta > 0.0f)
-			{
-				float correction = std::min(0.5f * cos_theta * dt, a->GetWater());   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
-				a->AdjustWater(-correction);
-				b->AdjustWater(correction);
-			}
-		}
+        assert(!a->IsDeleted());
+        
+        for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+        {
+            Point *b = *second;
+            assert(!b->IsDeleted());
+
+            float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
+            if (cos_theta > 0.0f)
+            {
+                float correction = std::min(0.5f * cos_theta * dt, a->GetWater());   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
+                a->AdjustWater(-correction);
+                b->AdjustWater(correction);
+            }
+        }
 	}
 }
 
@@ -310,16 +314,20 @@ void Ship::BalancePressure(float dt)
 		iter != mAdjacentNonHullPoints.end(); iter++)
 	{
 		Point *a = iter->first;
-		if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
-			continue;
+        assert(!a->IsDeleted());
 
-		for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-		{
-			Point *b = *second;
-			float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-			a->AdjustWater(correction);
-			b->AdjustWater(-correction);
-		}
+        if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
+            continue;
+
+        for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+        {
+            Point *b = *second;
+            assert(!b->IsDeleted());
+
+            float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+            a->AdjustWater(correction);
+            b->AdjustWater(-correction);
+        }
 	}
 }
 
@@ -340,6 +348,7 @@ void Ship::Update(
 	DoSprings(dt);
 
 	// Check if any springs exceed their breaking strain
+    size_t deletedSprings = 0u; // TBD: remove and replace with IGameSink call(material) 
 	for (Spring * spring : mAllSprings)
 	{
 		if (!spring->IsDeleted())
@@ -347,6 +356,8 @@ void Ship::Update(
 			if (spring->IsBroken(gameParameters.StrengthAdjustment))
 			{
 				spring->Destroy();
+
+                ++deletedSprings;
 			}
 		}
 	}
@@ -383,6 +394,11 @@ void Ship::Update(
         {
             return nullptr == t || t->IsDeleted();
         }));
+
+    if (deletedSprings > 0)
+    {
+        LogDebug("Deleted springs:", deletedSprings);
+    }
 }
 
 
@@ -495,7 +511,7 @@ void Ship::PointIntegrateTask::Process()
         Point * const point = mParentShip->mAllPoints[i];
         if (!point->IsDeleted())
         {
-            point->AdjustPosition(point->GetForce() * mDt);
+            point->AddToPosition(point->GetForce() * mDt);
             point->ZeroForce();
         }
 	}
