@@ -126,9 +126,9 @@ TEST(PointerContainerTests, IteratesElements_ForLoop)
 	PointerContainer<TestElement> pc(std::move(input));
 
 	size_t sum = 0;
-	for (auto it : pc)
+	for (auto elem : pc)
 	{
-		sum += it->Id;
+		sum += elem->Id;
 	}
 
 	EXPECT_EQ(6u, sum);
@@ -144,9 +144,9 @@ TEST(PointerContainerTests, IteratesElements_ForLoop_Const)
 	PointerContainer<TestElement> const pc(std::move(input));
 
 	size_t sum = 0;
-	for (auto it : pc)
+	for (auto elem : pc)
 	{
-		sum += it->Id;
+		sum += elem->Id;
 	}
 
 	EXPECT_EQ(6u, sum);

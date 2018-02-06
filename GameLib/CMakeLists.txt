@@ -6,6 +6,7 @@
 set  (GAME_SOURCES
 	AABB.cpp
 	AABB.h
+	FixedSizeVector.h
 	Game.cpp
 	Game.h
 	GameController.cpp
