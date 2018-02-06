@@ -467,21 +467,22 @@ void Ship::DoSprings(float dt)
 	{
 		for (int iteration = 0; iteration < 8; iteration++)
 		{
-			for (size_t i = mAllSprings.size() - 1; i > 0; /* decremented in loop */)
-			{
-				size_t thisChunkSize = (i >= parallelChunkSize) ? parallelChunkSize : i;
-				assert(thisChunkSize > 0);
+            for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)
+            {
+                size_t available = mAllSprings.size() - i;
+                size_t thisChunkSize = (available >= parallelChunkSize) ? parallelChunkSize : available;
+                assert(thisChunkSize > 0);
 
-				mScheduler.Schedule(
-					new SpringCalculateTask(
-						this,
-						i - thisChunkSize,
-						i));
+                mScheduler.Schedule(
+                    new SpringCalculateTask(
+                        this,
+                        i,
+                        i + thisChunkSize));
 
-				i -= thisChunkSize;
-			}
-
-			mScheduler.WaitForAllTasks();
+                i += thisChunkSize;
+            }
+			
+            mScheduler.WaitForAllTasks();
 		}
 		
         for (Spring * spring : mAllSprings)
@@ -496,7 +497,7 @@ void Ship::DoSprings(float dt)
 
 void Ship::SpringCalculateTask::Process()
 {
-    for (size_t i = mFirstSpringIndex; i <= mLastSpringIndex; ++i)
+    for (size_t i = mStartSpringIndex; i < mEndSpringIndex; ++i)
     {
         Spring * const spring = mParentShip->mAllSprings[i];
         if (!spring->IsDeleted())

@@ -110,11 +110,11 @@ private:
 
 		SpringCalculateTask(
 			Ship * parentShip,
-			size_t firstSpringIndex,
-			size_t lastSpringIndex)
+			size_t startSpringIndex,
+			size_t endSpringIndex)
 			: mParentShip(parentShip)
-			, mFirstSpringIndex(firstSpringIndex)
-			, mLastSpringIndex(lastSpringIndex)
+			, mStartSpringIndex(startSpringIndex)
+			, mEndSpringIndex(endSpringIndex)
 		{
 		}
 
@@ -127,8 +127,8 @@ private:
 	private:
 
 		Ship * const mParentShip;
-		size_t const mFirstSpringIndex;
-		size_t const mLastSpringIndex;
+		size_t const mStartSpringIndex;
+		size_t const mEndSpringIndex; // 1 past last
 	};
 
 	struct PointIntegrateTask : Scheduler::ITask
