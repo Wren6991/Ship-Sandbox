@@ -9,6 +9,13 @@
 
 #include "Log.h"
 
+#ifdef FLOATING_POINT_CHECKS
+#ifdef _MSC_VER
+#include <float.h>
+#else
+// Have no idea how to do this on other compilers...
+#endif
+#endif
 
 //
 // Scheduler
@@ -104,6 +111,16 @@ Scheduler::Thread::Thread(
 
 void Scheduler::Thread::Enter(void *arg)
 {
+#ifdef FLOATING_POINT_CHECKS
+#ifdef _MSC_VER
+#include <float.h>
+    // Enable all floating point exceptions except these
+    unsigned int fp_control_state = _controlfp(_EM_INEXACT | _EM_UNDERFLOW, _MCW_EM);
+#else
+    // Have no idea how to do this on other compilers...
+#endif
+#endif
+
     Scheduler::Thread * thisThread = static_cast<Scheduler::Thread *>(arg);
 	while (true)
 	{

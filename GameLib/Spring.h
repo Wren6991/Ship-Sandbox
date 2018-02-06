@@ -56,7 +56,7 @@ public:
 		return GetTensionStrain() > 1 + (strengthAdjustment * mMaterial->Strength);
 	}
 
-	// Tension strain: <1=no stress, >1=stressed
+	// Tension strain: <1=no tension stress, >1=stressed
 	inline float GetTensionStrain() const
 	{
 		return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mLength;

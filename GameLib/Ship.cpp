@@ -448,6 +448,8 @@ void Ship::Render(
 
 void Ship::DoSprings(float dt)
 {
+    float const dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
+
 	if (mAllSprings.empty())
 	{
 		// Nothing to do!
@@ -460,6 +462,7 @@ void Ship::DoSprings(float dt)
 
 	assert(parallelChunkSize > 0);
 
+    // Run iterations
 	for (int outiter = 0; outiter < 3; outiter++)
 	{
 		for (int iteration = 0; iteration < 8; iteration++)
@@ -480,8 +483,7 @@ void Ship::DoSprings(float dt)
 
 			mScheduler.WaitForAllTasks();
 		}
-
-		float dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
+		
         for (Spring * spring : mAllSprings)
         {
             if (!spring->IsDeleted())
