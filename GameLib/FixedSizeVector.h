@@ -11,7 +11,7 @@
 #include <cassert>
 
 /*
- * This class is a stack-allocated fixed-size vector.
+ * This class is a stack-allocated fixed-size vector for value elements.
  * Elements can be added up to the specified maximum size, after which an exception occurs.
  *
  * The container is optimized for fast *visit*, so that it can be used to iterate through
@@ -47,12 +47,12 @@ private:
             ++mCurrent;
         }
 
-        inline TIterated & operator*() noexcept
+        inline TIterated operator*() noexcept
         {
             return *mCurrent;
         }
 
-        inline TIterated & operator->() noexcept
+        inline TIterated operator->() noexcept
         {
             return *mCurrent;
         }
@@ -110,13 +110,13 @@ public:
         return const_iterator(mArray.data() + mCurrentSize);
     }
 
-    inline TElement & operator[](size_t index) noexcept
+    inline TElement operator[](size_t index) noexcept
     {
         assert(index < mCurrentSize);
         return mArray[index];
     }
 
-    inline TElement const & operator[](size_t index) const noexcept
+    inline TElement const operator[](size_t index) const noexcept
     {
         assert(index < mCurrentSize);
         return mArray[index];
@@ -182,6 +182,11 @@ public:
         }
 
         return false;
+    }
+
+    void clear()
+    {
+        mCurrentSize = 0u;
     }
 
 private:

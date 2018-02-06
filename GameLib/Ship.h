@@ -51,6 +51,7 @@ public:
     auto & GetSprings() { return mAllSprings; }
 
 	auto const & GetTriangles() const { return mAllTriangles; }
+    auto & GetTriangles() { return mAllTriangles; }
 
     void DestroyAt(
         vec2 const & targetPos,
@@ -95,11 +96,11 @@ private:
 	void Initialize(
         std::vector<Point *> && allPoints,
 		std::vector<Spring *> && allSprings,
-        std::set<Triangle *> && allTriangles)
+        std::vector<Triangle *> && allTriangles)
 	{
         mAllPoints.initialize(std::move(allPoints));
 		mAllSprings.initialize(std::move(allSprings));
-        mAllTriangles = allTriangles;
+        mAllTriangles.initialize(std::move(allTriangles));
 	}
 
 	void DoSprings(float dt);
@@ -168,7 +169,7 @@ private:
 	// Repository
     PointerContainer<Point> mAllPoints;
 	PointerContainer<Spring> mAllSprings;
-    std::set<Triangle *> mAllTriangles;
+    PointerContainer<Triangle> mAllTriangles;
 
     // Indices	
     // TODO: each arc here is a non-hull spring, and lives
@@ -197,10 +198,10 @@ inline void Ship::RegisterDestruction(Spring * /* element */)
 }
 
 template<>
-inline void Ship::RegisterDestruction(Triangle * element)
+inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
-    // Remove from set
-    mAllTriangles.erase(element);
+    // Just tell the pointer container, he'll take care of it later
+    mAllTriangles.register_deletion();
 }
 
 }

@@ -24,7 +24,7 @@ public:
         Point * b,
         Point * c);
 
-	void Destroy();
+	void DestroyFromPoint(Point const * pointSource);
 
 	inline Point const * GetPointA() const { return mPointA; }
 	inline Point const * GetPointB() const { return mPointB; }

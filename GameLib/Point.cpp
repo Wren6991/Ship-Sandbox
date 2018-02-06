@@ -47,7 +47,7 @@ void Point::Destroy()
     DestroyConnectedTriangles();
 
 	// Remove all springs attached to this point
-    // TODO: if this is too slow, see whether it makes sence for a point
+    // TODO: if this is too slow, see whether it makes sense for a point
     // to know his springs
 	for (Spring * spring : GetParentShip()->GetSprings())
 	{
@@ -130,11 +130,10 @@ void Point::Update(
 
 void Point::DestroyConnectedTriangles()
 {
-    for (auto it = mConnectedTriangles.begin(); it != mConnectedTriangles.end(); /* incremented in loop */)
+    for (Triangle * triangle : mConnectedTriangles)
     {
-        Triangle * triangle = *(it++);
         assert(!triangle->IsDeleted());
-        triangle->Destroy();
+        triangle->DestroyFromPoint(this);
     }
 
     mConnectedTriangles.clear();

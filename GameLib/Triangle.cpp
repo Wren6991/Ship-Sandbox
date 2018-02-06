@@ -25,18 +25,18 @@ Triangle::Triangle(
     c->AddConnectedTriangle(this);
 }
 
-void Triangle::Destroy()
+void Triangle::DestroyFromPoint(Point const * pointSource)
 {
     // Remove ourselves from each point
-	mPointA->RemoveConnectedTriangle(this);
-	mPointB->RemoveConnectedTriangle(this);
-	mPointC->RemoveConnectedTriangle(this);
+    if (pointSource != mPointA)
+	    mPointA->RemoveConnectedTriangle(this);
+    if (pointSource != mPointB)
+	    mPointB->RemoveConnectedTriangle(this);
+    if (pointSource != mPointC)
+	    mPointC->RemoveConnectedTriangle(this);
 
     // Remove ourselves from ship
     ShipElement::Destroy();
-
-    // Delete ourselves
-    delete this;
 }
 
 }

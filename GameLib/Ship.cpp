@@ -52,7 +52,8 @@ std::unique_ptr<Ship> Ship::Create(
     std::vector<Spring*> shipSprings;
     shipSprings.reserve(structureImageWidth * structureImageHeight / 10);
 
-    std::set<Triangle*> shipTriangles;
+    std::vector<Triangle*> shipTriangles;
+    shipTriangles.reserve(structureImageWidth * structureImageHeight / 10);
 
 	size_t leakingPointsCount = 0;
 
@@ -187,7 +188,7 @@ std::unique_ptr<Ship> Ship::Create(
                                     b,
                                     c);
 
-                                shipTriangles.insert(triangle);
+                                shipTriangles.push_back(triangle);
 							}
 						}
 					}
@@ -222,11 +223,6 @@ Ship::~Ship()
 {
     // Delete elements that are not unique_ptr's nor are kept
     // in a PointerContainer
-
-    for (Triangle * triangle : mAllTriangles)
-    {
-        delete triangle;
-    }
 }
 
 void Ship::DestroyAt(vec2 const & targetPos, float radius)
@@ -242,6 +238,10 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
             }
         }
     }
+
+    mAllPoints.shrink_to_fit();
+    mAllSprings.shrink_to_fit();
+    mAllTriangles.shrink_to_fit();
 }
 
 void Ship::DrawTo(vec2f const & targetPos)
@@ -348,7 +348,7 @@ void Ship::Update(
 	DoSprings(dt);
 
 	// Check if any springs exceed their breaking strain
-    size_t deletedSprings = 0u; // TBD: remove and replace with IGameSink call(material) 
+    size_t brokenSprings = 0u; // TBD: remove and replace with IGameSink call(material) 
 	for (Spring * spring : mAllSprings)
 	{
 		if (!spring->IsDeleted())
@@ -357,7 +357,7 @@ void Ship::Update(
 			{
 				spring->Destroy();
 
-                ++deletedSprings;
+                ++brokenSprings;
 			}
 		}
 	}
@@ -385,19 +385,11 @@ void Ship::Update(
 
     mAllPoints.shrink_to_fit();
     mAllSprings.shrink_to_fit();
+    mAllTriangles.shrink_to_fit();
 
-    // The triangle container does not contain deleted items
-    assert(mAllTriangles.end() == std::find_if(
-        mAllTriangles.begin(),
-        mAllTriangles.end(),
-        [](Triangle * t)
-        {
-            return nullptr == t || t->IsDeleted();
-        }));
-
-    if (deletedSprings > 0)
+    if (brokenSprings > 0)
     {
-        LogDebug("Deleted springs:", deletedSprings);
+        LogDebug("Broken springs: ", brokenSprings);
     }
 }
 

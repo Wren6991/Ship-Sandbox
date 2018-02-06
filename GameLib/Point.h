@@ -8,6 +8,7 @@
 #pragma once
 
 #include "AABB.h"
+#include "FixedSizeVector.h"
 #include "GameOpenGL.h"
 #include "GameParameters.h"
 #include "Material.h"
@@ -83,12 +84,15 @@ public:
 
     inline void AddConnectedTriangle(Triangle * triangle) 
     { 
-        mConnectedTriangles.insert(triangle); 
+        mConnectedTriangles.push_back(triangle); 
     }
 
     inline void RemoveConnectedTriangle(Triangle * triangle) 
     { 
-        mConnectedTriangles.erase(triangle); 
+        bool found = mConnectedTriangles.erase_first(triangle); 
+
+        assert(found);
+        (void)found;
     }
 
 	vec3f GetColour(vec3f const & baseColour) const;
@@ -137,8 +141,8 @@ private:
 	float mWater;
 	bool mIsLeaking;
 
-    std::vector<Spring *> mConnectedSprings;
-    std::set<Triangle *> mConnectedTriangles;    
+    FixedSizeVector<Spring *, 8U> mConnectedSprings;
+    FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    
 
 private:
 

@@ -233,6 +233,13 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 	ASSERT_NE(nullptr, tr1->GetPointB());
 	ASSERT_NE(nullptr, tr1->GetPointC());
 
+    ASSERT_EQ(1U, tr1->GetPointA()->GetConnectedTriangles().size());
+    EXPECT_EQ(tr1, tr1->GetPointA()->GetConnectedTriangles()[0]);
+    ASSERT_EQ(1U, tr1->GetPointB()->GetConnectedTriangles().size());
+    EXPECT_EQ(tr1, tr1->GetPointB()->GetConnectedTriangles()[0]);
+    ASSERT_EQ(1U, tr1->GetPointC()->GetConnectedTriangles().size());
+    EXPECT_EQ(tr1, tr1->GetPointC()->GetConnectedTriangles()[0]);
+
 	std::set<Physics::Point const *> distinctPoints;
 	distinctPoints.insert(tr1->GetPointA());
 	distinctPoints.insert(tr1->GetPointB());
@@ -284,10 +291,11 @@ TEST_F(ShipTests, DestroyAt)
 
     ship->GetPoints().shrink_to_fit();
     ship->GetSprings().shrink_to_fit();
+    ship->GetTriangles().shrink_to_fit();
 
 	EXPECT_EQ(5u, ship->GetPoints().size());
 	EXPECT_EQ(6u, ship->GetSprings().size());
-	EXPECT_EQ(2u, ship->GetTriangles().size());
+	EXPECT_EQ(0u, ship->GetTriangles().size()); // At this moment Spring::Destroy() destroys all triangles connected to either point
     // TODO: at this moment we don't remove keys, just adjacents from the value set
 	//EXPECT_EQ(5u, ship->GetPointAdjencyMap().size());
 

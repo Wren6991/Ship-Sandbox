@@ -223,7 +223,7 @@ public:
         mPointers = pNewPointers;
         mSize = newSize;
 
-        LogDebug("Deleted ", mDeletedElementsCount, " elements.");
+        LogDebug("Deleted elements from pContainter: ", mDeletedElementsCount);
 
         // Reset deletion count
         mDeletedElementsCount = 0u;
