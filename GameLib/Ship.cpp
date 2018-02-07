@@ -262,7 +262,7 @@ void Ship::LeakWater(
 	float dt,
 	GameParameters const & gameParameters)
 {
-	// Stuff some water into all the leaking nodes, if they're not under too much pressure
+	// Stuff some water into all the leaking nodes that are underwater, if they're not already under too much pressure
 	for (Point * point : mAllPoints)
 	{
         if (!point->IsDeleted())
@@ -271,8 +271,9 @@ void Ship::LeakWater(
                 && point->GetPosition().y < mParentWorld->GetWaterHeight(point->GetPosition().x, gameParameters) // point is in water
                 && point->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
             {
-                float const pressure = point->GetPressure(gameParameters.GravityMagnitude);
-                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (pressure - point->GetWater()));
+                float const externalWaterPressure = point->GetExternalWaterPressure(gameParameters.GravityMagnitude);
+                // TBD: we're also stuffing water out here, if external pressure < point->GetWater()
+                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
             }
         }
 	}
@@ -296,9 +297,10 @@ void Ship::GravitateWater(
             assert(!b->IsDeleted());
 
             float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
-            if (cos_theta > 0.0f)
+            if (cos_theta > 0.0f) // Only go down
             {
-                float correction = std::min(0.5f * cos_theta * dt, a->GetWater());   // The 0.5 can be tuned, it's just to stop all the water being stuffed into the first node...
+                // The 0.20 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+                float correction = 0.20f * cos_theta * dt * a->GetWater();   
                 a->AdjustWater(-correction);
                 b->AdjustWater(correction);
             }
@@ -308,27 +310,53 @@ void Ship::GravitateWater(
 
 void Ship::BalancePressure(float dt)
 {
-	// If there's too much water in this node, try and push it into the others
-	// (This needs to iterate over multiple frames for pressure waves to spread through water)
-	for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
-		iter != mAdjacentNonHullPoints.end(); iter++)
-	{
-		Point *a = iter->first;
-        assert(!a->IsDeleted());
-
-        if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
-            continue;
-
-        for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+    // If there's too much water in this node, try and push it into the others
+    // (This needs to iterate over multiple frames for pressure waves to spread through water)
+    for (Spring * spring : mAllSprings)
+    {
+        if (!spring->IsDeleted())
         {
-            Point *b = *second;
-            assert(!b->IsDeleted());
+            if (!spring->GetMaterial()->IsHull)
+            {
+                assert(!spring->GetPointA()->IsDeleted());
+                float const aWater = spring->GetPointA()->GetWater();
 
-            float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-            a->AdjustWater(correction);
-            b->AdjustWater(-correction);
+                assert(!spring->GetPointB()->IsDeleted());
+                float const bWater = spring->GetPointB()->GetWater();
+
+                if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
+                    continue;
+
+                // Move water from more wet to less wet
+                float correction = (bWater - aWater) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+                spring->GetPointA()->AdjustWater(correction);
+                spring->GetPointB()->AdjustWater(-correction);
+            }
         }
-	}
+    }
+    
+
+    ////// If there's too much water in this node, try and push it into the others
+    ////// (This needs to iterate over multiple frames for pressure waves to spread through water)
+    ////for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
+    ////    iter != mAdjacentNonHullPoints.end(); iter++)
+    ////{
+    ////    Point *a = iter->first;
+    ////    assert(!a->IsDeleted());
+
+    ////    if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
+    ////        continue;
+
+    ////    for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+    ////    {
+    ////        Point *b = *second;
+    ////        assert(!b->IsDeleted());
+
+    ////        float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+    ////        a->AdjustWater(correction);
+    ////        b->AdjustWater(-correction);
+    ////    }
+    ////}
 }
 
 void Ship::Update(

@@ -62,8 +62,10 @@ public:
 		return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mLength;
 	}
 
+    inline Point * GetPointA() { return mPointA; }
 	inline Point const * GetPointA() const { return mPointA; }
 
+    inline Point * GetPointB() { return mPointB; }
 	inline Point const * GetPointB() const { return mPointB; }
 
 	inline Material const * GetMaterial() const { return mMaterial; };

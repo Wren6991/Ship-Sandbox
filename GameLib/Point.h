@@ -51,7 +51,7 @@ public:
 
 	inline float GetBuoyancy() const { return mBuoyancy;  }
 
-	// TBD: WaterPressure?
+    // Dimensionally akin to Water Pressure
 	inline float GetWater() const { return mWater; }
 	inline void AdjustWater(float dWater) 
     { 
@@ -97,9 +97,14 @@ public:
 
 	vec3f GetColour(vec3f const & baseColour) const;
 
-	float GetPressure(float gravityMagnitude) const;
+    float GetExternalWaterPressure(float gravityMagnitude) const
+    {
+        // Negative Y == under water line
+        // Note: should use World.WaterHeight 
+        return gravityMagnitude * fmaxf(-mPosition.y, 0.0f) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
+    }
 
-	inline AABB GetAABB() const
+	inline AABB GetAABB() const noexcept
 	{
 		return AABB(mPosition - AABBRadius, mPosition + AABBRadius);
 	}

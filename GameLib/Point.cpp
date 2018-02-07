@@ -78,12 +78,6 @@ vec3f Point::GetColour(vec3f const & baseColour) const
 	return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
 }
 
-float Point::GetPressure(float gravityMagnitude) const
-{
-	// TBD: pressure is always zero? 
-	return gravityMagnitude * fmaxf(-mPosition.y, 0.0f) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
-}
-
 void Point::Breach()
 {
     // Start leaking

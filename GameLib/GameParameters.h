@@ -46,7 +46,7 @@ struct GameParameters
 		, GravityMagnitude(Gravity.length())
 		, StrengthAdjustment(0.01f)
 		, BuoyancyAdjustment(4.0f)
-		, WaterPressureAdjustment(0.3f)
+		, WaterPressureAdjustment(0.4f)
 		, WaveHeight(1.0f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.5f)
