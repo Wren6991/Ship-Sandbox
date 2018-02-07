@@ -153,7 +153,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	controlsMenu->Append(zoomOutMenuItem);
 	Connect(ID_ZOOM_OUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomOutMenuItemSelected);
 
-	wxMenuItem * pauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tCtrl+P"), wxEmptyString, wxITEM_CHECK);
+	wxMenuItem * pauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tP"), wxEmptyString, wxITEM_CHECK);
 	controlsMenu->Append(pauseMenuItem);
 	pauseMenuItem->Check(!mGameController->IsRunning());
 	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
@@ -165,11 +165,11 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
 	wxMenu * toolsMenu = new wxMenu();
 
-	wxMenuItem * smashMenuItem = new wxMenuItem(toolsMenu, ID_SMASH_MENUITEM, _("Smash"), wxEmptyString, wxITEM_RADIO);		
+	wxMenuItem * smashMenuItem = new wxMenuItem(toolsMenu, ID_SMASH_MENUITEM, _("Smash\tS"), wxEmptyString, wxITEM_RADIO);		
 	toolsMenu->Append(smashMenuItem);		
 	Connect(ID_SMASH_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnSmashMenuItemSelected);
 
-	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab"), wxEmptyString, wxITEM_RADIO);	
+	wxMenuItem * grabMenuItem = new wxMenuItem(toolsMenu, ID_GRAB_MENUITEM, _("Grab\tG"), wxEmptyString, wxITEM_RADIO);	
 	toolsMenu->Append(grabMenuItem);	
 	Connect(ID_GRAB_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnGrabMenuItemSelected);
 
