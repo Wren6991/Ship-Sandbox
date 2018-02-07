@@ -4,52 +4,76 @@
         "strength": 175,
         "mass": 7580,
         "colour": "#A0A0A0",
-        "isHull": true
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Steel",
         "strength": 160,
         "mass": 7480,
-        "colour": "#D8D8D8"
+        "colour": "#D8D8D8",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Iron Hull",
         "strength": 110,
         "mass": 7950,
         "colour": "#404050",
-        "isHull": true
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Iron",
         "strength": 100,
         "mass": 7850,
-        "colour": "#808090"
+        "colour": "#808090",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Wooden Hull",
         "strength": 50,
         "mass": 1000,
         "colour": "#905020",
-        "isHull": true
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
     },
     {
         "name": "Wood",
         "strength": 40,
         "mass": 800,
-        "colour": "#E0D8C0"
+        "colour": "#E0D8C0",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
     },
     {
         "name": "Titanium Hull",
         "strength": 150,
         "mass": 4600,
         "colour": "#565663",
-        "isHull": true
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Titanium",
         "strength": 140,
         "mass": 4500,
-        "colour": "#787896"
+        "colour": "#787896",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "Cardboard Hull",
@@ -462,7 +486,10 @@
         "strength": 40,
         "mass": 1000,
         "colour": "#E5FFFF",
-        "isHull": true
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Glass"
+	}
     },
     {
         "name": "Carbon Hull",
@@ -488,7 +515,10 @@
         "name": "Black Steel",
         "strength": 160,
         "mass": 7480,
-        "colour": "#262626"
+        "colour": "#262626",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
     },
     {
         "name": "DB_W_Red",
@@ -506,6 +536,9 @@
 		"element_type": "Lamp",
 		"resistance": 0,
 		"generated_voltage": 0
+	},
+	"sound_properties": {
+		"element_type": "Glass"
 	}
     },
     {
@@ -517,6 +550,9 @@
 		"element_type": "Generator",
 		"resistance": 0,
 		"generated_voltage": 12
+	},
+	"sound_properties": {
+		"element_type": "Metal"
 	}
     },
     {

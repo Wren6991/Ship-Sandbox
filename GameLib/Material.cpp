@@ -46,18 +46,18 @@ std::unique_ptr<Material> Material::Create(picojson::object const & materialJson
 	vec3f colour = Hex2Colour(Utils::GetMandatoryJsonMember<std::string>(materialJson, "colour"));
 	bool isHull = Utils::GetOptionalJsonMember<bool>(materialJson, "isHull", false);
 
-	std::optional<_ElectricalProperties> electricalProperties;
+	std::optional<ElectricalProperties> electricalProperties;
 	std::optional<picojson::object> electricalPropertiesJson = Utils::GetOptionalJsonObject(materialJson, "electrical_properties");
 	if (!!electricalPropertiesJson)
 	{
-		_ElectricalProperties::ElectricalElementType elementType;
+		ElectricalProperties::ElectricalElementType elementType;
 		std::string elementTypeJson = Utils::GetMandatoryJsonMember<std::string>(*electricalPropertiesJson, "element_type");
 		if (elementTypeJson == "Lamp")
-			elementType = _ElectricalProperties::ElectricalElementType::Lamp;
+			elementType = ElectricalProperties::ElectricalElementType::Lamp;
 		else if (elementTypeJson == "Cable")
-			elementType = _ElectricalProperties::ElectricalElementType::Cable;
+			elementType = ElectricalProperties::ElectricalElementType::Cable;
 		else if (elementTypeJson == "Generator")
-			elementType = _ElectricalProperties::ElectricalElementType::Generator;
+			elementType = ElectricalProperties::ElectricalElementType::Generator;
 		else
 			throw GameException("Electrical element_type \"" + elementTypeJson + "\" is not recognized");
 
@@ -70,6 +70,25 @@ std::unique_ptr<Material> Material::Create(picojson::object const & materialJson
 			generatedVoltage);
 	}
 
+    std::optional<SoundProperties> soundProperties;
+    std::optional<picojson::object> soundPropertiesJson = Utils::GetOptionalJsonObject(materialJson, "sound_properties");
+    if (!!soundPropertiesJson)
+    {
+        SoundProperties::SoundElementType elementType;
+        std::string elementTypeJson = Utils::GetMandatoryJsonMember<std::string>(*soundPropertiesJson, "element_type");
+        if (elementTypeJson == "Glass")
+            elementType = SoundProperties::SoundElementType::Glass;
+        else if (elementTypeJson == "Metal")
+            elementType = SoundProperties::SoundElementType::Metal;
+        else if (elementTypeJson == "Wood")
+            elementType = SoundProperties::SoundElementType::Wood;
+        else
+            throw GameException("Sound element_type \"" + elementTypeJson + "\" is not recognized");
+
+        soundProperties.emplace(
+            elementType);
+    }
+
 	return std::unique_ptr<Material>(
 		new Material(
 			name,
@@ -77,5 +96,6 @@ std::unique_ptr<Material> Material::Create(picojson::object const & materialJson
 			mass,
 			colour,
 			isHull,
-			electricalProperties));
+			electricalProperties,
+            soundProperties));
 }

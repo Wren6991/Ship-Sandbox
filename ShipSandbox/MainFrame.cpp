@@ -372,7 +372,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 			L"Select Ship", 
 			wxEmptyString, 
 			wxEmptyString, 
-			L"(*.png)|*.png", 
+			L"JPG and PNG files(*.jpg; *.png) | *.jpg; *.png",
 			wxFD_OPEN | wxFD_FILE_MUST_EXIST, 
 			wxDefaultPosition, 
 			wxDefaultSize, 

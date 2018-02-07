@@ -268,12 +268,13 @@ void Ship::LeakWater(
         if (!point->IsDeleted())
         {            
             if (point->IsLeaking()
-                && point->GetPosition().y < mParentWorld->GetWaterHeight(point->GetPosition().x, gameParameters) // point is in water
-                && point->GetWater() < 1.5f)	// Water pressure not already excedent // TBD: should 1.5 be 'pressure'?
+                && point->GetPosition().y < mParentWorld->GetWaterHeight(point->GetPosition().x, gameParameters)) // point is in water
             {
                 float const externalWaterPressure = point->GetExternalWaterPressure(gameParameters.GravityMagnitude);
-                // TBD: we're also stuffing water out here, if external pressure < point->GetWater()
-                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
+                if (externalWaterPressure > point->GetWater())
+                {
+                    point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
+                }
             }
         }
 	}
@@ -299,8 +300,8 @@ void Ship::GravitateWater(
             float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
             if (cos_theta > 0.0f) // Only go down
             {
-                // The 0.20 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.20f * cos_theta * dt * a->GetWater();   
+                // The 0.25 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+                float correction = 0.25f * cos_theta * dt * a->GetWater();   
                 a->AdjustWater(-correction);
                 b->AdjustWater(correction);
             }

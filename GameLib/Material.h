@@ -30,7 +30,7 @@ struct Material
 	// Electrical properties - optional
 	//
 
-	struct _ElectricalProperties
+	struct ElectricalProperties
 	{
 		enum class ElectricalElementType
 		{
@@ -43,7 +43,7 @@ struct Material
 		float const Resistance;
 		float const GeneratedVoltage;
 
-		_ElectricalProperties(
+		ElectricalProperties(
 			ElectricalElementType elementType,
 			float resistance,
 			float generatedVoltage)
@@ -54,7 +54,31 @@ struct Material
 		}
 	};
 
-	std::optional<_ElectricalProperties> ElectricalProperties;
+	std::optional<ElectricalProperties> Electrical;
+
+    //
+    // Sound properties - optional
+    //
+
+    struct SoundProperties
+    {
+        enum class SoundElementType
+        {
+            Glass,
+            Metal,
+            Wood
+        };
+
+        SoundElementType ElementType;
+
+        SoundProperties(
+            SoundElementType elementType)
+            : ElementType(elementType)
+        {
+        }
+    };
+
+    std::optional<SoundProperties> Sound;
 
 public:
 
@@ -66,13 +90,15 @@ public:
 		float mass,
 		vec3f colour,
 		bool isHull,
-		std::optional<_ElectricalProperties> electricalProperties)
+		std::optional<ElectricalProperties> electricalProperties,
+        std::optional<SoundProperties> soundProperties)
 		: Name(std::move(name))
 		, Strength(strength)
 		, Mass(mass)
 		, Colour(std::move(colour))
 		, IsHull(isHull)
-		, ElectricalProperties(std::move(electricalProperties))
+		, Electrical(std::move(electricalProperties))
+        , Sound(std::move(soundProperties))
 	{
 	}
 };
