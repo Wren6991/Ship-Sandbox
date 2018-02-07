@@ -262,15 +262,17 @@ void Ship::LeakWater(
 	float dt,
 	GameParameters const & gameParameters)
 {
-	// Stuff some water into all the leaking nodes that are underwater, if they're not already under too much pressure
+	// Stuff some water into all the leaking nodes that are underwater, if the external pressure is larger
 	for (Point * point : mAllPoints)
 	{
         if (!point->IsDeleted())
         {            
-            if (point->IsLeaking()
-                && point->GetPosition().y < mParentWorld->GetWaterHeight(point->GetPosition().x, gameParameters)) // point is in water
+            if (point->IsLeaking())
             {
-                float const externalWaterPressure = point->GetExternalWaterPressure(gameParameters.GravityMagnitude);
+                float const externalWaterPressure = point->GetExternalWaterPressure(
+                    mParentWorld,
+                    gameParameters);
+
                 if (externalWaterPressure > point->GetWater())
                 {
                     point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
@@ -301,7 +303,7 @@ void Ship::GravitateWater(
             if (cos_theta > 0.0f) // Only go down
             {
                 // The 0.25 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.25f * cos_theta * dt * a->GetWater();   
+                float correction = 0.25f * cos_theta * dt * a->GetWater();
                 a->AdjustWater(-correction);
                 b->AdjustWater(correction);
             }
@@ -319,19 +321,21 @@ void Ship::BalancePressure(float dt)
         {
             if (!spring->GetMaterial()->IsHull)
             {
-                assert(!spring->GetPointA()->IsDeleted());
-                float const aWater = spring->GetPointA()->GetWater();
+                Point * const pointA = spring->GetPointA();
+                assert(!pointA->IsDeleted());
+                float const aWater = pointA->GetWater();
 
-                assert(!spring->GetPointB()->IsDeleted());
-                float const bWater = spring->GetPointB()->GetWater();
+                Point * const pointB = spring->GetPointB();
+                assert(!pointB->IsDeleted());
+                float const bWater = pointB->GetWater();
 
                 if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
                     continue;
 
                 // Move water from more wet to less wet
                 float correction = (bWater - aWater) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-                spring->GetPointA()->AdjustWater(correction);
-                spring->GetPointB()->AdjustWater(-correction);
+                pointA->AdjustWater(correction);
+                pointB->AdjustWater(-correction);
             }
         }
     }
