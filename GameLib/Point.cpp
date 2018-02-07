@@ -78,22 +78,6 @@ vec3f Point::GetColour(vec3f const & baseColour) const
 	return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
 }
 
-float Point::GetExternalWaterPressure(
-    World const * parentWorld,
-    GameParameters const & gameParameters) const
-{
-    // Negative Y == under water line
-    float waterLevel = parentWorld->GetWaterHeight(mPosition.x, gameParameters);
-    if (mPosition.y < waterLevel)
-    {
-        return gameParameters.GravityMagnitude * (waterLevel - mPosition.y) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
-    }
-    else
-    {
-        return 0.0f;
-    }
-}
-
 void Point::Breach()
 {
     // Start leaking

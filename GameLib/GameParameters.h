@@ -26,7 +26,7 @@ struct GameParameters
 
 	float WaterPressureAdjustment;
 	static constexpr float MinWaterPressureAdjustment = 0.0f;
-	static constexpr float MaxWaterPressureAdjustment = 1.0f;
+	static constexpr float MaxWaterPressureAdjustment = 2.0f;
 
 	float WaveHeight;
 	static constexpr float MinWaveHeight = 0.0f;
@@ -44,9 +44,9 @@ struct GameParameters
 		: Gravity(0.0f, -9.8f)
 		, GravityNormal(Gravity.normalise())
 		, GravityMagnitude(Gravity.length())
-		, StrengthAdjustment(0.01f)
+		, StrengthAdjustment(0.0075f)
 		, BuoyancyAdjustment(4.0f)
-		, WaterPressureAdjustment(0.4f)
+		, WaterPressureAdjustment(0.75f)
 		, WaveHeight(1.0f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.5f)

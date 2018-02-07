@@ -98,8 +98,19 @@ public:
 	vec3f GetColour(vec3f const & baseColour) const;
 
     float GetExternalWaterPressure(
-        World const * parentWorld,
-        GameParameters const & gameParameters) const;
+        float waterLevel,
+        GameParameters const & gameParameters) const
+    {
+        // Negative Y == under water line
+        if (mPosition.y < waterLevel)
+        {
+            return gameParameters.GravityMagnitude * (waterLevel - mPosition.y) * 0.1f;  // 0.1 = scaling constant, represents 1/ship width
+        }
+        else
+        {
+            return 0.0f;
+        }
+    }
 
 	inline AABB GetAABB() const noexcept
 	{
@@ -116,18 +127,6 @@ public:
 	void Update(
 		float dt,
 		GameParameters const & gameParameters);
-
-	inline void Render() const
-	{
-		// Put a blue blob on leaking nodes (was more for debug purposes, but looks better IMO)
-		if (mIsLeaking)
-		{
-			glColor3f(0.0f, 0.0f, 1.0f);
-			glBegin(GL_POINTS);
-			glVertex3f(mPosition.x, mPosition.y, -1.0f);
-			glEnd();
-		}
-	}
 
 private:
 

@@ -153,7 +153,7 @@ void Game::Render(
 	glEnable(GL_POINT_SMOOTH);
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glPointSize(0.15f * renderParameters.CanvasHeight / renderParameters.Zoom);
 	glLineWidth(0.1f * renderParameters.CanvasHeight / renderParameters.Zoom);

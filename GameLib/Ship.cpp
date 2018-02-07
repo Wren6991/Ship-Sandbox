@@ -269,8 +269,12 @@ void Ship::LeakWater(
         {            
             if (point->IsLeaking())
             {
+                float waterLevel = mParentWorld->GetWaterHeight(
+                    point->GetPosition().x, 
+                    gameParameters);                
+
                 float const externalWaterPressure = point->GetExternalWaterPressure(
-                    mParentWorld,
+                    waterLevel,
                     gameParameters);
 
                 if (externalWaterPressure > point->GetWater())
@@ -302,8 +306,8 @@ void Ship::GravitateWater(
             float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
             if (cos_theta > 0.0f) // Only go down
             {
-                // The 0.25 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.25f * cos_theta * dt * a->GetWater();
+                // The 0.40 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+                float correction = 0.40f * cos_theta * dt * a->GetWater();
                 a->AdjustWater(-correction);
                 b->AdjustWater(correction);
             }
@@ -333,7 +337,7 @@ void Ship::BalancePressure(float dt)
                     continue;
 
                 // Move water from more wet to less wet
-                float correction = (bWater - aWater) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+                float correction = (bWater - aWater) * 4.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
                 pointA->AdjustWater(correction);
                 pointB->AdjustWater(-correction);
             }
@@ -407,7 +411,7 @@ void Ship::Update(
 		BalancePressure(dt);
 	}
 
-	for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
 		BalancePressure(dt);
 
 
@@ -431,13 +435,7 @@ void Ship::Render(
 	GameParameters const & gameParameters,
 	RenderParameters const & renderParameters) const
 {
-	// Draw all the points and springs
-    for (Point const * point : mAllPoints)
-    {
-        assert(!point->IsDeleted());
-        point->Render();
-    }
-
+	// Draw all the springs
     for (Spring const * spring : mAllSprings)
     {
         assert(!spring->IsDeleted());
