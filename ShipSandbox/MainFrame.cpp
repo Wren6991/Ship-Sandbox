@@ -54,7 +54,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	: mMouseInfo()
 	, mCurrentToolType(ToolType::Smash)
 	, mGameController(std::move(gameController))
-	, mFrameCount(0)
+	, mFrameCount(0u)
 {
 	Create(
 		nullptr, 
@@ -283,7 +283,7 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 	mGameTimer->Start(0, true);
 
 	// Main timing event!
-	mFrameCount++;
+	++mFrameCount;
 
     if (!mPauseMenuItem->IsChecked())
     {
@@ -303,7 +303,7 @@ void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
 
 	SetTitle(ss.str());
 
-	mFrameCount = 0;
+	mFrameCount = 0u;
 }
 
 //

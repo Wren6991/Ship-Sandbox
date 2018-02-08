@@ -18,6 +18,7 @@
 #include <wx/menu.h>
 #include <wx/timer.h>
 
+#include <cstdint>
 #include <memory>
 
 /*
@@ -120,16 +121,12 @@ private:
 		bool rdown;
 		int x;
 		int y;
-		int lastx;
-		int lasty;
 
 		MouseInfo()
 			: ldown(false)
 			, rdown(false)
 			, x(0)
 			, y(0)
-			, lastx(0)
-			, lasty(0)
 		{
 		}
 	};
@@ -145,5 +142,5 @@ private:
 	ToolType mCurrentToolType;
 
 	std::shared_ptr<GameController> mGameController;
-	int mFrameCount;	
+	uint64_t mFrameCount;	
 };
