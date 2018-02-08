@@ -1,8 +1,9 @@
 Alpha 2.0 (Gabriele Giuseppini) - Changes:
  - Slightly faster
  - More realistic water flows
+ - The strength of the smash and grab tools depends on how long the mouse button is kept pressed
  - Added menu and keyboard shortcuts (+/-) for zoom
- - Revamped settings window and added Destroy Radius
+ - Revamped settings window
  - Added an application icon and cursors 
 
 Alpha 1.3 - Changes:
