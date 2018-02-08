@@ -95,11 +95,15 @@ void World::DestroyAt(
     }
 }
 
-void World::DrawTo(vec2f const & targetPos)
+void World::DrawTo(
+    vec2f const & targetPos,
+    float strength)
 {
     for (auto & ship : mAllShips)
     {
-        ship->DrawTo(targetPos);
+        ship->DrawTo(
+            targetPos,
+            strength);
     }
 }
 

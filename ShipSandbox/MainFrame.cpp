@@ -282,17 +282,18 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 	// Make the timer for the next step start now
 	mGameTimer->Start(0, true);
 
-	// Main timing event!
-	++mFrameCount;
+    // Update the tool
+    UpdateTool();
 
-    if (!mPauseMenuItem->IsChecked())
-    {
-        // Do a simulation step
+    // Do a simulation step
+    if (!IsPaused())
+    {        
         mGameController->DoStep();
     }
 
 	// Render
 	RenderGame();	
+    ++mFrameCount;
 }
 
 void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
@@ -326,9 +327,11 @@ void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
     // Remember the mouse button is down
     mMouseInfo.ldown = true;
 
-    SwitchCursor();
+    // Initialize the tool
+    mToolState.Initialize(mMouseInfo.x, mMouseInfo.y);
 
-	ApplyCurrentMouseTool();	
+    // Change cursor
+    SwitchCursor();
 }
 
 void MainFrame::OnMainGLCanvasLeftUp(wxMouseEvent & /*event*/)
@@ -336,6 +339,7 @@ void MainFrame::OnMainGLCanvasLeftUp(wxMouseEvent & /*event*/)
 	// Remember the mouse button is not down anymore
 	mMouseInfo.ldown = false;
 
+    // Change cursor
     SwitchCursor();
 }
 
@@ -368,11 +372,6 @@ void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
 		// Pan
 		vec2 screenOffset = vec2(mMouseInfo.x, mMouseInfo.y) - vec2(oldx, oldy);
 		mGameController->Pan(screenOffset);
-	}
-	else if (mMouseInfo.ldown)
-	{
-		// Tool
-		ApplyCurrentMouseTool();
 	}
 }
 
@@ -527,25 +526,71 @@ void MainFrame::SwitchCursor()
     }
 }
 
-void MainFrame::ApplyCurrentMouseTool()
+void MainFrame::UpdateTool()
 {
-	assert(!!mGameController);
+    // We apply the tool only if the left mouse button is down
+    if (mMouseInfo.ldown)
+    {
+        auto now = std::chrono::steady_clock::now();
 
-	// Action depends on current tool
-	switch (mCurrentToolType)
-	{
-		case ToolType::Grab:
-		{
-			mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y));
-			break;
-		}
+        // Accumulate total time iff we haven't moved since last time
+        if (mToolState.PreviousMouseX == mMouseInfo.x
+            && mToolState.PreviousMouseY == mMouseInfo.y)
+        {
+            mToolState.CumulatedTime += std::chrono::duration_cast<std::chrono::microseconds>(
+                now - mToolState.PreviousTimestamp);
+        }
+        else
+        {
+            // We've moved, don't accumulate but use time
+            // that was built up so far
+        }
 
-		case ToolType::Smash:
-		{
-			mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y));
-			break;
-		}
-	}
+        // Remember new position and timestamp
+        mToolState.PreviousMouseX = mMouseInfo.x;
+        mToolState.PreviousMouseY = mMouseInfo.y;
+        mToolState.PreviousTimestamp = now;
+
+	    // Apply current tool
+        assert(!!mGameController);
+	    switch (mCurrentToolType)
+	    {
+		    case ToolType::Grab:
+		    {
+                // Calculate strength multiplier
+                // 0-500ms      = 1.0
+                // 15000ms-+INF = 10.0
+
+                float millisecondsElapsed = static_cast<float>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
+                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 15000.0f);
+
+                // Draw
+			    mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y), strengthMultiplier);
+			    break;
+		    }
+
+		    case ToolType::Smash:
+		    {
+                // Calculate radius multiplier
+                // 0-500ms      = 1.0
+                // 15000ms-+INF = 10.0
+
+                float millisecondsElapsed = static_cast<float>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
+                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 15000.0f);
+
+                // Destroy
+			    mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y), radiusMultiplier);
+			    break;
+		    }
+	    }
+    }
+}
+
+bool MainFrame::IsPaused()
+{
+    return mPauseMenuItem->IsChecked();
 }
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS

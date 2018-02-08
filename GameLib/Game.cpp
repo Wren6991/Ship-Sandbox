@@ -109,10 +109,12 @@ void Game::DestroyAt(
 	// TODO: publish game event
 }
 
-void Game::DrawTo(vec2 worldCoordinates)
+void Game::DrawTo(
+    vec2 worldCoordinates,
+    float strength)
 {
 	assert(!!mWorld);
-	mWorld->DrawTo(worldCoordinates);
+	mWorld->DrawTo(worldCoordinates, strength);
 
 	// TODO: publish game event
 }

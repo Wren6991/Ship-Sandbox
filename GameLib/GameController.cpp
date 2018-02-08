@@ -86,22 +86,26 @@ void GameController::Render()
 // Interactions
 /////////////////////////////////////////////////////////////
 
-void GameController::DestroyAt(vec2 const & screenCoordinates)
+void GameController::DestroyAt(
+    vec2 const & screenCoordinates, 
+    float radiusMultiplier)
 {
 	vec2 worldCoordinates = RenderUtils::Screen2World(
 		screenCoordinates,
 		mRenderParameters);
 
-    LogDebug(L"DestroyAt: ", worldCoordinates.toString());
+    LogDebug(L"DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
 	// Apply action
 	assert(!!mGame);
 	mGame->DestroyAt(
 		worldCoordinates,
-		mGameParameters.DestroyRadius);
+		mGameParameters.DestroyRadius * radiusMultiplier);
 }
 
-void GameController::DrawTo(vec2 const & screenCoordinates)
+void GameController::DrawTo(
+    vec2 const & screenCoordinates,
+    float strengthMultiplier)
 {
 	vec2 worldCoordinates = RenderUtils::Screen2World(
 		screenCoordinates,
@@ -109,7 +113,7 @@ void GameController::DrawTo(vec2 const & screenCoordinates)
 
 	// Apply action
 	assert(!!mGame);
-	mGame->DrawTo(worldCoordinates);
+	mGame->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
 }
 
 void GameController::SetCanvasSize(

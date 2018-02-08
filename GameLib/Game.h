@@ -23,8 +23,13 @@ public:
 	void Reset();
 	void LoadShip(std::wstring const & filepath);
 
-	void DestroyAt(vec2 worldCoordinates, float radius);
-	void DrawTo(vec2 worldCoordinates);
+	void DestroyAt(
+        vec2 worldCoordinates, 
+        float radius);
+
+	void DrawTo(
+        vec2 worldCoordinates,         
+        float strength);
 
 	/*
 	 * Runs a game simulation step.

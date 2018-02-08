@@ -40,7 +40,9 @@ public:
 		vec2 const & targetPos, 
 		float radius);
 
-	void DrawTo(vec2 const & targetPos);
+	void DrawTo(
+        vec2 const & targetPos,
+        float strength);
 
 	void Update(
 		float dt,

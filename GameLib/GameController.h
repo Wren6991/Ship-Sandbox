@@ -35,8 +35,8 @@ public:
 	// Interactions
 	//
 
-	void DestroyAt(vec2 const & screenCoordinates);
-	void DrawTo(vec2 const & screenCoordinates);
+	void DestroyAt(vec2 const & screenCoordinates, float radiusMultiplier);
+	void DrawTo(vec2 const & screenCoordinates, float strengthMultiplier);
 
 	void SetCanvasSize(int width, int height);
 	void Pan(vec2 const & screenOffset);

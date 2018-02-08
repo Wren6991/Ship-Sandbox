@@ -18,8 +18,10 @@
 #include <wx/menu.h>
 #include <wx/timer.h>
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 /*
  * The main window of the game's GUI.
@@ -110,7 +112,8 @@ private:
 
     std::unique_ptr<wxCursor> MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY);
     void SwitchCursor();
-	void ApplyCurrentMouseTool();
+	void UpdateTool();
+    bool IsPaused();
 	void RenderGame();
 
 private:
@@ -140,6 +143,39 @@ private:
 	};
 
 	ToolType mCurrentToolType;
+
+
+    // This struct contains the information we need to grow the strength of the
+    // tool while the user keeps the left mouse button pressed.
+    // The strength only grows when the mouse is still, and stays constant while it's moved.
+    struct ToolState
+    {
+        // Previous mouse position and time when we looked at it
+        int PreviousMouseX; 
+        int PreviousMouseY;
+        std::chrono::steady_clock::time_point PreviousTimestamp;
+
+        // The total accumulated press time - the proxy for the strength of the tool
+        std::chrono::microseconds CumulatedTime;
+
+        ToolState()
+            : PreviousMouseX(-1)
+            , PreviousMouseY(-1)
+            , PreviousTimestamp(std::chrono::steady_clock::now())
+            , CumulatedTime(0)
+        {            
+        }
+
+        void Initialize(int mouseX, int mouseY)
+        {
+            PreviousMouseX = mouseX;
+            PreviousMouseY = mouseY;
+            PreviousTimestamp = std::chrono::steady_clock::now();
+            CumulatedTime = std::chrono::microseconds(0);
+        }
+    };
+
+    ToolState mToolState;
 
 	std::shared_ptr<GameController> mGameController;
 	uint64_t mFrameCount;	

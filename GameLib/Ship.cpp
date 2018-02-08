@@ -244,7 +244,9 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
     mAllTriangles.shrink_to_fit();
 }
 
-void Ship::DrawTo(vec2f const & targetPos)
+void Ship::DrawTo(
+    vec2f const & targetPos,
+    float strength)
 {
     // Attract all points to a single position
     for (Point * point : mAllPoints)
@@ -252,7 +254,7 @@ void Ship::DrawTo(vec2f const & targetPos)
         if (!point->IsDeleted())
         {
             vec2f displacement = (targetPos - point->GetPosition());
-            float forceMagnitude = 50000.0f / sqrtf(0.1f + displacement.length());
+            float forceMagnitude = strength / sqrtf(0.1f + displacement.length());
             point->ApplyForce(displacement.normalise() * forceMagnitude);
         }
     }
