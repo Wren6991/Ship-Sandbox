@@ -40,6 +40,12 @@ private:
 	std::unique_ptr<wxGLCanvas> mMainGLCanvas;
 	std::unique_ptr<wxGLContext> mMainGLCanvasContext;
 
+    //
+    // Controls that we're interacting with
+    //
+
+    wxMenuItem * mPauseMenuItem;
+
 	//
 	// Dialogs
 	//

@@ -154,9 +154,9 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	controlsMenu->Append(zoomOutMenuItem);
 	Connect(ID_ZOOM_OUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomOutMenuItemSelected);
 
-	wxMenuItem * pauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tP"), wxEmptyString, wxITEM_CHECK);
-	controlsMenu->Append(pauseMenuItem);
-	pauseMenuItem->Check(!mGameController->IsRunning());
+    mPauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tP"), wxEmptyString, wxITEM_CHECK);
+	controlsMenu->Append(mPauseMenuItem);
+    mPauseMenuItem->Check(false);
 	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
 
 	mainMenuBar->Append(controlsMenu, _("Controls"));
@@ -285,8 +285,11 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 	// Main timing event!
 	mFrameCount++;
 
-	// Do a simulation step
-	mGameController->DoStep();
+    if (!mPauseMenuItem->IsChecked())
+    {
+        // Do a simulation step
+        mGameController->DoStep();
+    }
 
 	// Render
 	RenderGame();	
@@ -420,8 +423,7 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
 {
-	assert(!!mGameController);
-	mGameController->SetRunningState(!event.IsChecked());
+	// Nothing to do
 }
 
 void MainFrame::OnZoomInMenuItemSelected(wxCommandEvent & /*event*/)

@@ -38,8 +38,6 @@ public:
 	void DestroyAt(vec2 const & screenCoordinates);
 	void DrawTo(vec2 const & screenCoordinates);
 
-	bool IsRunning() const;
-	void SetRunningState(bool isRunning);
 	void SetCanvasSize(int width, int height);
 	void Pan(vec2 const & screenOffset);
 	void AdjustZoom(float amount);
@@ -90,7 +88,6 @@ private:
 		std::wstring const & initialShipLoaded)
 		: mGameParameters()
 		, mRenderParameters()
-		, mIsRunning(true)
 		, mLastShipLoaded(initialShipLoaded)
 		, mGame(std::move(game))
 	{}
@@ -99,8 +96,6 @@ private:
 
 	GameParameters mGameParameters;
 	RenderParameters mRenderParameters;
-
-	bool mIsRunning;
 
 	std::wstring mLastShipLoaded;
 

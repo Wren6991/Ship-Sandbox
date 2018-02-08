@@ -68,14 +68,11 @@ void GameController::ReloadLastShip()
 
 void GameController::DoStep()
 {
-	if (mIsRunning)
-	{
-		// Update game now, copying the parameters
-		assert(!!mGame);
-		mGame->Update(
-			0.02f, // TODO: setting? if not, constant
-			mGameParameters);
-	}
+	// Update game, copying the parameters
+	assert(!!mGame);
+	mGame->Update(
+		0.02f, // TODO: setting? if not, constant
+		mGameParameters);
 }
 
 void GameController::Render()
@@ -113,16 +110,6 @@ void GameController::DrawTo(vec2 const & screenCoordinates)
 	// Apply action
 	assert(!!mGame);
 	mGame->DrawTo(worldCoordinates);
-}
-
-bool GameController::IsRunning() const
-{
-	return mIsRunning;
-}
-
-void GameController::SetRunningState(bool isRunning)
-{
-	mIsRunning = isRunning;
 }
 
 void GameController::SetCanvasSize(
