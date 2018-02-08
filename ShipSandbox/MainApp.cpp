@@ -54,7 +54,7 @@ bool MainApp::OnInit()
 	}
 
 	MainFrame* frame = new MainFrame(std::move(gameController));
-	frame->SetIcon(wxICON(SHIP_ICON));
+	frame->SetIcon(wxICON(AAA_SHIP_ICON));
 	frame->Show();
 	SetTopWindow(frame);
 	

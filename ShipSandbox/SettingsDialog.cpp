@@ -69,7 +69,7 @@ SettingsDialog::SettingsDialog(
 	// Strength
 
 	wxBoxSizer* strengthSizer = new wxBoxSizer(wxVERTICAL);
-
+    // TODO: use define for 100
 	mStrengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Strength Slider"));
 	mStrengthSlider->SetTickFreq(4);
@@ -526,6 +526,7 @@ float SettingsDialog::SliderToRealValue(
 	float minValue,
 	float maxValue) const
 {
+    // TODO: value change problem
 	int sliderValue = slider->GetValue();
 	float realValue = minValue + (static_cast<float>(sliderValue) / 100.0f) * (maxValue - minValue);
 
@@ -538,6 +539,7 @@ void SettingsDialog::RealValueToSlider(
 	float maxValue,
 	wxSlider * slider) const
 {
+    // TODO: value change problem
 	int sliderValue = static_cast<int>(roundf((value - minValue) / (maxValue - minValue) * 100.0f));
 
 	slider->SetValue(sliderValue);

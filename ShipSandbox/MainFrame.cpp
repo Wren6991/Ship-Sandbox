@@ -8,6 +8,7 @@
 #include "MainFrame.h"
 #include "Version.h"
 
+#include <GameLib/GameException.h>
 #include <GameLib/Log.h>
 
 #include <wx/intl.h>
@@ -216,6 +217,17 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	Centre();
 
 
+    //
+    // Prepare cursors
+    //
+
+    mGrabCursor = MakeCursor("Data/Resources/DragCursor.png", 15, 15);
+    mMoveCursor = MakeCursor("Data/Resources/MoveCursor.png", 15, 15);
+    mSmashCursor = MakeCursor("Data/Resources/SmashCursor.png", 0, 13);
+
+    SwitchCursor();
+
+
 	//
 	// Initialize timers
 	//
@@ -308,26 +320,36 @@ void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 
 void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
 {
-	ApplyCurrentMouseTool();
-	
-	// Remember the mouse button is down
-	mMouseInfo.ldown = true;
+    // Remember the mouse button is down
+    mMouseInfo.ldown = true;
+
+    SwitchCursor();
+
+	ApplyCurrentMouseTool();	
 }
 
 void MainFrame::OnMainGLCanvasLeftUp(wxMouseEvent & /*event*/)
 {
 	// Remember the mouse button is not down anymore
 	mMouseInfo.ldown = false;
+
+    SwitchCursor();
 }
 
 void MainFrame::OnMainGLCanvasRightDown(wxMouseEvent & /*event*/)
 {
+    // Remember the mouse button is down
 	mMouseInfo.rdown = true;
+
+    SwitchCursor();
 }
 
 void MainFrame::OnMainGLCanvasRightUp(wxMouseEvent & /*event*/)
 {
+    // Remember the mouse button is not down anymore
 	mMouseInfo.rdown = false;
+
+    SwitchCursor();
 }
 
 void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
@@ -419,11 +441,15 @@ void MainFrame::OnZoomOutMenuItemSelected(wxCommandEvent & /*event*/)
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	mCurrentToolType = ToolType::Smash;
+
+    SwitchCursor();
 }
 
 void MainFrame::OnGrabMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	mCurrentToolType = ToolType::Grab;
+
+    SwitchCursor();
 }
 
 void MainFrame::OnOpenSettingsWindowMenuItemSelected(wxCommandEvent & /*event*/)
@@ -451,6 +477,52 @@ void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	wxMessageBox(GetVersionInfo(VersionFormat::Long), L"Welcome to...");
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+std::unique_ptr<wxCursor> MainFrame::MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY)
+{
+    wxBitmap* bmp = new wxBitmap(imageFilePath, wxBITMAP_TYPE_PNG);
+    if (nullptr == bmp)
+    {
+        throw GameException("Cannot load resource '" + imageFilePath + "'");
+    }
+
+    wxImage img = bmp->ConvertToImage();
+    img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, hotspotX);
+    img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, hotspotY);
+    std::unique_ptr<wxCursor> cursor = std::make_unique<wxCursor>(img);
+
+    delete (bmp);
+
+    return cursor;
+}
+
+void MainFrame::SwitchCursor()
+{
+    if (mMouseInfo.rdown)
+    {
+        this->SetCursor(*mMoveCursor);
+    }
+    else
+    {
+        switch (mCurrentToolType)
+        {
+            case ToolType::Grab:
+            {
+                this->SetCursor(*mGrabCursor);
+                break;
+            }
+
+            case ToolType::Smash:
+            {
+                this->SetCursor(*mSmashCursor);
+                break;
+            }
+        }
+
+    }
 }
 
 void MainFrame::ApplyCurrentMouseTool()

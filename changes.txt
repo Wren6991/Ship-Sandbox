@@ -3,7 +3,7 @@ Alpha 2.0 (Gabriele Giuseppini) - Changes:
  - More realistic water flows
  - Added menu and keyboard shortcuts (+/-) for zoom
  - Revamped settings window and added Destroy Radius
- - Added an icon to the application
+ - Added an application icon and cursors 
 
 Alpha 1.3 - Changes:
  - Stress markers are visible through panels

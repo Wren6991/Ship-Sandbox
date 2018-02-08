@@ -48,6 +48,15 @@ private:
 	std::unique_ptr<LoggingDialog> mLoggingDialog;
 	std::unique_ptr<SettingsDialog> mSettingsDialog;
 
+    //
+    // Cursors
+    //
+
+    std::unique_ptr<wxCursor> mGrabCursor;
+    std::unique_ptr<wxCursor> mMoveCursor;
+    std::unique_ptr<wxCursor> mSmashCursor;
+
+
 	//
 	// Timers
 	//
@@ -92,6 +101,8 @@ private:
 
 private:
 
+    std::unique_ptr<wxCursor> MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY);
+    void SwitchCursor();
 	void ApplyCurrentMouseTool();
 	void RenderGame();
 
