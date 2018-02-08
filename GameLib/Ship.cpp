@@ -339,7 +339,7 @@ void Ship::BalancePressure(float dt)
                     continue;
 
                 // Move water from more wet to less wet
-                float correction = (bWater - aWater) * 4.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+                float correction = (bWater - aWater) * 1.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
                 pointA->AdjustWater(correction);
                 pointB->AdjustWater(-correction);
             }
