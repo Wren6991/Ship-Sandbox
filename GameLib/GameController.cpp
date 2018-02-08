@@ -94,7 +94,7 @@ void GameController::DestroyAt(
 		screenCoordinates,
 		mRenderParameters);
 
-    LogDebug(L"DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
+    LogMessage(L"DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
 	// Apply action
 	assert(!!mGame);
