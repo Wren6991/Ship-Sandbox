@@ -65,6 +65,7 @@ std::unique_ptr<Ship> Ship::Create(
 	{
         pointMatrix[x] = std::unique_ptr<Point *[]>(new Point *[structureImageHeight]);
 
+        // From bottom to top
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
 			// R G B

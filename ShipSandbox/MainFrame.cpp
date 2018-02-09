@@ -225,7 +225,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
     //
 
     mGrabCursors = MakeCursors("Data/Resources/DragCursor.png", 15, 15);
-    mSmashCursors = MakeCursors("Data/Resources/SmashCursor.png", 3, 16);
+    mSmashCursors = MakeCursors("Data/Resources/SmashCursor.png", 1, 16);
     mMoveCursor = MakeCursor("Data/Resources/MoveCursor.png", 15, 15);
 
     SwitchCursor();
