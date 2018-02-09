@@ -50,6 +50,9 @@ const long ID_ABOUT_MENUITEM = wxNewId();
 const long ID_GAME_TIMER = wxNewId();
 const long ID_STATS_REFRESH_TIMER = wxNewId();
 
+static constexpr int CursorStep = 30;
+static constexpr int PowerBarThickness = 2;
+
 MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	: mMouseInfo()
 	, mCurrentToolType(ToolType::Smash)
@@ -221,9 +224,9 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
     // Prepare cursors
     //
 
-    mGrabCursor = MakeCursor("Data/Resources/DragCursor.png", 15, 15);
+    mGrabCursors = MakeCursors("Data/Resources/DragCursor.png", 15, 15);
+    mSmashCursors = MakeCursors("Data/Resources/SmashCursor.png", 3, 16);
     mMoveCursor = MakeCursor("Data/Resources/MoveCursor.png", 15, 15);
-    mSmashCursor = MakeCursor("Data/Resources/SmashCursor.png", 0, 13);
 
     SwitchCursor();
 
@@ -420,7 +423,7 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 	mGameController->ReloadLastShip();
 }
 
-void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & event)
+void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	// Nothing to do
 }
@@ -482,6 +485,64 @@ void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+std::vector<std::unique_ptr<wxCursor>> MainFrame::MakeCursors(std::string const & imageFilePath, int hotspotX, int hotspotY)
+{
+    wxBitmap* bmp = new wxBitmap(imageFilePath, wxBITMAP_TYPE_PNG);
+    if (nullptr == bmp)
+    {
+        throw GameException("Cannot load resource '" + imageFilePath + "'");
+    }
+
+    wxImage img = bmp->ConvertToImage();
+    int const imageWidth = img.GetWidth();
+    int const imageHeight = img.GetHeight();
+
+    // Set hotspots
+    img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, hotspotX);
+    img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, hotspotY);
+
+    std::vector<std::unique_ptr<wxCursor>> cursors;
+
+    // Create base
+    cursors.emplace_back(std::make_unique<wxCursor>(img));
+
+    // Create cursors for all the strengths we want to have on the power base
+    static_assert(CursorStep > 0, "CursorStep is at least 1");
+    static_assert(PowerBarThickness > 0, "PowerBarThickness is at least 1");
+
+    unsigned char * data = img.GetData();
+    unsigned char * alpha = img.GetAlpha();
+        
+    for (int c = 1; c <= CursorStep; ++c)
+    {
+        // Draw vertical line on the right, height = f(c),  0 < height <= imageHeight
+        int powerHeight = static_cast<int>(floorf(
+            static_cast<float>(imageHeight) * static_cast<float>(c) / static_cast<float>(CursorStep)
+        ));
+
+        // Start from top
+        for (int y = imageHeight - powerHeight; y < imageHeight; ++y)
+        {
+            int index = imageWidth - PowerBarThickness - 1 + (imageWidth * y);
+
+            // Thickness
+            for (int t = 0; t < PowerBarThickness; ++t, ++index)
+            {
+                alpha[index] = 0xff;
+                data[index * 3] = (c == CursorStep) ? 0x00 : 0xB0;
+                data[index * 3 + 1] = (c == CursorStep) ? 0xB0 : 0x00;
+                data[index * 3 + 2] = 0x00;
+            }
+        }
+
+        cursors.emplace_back(std::make_unique<wxCursor>(img));
+    }
+
+    delete (bmp);
+
+    return cursors;
+}
+
 std::unique_ptr<wxCursor> MainFrame::MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY)
 {
     wxBitmap* bmp = new wxBitmap(imageFilePath, wxBITMAP_TYPE_PNG);
@@ -491,17 +552,17 @@ std::unique_ptr<wxCursor> MainFrame::MakeCursor(std::string const & imageFilePat
     }
 
     wxImage img = bmp->ConvertToImage();
+
+    // Set hotspots
     img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_X, hotspotX);
     img.SetOption(wxIMAGE_OPTION_CUR_HOTSPOT_Y, hotspotY);
-    std::unique_ptr<wxCursor> cursor = std::make_unique<wxCursor>(img);
 
-    delete (bmp);
-
-    return cursor;
+    return std::make_unique<wxCursor>(img);
 }
 
 void MainFrame::SwitchCursor()
 {
+    // Set base cursor
     if (mMouseInfo.rdown)
     {
         this->SetCursor(*mMoveCursor);
@@ -512,17 +573,66 @@ void MainFrame::SwitchCursor()
         {
             case ToolType::Grab:
             {
-                this->SetCursor(*mGrabCursor);
+                this->SetCursor(*(mGrabCursors[0]));
                 break;
             }
 
             case ToolType::Smash:
             {
-                this->SetCursor(*mSmashCursor);
+                this->SetCursor(*(mSmashCursors[0]));
                 break;
             }
         }
+    }
+}
 
+void MainFrame::SetCursorStrength(float strength, float minStrength, float maxStrength)
+{
+    assert(mMouseInfo.ldown);
+
+    std::vector<std::unique_ptr<wxCursor>> const * cursors;
+    switch (mCurrentToolType)
+    {
+        case ToolType::Grab:
+        {
+            cursors = &mGrabCursors;
+            break;
+        }
+
+        case ToolType::Smash:
+        {
+            cursors = &mSmashCursors;
+            break;
+        }
+
+        default:
+        {
+            cursors = nullptr;
+            break;
+        }
+    }
+
+    assert(nullptr != cursors);
+
+    // Calculate cursor index (cursor 0 is the base, we don't use it here)
+    size_t const numberOfCursors = (cursors->size() - 1);
+    size_t cursorIndex = 1u + static_cast<size_t>(floorf(
+        (strength - minStrength) / (maxStrength - minStrength) * static_cast<float>(numberOfCursors - 1)
+        ));
+
+    switch (mCurrentToolType)
+    {
+        case ToolType::Grab:
+        {
+            this->SetCursor(*(mGrabCursors[cursorIndex]));
+            break;
+        }
+
+        case ToolType::Smash:
+        {
+            this->SetCursor(*(mSmashCursors[cursorIndex]));
+            break;
+        }
     }
 }
 
@@ -559,14 +669,18 @@ void MainFrame::UpdateTool()
 		    {
                 // Calculate strength multiplier
                 // 0-500ms      = 1.0
-                // 15000ms-+INF = 10.0
+                // 10000ms-+INF = 10.0
 
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 15000.0f);
+                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 10000.0f);
 
                 // Draw
 			    mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y), strengthMultiplier);
+
+                // Modulate cursor
+                SetCursorStrength(strengthMultiplier, 1.0f, 10.0f);
+
 			    break;
 		    }
 
@@ -574,14 +688,18 @@ void MainFrame::UpdateTool()
 		    {
                 // Calculate radius multiplier
                 // 0-500ms      = 1.0
-                // 15000ms-+INF = 10.0
+                // 10000ms-+INF = 10.0
 
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 15000.0f);
+                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 10000.0f);
 
                 // Destroy
 			    mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y), radiusMultiplier);
+
+                // Modulate cursor
+                SetCursorStrength(radiusMultiplier, 1.0f, 10.0f);
+
 			    break;
 		    }
 	    }

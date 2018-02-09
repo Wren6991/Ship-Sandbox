@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <vector>
 
 /*
  * The main window of the game's GUI.
@@ -61,9 +62,10 @@ private:
     // Cursors
     //
 
-    std::unique_ptr<wxCursor> mGrabCursor;
+    // Cursor 0 is base; cursor 1 -> size-1 are strength-based
+    std::vector<std::unique_ptr<wxCursor>> mGrabCursors;
+    std::vector<std::unique_ptr<wxCursor>> mSmashCursors;
     std::unique_ptr<wxCursor> mMoveCursor;
-    std::unique_ptr<wxCursor> mSmashCursor;
 
 
 	//
@@ -110,8 +112,10 @@ private:
 
 private:
 
+    std::vector<std::unique_ptr<wxCursor>> MakeCursors(std::string const & imageFilePath, int hotspotX, int hotspotY);
     std::unique_ptr<wxCursor> MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY);
     void SwitchCursor();
+    void SetCursorStrength(float strength, float minStrength, float maxStrength);
 	void UpdateTool();
     bool IsPaused();
 	void RenderGame();
