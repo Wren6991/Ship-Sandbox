@@ -308,8 +308,8 @@ void Ship::GravitateWater(
             float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
             if (cos_theta > 0.0f) // Only go down
             {
-                // The 0.40 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.40f * cos_theta * dt * a->GetWater();
+                // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+                float correction = 0.60f * cos_theta * dt * a->GetWater();
                 a->AdjustWater(-correction);
                 b->AdjustWater(correction);
             }
@@ -339,7 +339,7 @@ void Ship::BalancePressure(float dt)
                     continue;
 
                 // Move water from more wet to less wet
-                float correction = (bWater - aWater) * 1.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+                float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
                 pointA->AdjustWater(correction);
                 pointB->AdjustWater(-correction);
             }
@@ -407,14 +407,15 @@ void Ship::Update(
     //
 
 	LeakWater(dt, gameParameters);
-	for (int i = 0; i < 4; i++)
-	{
-		GravitateWater(dt, gameParameters);
-		BalancePressure(dt);
-	}
 
     for (int i = 0; i < 4; i++)
-		BalancePressure(dt);
+        BalancePressure(dt);
+
+	for (int i = 0; i < 4; i++)
+	{
+        BalancePressure(dt);
+		GravitateWater(dt, gameParameters);
+	}
 
 
     //
