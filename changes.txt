@@ -1,7 +1,7 @@
 Alpha 2.0 (Gabriele Giuseppini) - Changes:
- - Slightly faster
+ - Quite faster (from 7fps/8fps on my single-core laptop to 12fps)
  - More realistic water flows
- - The strength of the smash and grab tools depends on how long the mouse button is kept pressed
+ - The strength of the smash and grab tools depends on how long the mouse button is kept pressed for
  - Added menu and keyboard shortcuts (+/-) for zoom
  - Revamped settings window
  - Added an application icon and cursors 

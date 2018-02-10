@@ -293,35 +293,72 @@ void Ship::GravitateWater(
 	float dt,
 	GameParameters const & gameParameters)
 {
-	// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
-	// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-	for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
-		iter != mAdjacentNonHullPoints.end(); iter++)
-	{
-		Point *a = iter->first;
-        assert(!a->IsDeleted());
-        
-        for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-        {
-            Point *b = *second;
-            assert(!b->IsDeleted());
+    //
+    // Water flows into adjacent nodes in a quantity proportional to the cos of angle the spring makes
+    // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0, parallel-opposite => -1 (goes back))
+    //
+    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
+    // simulation to change over time.
+    //
 
-            float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
-            if (cos_theta > 0.0f) // Only go down
+    for (Spring * spring : mAllSprings)
+    {
+        if (!spring->IsDeleted())
+        {
+            if (!spring->GetMaterial()->IsHull)
             {
+                Point * const pointA = spring->GetPointA();
+                assert(!pointA->IsDeleted());
+
+                Point * const pointB = spring->GetPointB();
+                assert(!pointB->IsDeleted());
+
+                // cos_theta > 0 => pointA above pointB
+                float cos_theta = (pointB->GetPosition() - pointA->GetPosition()).normalise().dot(gameParameters.GravityNormal);                
+                
                 // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.60f * cos_theta * dt * a->GetWater();
-                a->AdjustWater(-correction);
-                b->AdjustWater(correction);
+                float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
+                pointA->AdjustWater(-correction);
+                pointB->AdjustWater(correction);
             }
         }
-	}
+    }
+
+	//// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
+	//// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
+	//for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
+	//	iter != mAdjacentNonHullPoints.end(); iter++)
+	//{
+	//	Point *a = iter->first;
+ //       assert(!a->IsDeleted());
+ //       
+ //       for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
+ //       {
+ //           Point *b = *second;
+ //           assert(!b->IsDeleted());
+
+ //           float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
+ //           if (cos_theta > 0.0f) // Only go down
+ //           {
+ //               // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+ //               float correction = 0.60f * cos_theta * dt * a->GetWater();
+ //               a->AdjustWater(-correction);
+ //               b->AdjustWater(correction);
+ //           }
+ //       }
+	//}
 }
 
 void Ship::BalancePressure(float dt)
 {
+    //
     // If there's too much water in this node, try and push it into the others
     // (This needs to iterate over multiple frames for pressure waves to spread through water)
+    //
+    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
+    // simulation to change over time.
+    //
+
     for (Spring * spring : mAllSprings)
     {
         if (!spring->IsDeleted())
