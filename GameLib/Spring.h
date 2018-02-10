@@ -44,6 +44,8 @@ public:
 
 	void Destroy();
 
+    void DestroyFromPoint(Point const * pointSource);
+
 	inline bool IsStressed(float strengthAdjustment) const
 	{
 		// Check whether strain is more than a fraction of the word's base strength * this object's relative strength

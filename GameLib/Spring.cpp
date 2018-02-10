@@ -33,6 +33,9 @@ Spring::Spring(
 	, mLength(length)
 	, mMaterial(material)
 {
+    // Add ourselves to our endpoints
+    a->AddConnectedSpring(this);
+    b->AddConnectedSpring(this);
 }
 
 void Spring::Destroy()
@@ -48,14 +51,37 @@ void Spring::Destroy()
 	mPointA->Breach();
 	mPointB->Breach();
 
-	// Scour out any references to this spring
-	if (GetParentShip()->mAdjacentNonHullPoints.find(mPointA) != GetParentShip()->mAdjacentNonHullPoints.end())
-		GetParentShip()->mAdjacentNonHullPoints[mPointA].erase(mPointB);
-	if (GetParentShip()->mAdjacentNonHullPoints.find(mPointB) != GetParentShip()->mAdjacentNonHullPoints.end())
-		GetParentShip()->mAdjacentNonHullPoints[mPointB].erase(mPointA);
+    // Remove ourselves from our endpoints
+    mPointA->RemoveConnectedSpring(this);
+    mPointB->RemoveConnectedSpring(this);
 
 	// Remove ourselves
 	ShipElement::Destroy();
+}
+
+void Spring::DestroyFromPoint(Point const * pointSource)
+{
+    assert(!mPointA->IsDeleted());
+    assert(!mPointB->IsDeleted());
+
+    // Used to do more complicated checks, but easier (and better) to make everything leak when it breaks
+
+    // Make endpoints leak and destroy their triangles
+    // Note: technically, should only destroy those triangles that contain the A-B side, and definitely
+    // make both A and B leak
+    if (mPointA != pointSource)
+        mPointA->Breach();
+    if (mPointB != pointSource)
+        mPointB->Breach();
+
+    // Remove ourselves from our endpoints
+    if (mPointA != pointSource)
+        mPointA->RemoveConnectedSpring(this);
+    if (mPointB != pointSource)
+        mPointB->RemoveConnectedSpring(this);
+
+    // Remove ourselves
+    ShipElement::Destroy();
 }
 
 void Spring::Update()

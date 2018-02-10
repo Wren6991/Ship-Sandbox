@@ -132,6 +132,17 @@ public:
         return mCurrentSize == 0u;
     }
 
+    inline bool is_in(TElement const & element) const noexcept
+    {
+        for (size_t i = 0; i < mCurrentSize; ++i)
+        {
+            if (mArray[i] == element)
+                return true;
+        }
+
+        return false;
+    }
+
     //
     // Modifiers
     //
@@ -140,6 +151,7 @@ public:
     {
         if (mCurrentSize < MaxSize)
         {
+            assert(false == is_in(element));
             mArray[mCurrentSize++] = element;
         }
         else

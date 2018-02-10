@@ -28,11 +28,11 @@ Triangle::Triangle(
 void Triangle::DestroyFromPoint(Point const * pointSource)
 {
     // Remove ourselves from each point
-    if (pointSource != mPointA)
+    if (mPointA != pointSource)
 	    mPointA->RemoveConnectedTriangle(this);
-    if (pointSource != mPointB)
+    if (mPointB != pointSource)
 	    mPointB->RemoveConnectedTriangle(this);
-    if (pointSource != mPointC)
+    if (mPointC != pointSource)
 	    mPointC->RemoveConnectedTriangle(this);
 
     // Remove ourselves from ship

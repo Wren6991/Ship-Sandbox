@@ -164,12 +164,6 @@ std::unique_ptr<Ship> Ship::Create(
 
 						shipSprings.push_back(spr);
 
-						if (!springIsHull)
-						{
-							shp->mAdjacentNonHullPoints[a].insert(b);
-							shp->mAdjacentNonHullPoints[b].insert(a);
-						}
-
 						// Check adjacent point in next CW direction (for constructing triangles)
 						int adjx2 = x + Directions[i + 1][0];
 						int adjy2 = y + Directions[i + 1][1];
@@ -198,7 +192,7 @@ std::unique_ptr<Ship> Ship::Create(
 
 	LogMessage(L"Created ship: W=", structureImageWidth, L", H=", structureImageHeight, ", ",
 		shipPoints.size(), L" points, of which ", leakingPointsCount, " leaking, ", shipSprings.size(),
-		L" springs, ", shipTriangles.size(), L" triangles, and ", shp->mAdjacentNonHullPoints.size(), " adjacency entries.");
+		L" springs, ", shipTriangles.size(), L" triangles.");
 
 	shp->Initialize(
         std::move(shipPoints),
@@ -213,7 +207,6 @@ Ship::Ship(World * parentWorld)
     , mAllPoints()
     , mAllSprings()
     , mAllTriangles()
-    , mAdjacentNonHullPoints()
     , mScheduler()
 {
 }

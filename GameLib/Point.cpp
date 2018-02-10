@@ -43,29 +43,16 @@ Point::Point(
 
 void Point::Destroy()
 {
-	// Get rid of connected triangles
+    // Destroy all springs attached to this point
+    for (Spring * spring : mConnectedSprings)
+    {
+        assert(!spring->IsDeleted());
+        spring->DestroyFromPoint(this);
+    }
+
+	// Destroy connected triangles
     DestroyConnectedTriangles();
-
-	// Remove all springs attached to this point
-    // TODO: if this is too slow, see whether it makes sense for a point
-    // to know his springs
-	for (Spring * spring : GetParentShip()->GetSprings())
-	{
-		if (!spring->IsDeleted())
-		{
-			if (spring->GetPointA() == this || spring->GetPointB() == this)
-			{
-				spring->Destroy();
-			}
-		}
-	}
-
-    // Remove ourselves from adjacents
-    assert(
-        GetParentShip()->mAdjacentNonHullPoints.end() == GetParentShip()->mAdjacentNonHullPoints.find(this)
-        || GetParentShip()->mAdjacentNonHullPoints[this].size() == 0);
-    GetParentShip()->mAdjacentNonHullPoints.erase(this);
-
+    
     // Remove ourselves
     ShipElement::Destroy();
 }

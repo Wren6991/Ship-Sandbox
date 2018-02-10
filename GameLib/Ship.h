@@ -45,8 +45,6 @@ public:
 	auto const & GetPoints() const { return mAllPoints; }
     auto & GetPoints() { return mAllPoints; }
 
-	auto const & GetPointAdjencyMap() const { return mAdjacentNonHullPoints; } // TODO: will go once these move to Point itself
-
 	auto const & GetSprings() const { return mAllSprings; }
     auto & GetSprings() { return mAllSprings; }
 
@@ -173,14 +171,6 @@ private:
 	PointerContainer<Spring> mAllSprings;
     PointerContainer<Triangle> mAllTriangles;
 
-    // Indices	
-    // TODO: each arc here is a non-hull spring, and lives
-    // as long as the spring lives; 
-    // We might then get rid of these and just visit the non-hull springs,
-    // provided that we adjust GravitateWater and BalancePressure
-    // for the fact that each arc is now visited only once
-	std::map<Point *, std::set<Point*>> mAdjacentNonHullPoints;
-	
 	// The scheduler we use for parallelizing updates
 	Scheduler mScheduler;
 };

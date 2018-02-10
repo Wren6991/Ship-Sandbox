@@ -528,10 +528,12 @@ std::vector<std::unique_ptr<wxCursor>> MainFrame::MakeCursors(std::string const 
             // Thickness
             for (int t = 0; t < PowerBarThickness; ++t, ++index)
             {
+                // Red:   ff3300
+                // Green: 00ff00
                 alpha[index] = 0xff;
-                data[index * 3] = (c == CursorStep) ? 0x00 : 0xB0;
-                data[index * 3 + 1] = (c == CursorStep) ? 0xB0 : 0x00;
-                data[index * 3 + 2] = 0x00;
+                data[index * 3] = (c == CursorStep) ? 0x00 : 0xFF;
+                data[index * 3 + 1] = (c == CursorStep) ? 0xFF : 0x33;
+                data[index * 3 + 2] = (c == CursorStep) ? 0x00 : 0x00;
             }
         }
 

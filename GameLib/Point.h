@@ -62,19 +62,20 @@ public:
 	inline void SetLeaking() { mIsLeaking = true; }
 
     
-    /*
     inline auto const & GetConnectedSprings() const { return mConnectedSprings; }
 
     inline void AddConnectedSpring(Spring * spring) 
     { 
-        mConnectedTriangles.insert(triangle); 
+        mConnectedSprings.push_back(spring); 
     }
 
     inline void RemoveConnectedSpring(Spring * spring) 
     { 
-        mConnectedTriangles.erase(triangle); 
+        bool found = mConnectedSprings.erase_first(spring);
+
+        assert(found);
+        (void)found;
     }
-    */
 
 
     inline auto const & GetConnectedTriangles() const 
