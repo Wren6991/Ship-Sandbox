@@ -17,7 +17,6 @@
 #include <picojson/picojson.h>
 
 #include <cassert>
-#include <iostream>// TODO: nuke
 #include <map>
 #include <string>
 
@@ -144,19 +143,22 @@ void Game::Render(
 	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// TODO: see if all of this may be cached (with ParametersGenerationSequenceNumber check)
+	// Set projection (ortho) and translation 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
 	glTranslatef(-renderParameters.CamX, -renderParameters.CamY, 0);
 
+    // Smooth lines and points
 	glEnable(GL_LINE_SMOOTH);
 	glHint(GL_LINE_SMOOTH, GL_NICEST);
 	glEnable(GL_POINT_SMOOTH);
 
+    // Set blending function
 	glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Set primitives' thickness
 	glPointSize(0.15f * renderParameters.CanvasHeight / renderParameters.Zoom);
 	glLineWidth(0.1f * renderParameters.CanvasHeight / renderParameters.Zoom);
 	glColor3f(0, 0, 0);

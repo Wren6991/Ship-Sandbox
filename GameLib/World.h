@@ -82,14 +82,13 @@ private:
 	// The current time
 	float mCurrentTime;
 
-	// TODO: public or private?
-	float const *oceandepthbuffer;
-
 private:
 
 	//
 	// TODO: experimental
 	//
+
+    // float const *oceandepthbuffer;
 
 	struct BVHNode
 	{

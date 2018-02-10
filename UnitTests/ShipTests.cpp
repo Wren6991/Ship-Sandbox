@@ -5,6 +5,8 @@
 
 #include "gtest/gtest.h"
 
+#include <algorithm>
+
 class ShipTests : public ::testing::Test
 {
 protected:
@@ -30,8 +32,8 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f, { 0.1f, 0.1f, 0.1f }, false, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f, { 25.f/255.f, 30.f/255.f, 35.f/255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 0.1f, 0.1f, 0.1f }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25.f/255.f, 30.f/255.f, 35.f/255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -57,10 +59,9 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 	Physics::Point const * pt = *(ship->GetPoints().begin());
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->GetPosition());
 	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
+    EXPECT_EQ(0u, pt->GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt->GetConnectedTriangles().size());
 	EXPECT_TRUE(pt->IsLeaking());
-
-	EXPECT_EQ(0u, ship->GetPointAdjencyMap().size());
 }
 
 TEST_F(ShipTests, BuildsPoints_TwoPoints)
@@ -69,8 +70,8 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -98,6 +99,7 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 	Physics::Point const * pt1 = *pointIt;
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->GetPosition());
 	EXPECT_EQ(materials[1].get(), pt1->GetMaterial());
+    EXPECT_EQ(1u, pt1->GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt1->GetConnectedTriangles().size());
 	EXPECT_TRUE(pt1->IsLeaking());
 
@@ -106,20 +108,9 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 	Physics::Point const * pt2 = *pointIt;
 	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->GetPosition());
 	EXPECT_EQ(materials[0].get(), pt2->GetMaterial());
+    EXPECT_EQ(1u, pt2->GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt2->GetConnectedTriangles().size());
 	EXPECT_FALSE(pt2->IsLeaking());
-
-	// Adjacent nodes
-
-	EXPECT_EQ(2u, ship->GetPointAdjencyMap().size());
-
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(pt1)));
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt1)).size());
-	EXPECT_EQ(pt2, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt1)).begin()));
-
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().count(const_cast<Physics::Point *>(pt2)));
-	ASSERT_EQ(1u, ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt2)).size());
-	EXPECT_EQ(pt1, *(ship->GetPointAdjencyMap().at(const_cast<Physics::Point *>(pt2)).begin()));
 }
 
 TEST_F(ShipTests, BuildsPoints_EmptyShip)
@@ -128,8 +119,8 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 0.1f, 0.1f, 0.1f }, false, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 0.1f, 0.1f, 0.1f }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -161,8 +152,8 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -203,8 +194,8 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -258,15 +249,17 @@ TEST_F(ShipTests, DestroyAt)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt },
+            { "XXXX", 1.0f, 1.0f,{ 77.f / 255.f, 77.f / 255.f, 77.f / 255.f }, false, std::nullopt, std::nullopt },
+            { "YYYY", 1.0f, 1.0f,{ 66.f / 255.f, 66.f / 255.f, 66.f / 255.f }, false, std::nullopt, std::nullopt }
 		}
 	);
 
 	unsigned char imageData[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,	66, 66, 66,			40, 45, 50,			0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,	77, 77, 77,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
@@ -283,9 +276,30 @@ TEST_F(ShipTests, DestroyAt)
 	EXPECT_EQ(6u, ship->GetPoints().size());
 	EXPECT_EQ(11u, ship->GetSprings().size());
 	EXPECT_EQ(8u, ship->GetTriangles().size());
-	EXPECT_EQ(6u, ship->GetPointAdjencyMap().size());
 
-	// TODO: verify all relationships
+    Physics::Point const * testPoint = nullptr;
+    Physics::Point const * sentinelPoint = nullptr;
+    for (auto pt : ship->GetPoints())
+    {
+        if (pt->GetMaterial()->Name == "XXXX")
+            testPoint = pt;
+        if (pt->GetMaterial()->Name == "YYYY")
+            sentinelPoint = pt;
+    }
+
+    ASSERT_NE(testPoint, nullptr);
+    ASSERT_NE(sentinelPoint, nullptr);
+
+    EXPECT_EQ(5u, testPoint->GetConnectedSprings().size());
+    EXPECT_EQ(6u, testPoint->GetConnectedTriangles().size());
+
+    EXPECT_EQ(3u, sentinelPoint->GetConnectedSprings().size());
+    EXPECT_EQ(3u, sentinelPoint->GetConnectedTriangles().size());
+
+
+    //
+    // Destroy test point now
+    //
 
 	ship->DestroyAt(vec2f(-1.0f, 2.0f), 0.1f);
 
@@ -295,9 +309,9 @@ TEST_F(ShipTests, DestroyAt)
 
 	EXPECT_EQ(5u, ship->GetPoints().size());
 	EXPECT_EQ(6u, ship->GetSprings().size());
-	EXPECT_EQ(0u, ship->GetTriangles().size()); // At this moment Spring::Destroy() destroys all triangles connected to either point
-    // TODO: at this moment we don't remove keys, just adjacents from the value set
-	//EXPECT_EQ(5u, ship->GetPointAdjencyMap().size());
+	EXPECT_EQ(0u, ship->GetTriangles().size()); 
 
-	// TODO: verify all new relationships
+    EXPECT_EQ(2u, sentinelPoint->GetConnectedSprings().size());
+    // These days we nuke all triangles connected to each connected point
+    EXPECT_EQ(0u, sentinelPoint->GetConnectedTriangles().size());
 }

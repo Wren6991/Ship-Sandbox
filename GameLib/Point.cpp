@@ -80,24 +80,26 @@ void Point::Update(
 {    
 	// TODO: potential to optimize by calculating/invoking things only once
 
-	float mass = mMaterial->Mass;
+    float const waterHeightAtThisPoint = GetParentShip()->GetParentWorld()->GetWaterHeight(mPosition.x, gameParameters);
+	float const mass = mMaterial->Mass;
+
 	this->ApplyForce(gameParameters.Gravity * (mass * (1.0f + fminf(mWater, 1.0f) * gameParameters.BuoyancyAdjustment * mBuoyancy)));    // clamp water to 1, so high pressure areas are not heavier.
 	// Buoyancy:
-	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+	if (mPosition.y < waterHeightAtThisPoint)
 		this->ApplyForce(gameParameters.Gravity * (-gameParameters.BuoyancyAdjustment * mBuoyancy * mass));
 	vec2f newLastPosition = mPosition;
 
 	// Water drag:
-	if (mPosition.y < GetParentShip()->mParentWorld->GetWaterHeight(mPosition.x, gameParameters))
+	if (mPosition.y < waterHeightAtThisPoint)
 		mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
 
 	// Apply verlet integration:
 	mPosition += (mPosition - mLastPosition) + mForce * (dt * dt / mass);
  	// Collision with seafloor:
-	float floorheight = GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x, gameParameters);
+	float const floorheight = GetParentShip()->GetParentWorld()->GetOceanFloorHeight(mPosition.x, gameParameters);
 	if (mPosition.y < floorheight)
 	{
-		vec2f dir = vec2f(floorheight - GetParentShip()->mParentWorld->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
+		vec2f dir = vec2f(floorheight - GetParentShip()->GetParentWorld()->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
 		mPosition += dir * (floorheight - mPosition.y);
  	}
 	mLastPosition = newLastPosition;

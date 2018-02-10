@@ -11,6 +11,12 @@
 #include <IL/il.h>
 #include <IL/ilu.h>
 
+//
+// The dt of each step
+//
+
+static constexpr float StepTimeDuration = 0.02f;
+
 std::unique_ptr<GameController> GameController::Create()
 {
 	// Initialize DevIL
@@ -71,7 +77,7 @@ void GameController::DoStep()
 	// Update game, copying the parameters
 	assert(!!mGame);
 	mGame->Update(
-		0.02f, // TODO: setting? if not, constant
+        StepTimeDuration,
 		mGameParameters);
 }
 

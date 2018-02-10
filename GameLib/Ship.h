@@ -23,11 +23,6 @@ class Ship
 {
 public:
 
-	// TODO: nuke
-	friend class Point;
-	friend class Spring;
-	friend class Triangle;
-
 	static std::unique_ptr<Ship> Create(
 		World * parentWorld,
 		unsigned char const * structureImageData,
