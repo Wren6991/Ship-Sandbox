@@ -13,8 +13,6 @@
 
 #include <algorithm>
 #include <cassert>
-// TODO
-//#include <cmath>
 
 namespace Physics {
 
@@ -301,6 +299,7 @@ void Ship::GravitateWater(
     // simulation to change over time.
     //
 
+    // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring * spring : mAllSprings)
     {
         if (!spring->IsDeleted())
@@ -359,6 +358,7 @@ void Ship::BalancePressure(float dt)
     // simulation to change over time.
     //
 
+    // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring * spring : mAllSprings)
     {
         if (!spring->IsDeleted())
