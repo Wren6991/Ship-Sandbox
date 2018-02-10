@@ -32,8 +32,8 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f, { 0.1f, 0.1f, 0.1f }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f, { 25.f/255.f, 30.f/255.f, 35.f/255.f }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -70,8 +70,8 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -119,8 +119,8 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 0.1f, 0.1f, 0.1f }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f,{ 1, 1, 1 }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -152,9 +152,9 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
-		}
+            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+        }
 	);
 
 	unsigned char imageData[] = {
@@ -194,9 +194,9 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt }
-		}
+            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+        }
 	);
 
 	unsigned char imageData[] = {
@@ -249,10 +249,11 @@ TEST_F(ShipTests, DestroyAt)
 
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 40.f / 255.f, 45.f / 255.f, 50.f / 255.f }, true, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25.f / 255.f, 30.f / 255.f, 35.f / 255.f }, false, std::nullopt, std::nullopt },
-            { "XXXX", 1.0f, 1.0f,{ 77.f / 255.f, 77.f / 255.f, 77.f / 255.f }, false, std::nullopt, std::nullopt },
-            { "YYYY", 1.0f, 1.0f,{ 66.f / 255.f, 66.f / 255.f, 66.f / 255.f }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt },
+
+            { "XXXX", 1.0f, 1.0f,{ 77, 77, 77 }, false, std::nullopt, std::nullopt },
+            { "YYYY", 1.0f, 1.0f,{ 66, 66, 66 }, false, std::nullopt, std::nullopt }
 		}
 	);
 

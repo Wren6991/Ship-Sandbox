@@ -8,6 +8,7 @@
 #include <cassert>
 #include <deque>
 #include <functional>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -82,6 +83,9 @@ public:
 		{
 			mCurrentListener(message);
 		}
+
+        // Output
+        std::wcout << message << std::endl;
 	}
 
 public:

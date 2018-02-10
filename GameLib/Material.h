@@ -9,6 +9,7 @@
 
 #include "Vectors.h"
 
+#include <array>
 #include <memory>
 #include <optional>
 #include <picojson/picojson.h>
@@ -24,6 +25,7 @@ struct Material
     float const Strength;
     float const Mass;
     vec3f const Colour;
+    std::array<uint8_t, 3u> RgbColour;
     bool const IsHull;
 
 	//
@@ -84,21 +86,28 @@ public:
 
 	static std::unique_ptr<Material> Create(picojson::object const & materialJson);
 
-	Material(
-		std::string name,
-		float strength,
-		float mass,
-		vec3f colour,
+    Material(
+        std::string name,
+        float strength,
+        float mass,
+        std::array<uint8_t, 3u> rgbColour,
 		bool isHull,
 		std::optional<ElectricalProperties> electricalProperties,
         std::optional<SoundProperties> soundProperties)
 		: Name(std::move(name))
 		, Strength(strength)
 		, Mass(mass)
-		, Colour(std::move(colour))
+		, Colour(RgbToVec(rgbColour))
+        , RgbColour(rgbColour)
 		, IsHull(isHull)
 		, Electrical(std::move(electricalProperties))
         , Sound(std::move(soundProperties))
 	{
 	}
+
+private:
+
+    static uint8_t Material::Hex2Byte(std::string const & str);
+    static std::array<uint8_t, 3u> Hex2RgbColour(std::string str);
+    static vec3f RgbToVec(std::array<uint8_t, 3u> const & rgbColour);
 };

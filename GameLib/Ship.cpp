@@ -34,9 +34,9 @@ std::unique_ptr<Ship> Ship::Create(
 	std::vector<std::unique_ptr<Material const>> const & allMaterials)
 {
 	// Prepare materials dictionary
-	std::map<vec3f, Material const *> colourdict;
+	std::map<std::array<uint8_t, 3u>, Material const *> rgbColourMap;
 	for (auto const & material: allMaterials)
-		colourdict[material->Colour] = material.get();
+        rgbColourMap[material->RgbColour] = material.get();
 
 	//
 	// Process image points and create points, springs, and triangles for this ship
@@ -67,14 +67,15 @@ std::unique_ptr<Ship> Ship::Create(
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
 			// R G B
-			vec3f colour(
-				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0] / 255.f,
-				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1] / 255.f,
-				structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2] / 255.f);
+            std::array<uint8_t, 3u> rgbColour = {
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0],
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1],
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2]};
 
-			if (colourdict.find(colour) != colourdict.end())
+            auto srchIt = rgbColourMap.find(rgbColour);
+			if (srchIt != rgbColourMap.end())
 			{
-				auto mtl = colourdict[colour];
+                auto mtl = srchIt->second;
 
 				Point * pt = new Point(
 					shp,

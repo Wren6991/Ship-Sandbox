@@ -49,20 +49,13 @@ source_group("Physics" FILES ${PHYSICS_SOURCES})
 
 add_library (GameLib ${GAME_SOURCES} ${PHYSICS_SOURCES})
 
-target_include_directories(GameLib PUBLIC
-	${PICOJSON_INCLUDE_DIRS})
-
-target_include_directories(GameLib PRIVATE
-	${DEVIL_INCLUDE_DIRS})
-
-target_include_directories(GameLib INTERFACE 
-	..)
+target_include_directories(GameLib PUBLIC ${PICOJSON_INCLUDE_DIRS})
+target_include_directories(GameLib PRIVATE ${IL_INCLUDE_DIR})
+target_include_directories(GameLib INTERFACE ..)
 
 target_link_libraries (GameLib
 	${OPENGL_LIBRARIES}
-	debug ${DEVIL_DEVIL_LIBRARY_DEBUG}
-	debug ${DEVIL_ILU_LIBRARY_DEBUG}
-	optimized ${DEVIL_DEVIL_LIBRARY_RELEASE}
-	optimized ${DEVIL_ILU_LIBRARY_RELEASE}
+	${IL_LIBRARIES}
+	${ILU_LIBRARIES}
+	${ILUT_LIBRARIES}
 	${ADDITIONAL_LIBRARIES})
-

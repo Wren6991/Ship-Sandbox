@@ -14,70 +14,36 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Release builds, just use the same library for both.
 ####################################################
 
-#
-# Picojson
-#
+list(APPEND CMAKE_PREFIX_PATH "C:/Users/Neurodancer/source/SDK/DevIL")
+list(APPEND CMAKE_PREFIX_PATH "C:/Users/Neurodancer/source/SDK/PicoJSON")
+list(APPEND CMAKE_LIBRARY_PATH "C:/Users/Neurodancer/source/SDK/DevIL")
+set(wxWidgets_ROOT_DIR "C:/Users/Neurodancer/source/SDK/wxWidgets")
 
-set (PICOJSON_SDK_ROOT "C:/Users/Neurodancer/source/SDK/PicoJSON")
+find_path(PICOJSON_INCLUDE_DIRS
+    NAMES picojson/picojson.h)
 
-set (PICOJSON_INCLUDE_DIRS 
-	"${PICOJSON_SDK_ROOT}/include")
+find_package(wxWidgets REQUIRED base gl core media)
 
+find_package(DevIL REQUIRED)
+if (WIN32)
+	find_path(DEVIL_LIB_DIRS 
+		NAMES DevIL.lib
+		PATH_SUFFIXES DevIL lib)
+	file(GLOB DEVIL_RUNTIME_LIBRARIES 
+		${DEVIL_LIB_DIRS}/*.dll)
+endif()
 
-#
-# WxWidgets
-#
-
-set (WXWIDGETS_SDK_ROOT "C:/Users/Neurodancer/source/repos/wxWidgets")
-
-set (WXWIDGETS_INCLUDE_DIRS 
-	"${WXWIDGETS_SDK_ROOT}/include" 
-	"${WXWIDGETS_SDK_ROOT}/include/msvc"
-	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/mswu")
-
-link_directories("${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib")
-
-set (WXWIDGETS_WXMSW_LIBRARY_DEBUG
-	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31ud_core.lib")
-set (WXWIDGETS_WXBASE_LIBRARY_DEBUG
-	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31ud.lib")
-set (WXWIDGETS_WXMSW_LIBRARY_RELEASE
-	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxmsw31u_core.lib")
-set (WXWIDGETS_WXBASE_LIBRARY_RELEASE
-	"${WXWIDGETS_SDK_ROOT}/lib/vc_x64_lib/wxbase31u.lib")
-
-
-#
-# DevIL
-#
-
-set (DEVIL_SDK_ROOT "C:/Users/Neurodancer/source/SDK/DevIL")
-
-set (DEVIL_INCLUDE_DIRS "${DEVIL_SDK_ROOT}/include")
-
-set (DEVIL_DEVIL_LIBRARY_DEBUG
-	"${DEVIL_SDK_ROOT}/lib/x64/Debug/DevIL.lib")
-set (DEVIL_ILU_LIBRARY_DEBUG
-	"${DEVIL_SDK_ROOT}/lib/x64/Debug/ILU.lib")
-set (DEVIL_DEVIL_LIBRARY_RELEASE
-	"${DEVIL_SDK_ROOT}/lib/x64/Release/DevIL.lib")
-set (DEVIL_ILU_LIBRARY_RELEASE
-	"${DEVIL_SDK_ROOT}/lib/x64/Release/ILU.lib")
-
-set (DEVIL_RUNTIME_LIBRARIES_DEBUG
-       "${DEVIL_SDK_ROOT}/lib/x64/Debug/DevIL.dll"
-       "${DEVIL_SDK_ROOT}/lib/x64/Debug/ILU.dll")
-set (DEVIL_RUNTIME_LIBRARIES_RELEASE
-       "${DEVIL_SDK_ROOT}/lib/x64/Release/DevIL.dll"
-       "${DEVIL_SDK_ROOT}/lib/x64/Release/ILU.dll")
+find_package(OpenGL REQUIRED)
 
 
 ####################################################
 # Flags
 ####################################################
 
+set(CMAKE_CXX_STANDARD 17)
+
 if (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS /D_HAS_CXX17")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
 
 	foreach(flag_var
 		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
@@ -99,7 +65,6 @@ if (MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /fp:fast /Ox /GS-")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /fp:fast /Ox /GS-")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /fp:strict /DFLOATING_POINT_CHECKS")
-
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT")
 elseif(CMAKE_COMPILER_IS_GNUXX)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /W4 -O3 -ffast-math -fno-math-errno -funsafe-math-optimizations -ffinite-math-only -fno-trapping-math")
@@ -128,10 +93,6 @@ else(MSVC)
 endif(MSVC)
 
 
-find_package(OpenGL REQUIRED)
-
-
-
 
 ####################################################
 # Sub-projects
@@ -140,7 +101,4 @@ find_package(OpenGL REQUIRED)
 add_subdirectory(GameLib)
 add_subdirectory(ShipSandbox)
 add_subdirectory(UnitTests)
-
-
-
 
