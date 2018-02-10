@@ -95,7 +95,7 @@ private:
 		AABB volume;
 		BVHNode *l, *r;
 		bool isLeaf;
-		int pointCount;
+		size_t pointCount;
 		static const int MAX_DEPTH = 15;
 		static const int MAX_N_POINTS = 10;
 		Point* points[MAX_N_POINTS];

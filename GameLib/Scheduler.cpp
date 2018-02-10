@@ -116,6 +116,7 @@ void Scheduler::Thread::Enter(void *arg)
 #include <float.h>
     // Enable all floating point exceptions except these
     unsigned int fp_control_state = _controlfp(_EM_INEXACT | _EM_UNDERFLOW, _MCW_EM);
+    (void)fp_control_state;
 #else
     // Have no idea how to do this on other compilers...
 #endif

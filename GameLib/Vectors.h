@@ -132,7 +132,7 @@ public:
 	}
 };
 
-typedef vec2f vec2;
+using vec2 = vec2f;
 
 struct vec3f
 {
@@ -243,4 +243,4 @@ public:
 	}
 };
 
-typedef vec3f vec3;
+using vec3 = vec3f;

@@ -203,6 +203,8 @@ std::vector<std::unique_ptr<Material const>> Game::LoadMaterials(std::wstring co
 
 std::vector<float> Game::LoadOceanDepth(std::wstring const & filepath)
 {
+    // TBD
+    (void)filepath;
 	/*wxImage depthimage(filename, wxBITMAP_TYPE_PNG);
 	oceandepthbuffer = new float[2048];
 	for (unsigned i = 0; i < 2048; i++)

@@ -153,7 +153,6 @@ std::unique_ptr<Ship> Ship::Create(
 						// Create a<->b spring
 						// 
 
-						bool springIsHull = aIsHull && b->GetMaterial()->IsHull;
 						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
 
 						Spring * spr = new Spring(
