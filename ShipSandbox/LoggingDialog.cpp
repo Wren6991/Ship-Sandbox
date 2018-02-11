@@ -7,6 +7,8 @@
 
 #include <GameLib/Log.h>
 
+#include <wx/settings.h>
+
 #include <cassert>
 
 wxBEGIN_EVENT_TABLE(LoggingDialog, wxDialog)
