@@ -12,18 +12,7 @@ class GameException : public std::exception
 {
 public:
 
-	GameException(std::wstring const & errorMessage)
-		: mErrorMessage(errorMessage)
+	GameException(std::string const & errorMessage)
+		: std::exception(errorMessage.c_str())
 	{}
-
-	GameException(std::string const & errorMessage);
-
-	std::wstring GetErrorMessage() const
-	{
-		return mErrorMessage;
-	}
-
-private:
-	
-	std::wstring const mErrorMessage;
 };

@@ -50,7 +50,7 @@ LoggingDialog::~LoggingDialog()
 void LoggingDialog::Open()
 {
 	Logger::Instance.RegisterListener(
-		[this](std::wstring const & message)
+		[this](std::string const & message)
 		{
 			assert(this->mTextCtrl != nullptr);
 			this->mTextCtrl->WriteText(message);

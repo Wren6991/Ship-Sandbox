@@ -31,7 +31,7 @@ std::unique_ptr<GameController> GameController::Create()
 	//
 
 	// Load initial ship
-	std::wstring initialShipFilename = L"Data/default_ship.png";
+	std::string initialShipFilename = "Data/default_ship.png";
 	game->LoadShip(initialShipFilename);
 
 	return std::unique_ptr<GameController>(
@@ -40,7 +40,7 @@ std::unique_ptr<GameController> GameController::Create()
 			initialShipFilename));
 }
 
-void GameController::ResetAndLoadShip(std::wstring const & filepath)
+void GameController::ResetAndLoadShip(std::string const & filepath)
 {
 	assert(!!mGame);
 
@@ -50,7 +50,7 @@ void GameController::ResetAndLoadShip(std::wstring const & filepath)
 	mLastShipLoaded = filepath;
 }
 
-void GameController::AddShip(std::wstring const & filepath)
+void GameController::AddShip(std::string const & filepath)
 {
 	assert(!!mGame);
 
@@ -100,7 +100,7 @@ void GameController::DestroyAt(
 		screenCoordinates,
 		mRenderParameters);
 
-    LogMessage(L"DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
+    LogMessage("DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
 	// Apply action
 	assert(!!mGame);

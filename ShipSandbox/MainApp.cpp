@@ -49,7 +49,7 @@ bool MainApp::OnInit()
 	}
 	catch (GameException const & e)
 	{
-		wxMessageBox(L"Error during initialization: " + e.GetErrorMessage(), wxT("Error"), wxICON_ERROR);
+		wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
 		return false;
 	}
 

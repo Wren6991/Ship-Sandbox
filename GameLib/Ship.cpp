@@ -190,9 +190,9 @@ std::unique_ptr<Ship> Ship::Create(
 		}
 	}
 
-	LogMessage(L"Created ship: W=", structureImageWidth, L", H=", structureImageHeight, ", ",
-		shipPoints.size(), L" points, of which ", leakingPointsCount, " leaking, ", shipSprings.size(),
-		L" springs, ", shipTriangles.size(), L" triangles.");
+	LogMessage("Created ship: W=", structureImageWidth, ", H=", structureImageHeight, ", ",
+		shipPoints.size(), " points, of which ", leakingPointsCount, " leaking, ", shipSprings.size(),
+		" springs, ", shipTriangles.size(), " triangles.");
 
 	shp->Initialize(
         std::move(shipPoints),

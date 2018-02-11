@@ -90,7 +90,7 @@ std::array<uint8_t, 3u> Material::Hex2RgbColour(std::string str)    //  e.g. "#0
         str = str.substr(1);
 
     if (str.length() != 6)
-        throw GameException(L"Error: badly formed hex colour value \"" + Utils::ConvertAsciiString(str) + L"\"");
+        throw GameException("Error: badly formed hex colour value \"" + str + "\"");
 
     std::array<uint8_t, 3u> rgbColour;
     rgbColour[0] = Hex2Byte(str.substr(0, 2));

@@ -23,8 +23,8 @@ public:
 
 	static std::unique_ptr<GameController> Create();
 
-	void ResetAndLoadShip(std::wstring const & filepath);
-    void AddShip(std::wstring const & filepath);
+	void ResetAndLoadShip(std::string const & filepath);
+    void AddShip(std::string const & filepath);
 	void ReloadLastShip();
 
 	void DoStep();
@@ -85,7 +85,7 @@ private:
 
 	GameController(
 		std::unique_ptr<Game> && game,
-		std::wstring const & initialShipLoaded)
+		std::string const & initialShipLoaded)
 		: mGameParameters()
 		, mRenderParameters()
 		, mLastShipLoaded(initialShipLoaded)
@@ -97,7 +97,7 @@ private:
 	GameParameters mGameParameters;
 	RenderParameters mRenderParameters;
 
-	std::wstring mLastShipLoaded;
+	std::string mLastShipLoaded;
 
 	std::unique_ptr<Game> mGame;
 };

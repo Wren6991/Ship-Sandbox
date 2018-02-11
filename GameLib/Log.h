@@ -15,14 +15,14 @@
 namespace /* anonymous */ {
 
 	template<typename T>
-	std::wstringstream & _LogToStream(std::wstringstream & ss, T&& t)
+	std::stringstream & _LogToStream(std::stringstream & ss, T&& t)
 	{
 		ss << std::forward<T>(t) << std::endl;
 		return ss;
 	}
 
 	template<typename T, typename... TArgs>
-	std::wstringstream & _LogToStream(std::wstringstream & ss, T&& t, TArgs&&... args)
+	std::stringstream & _LogToStream(std::stringstream & ss, T&& t, TArgs&&... args)
 	{
 		ss << std::forward<T>(t);
 		return _LogToStream(ss, std::forward<TArgs>(args)...);
@@ -45,13 +45,13 @@ public:
 	Logger & operator=(Logger &&) = delete;
 
 	void RegisterListener(
-		std::function<void(std::wstring const & message)> listener)
+		std::function<void(std::string const & message)> listener)
 	{
 		assert(!mCurrentListener);
 		mCurrentListener = std::move(listener);
 
 		// Publish all the messages so far
-		for (std::wstring const & message : mStoredMessages)
+		for (std::string const & message : mStoredMessages)
 		{
 			mCurrentListener(message);
 		}
@@ -66,10 +66,10 @@ public:
 	template<typename...TArgs>
 	void Log(TArgs&&... args)
 	{
-		std::wstringstream ss;
+		std::stringstream ss;
 		_LogToStream(ss, std::forward<TArgs>(args)...);
 
-		std::wstring const & message = ss.str();
+		std::string const & message = ss.str();
 
 		// Store
 		mStoredMessages.push_back(message);
@@ -85,7 +85,7 @@ public:
 		}
 
         // Output
-        std::wcout << message << std::endl;
+        std::cout << message << std::endl;
 	}
 
 public:
@@ -95,10 +95,10 @@ public:
 private:
 
 	// The current listener
-	std::function<void(std::wstring const & message)> mCurrentListener;
+	std::function<void(std::string const & message)> mCurrentListener;
 
 	// The messages stored so far
-	std::deque<std::wstring> mStoredMessages;
+	std::deque<std::string> mStoredMessages;
 	static constexpr size_t MaxStoredMessages = 10000;
 };
 

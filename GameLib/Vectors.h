@@ -121,7 +121,7 @@ public:
 		return (*this) * fast_inv_sqrt(x * x + y * y);
 	}
 
-    std::wstring toString();
+    std::string toString();
 
 	inline vec2f(
 		float _x = 0,
@@ -230,7 +230,7 @@ public:
 		return (*this) * fast_inv_sqrt(x * x + y * y + z * z);
 	}
 
-    std::wstring toString();
+    std::string toString();
 
 	inline vec3f(
 		float _x = 0,

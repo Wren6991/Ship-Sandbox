@@ -23,9 +23,9 @@
 
 namespace /* anonymous */ {
 
-	std::wstring GetWindowTitle()
+	std::string GetWindowTitle()
 	{
-		return std::wstring(L"Ship Sandbox ") + GetVersionInfo(VersionFormat::Short);
+		return std::string("Ship Sandbox ") + GetVersionInfo(VersionFormat::Short);
 	}
 }
 
@@ -410,7 +410,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 
 	if (mFileOpenDialog->ShowModal() == wxID_OK)
 	{
-		std::wstring filename = mFileOpenDialog->GetPath().ToStdWstring();
+		std::string filename = mFileOpenDialog->GetPath().ToStdString();
 
 		assert(!!mGameController);
 		mGameController->ResetAndLoadShip(filename);

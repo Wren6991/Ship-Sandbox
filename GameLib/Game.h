@@ -21,7 +21,7 @@ public:
 	static std::unique_ptr<Game> Create();
 
 	void Reset();
-	void LoadShip(std::wstring const & filepath);
+	void LoadShip(std::string const & filepath);
 
 	void DestroyAt(
         vec2 worldCoordinates, 
@@ -58,8 +58,8 @@ private:
 	{
 	}
 
-	static std::vector<std::unique_ptr<Material const>> LoadMaterials(std::wstring const & filepath);
-	static std::vector<float> LoadOceanDepth(std::wstring const & filepath);
+	static std::vector<std::unique_ptr<Material const>> LoadMaterials(std::string const & filepath);
+	static std::vector<float> LoadOceanDepth(std::string const & filepath);
 
 private:
 

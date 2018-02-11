@@ -8,7 +8,7 @@
 #include <cassert>
 #include <string>
 
-#define VERSION L"2.0 Alpha"
+#define VERSION "2.0 Alpha"
 
 enum class VersionFormat
 {
@@ -16,24 +16,24 @@ enum class VersionFormat
 	Long
 };
 
-std::wstring GetVersionInfo(VersionFormat versionFormat)
+std::string GetVersionInfo(VersionFormat versionFormat)
 {
 	switch (versionFormat)
 	{
 		case VersionFormat::Short:
 		{
-			return std::wstring(VERSION);
+			return std::string(VERSION);
 		}
 
 		case VersionFormat::Long:
 		{
-			return std::wstring(L"Ship Sandbox Alpha v" VERSION L"\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nThis version licensed to Mattia");
+			return std::string("Ship Sandbox Alpha v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nThis version licensed to Mattia");
 		}
 
 		default:
 		{
 			assert(false);
-			return L"";
+			return "";
 		}
 	}
 }

@@ -4,7 +4,6 @@ project (ShipSandbox)
  
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-
 ####################################################
 #                External libraries 
 #
@@ -43,7 +42,7 @@ find_package(OpenGL REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 
 if (MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_UNICODE /D_CRT_SECURE_NO_WARNINGS")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_CRT_SECURE_NO_WARNINGS")
 
 	foreach(flag_var
 		CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
