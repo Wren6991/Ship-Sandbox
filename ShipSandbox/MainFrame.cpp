@@ -39,6 +39,7 @@ const long ID_QUIT_MENUITEM = wxNewId();
 const long ID_ZOOM_IN_MENUITEM = wxNewId();
 const long ID_ZOOM_OUT_MENUITEM = wxNewId();
 const long ID_PAUSE_MENUITEM = wxNewId();
+const long ID_RESET_VIEW_MENUITEM = wxNewId();
 
 const long ID_SMASH_MENUITEM = wxNewId();
 const long ID_GRAB_MENUITEM = wxNewId();
@@ -84,12 +85,19 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	// Build main GL canvas
 	//
 	
-	int mainGLCanvasAttributes[8] = 
+	int mainGLCanvasAttributes[] = 
 	{
 		WX_GL_RGBA,
 		WX_GL_DOUBLEBUFFER,
-		WX_GL_DEPTH_SIZE,      16,
-		WX_GL_STENCIL_SIZE,    0,
+        WX_GL_DEPTH_SIZE,      16,
+        WX_GL_STENCIL_SIZE,    0,
+
+        // We want to use OpenGL 3.3, Core Profile        
+        //TODO
+        //WX_GL_CORE_PROFILE,
+        //WX_GL_MAJOR_VERSION,    3,
+        //WX_GL_MINOR_VERSION,    3,
+
 		0, 0 
 	};
 
@@ -162,6 +170,12 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	controlsMenu->Append(mPauseMenuItem);
     mPauseMenuItem->Check(false);
 	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
+
+    controlsMenu->Append(new wxMenuItem(controlsMenu, wxID_SEPARATOR));
+
+    wxMenuItem * resetViewMenuItem = new wxMenuItem(controlsMenu, ID_RESET_VIEW_MENUITEM, _("Reset View"), wxEmptyString, wxITEM_NORMAL);
+    controlsMenu->Append(resetViewMenuItem);
+    Connect(ID_RESET_VIEW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnResetViewMenuItemSelected);
 
 	mainMenuBar->Append(controlsMenu, _("Controls"));
 
@@ -427,6 +441,13 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	// Nothing to do
+}
+
+void MainFrame::OnResetViewMenuItemSelected(wxCommandEvent & /*event*/)
+{
+    assert(!!mGameController);
+    mGameController->ResetPan();
+    mGameController->ResetZoom();
 }
 
 void MainFrame::OnZoomInMenuItemSelected(wxCommandEvent & /*event*/)

@@ -39,8 +39,12 @@ public:
 	void DrawTo(vec2 const & screenCoordinates, float strengthMultiplier);
 
 	void SetCanvasSize(int width, int height);
+
 	void Pan(vec2 const & screenOffset);
+    void ResetPan();
+
 	void AdjustZoom(float amount);
+    void ResetZoom();
 
 	float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
 	void SetStrengthAdjustment(float value);

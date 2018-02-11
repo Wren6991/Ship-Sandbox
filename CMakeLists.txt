@@ -98,6 +98,7 @@ endif(MSVC)
 ####################################################
 
 add_subdirectory(GameLib)
+add_subdirectory(Glad)
 add_subdirectory(ShipSandbox)
 add_subdirectory(UnitTests)
 

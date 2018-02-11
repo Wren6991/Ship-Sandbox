@@ -11,8 +11,13 @@
 struct RenderParameters
 {
 	float Zoom;
+    static constexpr float DefaultZoom = 75.0f;
+
 	float CamX;
+    static constexpr float DefaultCamX = 0.0f;
+
 	float CamY;
+    static constexpr float DefaultCamY= 0.0f;
 
 	int CanvasWidth;
 	int CanvasHeight;
@@ -22,9 +27,9 @@ struct RenderParameters
 	bool QuickWaterFix;
 
 	RenderParameters()
-		: Zoom(75.0f)
-		, CamX(0.0f)
-		, CamY(0.0f)
+		: Zoom(DefaultZoom)
+		, CamX(DefaultCamX)
+		, CamY(DefaultCamY)
 		, CanvasWidth()
 		, CanvasHeight()
 		, ShowStress(false)

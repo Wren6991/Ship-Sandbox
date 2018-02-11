@@ -38,9 +38,23 @@ IMPLEMENT_APP(MainApp);
 
 bool MainApp::OnInit()
 {
+    //
+    // Initialize OpenGL
+    //
+
+    InitOpenGL();
+
+    //
+    // Initialize wxWidgets
+    //
+
 	wxInitAllImageHandlers();
 
+
+    //
 	// Create Game controller
+    //
+
 	// TODO: splash screen and game controller progress
 	std::unique_ptr<GameController> gameController;
 	try
@@ -52,6 +66,11 @@ bool MainApp::OnInit()
 		wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
 		return false;
 	}
+
+
+    //
+    // Create frame and start
+    //
 
 	MainFrame* frame = new MainFrame(std::move(gameController));
 	frame->SetIcon(wxICON(AAA_SHIP_ICON));

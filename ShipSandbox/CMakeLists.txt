@@ -28,6 +28,7 @@ target_include_directories(ShipSandbox PRIVATE ${wxWidgets_INCLUDE_DIRS})
 target_compile_definitions(ShipSandbox PRIVATE "${wxWidgets_DEFINITIONS}")
 target_link_libraries (ShipSandbox
 	GameLib
+	GladLib
 	${OPENGL_LIBRARIES}
 	${wxWidgets_LIBRARIES}
 	${ADDITIONAL_LIBRARIES})

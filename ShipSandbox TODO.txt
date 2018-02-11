@@ -1,23 +1,30 @@
 	
-- Take new perf baseline
-	- FPS (-> changes.txt)
-	- percentages (from perf analyzer)
-		- See hotspots with perf analyzer
++ Take new perf baseline
+	+ FPS (-> changes.txt)
+	+ percentages (from perf analyzer)
+		+ See hotspots with perf analyzer
 
-- Render:
-	- OpenGL rearc:
-		- wxGLCanvas: enable core profile (http://docs.wxwidgets.org/3.0/glcanvas_8h.html#wxGL_FLAGS)
+= Render:
+	= OpenGL rearc:
+		= wxGLCanvas: enable core profile and 3.3 (http://docs.wxwidgets.org/3.0/glcanvas_8h.html#wxGL_FLAGS)
+			- Install updated driver
+			- See perf
 		- OpenGL with glad
-	
+			- Have to change all API calls
+				- Test with something small first, e.g. just water and land
+					- Dummy defines for the others, just to make it build
+			- See perf
+				
 	- See if can do the entire prolog in an object (https://learnopengl.com/Getting-started/OpenGL)
+		- See perf
 
 - Water:
 	- GravitateWater: try inverse visit (from H to L)
 		- Requires PointerVector::rbegin,rend
 	- Try directional BalancePressure?
 
-- Get rid of unicode
-	- Can, really?
++ Get rid of unicode
+	+ Can, really?
 
 - SettingsDialog: save settings
 	- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
@@ -488,3 +495,4 @@ IF WX:
 		+ All TODO's
 	+ Commit & push
 	+ Verify unit tests & runs normally & no fps regression
++ Menu entry to reset pan and zoom

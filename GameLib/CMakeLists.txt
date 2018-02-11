@@ -53,6 +53,7 @@ target_include_directories(GameLib PRIVATE ${IL_INCLUDE_DIR})
 target_include_directories(GameLib INTERFACE ..)
 
 target_link_libraries (GameLib
+	GladLib
 	${OPENGL_LIBRARIES}
 	${IL_LIBRARIES}
 	${ILU_LIBRARIES}

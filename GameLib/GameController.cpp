@@ -140,9 +140,20 @@ void GameController::Pan(vec2 const & screenOffset)
 	mRenderParameters.CamY -= worldOffset.y;
 }
 
+void GameController::ResetPan()
+{
+    mRenderParameters.CamX = RenderParameters::DefaultCamX;
+    mRenderParameters.CamY = RenderParameters::DefaultCamY;
+}
+
 void GameController::AdjustZoom(float amount)
 {
 	mRenderParameters.Zoom *= amount;
+}
+
+void GameController::ResetZoom()
+{
+    mRenderParameters.Zoom = RenderParameters::DefaultZoom;
 }
 
 void GameController::SetStrengthAdjustment(float value)

@@ -102,6 +102,7 @@ private:
 	void OnZoomInMenuItemSelected(wxCommandEvent& event);
 	void OnZoomOutMenuItemSelected(wxCommandEvent& event);
 	void OnPauseMenuItemSelected(wxCommandEvent& event);
+    void OnResetViewMenuItemSelected(wxCommandEvent& event);
 	void OnLoadShipMenuItemSelected(wxCommandEvent& event);
 	void OnReloadLastShipMenuItemSelected(wxCommandEvent& event);
 	void OnSmashMenuItemSelected(wxCommandEvent& event);

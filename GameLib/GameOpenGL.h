@@ -10,4 +10,18 @@
 #define NOMINMAX
 #include <windows.h>
 #endif
+
+//#include <glad/glad.h>
 #include <GL/gl.h>
+
+#include <stdexcept>
+
+inline void InitOpenGL()
+{
+    /*
+    if (!gladLoadGLLoader((GLADloadproc)GetProcAddress))
+    {
+        throw std::runtime_error("Failed to initialize GLAD");
+    }
+    */
+}

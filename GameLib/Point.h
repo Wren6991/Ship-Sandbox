@@ -96,7 +96,13 @@ public:
         (void)found;
     }
 
-	vec3f GetColour(vec3f const & baseColour) const;
+    inline vec3f GetColour(vec3f const & baseColour) const
+    {
+        static const vec3f WetColour(0.0f, 0.0f, 0.8f);
+
+        float const colorWetness = fminf(mWater, 1.0f) * 0.7f;
+        return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
+    }
 
     float GetExternalWaterPressure(
         float waterLevel,
