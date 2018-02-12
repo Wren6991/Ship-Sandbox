@@ -13,6 +13,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <limits>
+#include <queue>
+#include <set>
 
 namespace Physics {
 
@@ -42,7 +45,9 @@ std::unique_ptr<Ship> Ship::Create(
 	// Process image points and create points, springs, and triangles for this ship
 	//
 
-    Ship *shp = new Ship(parentWorld);
+    Ship *ship = new Ship(parentWorld);
+
+    std::vector<ElectricalElement*> shipElectricalElements;
 
     std::vector<Point*> shipPoints;
     shipPoints.reserve(structureImageWidth * structureImageHeight / 10);
@@ -77,14 +82,46 @@ std::unique_ptr<Ship> Ship::Create(
 			{
                 auto mtl = srchIt->second;
 
-				Point * pt = new Point(
-					shp,
+                //
+                // Create point
+                //
+
+				Point * point = new Point(
+					ship,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
 					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
 
-                pointMatrix[x][y] = pt;
-                shipPoints.push_back(pt);
+                pointMatrix[x][y] = point;
+                shipPoints.push_back(point);
+
+                //
+                // Create electrical element
+                //
+
+                if (!!mtl->Electrical)
+                {
+                    switch (mtl->Electrical->ElementType)
+                    {
+                        case Material::ElectricalProperties::ElectricalElementType::Cable:
+                        {
+                            shipElectricalElements.emplace_back(new Cable(ship, point));
+                            break;
+                        }
+
+                        case Material::ElectricalProperties::ElectricalElementType::Generator:
+                        {
+                            shipElectricalElements.emplace_back(new Generator(ship, point));
+                            break;
+                        }
+
+                        case Material::ElectricalProperties::ElectricalElementType::Lamp:
+                        {
+                            shipElectricalElements.emplace_back(new Lamp(ship, point));
+                            break;
+                        }
+                    }
+                }
 			}
 			else
 			{
@@ -157,7 +194,7 @@ std::unique_ptr<Ship> Ship::Create(
 						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
 
 						Spring * spr = new Spring(
-							shp,
+							ship,
 							a,
 							b,
 							mtl);
@@ -176,7 +213,7 @@ std::unique_ptr<Ship> Ship::Create(
 							if (nullptr != c)
 							{
                                 Triangle * triangle = new Triangle(
-                                    shp,
+                                    ship,
                                     a,
                                     b,
                                     c);
@@ -190,16 +227,13 @@ std::unique_ptr<Ship> Ship::Create(
 		}
 	}
 
-	LogMessage("Created ship: W=", structureImageWidth, ", H=", structureImageHeight, ", ",
-		shipPoints.size(), " points, of which ", leakingPointsCount, " leaking, ", shipSprings.size(),
-		" springs, ", shipTriangles.size(), " triangles.");
-
-	shp->Initialize(
+	ship->Initialize(
+        std::move(shipElectricalElements),
         std::move(shipPoints),
         std::move(shipSprings),
         std::move(shipTriangles));
 
-	return std::unique_ptr<Ship>(shp);
+	return std::unique_ptr<Ship>(ship);
 }
 
 Ship::Ship(World * parentWorld)
@@ -234,6 +268,7 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
     mAllPoints.shrink_to_fit();
     mAllSprings.shrink_to_fit();
     mAllTriangles.shrink_to_fit();
+    mAllElectricalElements.shrink_to_fit();
 }
 
 void Ship::DrawTo(
@@ -252,15 +287,37 @@ void Ship::DrawTo(
     }
 }
 
-void Ship::LeakWater(
+Point const * Ship::GetNearestPointAt(vec2 const & targetPos) const
+{
+    Point const * bestPoint = nullptr;
+    float bestDistance = std::numeric_limits<float>::max();
+
+    for (Point const * point : mAllPoints)
+    {
+        if (!point->IsDeleted())
+        {
+            float distance = (point->GetPosition() - targetPos).length();
+            if (distance < bestDistance)
+            {
+                bestPoint = point;
+                bestDistance = distance;
+            }
+        }
+    }
+
+    return bestPoint;
+}
+
+void Ship::LeakWaterAndZeroLight(
 	float dt,
 	GameParameters const & gameParameters)
 {
-	// Stuff some water into all the leaking nodes that are underwater, if the external pressure is larger
+	// We use this point loop for everything that needs to be done on all points
 	for (Point * point : mAllPoints)
 	{
         if (!point->IsDeleted())
         {            
+            // Stuff some water into all the leaking nodes that are underwater, if the external pressure is larger
             if (point->IsLeaking())
             {
                 float waterLevel = mParentWorld->GetWaterHeight(
@@ -276,6 +333,9 @@ void Ship::LeakWater(
                     point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
                 }
             }
+
+            // Zero-out the quantity of light at this point
+            point->ZeroLight();
         }
 	}
 }
@@ -315,30 +375,6 @@ void Ship::GravitateWater(
             }
         }
     }
-
-	//// Water flows into adjacent nodes in a quantity proportional to the cos of angle the beam makes
-	//// against gravity (parallel with gravity => 1 (full flow), perpendicular = 0)
-	//for (std::map<Point *, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
-	//	iter != mAdjacentNonHullPoints.end(); iter++)
-	//{
-	//	Point *a = iter->first;
- //       assert(!a->IsDeleted());
- //       
- //       for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
- //       {
- //           Point *b = *second;
- //           assert(!b->IsDeleted());
-
- //           float cos_theta = (b->GetPosition() - a->GetPosition()).normalise().dot(gameParameters.GravityNormal);
- //           if (cos_theta > 0.0f) // Only go down
- //           {
- //               // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
- //               float correction = 0.60f * cos_theta * dt * a->GetWater();
- //               a->AdjustWater(-correction);
- //               b->AdjustWater(correction);
- //           }
- //       }
-	//}
 }
 
 void Ship::BalancePressure(float dt)
@@ -376,33 +412,95 @@ void Ship::BalancePressure(float dt)
             }
         }
     }
-    
+}
 
-    ////// If there's too much water in this node, try and push it into the others
-    ////// (This needs to iterate over multiple frames for pressure waves to spread through water)
-    ////for (std::map<Point*, std::set<Point*> >::iterator iter = mAdjacentNonHullPoints.begin();
-    ////    iter != mAdjacentNonHullPoints.end(); iter++)
-    ////{
-    ////    Point *a = iter->first;
-    ////    assert(!a->IsDeleted());
+void Ship::DiffuseLight(
+    float dt,
+    uint64_t currentStepSequenceNumber,
+    GameParameters const & gameParameters)
+{
+    //
+    // Diffuse light from each lamp to the closest adjacent (i.e. spring-connected) points,
+    // inversely-proportional to the square of the distance
+    //
 
-    ////    if (a->GetWater() < 1)   // if water content is not above threshold, no need to force water out
-    ////        continue;
+    // We start at each lamp and do a graph flood from there, stopping at a maximum distance
+    for (ElectricalElement * el : mAllElectricalElements)
+    {
+        if (!el->IsDeleted())
+        {
+            if (ElectricalElement::Type::Lamp == el->GetType())
+            {
+                Point * const lampPoint = el->GetPoint();
+                assert(nullptr != lampPoint && !lampPoint->IsDeleted());
 
-    ////    for (std::set<Point*>::iterator second = iter->second.begin(); second != iter->second.end(); second++)
-    ////    {
-    ////        Point *b = *second;
-    ////        assert(!b->IsDeleted());
+                // Set light on lamp's point
+                // TBD: this needs to be based off the current at this lamp
+                lampPoint->SetLight(1.0f);
 
-    ////        float correction = (b->GetWater() - a->GetWater()) * 8.0f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-    ////        a->AdjustWater(correction);
-    ////        b->AdjustWater(-correction);
-    ////    }
-    ////}
+                std::set<Point *> visitedPoints;
+                visitedPoints.insert(lampPoint);
+
+                std::queue<Point *> pointsToVisit;
+
+                Point * currentPoint = lampPoint;
+                while (true)
+                {
+                    // Go through this point's adjacents
+                    for (Spring * spring : currentPoint->GetConnectedSprings())
+                    {
+                        if (!spring->IsDeleted())
+                        {
+                            Point * connectedPoint = nullptr;
+                            if (0 == visitedPoints.count(spring->GetPointA()))
+                            {
+                                assert(1 == visitedPoints.count(spring->GetPointB()));
+                                connectedPoint = spring->GetPointA();
+                            }
+                            else if (0 == visitedPoints.count(spring->GetPointB()))
+                            {
+                                connectedPoint = spring->GetPointB();
+                            }
+
+                            if (nullptr != connectedPoint)
+                            {
+                                visitedPoints.insert(connectedPoint);
+
+                                // Calculate light to push into this point, and stop if it's too little
+                                float squareDistance = (connectedPoint->GetPosition() - lampPoint->GetPosition()).squareLength();
+                                assert(squareDistance != 0.0f);
+                                float light = lampPoint->GetLight() / squareDistance;
+                                if (light > 0.02)
+                                {                              
+                                    connectedPoint->SetLight(light);
+
+                                    // Visit this point next
+                                    pointsToVisit.push(connectedPoint);
+                                }
+                            }
+                        }
+                    }
+
+                    //
+                    // Get next point to visit
+                    //
+
+                    if (pointsToVisit.empty())
+                    {
+                        break;
+                    }
+
+                    currentPoint = pointsToVisit.front();
+                    pointsToVisit.pop();
+                }
+            }
+        }
+    }
 }
 
 void Ship::Update(
 	float dt,
+    uint64_t currentStepSequenceNumber,
 	GameParameters const & gameParameters)
 {
 	// Advance simulation for points (velocity and forces)
@@ -413,6 +511,11 @@ void Ship::Update(
             point->Update(dt, gameParameters);
         }
     }
+
+
+    //
+    // Update springs dynamics
+    //
 
 	// Iterate the spring relaxation
 	DoSprings(dt);
@@ -434,10 +537,10 @@ void Ship::Update(
 
 
     //
-	// Update all water stuff
+	// Update all electrical and water stuff
     //
 
-	LeakWater(dt, gameParameters);
+    LeakWaterAndZeroLight(dt, gameParameters);
 
     for (int i = 0; i < 4; i++)
         BalancePressure(dt);
@@ -448,6 +551,10 @@ void Ship::Update(
 		GravitateWater(dt, gameParameters);
 	}
 
+    DiffuseLight(
+        dt, 
+        currentStepSequenceNumber,
+        gameParameters);
 
     //
     // Clear up pointer containers, in case there have been deletions
@@ -469,6 +576,21 @@ void Ship::Render(
 	GameParameters const & gameParameters,
 	RenderParameters const & renderParameters) const
 {
+    if (renderParameters.DrawPointsOnly)
+    {
+        glBegin(GL_POINTS);
+
+        for (Point const * point : mAllPoints)
+        {
+            RenderUtils::SetColour(point->GetColour(point->GetMaterial()->Colour));
+            glVertex3f(point->GetPosition().x, point->GetPosition().y, -1);
+        }
+
+        glEnd();
+
+        return;
+    }
+
 	// Draw all the springs
     for (Spring const * spring : mAllSprings)
     {

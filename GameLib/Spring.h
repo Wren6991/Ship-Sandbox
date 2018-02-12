@@ -85,7 +85,7 @@ public:
 		glBegin(GL_LINES);
 
 		if (isStressed)
-			glColor3f(1, 0, 0);
+            RenderUtils::SetColour(1.f, 0.f, 0.f);
 		else
 			RenderUtils::SetColour(mPointA->GetColour(mMaterial->Colour));
 

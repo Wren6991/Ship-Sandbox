@@ -19,7 +19,7 @@
 //   VVV    E         CC CC    2       F
 //    V     EEEEEEE    CCC    2222222  F
 
-std::string vec2f::toString()
+std::string vec2f::toString() const
 {
     std::stringstream ss;
     ss << "(" << x << ", " << y << ")";
@@ -36,7 +36,7 @@ std::string vec2f::toString()
 //   VVV    E         CC CC   33   33  F
 //    V     EEEEEEE    CCC      333    F
 
-std::string vec3f::toString()
+std::string vec3f::toString() const
 {
     std::stringstream ss;
     ss << "(" << x << ", " << y << ", " << z << ")";

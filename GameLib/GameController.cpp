@@ -122,6 +122,16 @@ void GameController::DrawTo(
 	mGame->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
 }
 
+Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoordinates) const
+{
+    vec2 worldCoordinates = RenderUtils::Screen2World(
+        screenCoordinates,
+        mRenderParameters);
+
+    assert(!!mGame);
+    return mGame->GetNearestPointAt(worldCoordinates);
+}
+
 void GameController::SetCanvasSize(
 	int width,
 	int height)
@@ -217,4 +227,11 @@ void GameController::SetDoUseXRayMode(bool value)
 	LogDebug("GameController::SetDoUseXRayMode(", value, ")");
 
 	mRenderParameters.UseXRayMode = value;
+}
+
+void GameController::SetDrawPointsOnly(bool value)
+{
+    LogDebug("GameController::SetDrawPointsOnly(", value, ")");
+
+    mRenderParameters.DrawPointsOnly = value;
 }

@@ -13,6 +13,7 @@
 #include "RenderParameters.h"
 #include "Vectors.h"
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <vector>
@@ -43,6 +44,8 @@ public:
 	void DrawTo(
         vec2 const & targetPos,
         float strength);
+
+    Point const * GetNearestPointAt(vec2 const & targetPos) const;
 
 	void Update(
 		float dt,
@@ -79,8 +82,12 @@ private:
 	// Repository
 	std::vector<std::unique_ptr<Ship>> mAllShips;
 
-	// The current time
+	// The current time 
 	float mCurrentTime;
+
+    // The current step sequence number; used to avoid zero-ing out things.
+    // Guaranteed to never be zero, but expected to rollover
+    uint64_t mCurrentStepSequenceNumber;
 
 private:
 

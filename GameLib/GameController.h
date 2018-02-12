@@ -37,6 +37,7 @@ public:
 
 	void DestroyAt(vec2 const & screenCoordinates, float radiusMultiplier);
 	void DrawTo(vec2 const & screenCoordinates, float strengthMultiplier);
+    Physics::Point const * GetNearestPointAt(vec2 const & screenCoordinates) const;
 
 	void SetCanvasSize(int width, int height);
 
@@ -84,6 +85,9 @@ public:
 
 	bool GetDoUseXRayMode() const { return mRenderParameters.UseXRayMode; }
 	void SetDoUseXRayMode(bool value);
+
+    bool GetDrawPointsOnly() const { return mRenderParameters.DrawPointsOnly; }
+    void SetDrawPointsOnly(bool value);
 
 private:
 

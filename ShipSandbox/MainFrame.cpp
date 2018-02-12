@@ -93,10 +93,10 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
         WX_GL_STENCIL_SIZE,    0,
 
         // We want to use OpenGL 3.3, Core Profile        
-        //TODO
-        //WX_GL_CORE_PROFILE,
-        //WX_GL_MAJOR_VERSION,    3,
-        //WX_GL_MINOR_VERSION,    3,
+        // TBD: Not now, my laptop does not support OpenGL 3 :-(
+        // WX_GL_CORE_PROFILE,
+        // WX_GL_MAJOR_VERSION,    3,
+        // WX_GL_MINOR_VERSION,    3,
 
 		0, 0 
 	};
@@ -173,7 +173,7 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 
     controlsMenu->Append(new wxMenuItem(controlsMenu, wxID_SEPARATOR));
 
-    wxMenuItem * resetViewMenuItem = new wxMenuItem(controlsMenu, ID_RESET_VIEW_MENUITEM, _("Reset View"), wxEmptyString, wxITEM_NORMAL);
+    wxMenuItem * resetViewMenuItem = new wxMenuItem(controlsMenu, ID_RESET_VIEW_MENUITEM, _("Reset View\tESC"), wxEmptyString, wxITEM_NORMAL);
     controlsMenu->Append(resetViewMenuItem);
     Connect(ID_RESET_VIEW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnResetViewMenuItemSelected);
 
@@ -289,7 +289,22 @@ void MainFrame::OnPaint(wxPaintEvent& event)
 
 void MainFrame::OnKeyDown(wxKeyEvent & event)
 {
-	// Nothing now
+    if (event.GetKeyCode() == static_cast<int>(' '))
+    {
+        //
+        // Get point stats
+        //
+
+        assert(!!mGameController);
+
+        Physics::Point const * point = mGameController->GetNearestPointAt(vec2(mMouseInfo.x, mMouseInfo.y));
+        if (nullptr != point)
+        {
+            // TODO: write directly onto window
+            LogMessage("Point @ ", point->GetPosition().toString(), "; Light=", point->GetLight());
+        }
+    }
+	
 	event.Skip();
 }
 

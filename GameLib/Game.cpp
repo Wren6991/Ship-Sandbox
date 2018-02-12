@@ -89,7 +89,12 @@ void Game::LoadShip(std::string const & filepath)
 		height,
 		mMaterials);
 
+    LogMessage("Loaded ship from ", filepath, " : W=", width, ", H=", height, ", ",
+        shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
+        " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
+
 	mWorld->AddShip(std::move(shp));
+
 
 	//
 	// Delete image
@@ -116,6 +121,12 @@ void Game::DrawTo(
 	mWorld->DrawTo(worldCoordinates, strength);
 
 	// TODO: publish game event
+}
+
+Physics::Point const * Game::GetNearestPointAt(vec2 const & worldCoordinates) const
+{
+    assert(!!mWorld);
+    return mWorld->GetNearestPointAt(worldCoordinates);
 }
 
 void Game::Update(
@@ -174,7 +185,7 @@ void Game::Render(
 		gameParameters,
 		renderParameters);
 
-	glFlush();
+    glFlush();
 }
 
 std::vector<std::unique_ptr<Material const>> Game::LoadMaterials(std::string const & filepath)

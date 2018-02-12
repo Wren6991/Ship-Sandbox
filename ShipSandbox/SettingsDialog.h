@@ -40,6 +40,7 @@ private:
 	void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
 	void OnShowStressCheckBoxClick(wxCommandEvent & event);
 	void OnXRayCheckBoxClick(wxCommandEvent & event);
+    void OnDrawPointsOnlyCheckBoxClick(wxCommandEvent & event);
 
 	void OnOkButton(wxCommandEvent & event);
 	void OnApplyButton(wxCommandEvent & event);
@@ -64,6 +65,7 @@ private:
 	wxCheckBox * mQuickWaterFixCheckBox;
 	wxCheckBox* mShowStressCheckBox;
 	wxCheckBox* mXRayCheckBox;
+    wxCheckBox* mDrawPointsOnlyCheckBox;
 
 	wxButton * mOkButton;
 	wxButton * mCancelButton;
@@ -85,6 +87,8 @@ private:
 		float minValue,
 		float maxValue,
 		wxSlider * slider) const;
+
+    void OnDrawPointsOnlyChanged();
 
 private:
 

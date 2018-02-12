@@ -5,11 +5,16 @@
 ***************************************************************************************/
 #pragma once
 
+#include "Vectors.h"
+
 /*
 * Parameters that affect the rendering of the game.
 */
 struct RenderParameters
 {
+    static constexpr vec3f LightPointColour = vec3f(1.0f, 1.0f, 0.25f);
+    static constexpr vec3f WetPointColour = vec3f(0.0f, 0.0f, 0.8f);
+
 	float Zoom;
     static constexpr float DefaultZoom = 75.0f;
 
@@ -25,6 +30,7 @@ struct RenderParameters
 	bool ShowStress;
 	bool UseXRayMode;
 	bool QuickWaterFix;
+    bool DrawPointsOnly;
 
 	RenderParameters()
 		: Zoom(DefaultZoom)
@@ -35,6 +41,7 @@ struct RenderParameters
 		, ShowStress(false)
 		, UseXRayMode(false)
 		, QuickWaterFix(false)
+        , DrawPointsOnly(false)
 	{
 	}
 };

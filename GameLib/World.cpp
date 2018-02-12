@@ -49,6 +49,7 @@ namespace Physics {
 World::World()
 	: mAllShips()
 	, mCurrentTime(0.0f)
+    , mCurrentStepSequenceNumber(0u)
 	, mCollisionTree(BVHNode::AllocateTree())
 {
 }
@@ -107,16 +108,46 @@ void World::DrawTo(
     }
 }
 
+Point const * World::GetNearestPointAt(vec2 const & targetPos) const
+{
+    Point const * bestPoint = nullptr;
+    float bestDistance = std::numeric_limits<float>::max();
+
+    for (auto const & ship : mAllShips)
+    {
+        Point const * shipBestPoint = ship->GetNearestPointAt(targetPos);
+        if (nullptr != shipBestPoint)
+        {
+            float distance = (shipBestPoint->GetPosition() - targetPos).length();
+            if (distance < bestDistance)
+            {
+                bestPoint = shipBestPoint;
+                bestDistance = distance;
+            }
+        }
+    }
+
+    return bestPoint;
+}
+
 void World::Update(
 	float dt,
 	GameParameters const & gameParameters)
 {
+    // Update current time
 	mCurrentTime += dt;
 
+    // Generate a new step sequence number
+    ++mCurrentStepSequenceNumber;
+    if (0u == mCurrentStepSequenceNumber)
+        mCurrentStepSequenceNumber = 1u;
+
+    // Update all ships
 	for (auto & ship : mAllShips)
 	{
 		ship->Update(
 			dt,
+            mCurrentStepSequenceNumber,
 			gameParameters);
 	}
 }

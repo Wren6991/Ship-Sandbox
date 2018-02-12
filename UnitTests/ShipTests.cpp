@@ -61,6 +61,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
     EXPECT_EQ(0u, pt->GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt->GetConnectedTriangles().size());
+    EXPECT_EQ(nullptr, pt->GetConnectedElectricalElement());
 	EXPECT_TRUE(pt->IsLeaking());
 }
 
@@ -315,4 +316,43 @@ TEST_F(ShipTests, DestroyAt)
     EXPECT_EQ(2u, sentinelPoint->GetConnectedSprings().size());
     // These days we nuke all triangles connected to each connected point
     EXPECT_EQ(0u, sentinelPoint->GetConnectedTriangles().size());
+}
+
+///////////////////////////////////////////////////////////////////////
+// Lamps 
+///////////////////////////////////////////////////////////////////////
+
+TEST_F(ShipTests, BuildsLamps_OneLamp)
+{
+    Physics::World wld;
+
+    auto materials = MakeMaterials(
+        {
+            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, {{Material::ElectricalProperties::ElectricalElementType::Lamp, 0.0f, 0.0f}}, std::nullopt }
+        }
+    );
+
+    unsigned char imageData[] = {
+        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+    };
+
+    auto ship = Physics::Ship::Create(
+        &wld,
+        imageData,
+        4,
+        5,
+        materials);
+
+    ASSERT_TRUE(!!ship);
+
+    ASSERT_EQ(1u, ship->GetElectricalElements().size());
+
+    Physics::ElectricalElement const * el1 = *(ship->GetElectricalElements().begin());
+    EXPECT_EQ(Physics::ElectricalElement::Type::Lamp, el1->GetType());
+    EXPECT_EQ(vec2f(-1.0f, 3.0f), el1->GetPoint()->GetPosition());
 }

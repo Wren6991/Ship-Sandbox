@@ -14,6 +14,8 @@
 #include <wx/stattext.h>
 #include <wx/string.h>
 
+static constexpr int SliderTicks = 100;
+
 const long ID_STRENGTH_SLIDER = wxNewId();
 const long ID_BUOYANCY_SLIDER = wxNewId();
 const long ID_WATER_PRESSURE_SLIDER = wxNewId();
@@ -24,6 +26,7 @@ const long ID_DESTROY_RADIUS_SLIDER = wxNewId();
 const long ID_QUICK_WATER_FIX_CHECKBOX = wxNewId();
 const long ID_SHOW_STRESS_CHECKBOX = wxNewId();
 const long ID_XRAY_CHECKBOX = wxNewId();
+const long ID_DRAW_POINTS_ONLY_CHECKBOX = wxNewId();
 
 wxBEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
 	EVT_COMMAND_SCROLL(ID_STRENGTH_SLIDER, SettingsDialog::OnStrengthSliderScroll)
@@ -69,8 +72,7 @@ SettingsDialog::SettingsDialog(
 	// Strength
 
 	wxBoxSizer* strengthSizer = new wxBoxSizer(wxVERTICAL);
-    // TODO: use define for 100
-	mStrengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+	mStrengthSlider = new wxSlider(this, ID_STRENGTH_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Strength Slider"));
 	mStrengthSlider->SetTickFreq(4);
 	strengthSizer->Add(mStrengthSlider, 0, wxALIGN_CENTRE);
@@ -92,7 +94,7 @@ SettingsDialog::SettingsDialog(
 	
 	wxBoxSizer* buoyancySizer = new wxBoxSizer(wxVERTICAL);
 
-	mBuoyancySlider = new wxSlider(this, ID_BUOYANCY_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200), 
+	mBuoyancySlider = new wxSlider(this, ID_BUOYANCY_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Buoyancy Slider"));
 	mBuoyancySlider->SetTickFreq(4);
 	buoyancySizer->Add(mBuoyancySlider, 0, wxALIGN_CENTRE);
@@ -114,7 +116,7 @@ SettingsDialog::SettingsDialog(
 
 	wxBoxSizer* waterPressureSizer = new wxBoxSizer(wxVERTICAL);
 
-	mWaterPressureSlider = new wxSlider(this, ID_WATER_PRESSURE_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+	mWaterPressureSlider = new wxSlider(this, ID_WATER_PRESSURE_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Water Pressure Slider"));
 	mWaterPressureSlider->SetTickFreq(4);
 	waterPressureSizer->Add(mWaterPressureSlider, 0, wxALIGN_CENTRE);
@@ -136,7 +138,7 @@ SettingsDialog::SettingsDialog(
 
 	wxBoxSizer* waveHeightSizer = new wxBoxSizer(wxVERTICAL);
 
-	mWaveHeightSlider = new wxSlider(this, ID_WAVE_HEIGHT_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+	mWaveHeightSlider = new wxSlider(this, ID_WAVE_HEIGHT_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Wave Height Slider"));
 	mWaveHeightSlider->SetTickFreq(4);
 	waveHeightSizer->Add(mWaveHeightSlider, 0, wxALIGN_CENTRE);
@@ -158,7 +160,7 @@ SettingsDialog::SettingsDialog(
 
 	wxBoxSizer* seaDepthSizer = new wxBoxSizer(wxVERTICAL);
 
-	mSeaDepthSlider = new wxSlider(this, ID_SEA_DEPTH_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+	mSeaDepthSlider = new wxSlider(this, ID_SEA_DEPTH_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Sea Depth Slider"));
 	mSeaDepthSlider->SetTickFreq(4);
 	seaDepthSizer->Add(mSeaDepthSlider, 0, wxALIGN_CENTRE);
@@ -180,7 +182,7 @@ SettingsDialog::SettingsDialog(
 
 	wxBoxSizer* destroyRadiusSizer = new wxBoxSizer(wxVERTICAL);
 
-	mDestroyRadiusSlider = new wxSlider(this, ID_DESTROY_RADIUS_SLIDER, 50, 0, 100, wxDefaultPosition, wxSize(50, 200),
+	mDestroyRadiusSlider = new wxSlider(this, ID_DESTROY_RADIUS_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
 		wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Destroy Radius Slider"));
 	mDestroyRadiusSlider->SetTickFreq(4);
 	destroyRadiusSizer->Add(mDestroyRadiusSlider, 0, wxALIGN_CENTRE);
@@ -213,6 +215,10 @@ SettingsDialog::SettingsDialog(
 	mXRayCheckBox = new wxCheckBox(this, ID_XRAY_CHECKBOX, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Use XRay Checkbox"));
 	Connect(ID_XRAY_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnXRayCheckBoxClick);
 	checkboxesSizer->Add(mXRayCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
+
+    mDrawPointsOnlyCheckBox = new wxCheckBox(this, ID_DRAW_POINTS_ONLY_CHECKBOX, _("Draw Only Points"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Draw Only Points Checkbox"));
+    Connect(ID_DRAW_POINTS_ONLY_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnDrawPointsOnlyCheckBoxClick);
+    checkboxesSizer->Add(mDrawPointsOnlyCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
 
 	controlsSizer->Add(checkboxesSizer, 0);
 
@@ -387,6 +393,14 @@ void SettingsDialog::OnXRayCheckBoxClick(wxCommandEvent & /*event*/)
 	mApplyButton->Enable(true);
 }
 
+void SettingsDialog::OnDrawPointsOnlyCheckBoxClick(wxCommandEvent & /*event*/)
+{
+    OnDrawPointsOnlyChanged();
+
+    // Remember we're dirty now
+    mApplyButton->Enable(true);
+}
+
 void SettingsDialog::OnOkButton(wxCommandEvent & /*event*/)
 {
 	assert(!!mGameController);
@@ -454,6 +468,8 @@ void SettingsDialog::ApplySettings()
 	mGameController->SetDoShowStress(mShowStressCheckBox->IsChecked());
 
 	mGameController->SetDoUseXRayMode(mXRayCheckBox->IsChecked());
+
+    mGameController->SetDrawPointsOnly(mDrawPointsOnlyCheckBox->IsChecked());
 }
 
 void SettingsDialog::ReadSettings()
@@ -519,6 +535,10 @@ void SettingsDialog::ReadSettings()
 	mShowStressCheckBox->SetValue(mGameController->GetDoShowStress());
 
 	mXRayCheckBox->SetValue(mGameController->GetDoUseXRayMode());
+
+    mDrawPointsOnlyCheckBox->SetValue(mGameController->GetDrawPointsOnly());
+
+    OnDrawPointsOnlyChanged();
 }
 
 float SettingsDialog::SliderToRealValue(
@@ -526,9 +546,8 @@ float SettingsDialog::SliderToRealValue(
 	float minValue,
 	float maxValue) const
 {
-    // TODO: value change problem
 	int sliderValue = slider->GetValue();
-	float realValue = minValue + (static_cast<float>(sliderValue) / 100.0f) * (maxValue - minValue);
+	float realValue = minValue + (static_cast<float>(sliderValue) / static_cast<float>(SliderTicks)) * (maxValue - minValue);
 
 	return realValue;
 }
@@ -539,8 +558,21 @@ void SettingsDialog::RealValueToSlider(
 	float maxValue,
 	wxSlider * slider) const
 {
-    // TODO: value change problem
-	int sliderValue = static_cast<int>(roundf((value - minValue) / (maxValue - minValue) * 100.0f));
+    int sliderValue = static_cast<int>(roundf((value - minValue) / (maxValue - minValue) * static_cast<float>(SliderTicks)));
 
 	slider->SetValue(sliderValue);
+}
+
+void SettingsDialog::OnDrawPointsOnlyChanged()
+{
+    if (mDrawPointsOnlyCheckBox->IsChecked())
+    {
+        mShowStressCheckBox->Enable(false);
+        mXRayCheckBox->Enable(false);
+    }
+    else
+    {
+        mShowStressCheckBox->Enable(true);
+        mXRayCheckBox->Enable(true);
+    }
 }

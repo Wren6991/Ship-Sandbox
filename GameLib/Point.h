@@ -42,26 +42,46 @@ public:
     inline void AddToLastPosition(vec2 const & dPosition) { mLastPosition += dPosition; }
     inline void SubtractFromLastPosition(vec2 const & dPosition) { mLastPosition -= dPosition; }
 
+
 	inline Material const * GetMaterial() const { return mMaterial; }
+
 
 	inline float GetMass() const { return mMaterial->Mass; }
 
+
 	inline vec2 const & GetForce() const { return mForce; }	
+
     inline void ZeroForce() { mForce = vec2(0, 0); }
 
-	inline float GetBuoyancy() const { return mBuoyancy;  }
+	
+    inline float GetBuoyancy() const { return mBuoyancy;  }
+
 
     // Dimensionally akin to Water Pressure
 	inline float GetWater() const { return mWater; }
+
 	inline void AdjustWater(float dWater) 
     { 
         mWater += dWater; 
     }
 
 	inline bool IsLeaking() const { return mIsLeaking;  }
+
 	inline void SetLeaking() { mIsLeaking = true; }
 
-    
+
+    inline float GetLight() const { return mLight; }
+
+    inline void ZeroLight()
+    {
+        mLight = 0.0f;
+    }
+
+    inline void SetLight(float light)
+    {
+        mLight = light;
+    }
+
     inline auto const & GetConnectedSprings() const { return mConnectedSprings; }
 
     inline void AddConnectedSpring(Spring * spring) 
@@ -96,12 +116,38 @@ public:
         (void)found;
     }
 
+
+    inline ElectricalElement const * GetConnectedElectricalElement() const
+    {
+        return mConnectedElectricalElement;
+    }
+
+    inline ElectricalElement * GetConnectedElectricalElement()
+    {
+        return mConnectedElectricalElement;
+    }
+
+    inline void SetConnectedElectricalElement(ElectricalElement * electricalElement)
+    {
+        assert(nullptr == mConnectedElectricalElement);
+        mConnectedElectricalElement = electricalElement;
+    }
+
+
     inline vec3f GetColour(vec3f const & baseColour) const
     {
-        static const vec3f WetColour(0.0f, 0.0f, 0.8f);
-
         float const colorWetness = fminf(mWater, 1.0f) * 0.7f;
-        return baseColour * (1.0f - colorWetness) + WetColour * colorWetness;
+
+        vec3f colour1 = baseColour * (1.0f - colorWetness)
+            + RenderParameters::WetPointColour * colorWetness;
+     
+        if (mLight == 0.0f)
+            return colour1;
+
+        float const colorLightness = fminf(mLight, 1.0f) * 0.95f;
+
+        return colour1 * (1.0f - colorLightness)
+            + RenderParameters::LightPointColour * colorLightness;
     }
 
     float GetExternalWaterPressure(
@@ -149,8 +195,11 @@ private:
 	float mWater;
 	bool mIsLeaking;
 
+    float mLight;
+
     FixedSizeVector<Spring *, 8U> mConnectedSprings;
     FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    
+    ElectricalElement * mConnectedElectricalElement;
 
 private:
 

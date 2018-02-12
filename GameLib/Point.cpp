@@ -37,7 +37,10 @@ Point::Point(
 	, mBuoyancy(buoyancy)
 	, mWater(0.0f)
 	, mIsLeaking(false)
+    , mLight(0.0f)
+    , mConnectedSprings()
     , mConnectedTriangles()
+    , mConnectedElectricalElement(nullptr)
 {
 }
 
@@ -52,6 +55,12 @@ void Point::Destroy()
 
 	// Destroy connected triangles
     DestroyConnectedTriangles();
+
+    // Destroy connected electrical elements
+    if (nullptr != mConnectedElectricalElement)
+    { 
+        mConnectedElectricalElement->Destroy();
+    }
     
     // Remove ourselves
     ShipElement::Destroy();

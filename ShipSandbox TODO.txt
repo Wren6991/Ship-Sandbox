@@ -4,27 +4,10 @@
 	+ percentages (from perf analyzer)
 		+ See hotspots with perf analyzer
 
-= Render:
-	= OpenGL rearc:
-		= wxGLCanvas: enable core profile and 3.3 (http://docs.wxwidgets.org/3.0/glcanvas_8h.html#wxGL_FLAGS)
-			- Install updated driver
-			- See perf
-		- OpenGL with glad
-			- Have to change all API calls
-				- Test with something small first, e.g. just water and land
-					- Dummy defines for the others, just to make it build
-			- See perf
-				
-	- See if can do the entire prolog in an object (https://learnopengl.com/Getting-started/OpenGL)
-		- See perf
-
 - Water:
 	- GravitateWater: try inverse visit (from H to L)
 		- Requires PointerVector::rbegin,rend
 	- Try directional BalancePressure?
-
-+ Get rid of unicode
-	+ Can, really?
 
 - SettingsDialog: save settings
 	- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
@@ -63,8 +46,6 @@
 - Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
 	- Also jellyfish fixed in 1.2.6?
 
-
-
 - Settings:
 	- Strength Adjustment must be settable exponentially (slider=>exp)
 		- Formula: TODO
@@ -76,12 +57,9 @@
 			+ also move GameController's Screen2World implementation to Renderer
 		- See if needs to be exponentially-slider'ed as well
 
-- Clean all warnings
-
 - is Verlet implemented right?
 
 
-- no memory leaks at all (no heap alloc's outside of unique_ptr)
 - See if can continue queueing tasks without waiting for all blocks of chunks
 
 - Game interactions:
@@ -128,9 +106,20 @@
 		+ Material.ElectricalProperties (optional)
 			+ type (Material::ElectricalProperties::ElectricalElementType=lamp, cable, generator)
 			+ flat list of all electrical properties, some apply some don't
-	- class Lamp()
-		- points to Point and Point points optionally to ElectricalElement (base abstract of Lamp, Cable, Generator)
-			- ElectricalElement::GetType(){return mType;}: non-virtual, it's optimized by compiler
+	+ class Lamp()
+		+ points to Point and Point points optionally to ElectricalElement (base abstract of Lamp, Cable, Generator)
+			+ ElectricalElement::GetType(){return mType;}: non-virtual, it's optimized by compiler
+	= Lamp render:
+		+ Can test it by itself, by using light material and by cheating with current!
+		= After current propagation:
+			+ Zero out mLight of each point (use generation sequence number? useful for other Point properties?)
+				+ No, easier and probably faster to do it in same pass as LeakWater - LeakWaterAndZeroLight()
+			- Visit all lamps:
+				= Set Lamp->Point.mLight = f(incoming current, flicker state machine)
+				+ Diffusion: propagate mLight to adjacent points (incl. other lamps),
+				  inv. proportional to distance^2, with a graph flood stopping at max distance
+		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
+                  and makes alpha blend just like water
 	- Current Propagation Algo:
 		- create new generation seq number; if new is 0 => 1
 		- visit all generator points and count the points in their graphs; for each connected component:
@@ -144,17 +133,6 @@
 				- start flicker state machine (consumed by diffusion below)
 					- base off clock time, not simulation step
 			- else: nop (will be rendered as lighted, depending on current)
-	- Lamp render:
-		+ Can test it by itself, by using light material and by cheating with current!
-		- After current propagation:
-			- Zero out mLight of each point (use generation sequence number? useful for other Point properties?)
-				- No, easier and probably faster to do it in same pass as LeakWater - LeakWaterAndZeroLight()
-			- Visit all lamps:
-				- Set Lamp->Point.mLight = f(incoming current, flicker state machine)
-				- Diffusion: propagate mLight to adjacent points (incl. other lamps),
-				  inv. proportional to distance^2, with a graph flood stopping at max distance
-		- Point.GetColour() takes also into account mLight (from itself, not from lamp) 
-                  and makes alpha blend just like water
 
 - Sinking music
 	- GameController starts it upon OnStartedSinking() event, published by Game when total ship
@@ -173,6 +151,16 @@
 - ocean depth bitmaps
 
 - Water drag
+
+= Render:
+	- OpenGL with glad
+		- Have to change all API calls
+			- Test with something small first, e.g. just water and land
+				- Dummy defines for the others, just to make it build
+		- See perf afterwards
+				
+	- See if can do the entire prolog in an object (https://learnopengl.com/Getting-started/OpenGL) and switch to it
+		- See perf
 
 ==============================================================================
 ==============================================================================
@@ -496,3 +484,6 @@ IF WX:
 	+ Commit & push
 	+ Verify unit tests & runs normally & no fps regression
 + Menu entry to reset pan and zoom
++ Get rid of unicode
+	+ Can, really?
+

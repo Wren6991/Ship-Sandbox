@@ -29,6 +29,14 @@ set  (GAME_SOURCES
 	Vectors.h)
 
 set  (PHYSICS_SOURCES
+	Cable.cpp
+	Cable.h
+	ElectricalElement.cpp
+	ElectricalElement.h
+	Generator.cpp
+	Generator.h
+	Lamp.cpp
+	Lamp.h
 	Physics.h
 	Point.cpp
 	Point.h

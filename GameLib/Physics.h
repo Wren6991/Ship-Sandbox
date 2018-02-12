@@ -7,6 +7,10 @@
 
 namespace Physics
 {
+    class Cable;
+    class ElectricalElement;
+    class Generator;
+    class Lamp;
 	class Point;
 	class Ship;
 	class Spring;
@@ -15,6 +19,12 @@ namespace Physics
 }
 
 #include "ShipElement.h"
+
+#include "ElectricalElement.h"
+
+#include "Cable.h"
+#include "Generator.h"
+#include "Lamp.h"
 #include "Point.h"
 #include "Ship.h"
 #include "Spring.h"

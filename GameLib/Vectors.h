@@ -116,12 +116,17 @@ public:
 		return sqrtf(x * x + y * y);
 	}
 
+    inline float squareLength() const
+    {
+        return x * x + y * y;
+    }
+
 	inline vec2f normalise() const
 	{
 		return (*this) * fast_inv_sqrt(x * x + y * y);
 	}
 
-    std::string toString();
+    std::string toString() const;
 
 	inline vec2f(
 		float _x = 0,
@@ -230,9 +235,9 @@ public:
 		return (*this) * fast_inv_sqrt(x * x + y * y + z * z);
 	}
 
-    std::string toString();
+    std::string toString() const;
 
-	inline vec3f(
+	inline constexpr vec3f(
 		float _x = 0,
 		float _y = 0,
 		float _z = 0)

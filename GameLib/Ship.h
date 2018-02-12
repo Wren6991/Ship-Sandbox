@@ -37,6 +37,9 @@ public:
 	World const * GetParentWorld() const { return mParentWorld; }
 	World * GetParentWorld() { return mParentWorld; }
 
+    auto const & GetElectricalElements() const { return mAllElectricalElements; }
+    auto & GetElectricalElements() { return mAllElectricalElements; }
+
 	auto const & GetPoints() const { return mAllPoints; }
     auto & GetPoints() { return mAllPoints; }
 
@@ -54,7 +57,9 @@ public:
         vec2 const & targetPos,
         float strength);
 
-	void LeakWater(
+    Point const * GetNearestPointAt(vec2 const & targetPos) const;
+
+	void LeakWaterAndZeroLight(
 		float dt,
 		GameParameters const & gameParameters);
 
@@ -64,8 +69,14 @@ public:
 
 	void BalancePressure(float dt);
 
-	void Update(
+    void DiffuseLight(
+        float dt,
+        uint64_t currentStepSequenceNumber,
+        GameParameters const & gameParameters);
+
+    void Update(
 		float dt,
+        uint64_t currentStepSequenceNumber,
 		GameParameters const & gameParameters);
 
 	void Render(
@@ -88,15 +99,17 @@ private:
 
     Ship(World * parentWorld);
 
-	void Initialize(
+    void Initialize(
+        std::vector<ElectricalElement *> && allElectricalElements,
         std::vector<Point *> && allPoints,
-		std::vector<Spring *> && allSprings,
+        std::vector<Spring *> && allSprings,
         std::vector<Triangle *> && allTriangles)
-	{
+    {
+        mAllElectricalElements.initialize(std::move(allElectricalElements));
         mAllPoints.initialize(std::move(allPoints));
-		mAllSprings.initialize(std::move(allSprings));
+        mAllSprings.initialize(std::move(allSprings));
         mAllTriangles.initialize(std::move(allTriangles));
-	}
+    }
 
 	void DoSprings(float dt);
 
@@ -162,6 +175,7 @@ private:
 	World * const mParentWorld;
 
 	// Repository
+    PointerContainer<ElectricalElement> mAllElectricalElements;
     PointerContainer<Point> mAllPoints;
 	PointerContainer<Spring> mAllSprings;
     PointerContainer<Triangle> mAllTriangles;
@@ -169,6 +183,13 @@ private:
 	// The scheduler we use for parallelizing updates
 	Scheduler mScheduler;
 };
+
+template<>
+inline void Ship::RegisterDestruction(ElectricalElement * /* element */)
+{
+    // Just tell the pointer container, he'll take care of it later
+    mAllElectricalElements.register_deletion();
+}
 
 template<>
 inline void Ship::RegisterDestruction(Point * /* element */)

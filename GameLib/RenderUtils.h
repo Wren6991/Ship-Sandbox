@@ -35,18 +35,18 @@ public:
 		vec2 const & posa,
 		vec2 const & posb,
 		vec2 const & posc,
-		vec3f const & cola,
-		vec3f const & colb,
-		vec3f const & colc)
+		vec3 const & cola,
+		vec3 const & colb,
+		vec3 const & colc)
 	{
-		glBegin(GL_TRIANGLES);
+        glBegin(GL_TRIANGLES);
 		glColor3f(cola.x, cola.y, cola.z);
 		glVertex3f(posa.x, posa.y, -1);
 		glColor3f(colb.x, colb.y, colb.z);
 		glVertex3f(posb.x, posb.y, -1);
 		glColor3f(colc.x, colc.y, colc.z);
 		glVertex3f(posc.x, posc.y, -1);
-		glEnd();
+        glEnd();
 	}
 
 	static inline void RenderBox(
@@ -66,6 +66,11 @@ public:
 	{
 		glColor3f(c.x, c.y, c.z);
 	}
+
+    static inline void SetColour(float r, float g, float b)
+    {
+        glColor3f(r, g, b);
+    }
 
 	//
 	// World<->Screen
