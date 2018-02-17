@@ -47,12 +47,14 @@ private:
 			int name);
 
 		static void Enter(void * thisThread);
+        void Stop();
 
 	private:
         Scheduler * const mParent;
 		int const mName;
 		std::thread mThread;
 		ITask * mCurrentTask;
+        bool mIsStopped;
     };
 
     class Semaphore

@@ -436,7 +436,7 @@ void Ship::DiffuseLight(
 
                 // Set light on lamp's point
                 // TBD: this needs to be based off the current at this lamp
-                lampPoint->SetLight(1.0f);
+                lampPoint->AdjustLight(1.0f);
 
                 std::set<Point *> visitedPoints;
                 visitedPoints.insert(lampPoint);
@@ -471,8 +471,8 @@ void Ship::DiffuseLight(
                                 assert(squareDistance != 0.0f);
                                 float light = lampPoint->GetLight() / squareDistance;
                                 if (light > 0.02)
-                                {                              
-                                    connectedPoint->SetLight(light);
+                                {
+                                    connectedPoint->AdjustLight(light);
 
                                     // Visit this point next
                                     pointsToVisit.push(connectedPoint);

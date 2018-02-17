@@ -351,8 +351,6 @@ void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 	mGameController->SetCanvasSize(
 		event.GetSize().GetX(),
 		event.GetSize().GetY());
-
-	mMainGLCanvas->Refresh();
 }
 
 void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)

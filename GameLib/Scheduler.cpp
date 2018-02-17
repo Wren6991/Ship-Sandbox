@@ -35,29 +35,41 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 {
-	/*
-	for (unsigned int i = 0; i < mThreadPool.size(); i++)
-		mThreadPool[i];
-		*/
+    for (auto t : mThreadPool)
+    {
+        t->Stop();
+    }
 }
 
 void Scheduler::Schedule(ITask *t)
 {
-	if (mThreadPool.empty())
-	{
-		assert(mNThreads > 0);
-		for (int i = 0; i < mNThreads; i++)
-		{
-			mThreadPool.push_back(new Thread(this, i + 1));
-		}
-	}
-
+    if (mNThreads > 1)
     {
-        std::lock_guard<std::mutex> lock(mTaskQueueMutex);
-        mTaskQueue.push(t);               
-    }
+        if (mThreadPool.empty())
+        {
+            assert(mNThreads > 0);
+            for (int i = 0; i < mNThreads; i++)
+            {
+                mThreadPool.push_back(new Thread(this, i + 1));
+            }
+        }
 
-    mAvailable.Signal();
+        {
+            std::lock_guard<std::mutex> lock(mTaskQueueMutex);
+            mTaskQueue.push(t);
+        }
+
+        // Tell threads that there's a new task ready to be picked up
+        mAvailable.Signal();
+    }
+    else
+    {
+        // Run immediately, no point dispatching to another thread
+        t->Process();
+
+        // Fake immediate completion
+        mCompleted.Signal();
+    }    
 
     ++mCurrentScheduledTasks;
 }
@@ -103,6 +115,7 @@ Scheduler::Thread::Thread(
 	int name)
 	: mParent(parent)
 	, mName(name)
+    , mIsStopped(false)
 {
 	// Start thread
 	mThread = std::thread(Scheduler::Thread::Enter, this);
@@ -123,7 +136,7 @@ void Scheduler::Thread::Enter(void *arg)
 #endif
 
     Scheduler::Thread * thisThread = static_cast<Scheduler::Thread *>(arg);
-	while (true)
+	while (!thisThread->mIsStopped)
 	{
 		// Wait for a task to become available
 		thisThread->mParent->mAvailable.Wait();
@@ -143,4 +156,13 @@ void Scheduler::Thread::Enter(void *arg)
         delete thisThread->mCurrentTask;
 		thisThread->mParent->mCompleted.Signal();
    }
+}
+
+void Scheduler::Thread::Stop()
+{
+    mIsStopped = true;
+    if (mThread.joinable())
+    {
+        mThread.join();
+    }
 }

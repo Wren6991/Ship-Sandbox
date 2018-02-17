@@ -4,6 +4,47 @@
 	+ percentages (from perf analyzer)
 		+ See hotspots with perf analyzer
 
+- Retake perf baseline with single-thread optimization
+	- fps: 12/13
+	- See dynamics as a whole vs render
+
+- See if during dynamics can assume no deletions (i.e. iff we break springs only at end)
+
+- Gfx:
+	- OpenGL optimizations:
+		- Try without buffer population: 			
+			- Point has vec2f * const mPosition and vec2f * const mColour, pointing into two fixed buffers
+				- vectors are packed (static_assert on contiguous 2 or 3)
+				- TBD: not needed, could stay in PointerContainer and get deleted;
+				  was: Point does not live in PointerContainer but in std::uq_ptr<Point>[]
+					- Delete does nothing (Destroy does relationships though), just marks it
+			- Point also has mElementIndex, queried by springs and triangles when rendering themselves
+			- Pointers to fixed buffers (as arrays of vectors) are owned by Ship and
+			  are given by Ship to RenderContext at each Render via 
+			  RenderContext::UploadVertices(vec2f*, vec3f*, count)
+			- RenderContext usage of two buffers at each DrawElements:
+				glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+				glVertexAttribPointer(vertexPositionAttribute, 3,  GL_FLOAT, false, 0, 0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
+
+	- Texture mapping for 2nd image
+		- Load ship == Dialog with two textboxes and "browse" next to them
+	- Magnifying glass
+		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
+		- https://www.shadertoy.com/view/4tdXDl
+	- Water with OpenGL particle effects
+	- ocean depth bitmaps
+	- Save photos (opens SaveAs FileDialog)
+
+- Dynamics:
+	- After OpenGL/Fixed buffers optimization: 
+		- Implement Ship::CalculatePointColors() (called at Render time) which does everything in parallel on 
+		  Colour buffer (before calling RenderContext::UploadVertices(.))
+			- Verify VS emits parallel instructions
+		- See other similar parallelization opportunities on Positions
+
 - Water:
 	- GravitateWater: try inverse visit (from H to L)
 		- Requires PointerVector::rbegin,rend
@@ -34,7 +75,7 @@
 
 - DestroyAt:
 	- Test: Spring::Destroy() only destroys triangles that contain A-B
-		- Should definitely make both A and B leak
+		- Should definitely make both A and B leak, as they both now have an adjacent hole
 
 - Y-center ship after loading
 	+ Log destroyAt world coordinates to see span of Y axis: Y=0 is sea level, - is down, + is up
@@ -50,9 +91,9 @@
 	- Strength Adjustment must be settable exponentially (slider=>exp)
 		- Formula: TODO
 		- Formula done by physics when calculating strengthfactor off strengthadjustment
-- Zoom: inverse?
-	- 0 - 1000
-		- Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
+= Zoom: inverse?
+	= 0 - 1000
+		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
 		+ Also called by GameController's Screen2World 
 			+ also move GameController's Screen2World implementation to Renderer
 		- See if needs to be exponentially-slider'ed as well
@@ -63,25 +104,25 @@
 - See if can continue queueing tasks without waiting for all blocks of chunks
 
 - Game interactions:
-	- IGameEventSink: individual methods, including parameter changes, all default-implemented
+	- IGameEventHandler: individual methods, including parameter changes, all default-implemented
 		- OnDestroy(Material const *, size)
 		- OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=N
-	- GameController::RegisterGameEventSink(IGameEventSink *)
-		- calls into GameEventDispatcher::RegisterGameEventSink, who does:
+	- GameController::RegisterGameEventHandler(IGameEventHandler *)
+		- calls into GameEventDispatcher::RegisterGameEventHandler, who does:
 			- Registration of sinks
 			- Aggregation of duplicate events (is called at step start/step end)
 				- e.g.: OnBreak: keep distinct Material * and count for size
-	- GameController gives shared_ptr<GameEventDispacther> to Game at Game's cctor
-	- First GameEventSink: EventTicker
+	- GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
+	- First GameEventHandler: EventTicker
 		- It's custom panel at bottom with text ticker
 		- EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
 		- Created by MainFrame and registered by MainFrame on GameController
-		- Algo for ticker:
+		- Algo for ticker: TBD
 
 - Sound:
-	- MainApp initializes SoundController, which implements IGameEventSink
+	- MainApp initializes SoundController, which implements IGameEventHandler
 		- Initializes off visit of Data/Sounds, w/Music and Sounds
-			- Mapping of sounds with IGameEventSink events via:
+			- Mapping of sounds with IGameEventHandler events via:
 				- Material::optional<SoundProperties>
 					- SoundMaterial: enum(wood, metal, ...)
 				- Filename patterns of sounds and music (e.g. destroy_wood_1.wav)
@@ -95,7 +136,7 @@
 				- If still full, stop last and pop it (use doubly-linked list)
 		- Exposes Update(GameParameters const &) for own state machine (e.g. waves with frequency) and for aggregations (distinct sounds are played at this moment, provided not too close to previous)
 			- MainFrame calls at timer, after
-	- MainApp registers SoundController as sink with GameController
+	- MainApp registers SoundController as Handler with GameController
 	- MainApp passes SoundController as shared_ptr to MainFrame (exactly like GameController)
 		- So MainFrame can call its Update(.) and also configure it via options
 
@@ -115,7 +156,12 @@
 			+ Zero out mLight of each point (use generation sequence number? useful for other Point properties?)
 				+ No, easier and probably faster to do it in same pass as LeakWater - LeakWaterAndZeroLight()
 			- Visit all lamps:
-				= Set Lamp->Point.mLight = f(incoming current, flicker state machine)
+				- call Lamp->UpdateLightIntensity(IGameEventHandler) -> lightIntensity
+					- Looks at own (current, generationVisitNumber, state) and:
+						- Updates state
+						- Eventually invokes IGameEventHandler->StartFlicker("whichOne")
+							- After choosing "whichOne" and compiling the plan
+						- Sets and returns own lightIntensity = f(incoming current, flicker state machine, ...)
 				+ Diffusion: propagate mLight to adjacent points (incl. other lamps),
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
@@ -137,30 +183,8 @@
 - Sinking music
 	- GameController starts it upon OnStartedSinking() event, published by Game when total ship
 	  water level (always adjusted at Point::AdjustWater) reaches threshold
-
-- Second image next to ship's structural image, to be used at rendering time (stored in Point as its "pretty" color)
-	- Can use photos then!
-
-- Save photos (opens SaveAs FileDialog)
 	
-- Magnifying glass
-	- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
-	- https://www.shadertoy.com/view/4tdXDl
-
-- Water with OpenGL particle effects
-- ocean depth bitmaps
-
 - Water drag
-
-= Render:
-	- OpenGL with glad
-		- Have to change all API calls
-			- Test with something small first, e.g. just water and land
-				- Dummy defines for the others, just to make it build
-		- See perf afterwards
-				
-	- See if can do the entire prolog in an object (https://learnopengl.com/Getting-started/OpenGL) and switch to it
-		- See perf
 
 ==============================================================================
 ==============================================================================

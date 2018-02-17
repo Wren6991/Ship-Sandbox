@@ -77,9 +77,12 @@ public:
         mLight = 0.0f;
     }
 
-    inline void SetLight(float light)
+    inline void AdjustLight(float light)
     {
-        mLight = light;
+        if (light > mLight)
+        {
+            mLight = light;
+        }
     }
 
     inline auto const & GetConnectedSprings() const { return mConnectedSprings; }
