@@ -5,6 +5,7 @@
 ***************************************************************************************/
 #include "GameController.h"
 
+#include "GameMath.h"
 #include "Log.h"
 
 #include <IL/il.h>
@@ -79,7 +80,47 @@ void GameController::DoStep()
 
 void GameController::Render()
 {
+    //
+    // Do zoom smoothing
+    //
+
+    if (mCurrentZoom != mTargetZoom)
+    {
+        SmoothToTarget(
+            mCurrentZoom,
+            mStartingZoom,
+            mTargetZoom,
+            mStartZoomTimestamp);
+
+        mRenderContext->SetZoom(mCurrentZoom);
+    }
+
+
+    //
+    // Do camera smoothing
+    //
+
+    if (mCurrentCameraPosition != mTargetCameraPosition)
+    {
+        SmoothToTarget(
+            mCurrentCameraPosition.x,
+            mStartingCameraPosition.x,
+            mTargetCameraPosition.x,
+            mStartCameraPositionTimestamp);
+
+        SmoothToTarget(
+            mCurrentCameraPosition.y,
+            mStartingCameraPosition.y,
+            mTargetCameraPosition.y,
+            mStartCameraPositionTimestamp);
+
+        mRenderContext->SetCameraWorldPosition(mCurrentCameraPosition);
+    }
+
+    //
 	// Render game
+    //
+
 	assert(!!mGame);
 	mGame->Render(mGameParameters, *mRenderContext);
 }
@@ -162,4 +203,33 @@ void GameController::SetDestroyRadius(float value)
 	LogDebug("GameController::SetDestroyRadius(", value, ")");
 
 	mGameParameters.DestroyRadius = value;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+void GameController::SmoothToTarget(
+    float & currentValue,
+    float startingValue,
+    float targetValue,
+    std::chrono::steady_clock::time_point startingTime)
+{
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+    // Amplitude - summing up pieces from zero to PI yields PI/2
+    float amp = (targetValue - startingValue) / (Pi<float> / 2.0f);
+
+    // X - after SmoothMillis we want PI
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startingTime);
+    float x = static_cast<float>(elapsed.count()) * Pi<float> / static_cast<float>(SmoothMillis);
+    float dv = amp * sinf(x) * sinf(x);
+
+    float oldCurrentValue = currentValue;
+    currentValue += dv;
+
+    // Check if we've overshot
+    if ((targetValue - oldCurrentValue) * (targetValue - currentValue) < 0.0f)
+    {
+        // Overshot
+        currentValue = targetValue;
+    }
 }

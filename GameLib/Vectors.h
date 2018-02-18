@@ -100,6 +100,11 @@ public:
 		return x == rhs.x && y == rhs.y;
 	}
 
+    inline bool operator!=(vec2f const & rhs) const
+    {
+        return !(*this == rhs);
+    }
+
 	// (lexicographic comparison only)
 	inline bool operator<(vec2f const & rhs) const
 	{
@@ -213,6 +218,11 @@ public:
 	{
 		return x == rhs.x && y == rhs.y && z == rhs.z;
 	}
+
+    inline bool operator!=(vec3f const & rhs) const
+    {
+        return !(*this == rhs);
+    }
 
 	// (lexicographic comparison only)
 	inline bool operator<(vec3f const & rhs) const

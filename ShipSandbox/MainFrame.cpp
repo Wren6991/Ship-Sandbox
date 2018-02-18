@@ -305,7 +305,27 @@ void MainFrame::OnPaint(wxPaintEvent& event)
 
 void MainFrame::OnKeyDown(wxKeyEvent & event)
 {
-    if (event.GetKeyCode() == static_cast<int>(' '))
+    if (event.GetKeyCode() == WXK_LEFT)
+    {
+        // Left
+        mGameController->Pan(vec2f(-10.0f, 0.0f));
+    }
+    else if (event.GetKeyCode() == WXK_UP)
+    {
+        // Up
+        mGameController->Pan(vec2f(00.0f, -10.0f));
+    }
+    else if (event.GetKeyCode() == WXK_RIGHT)
+    {
+        // Right
+        mGameController->Pan(vec2f(10.0f, 0.0f));
+    }
+    else if (event.GetKeyCode() == WXK_DOWN)
+    {
+        // Down
+        mGameController->Pan(vec2f(0.0f, 10.0f));
+    }
+    else if (event.GetKeyCode() == static_cast<int>(' '))
     {
         //
         // Get point stats
@@ -418,7 +438,7 @@ void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
 	{
 		// Pan
 		vec2 screenOffset = vec2(mMouseInfo.x, mMouseInfo.y) - vec2(oldx, oldy);
-		mGameController->Pan(screenOffset);
+		mGameController->PanImmediate(screenOffset);
 	}
 }
 

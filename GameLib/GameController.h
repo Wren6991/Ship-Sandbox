@@ -10,6 +10,7 @@
 #include "RenderContext.h"
 #include "Vectors.h"
 
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -21,22 +22,22 @@ class GameController
 {
 public:
 
-	static std::unique_ptr<GameController> Create();
+    static std::unique_ptr<GameController> Create();
 
-	void ResetAndLoadShip(std::string const & filepath);
+    void ResetAndLoadShip(std::string const & filepath);
     void AddShip(std::string const & filepath);
-	void ReloadLastShip();
+    void ReloadLastShip();
 
-	void DoStep();
-	void Render();
+    void DoStep();
+    void Render();
 
 
-	//
-	// Interactions
-	//
+    //
+    // Interactions
+    //
 
-	void DestroyAt(vec2f const & screenCoordinates, float radiusMultiplier);
-	void DrawTo(vec2f const & screenCoordinates, float strengthMultiplier);
+    void DestroyAt(vec2f const & screenCoordinates, float radiusMultiplier);
+    void DrawTo(vec2f const & screenCoordinates, float strengthMultiplier);
     Physics::Point const * GetNearestPointAt(vec2 const & screenCoordinates) const;
 
     void SetCanvasSize(int width, int height) { mRenderContext->SetCanvasSize(width, height); }
@@ -44,46 +45,66 @@ public:
     void Pan(vec2f const & screenOffset)
     {
         vec2f worldOffset = mRenderContext->ScreenOffset2WorldOffset(screenOffset);
-        mRenderContext->AdjustCameraWorldPosition(worldOffset);
-    
+
+        mTargetCameraPosition = mTargetCameraPosition - worldOffset;
+        mStartingCameraPosition = mCurrentCameraPosition;
+        mStartCameraPositionTimestamp = std::chrono::steady_clock::now();
     }
+
+    void PanImmediate(vec2f const & screenOffset)
+    {
+        vec2f worldOffset = mRenderContext->ScreenOffset2WorldOffset(screenOffset);
+        mRenderContext->AdjustCameraWorldPosition(worldOffset);
+
+        mTargetCameraPosition = mCurrentCameraPosition = mRenderContext->GetCameraWorldPosition();
+    }
+
     void ResetPan()
     {
         mRenderContext->SetCameraWorldPosition(vec2f(0, 0));
     }
 
-    void AdjustZoom(float amount) { mRenderContext->AdjustZoom(amount); }
-    void ResetZoom() { mRenderContext->SetZoom(1.0); }
+    void AdjustZoom(float amount) 
+    { 
+        mTargetZoom = mTargetZoom * amount;
+        mStartingZoom = mCurrentZoom;
+        mStartZoomTimestamp = std::chrono::steady_clock::now();
+    }
 
-	float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
-	void SetStrengthAdjustment(float value);
-	float GetMinStrengthAdjustment() const { return GameParameters::MinStrengthAdjustment;  }
-	float GetMaxStrengthAdjustment() const { return GameParameters::MaxStrengthAdjustment; }
+    void ResetZoom() 
+    { 
+        mRenderContext->SetZoom(1.0); 
+    }
 
-	float GetBuoyancyAdjustment() const { return mGameParameters.BuoyancyAdjustment; }
-	void SetBuoyancyAdjustment(float value);
-	float GetMinBuoyancyAdjustment() const { return GameParameters::MinBuoyancyAdjustment; }
-	float GetMaxBuoyancyAdjustment() const { return GameParameters::MaxBuoyancyAdjustment; }
+    float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
+    void SetStrengthAdjustment(float value);
+    float GetMinStrengthAdjustment() const { return GameParameters::MinStrengthAdjustment;  }
+    float GetMaxStrengthAdjustment() const { return GameParameters::MaxStrengthAdjustment; }
 
-	float GetWaterPressureAdjustment() const { return mGameParameters.WaterPressureAdjustment; }
-	void SetWaterPressureAdjustment(float value);
-	float GetMinWaterPressureAdjustment() const { return GameParameters::MinWaterPressureAdjustment; }
-	float GetMaxWaterPressureAdjustment() const { return GameParameters::MaxWaterPressureAdjustment; }
+    float GetBuoyancyAdjustment() const { return mGameParameters.BuoyancyAdjustment; }
+    void SetBuoyancyAdjustment(float value);
+    float GetMinBuoyancyAdjustment() const { return GameParameters::MinBuoyancyAdjustment; }
+    float GetMaxBuoyancyAdjustment() const { return GameParameters::MaxBuoyancyAdjustment; }
 
-	float GetWaveHeight() const { return mGameParameters.WaveHeight; }
-	void SetWaveHeight(float value);
-	float GetMinWaveHeight() const { return GameParameters::MinWaveHeight; }
-	float GetMaxWaveHeight() const { return GameParameters::MaxWaveHeight; }
+    float GetWaterPressureAdjustment() const { return mGameParameters.WaterPressureAdjustment; }
+    void SetWaterPressureAdjustment(float value);
+    float GetMinWaterPressureAdjustment() const { return GameParameters::MinWaterPressureAdjustment; }
+    float GetMaxWaterPressureAdjustment() const { return GameParameters::MaxWaterPressureAdjustment; }
 
-	float GetSeaDepth() const { return mGameParameters.SeaDepth; }
-	void SetSeaDepth(float value);
-	float GetMinSeaDepth() const { return GameParameters::MinSeaDepth; }
-	float GetMaxSeaDepth() const { return GameParameters::MaxSeaDepth; }
+    float GetWaveHeight() const { return mGameParameters.WaveHeight; }
+    void SetWaveHeight(float value);
+    float GetMinWaveHeight() const { return GameParameters::MinWaveHeight; }
+    float GetMaxWaveHeight() const { return GameParameters::MaxWaveHeight; }
 
-	float GetDestroyRadius() const { return mGameParameters.DestroyRadius; }
-	void SetDestroyRadius(float value);
-	float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
-	float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
+    float GetSeaDepth() const { return mGameParameters.SeaDepth; }
+    void SetSeaDepth(float value);
+    float GetMinSeaDepth() const { return GameParameters::MinSeaDepth; }
+    float GetMaxSeaDepth() const { return GameParameters::MaxSeaDepth; }
+
+    float GetDestroyRadius() const { return mGameParameters.DestroyRadius; }
+    void SetDestroyRadius(float value);
+    float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
+    float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
 
     bool GetShowStress() const { return mRenderContext->GetShowStress(); }
     void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }
@@ -91,7 +112,7 @@ public:
     bool GetUseXRayMode() const { return mRenderContext->GetUseXRayMode(); }
     void SetUseXRayMode(bool value) { mRenderContext->SetUseXRayMode(value); }
 
-	bool GetShowShipThroughWater() const { return mRenderContext->GetShowShipThroughWater();  }
+    bool GetShowShipThroughWater() const { return mRenderContext->GetShowShipThroughWater();  }
     void SetShowShipThroughWater(bool value) { mRenderContext->SetShowShipThroughWater(value); }
 
     bool GetDrawPointsOnly() const { return mRenderContext->GetDrawPointsOnly(); }
@@ -99,15 +120,30 @@ public:
 
 private:
 
-	GameController(
-		std::unique_ptr<Game> && game,
-		std::string const & initialShipLoaded)
-		: mGame(std::move(game))
+    GameController(
+        std::unique_ptr<Game> && game,
+        std::string const & initialShipLoaded)
+        : mGame(std::move(game))
+        , mLastShipLoaded(initialShipLoaded)
         , mGameParameters()
-		, mRenderContext(new RenderContext())
-		, mLastShipLoaded(initialShipLoaded)
-	{}
-	
+        , mRenderContext(new RenderContext())        
+        , mCurrentZoom(mRenderContext->GetZoom())
+        , mTargetZoom(mCurrentZoom)
+        , mStartingZoom(mCurrentZoom)
+        , mStartZoomTimestamp()
+        , mCurrentCameraPosition(mRenderContext->GetCameraWorldPosition())
+        , mTargetCameraPosition(mCurrentCameraPosition)
+        , mStartingCameraPosition(mCurrentCameraPosition)
+        , mStartCameraPositionTimestamp()
+    {
+    }
+    
+    static void SmoothToTarget(
+        float & currentValue,
+        float startingValue,
+        float targetValue,
+        std::chrono::steady_clock::time_point startingTime);
+
 private:
 
     //
@@ -116,17 +152,33 @@ private:
 
     std::unique_ptr<Game> mGame;
 
+    std::string mLastShipLoaded;
+
     //
     // The game (dynamics) parameters
     //
 
-	GameParameters mGameParameters;
+    GameParameters mGameParameters;
 
     //
     // The render context
     //
 
-	std::unique_ptr<RenderContext> mRenderContext;
+    std::unique_ptr<RenderContext> mRenderContext;
 
-    std::string mLastShipLoaded;
+    //
+    // The current render parameters that we're smoothing to
+    //
+
+    static constexpr int SmoothMillis = 500;
+
+    float mCurrentZoom;
+    float mTargetZoom;
+    float mStartingZoom;
+    std::chrono::steady_clock::time_point mStartZoomTimestamp;
+
+    vec2f mCurrentCameraPosition;
+    vec2f mTargetCameraPosition;
+    vec2f mStartingCameraPosition;
+    std::chrono::steady_clock::time_point mStartCameraPositionTimestamp;
 };

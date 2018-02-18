@@ -12,6 +12,7 @@ set  (GAME_SOURCES
 	GameController.cpp
 	GameController.h
 	GameException.h
+	GameMath.h
 	GameOpenGL.h
 	GameParameters.h
 	Log.cpp

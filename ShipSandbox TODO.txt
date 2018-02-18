@@ -1,42 +1,20 @@
-	
-+ Take new perf baseline
-	+ FPS (-> changes.txt)
-	+ percentages (from perf analyzer)
-		+ See hotspots with perf analyzer
-
-= Do new OpenGL integration
-	+ Take first perf baseline (with single-thread optimization)
-		- fps: 12/13
-		- World::Update: 61.72%
-			- DoSprings: 42.59%
-				- Spring::Update: 34.46%
-				- Spring::DoDamping: 3.90%
-			- BalancePressure: 7.07%
-			- GravitateWater: 5.48%
-			- DiffuseLight: 3.17%
-			- Point::Update: 1.70%
-		- Game::Render: 31.48%
-			- Ship::Render: 30.21%
-				- ShipTriangles: 16.55%
-				- Springs: 10.72%%
-	+ Do integration
-		+ Fix water and land triangles
-		+ Fix - smoothing? anti-aliasing?
-	+ Retake perf baseline (with single-thread optimization)
-		- fps: 15/16
-		- World::Update: 43.79%
-			- DoSprings: 30.13%
-				- Spring::Update: 24.30%
-			- BalancePressure: 5.23%
-			- GravitateWater: 3.89%
-			- DiffuseLight: 2.22%
-			- Point::Update: 1.19%
-		- Game::Render: 52.34%
-			- Ship::Render: 51.73%
-				- External: 44.27%
-				- Point::GetColour: 5.09%
-	+ -> Changes.txt
-
+=================================================
+Current perf
+=================================================
+- fps: 15/16 (Samsung: )	
+- World::Update: 61.72%
+	- DoSprings: 42.59%
+		- Spring::Update: 34.46%
+		- Spring::DoDamping: 3.90%
+	- BalancePressure: 7.07%
+	- GravitateWater: 5.48%
+	- DiffuseLight: 3.17%
+	- Point::Update: 1.70%
+- Game::Render: 31.48%
+	- Ship::Render: 30.21%
+		- ShipTriangles: 16.55%
+		- Springs: 10.72%%
+=================================================
 - Gfx:
 	- OpenGL optimizations:
 		- Try without buffer population: 			
@@ -62,6 +40,7 @@
 	- Texture mapping:
 		- Land (sand)
 		- Water
+		- Sky
 		- Ship with second imange
 			- Load ship == Dialog with two textboxes and "browse" next to them
 	- Magnifying glass
@@ -96,20 +75,20 @@
 	- Water drag (already there?)
 
 - Controls:
-	- Smooth pan and zoom
-		- Takes 1 sec to get to final value (which is stored immediately as real value)
+	+ Smooth pan and zoom
+		+ Takes 1 sec to get to final value (which is stored immediately as real value)
 	- SettingsDialog: save settings
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 	- Settings:
 		- Strength Adjustment must be settable exponentially (slider=>exp)
 			- Formula: TODO
 			- Formula done by physics when calculating strengthfactor off strengthadjustment
-	= Zoom: inverse
-		= 0 - 1000
+	+ Zoom: inverse
+		+ 0 - 1000
 		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
 		+ Also called by GameController's Screen2World 
 			+ also move GameController's Screen2World implementation to Renderer
-		- See if needs to be exponentially-slider'ed as well
+		+ See if needs to be exponentially-slider'ed as well
 
 
 - Code:
