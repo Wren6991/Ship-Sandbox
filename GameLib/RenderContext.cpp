@@ -13,13 +13,13 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     : mResourceLoader(std::move(resourceLoader))
     // Land
     , mLandShaderProgram(0u)
-    , mLandShaderLandColorParameter(0)
     , mLandShaderAmbientLightIntensityParameter(0)
     , mLandShaderOrthoMatrixParameter(0)
     , mLandBuffer()
     , mLandBufferSize(0u)
     , mLandBufferMaxSize(0u)
     , mLandVBO(0u)
+    , mLandTexture(0u)
     // Water
     , mWaterShaderProgram(0u)
     , mWaterShaderWaterColorParameter(0)
@@ -70,7 +70,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     , mShowShipThroughWater(false)
     , mDrawPointsOnly(false)
 {
-    GLuint tmpVBO;
+    GLuint tmpGLuint;
 
     //
     // Init OpenGL
@@ -100,28 +100,51 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
 
 
     //
-    // Create land program
+    // Land 
     //
+
+    // Load texture
+    mLandTextureData = mResourceLoader->LoadTexture("sand_1.jpg");
+
+    // Create program
 
     mLandShaderProgram = glCreateProgram();
 
     char const * landVertexShaderSource = R"(
+
+        // Inputs
         attribute vec2 inputPos;
+
+        // Parameters
         uniform mat4 paramOrthoMatrix;
+
+        // Outputs
+        varying vec2 texturePos;
+
         void main()
         {
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+            texturePos = inputPos.xy;
         }
     )";
 
     CompileShader(landVertexShaderSource, GL_VERTEX_SHADER, mLandShaderProgram);
 
     char const * landFragmentShaderSource = R"(
-        uniform vec4 paramLandColor;
+
+        // Inputs from previous shader
+        varying vec2 texturePos;
+
+        // The texture
+        uniform sampler2D inputTexture;
+
+        // Parameters        
         uniform float paramAmbientLightIntensity;
+        uniform vec2 paramTextureScaling;
+
         void main()
         {
-            gl_FragColor = paramLandColor * paramAmbientLightIntensity;
+            gl_FragColor = texture2D(inputTexture, texturePos * paramTextureScaling) * paramAmbientLightIntensity;
         } 
     )";
 
@@ -134,22 +157,44 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     LinkProgram(mLandShaderProgram, "Land");
 
     // Get uniform locations
-    mLandShaderLandColorParameter = GetParameterLocation(mLandShaderProgram, "paramLandColor");
     mLandShaderAmbientLightIntensityParameter = GetParameterLocation(mLandShaderProgram, "paramAmbientLightIntensity");
+    GLint landShaderTextureScalingParameter = GetParameterLocation(mLandShaderProgram, "paramTextureScaling");
     mLandShaderOrthoMatrixParameter = GetParameterLocation(mLandShaderProgram, "paramOrthoMatrix");
 
     // Create VBO    
-    glGenBuffers(1, &tmpVBO);
-    mLandVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mLandVBO = tmpGLuint;
     
     // Set hardcoded parameters
     glUseProgram(*mLandShaderProgram);
-    glUniform4f(mLandShaderLandColorParameter, 0.5f, 0.5f, 0.5f, 1.0f);
+    glUniform2f(
+        landShaderTextureScalingParameter, 
+        4.0f / static_cast<float>(mLandTextureData->Width), 
+        4.0f / static_cast<float>(mLandTextureData->Height));
     glUseProgram(0);
+
+    // Create texture
+    glGenTextures(1, &tmpGLuint);
+    mLandTexture = tmpGLuint;
+
+    glBindTexture(GL_TEXTURE_2D, *mLandTexture);
+
+    // Set repeat mode
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Upload texture data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
 
     //
-    // Create water program
+    // Water 
     //
 
     mWaterShaderProgram = glCreateProgram();
@@ -188,8 +233,8 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     mWaterShaderOrthoMatrixParameter = GetParameterLocation(mWaterShaderProgram, "paramOrthoMatrix");
 
     // Create VBO
-    glGenBuffers(1, &tmpVBO);    
-    mWaterVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mWaterVBO = tmpGLuint;
 
     // Set hardcoded parameters
     glUseProgram(*mWaterShaderProgram);
@@ -201,8 +246,8 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     // Ship points
     //
 
-    glGenBuffers(1, &tmpVBO);
-    mShipPointVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mShipPointVBO = tmpGLuint;
 
 
     //
@@ -313,8 +358,8 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     mSpringShaderOrthoMatrixParameter = GetParameterLocation(mSpringShaderProgram, "paramOrthoMatrix");
 
     // Create VBOs
-    glGenBuffers(1, &tmpVBO);
-    mSpringVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mSpringVBO = tmpGLuint;
 
     // Set hardcoded parameters    
     glUseProgram(*mSpringShaderProgram);
@@ -367,8 +412,8 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     mStressedSpringShaderOrthoMatrixParameter = GetParameterLocation(mStressedSpringShaderProgram, "paramOrthoMatrix");
 
     // Create VBOs
-    glGenBuffers(1, &tmpVBO);
-    mStressedSpringVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mStressedSpringVBO = tmpGLuint;
 
     // Set hardcoded parameters    
     glUseProgram(*mStressedSpringShaderProgram);
@@ -427,8 +472,8 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     mShipTriangleShaderOrthoMatrixParameter = GetParameterLocation(mShipTriangleShaderProgram, "paramOrthoMatrix");
 
     // Create VBO
-    glGenBuffers(1, &tmpVBO);
-    mShipTriangleVBO = tmpVBO;
+    glGenBuffers(1, &tmpGLuint);
+    mShipTriangleVBO = tmpGLuint;
 
     glUseProgram(*mShipTriangleShaderProgram);
 
@@ -467,9 +512,11 @@ void RenderContext::RenderStart()
     glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Set anti-aliasing for lines
+    // Set anti-aliasing for lines and polygons
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH, GL_NICEST);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH, GL_NICEST);
 }
 
 void RenderContext::RenderLandStart(size_t slices)
@@ -495,6 +542,9 @@ void RenderContext::RenderLandEnd()
     // Set parameters
     glUniform1f(mLandShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
     glUniformMatrix4fv(mLandShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+
+    // Bind Texture
+    glBindTexture(GL_TEXTURE_2D, *mLandTexture);
 
     // Upload land buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);

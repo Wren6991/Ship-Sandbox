@@ -285,8 +285,10 @@ MainFrame::~MainFrame()
 
 void MainFrame::OnMainFrameClose(wxCloseEvent & /*event*/)
 {
-	mGameTimer->Stop();
-	mStatsRefreshTimer->Stop();
+    if (!!mGameTimer)
+	    mGameTimer->Stop();
+    if (!!mStatsRefreshTimer)
+	    mStatsRefreshTimer->Stop();
 
 	Destroy();
 }

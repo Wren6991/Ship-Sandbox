@@ -373,8 +373,20 @@ private:
         }
     };
 
+    struct OpenGLTextureDeleter
+    {
+        static void Delete(GLuint p)
+        {
+            if (p != 0)
+            {
+                glDeleteTextures(1, &p);
+            }
+        }
+    };
+
     using OpenGLShaderProgram = OpenGLObject<GLuint, OpenGLProgramDeleter>;
     using OpenGLVBO = OpenGLObject<GLuint, OpenGLVBODeleter>;
+    using OpenGLTexture = OpenGLObject<GLuint, OpenGLTextureDeleter>;
 
 private:
     
@@ -406,7 +418,6 @@ private:
     //
 
     OpenGLShaderProgram mLandShaderProgram;
-    GLint mLandShaderLandColorParameter;
     GLint mLandShaderAmbientLightIntensityParameter;
     GLint mLandShaderOrthoMatrixParameter;
 
@@ -425,6 +436,9 @@ private:
     size_t mLandBufferMaxSize;
 
     OpenGLVBO mLandVBO;
+    
+    std::unique_ptr<ResourceLoader::Texture const> mLandTextureData;
+    OpenGLTexture mLandTexture;
 
 
     //
