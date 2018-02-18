@@ -8,6 +8,7 @@
 #include "Game.h"
 #include "GameParameters.h"
 #include "RenderContext.h"
+#include "ResourceLoader.h"
 #include "Vectors.h"
 
 #include <chrono>
@@ -121,12 +122,14 @@ public:
 private:
 
     GameController(
-        std::unique_ptr<Game> && game,
-        std::string const & initialShipLoaded)
-        : mGame(std::move(game))
+        std::unique_ptr<Game> game,
+        std::string const & initialShipLoaded,
+        std::shared_ptr<ResourceLoader> resourceLoader)
+        : mResourceLoader(std::move(resourceLoader))
+        , mGame(std::move(game))
         , mLastShipLoaded(initialShipLoaded)
         , mGameParameters()
-        , mRenderContext(new RenderContext())        
+        , mRenderContext(new RenderContext(mResourceLoader))
         , mCurrentZoom(mRenderContext->GetZoom())
         , mTargetZoom(mCurrentZoom)
         , mStartingZoom(mCurrentZoom)
@@ -145,6 +148,8 @@ private:
         std::chrono::steady_clock::time_point startingTime);
 
 private:
+
+    std::shared_ptr<ResourceLoader> mResourceLoader;
 
     //
     // The game

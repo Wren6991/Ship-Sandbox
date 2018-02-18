@@ -9,19 +9,14 @@
 
 #include "GameException.h"
 #include "Log.h"
-#include "Utils.h"
-
-#include <IL/il.h>
-#include <IL/ilu.h>
-#include <picojson/picojson.h>
 
 #include <cassert>
 #include <map>
 #include <string>
 
-std::unique_ptr<Game> Game::Create()
+std::unique_ptr<Game> Game::Create(std::shared_ptr<ResourceLoader> resourceLoader)
 {
-	auto materials = LoadMaterials("Data/materials.json");
+	auto materials = resourceLoader->LoadMaterials();
 	auto oceanDepth = LoadOceanDepth("Data/depth.png");
 
 	std::unique_ptr<Physics::World> world = std::make_unique<Physics::World>();
@@ -30,7 +25,8 @@ std::unique_ptr<Game> Game::Create()
 		new Game(
 			std::move(materials),
 			std::move(oceanDepth),
-			std::move(world)));
+			std::move(world),
+            resourceLoader));
 }
 
 void Game::Reset()
@@ -40,66 +36,24 @@ void Game::Reset()
 
 void Game::LoadShip(std::string const & filepath)
 {
-	//
-	// Load image
-	//
-
-	ILuint imghandle;
-	ilGenImages(1, &imghandle);
-	ilBindImage(imghandle);
-
-	ILconst_string ilFilename(filepath.c_str());
-	if (!ilLoadImage(ilFilename))
-	{
-		ILint devilError = ilGetError();
-		std::string devilErrorMessage(iluErrorString(devilError));
-		throw GameException("Could not load ship \"" + filepath + "\": " + devilErrorMessage);
-	}
-
-    //
-    // Check if we need to convert it
-    //
-
-    int imageFormat = ilGetInteger(IL_IMAGE_FORMAT);
-    int imageType = ilGetInteger(IL_IMAGE_TYPE);
-    if (IL_RGB != imageFormat || IL_UNSIGNED_BYTE != imageType)
-    {
-        if (!ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE))
-        {
-            ILint devilError = ilGetError();
-            std::string devilErrorMessage(iluErrorString(devilError));
-            throw GameException("Could not convert ship image \"" + filepath + "\": " + devilErrorMessage);
-        }
-    }
-	
+    auto structureImage = mResourceLoader->LoadStructureImage(filepath);
 
 	//
 	// Create ship and add to world
 	//
 
-    ILubyte const * imageData = ilGetData();
-    int const width = ilGetInteger(IL_IMAGE_WIDTH);
-    int const height = ilGetInteger(IL_IMAGE_HEIGHT);
-
 	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
 		mWorld.get(),
-		imageData,
-		width,
-		height,
+        structureImage->Data,
+        structureImage->Width,
+        structureImage->Height,
 		mMaterials);
 
-    LogMessage("Loaded ship from ", filepath, " : W=", width, ", H=", height, ", ",
+    LogMessage("Loaded ship from ", filepath, " : W=", structureImage->Width, ", H=", structureImage->Height, ", ",
         shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
         " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
 
 	mWorld->AddShip(std::move(shp));
-
-
-	//
-	// Delete image
-	//
-
-	ilDeleteImage(imghandle);
 }
 
 void Game::DestroyAt(
@@ -150,30 +104,6 @@ void Game::Render(
 		renderContext);
 
     glFlush();
-}
-
-std::vector<std::unique_ptr<Material const>> Game::LoadMaterials(std::string const & filepath)
-{
-	std::vector<std::unique_ptr<Material const>> materials;
-
-	picojson::value root = Utils::ParseJSONFile(filepath);
-	if (!root.is<picojson::array>())
-	{
-		throw GameException("File \"" + filepath + "\" does not contain a JSON array");
-	}
-	
-	picojson::array rootArray = root.get<picojson::array>();
-	for (auto const & rootElem : rootArray)
-	{
-		if (!rootElem.is<picojson::object>())
-		{
-			throw GameException("File \"" + filepath + "\" does not contain a JSON array of objects");
-		}
-
-		materials.emplace_back(Material::Create(rootElem.get<picojson::object>()));
-	}
-
-	return materials;
 }
 
 std::vector<float> Game::LoadOceanDepth(std::string const & filepath)

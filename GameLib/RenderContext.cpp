@@ -9,9 +9,10 @@
 
 #include <cstring>
 
-RenderContext::RenderContext()
+RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
+    : mResourceLoader(std::move(resourceLoader))
     // Land
-    : mLandShaderProgram(0u)
+    , mLandShaderProgram(0u)
     , mLandShaderLandColorParameter(0)
     , mLandShaderAmbientLightIntensityParameter(0)
     , mLandShaderOrthoMatrixParameter(0)

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "GameOpenGL.h"
+#include "ResourceLoader.h"
 #include "Vectors.h"
 
 #include <cassert>
@@ -17,7 +18,7 @@ class RenderContext
 {
 public:
 
-    RenderContext();
+    RenderContext(std::shared_ptr<ResourceLoader> resourceLoader);
     
     ~RenderContext();
 
@@ -398,6 +399,8 @@ private:
 
 private:
 
+    std::shared_ptr<ResourceLoader> mResourceLoader;
+
     //
     // Land
     //
@@ -558,5 +561,5 @@ private:
     bool mShowStress;
     bool mUseXRayMode;
     bool mShowShipThroughWater;
-    bool mDrawPointsOnly;
+    bool mDrawPointsOnly;    
 };

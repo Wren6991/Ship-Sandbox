@@ -40,14 +40,16 @@ Current perf
 	- Texture mapping:
 		- Land (sand)
 		- Water
-		- Sky
-		- Ship with second imange
+		- Sky (with clouds)
+		- Ship with second image
 			- Load ship == Dialog with two textboxes and "browse" next to them
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
 		- https://www.shadertoy.com/view/4tdXDl
 	- ocean depth bitmaps
 	- Save photos (opens SaveAs FileDialog)
+	- Text (for query tool):
+		- see https://github.com/wxWidgets/wxWidgets/blob/master/samples/opengl/pyramid/pyramid.cpp
 
 - Dynamics:
 	- See if during dynamics can assume no deletions (i.e. iff we break springs only at end) and thus optimize

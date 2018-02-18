@@ -22,6 +22,8 @@ set  (GAME_SOURCES
 	PointerContainer.h
 	RenderContext.cpp
 	RenderContext.h
+	ResourceLoader.cpp
+	ResourceLoader.h
 	Scheduler.cpp
 	Scheduler.h
 	Utils.cpp

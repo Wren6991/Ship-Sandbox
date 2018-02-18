@@ -8,20 +8,16 @@
 #include "GameMath.h"
 #include "Log.h"
 
-#include <IL/il.h>
-#include <IL/ilu.h>
-
 // The dt of each step
 static constexpr float StepTimeDuration = 0.02f;
 
 std::unique_ptr<GameController> GameController::Create()
 {
-	// Initialize DevIL
-	ilInit();
-	iluInit();
+	// Create resource loader
+    std::shared_ptr<ResourceLoader> resourceLoader = std::make_shared<ResourceLoader>();
 
 	// Create game
-	std::unique_ptr<Game> game = Game::Create();
+	std::unique_ptr<Game> game = Game::Create(resourceLoader);
 
 	//
 	// Initialize game
@@ -34,7 +30,8 @@ std::unique_ptr<GameController> GameController::Create()
 	return std::unique_ptr<GameController>(
 		new GameController(
 			std::move(game),
-			initialShipFilename));
+			initialShipFilename,
+            resourceLoader));
 }
 
 void GameController::ResetAndLoadShip(std::string const & filepath)

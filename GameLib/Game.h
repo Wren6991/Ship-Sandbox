@@ -10,6 +10,7 @@
 #include "GameParameters.h"
 #include "Physics.h"
 #include "RenderContext.h"
+#include "ResourceLoader.h"
 
 #include <memory>
 #include <vector>
@@ -18,9 +19,10 @@ class Game
 {
 public:
 
-	static std::unique_ptr<Game> Create();
+	static std::unique_ptr<Game> Create(std::shared_ptr<ResourceLoader> resourceLoader);
 
 	void Reset();
+
 	void LoadShip(std::string const & filepath);
 
 	void DestroyAt(
@@ -53,14 +55,15 @@ private:
 	Game(
 		std::vector<std::unique_ptr<Material const>> materials,
 		std::vector<float> oceanDepth,
-		std::unique_ptr<Physics::World> world)
+		std::unique_ptr<Physics::World> world,
+        std::shared_ptr<ResourceLoader> resourceLoader)
 		: mMaterials(std::move(materials))
 		, mOceanDepth(std::move(oceanDepth))
 		, mWorld(std::move(world))
+        , mResourceLoader(std::move(resourceLoader))
 	{
 	}
 
-	static std::vector<std::unique_ptr<Material const>> LoadMaterials(std::string const & filepath);
 	static std::vector<float> LoadOceanDepth(std::string const & filepath);
 
 private:
@@ -69,4 +72,6 @@ private:
 	std::vector<float> const mOceanDepth;
 
     std::unique_ptr<Physics::World> mWorld;
+
+    std::shared_ptr<ResourceLoader> mResourceLoader;
 };
