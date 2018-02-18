@@ -7,9 +7,6 @@
 ***************************************************************************************/
 #include "AABB.h"
 
-#include "GameOpenGL.h"
-#include "RenderUtils.h"
-
 AABB::AABB(vec2 _bottomleft, vec2 _topright)
 {
 	bottomleft = _bottomleft;
@@ -30,7 +27,7 @@ void AABB::extendTo(AABB other)
 
 void AABB::render() const
 {
-	RenderUtils::RenderBox(
-		bottomleft,
-		topright);
+	//RenderUtils::RenderBox(
+	//	bottomleft,
+	//	topright);
 }

@@ -11,6 +11,7 @@
 #include "Material.h"
 #include "Physics.h"
 #include "PointerContainer.h"
+#include "RenderContext.h"
 #include "Scheduler.h"
 #include "Vectors.h"
 
@@ -81,7 +82,7 @@ public:
 
 	void Render(
 		GameParameters const & gameParameters,
-		RenderParameters const & renderParameters) const;
+		RenderContext & renderContext) const;
 
 public:
 

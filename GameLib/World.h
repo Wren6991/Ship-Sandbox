@@ -10,7 +10,7 @@
 #include "GameParameters.h"
 #include "Material.h"
 #include "Physics.h"
-#include "RenderParameters.h"
+#include "RenderContext.h"
 #include "Vectors.h"
 
 #include <cstdint>
@@ -52,30 +52,18 @@ public:
 		GameParameters const & gameParameters);
 
 	void Render(		
-		float left,
-		float right,
-		float bottom,
-		float top,
-		GameParameters const & gameParameters,
-		RenderParameters const & renderParameters) const;
+        GameParameters const & gameParameters,
+		RenderContext & renderContext) const;
 
 private:
 
 	void RenderLand(
-		float left,
-		float right,
-		float bottom,
-		float top,
 		GameParameters const & gameParameters,
-		RenderParameters const & renderParameters) const;
+        RenderContext & renderContext) const;
 
 	void RenderWater(
-		float left,
-		float right,
-		float bottom,
-		float top,
-		GameParameters const & gameParameters,
-		RenderParameters const & renderParameters) const;
+        GameParameters const & gameParameters,
+        RenderContext & renderContext) const;
 
 private:
 

@@ -4,11 +4,38 @@
 	+ percentages (from perf analyzer)
 		+ See hotspots with perf analyzer
 
-- Retake perf baseline with single-thread optimization
-	- fps: 12/13
-	- See dynamics as a whole vs render
-
-- See if during dynamics can assume no deletions (i.e. iff we break springs only at end)
+= Do new OpenGL integration
+	+ Take first perf baseline (with single-thread optimization)
+		- fps: 12/13
+		- World::Update: 61.72%
+			- DoSprings: 42.59%
+				- Spring::Update: 34.46%
+				- Spring::DoDamping: 3.90%
+			- BalancePressure: 7.07%
+			- GravitateWater: 5.48%
+			- DiffuseLight: 3.17%
+			- Point::Update: 1.70%
+		- Game::Render: 31.48%
+			- Ship::Render: 30.21%
+				- ShipTriangles: 16.55%
+				- Springs: 10.72%%
+	+ Do integration
+		+ Fix water and land triangles
+		+ Fix - smoothing? anti-aliasing?
+	+ Retake perf baseline (with single-thread optimization)
+		- fps: 15/16
+		- World::Update: 43.79%
+			- DoSprings: 30.13%
+				- Spring::Update: 24.30%
+			- BalancePressure: 5.23%
+			- GravitateWater: 3.89%
+			- DiffuseLight: 2.22%
+			- Point::Update: 1.19%
+		- Game::Render: 52.34%
+			- Ship::Render: 51.73%
+				- External: 44.27%
+				- Point::GetColour: 5.09%
+	+ -> Changes.txt
 
 - Gfx:
 	- OpenGL optimizations:
@@ -19,6 +46,7 @@
 				  was: Point does not live in PointerContainer but in std::uq_ptr<Point>[]
 					- Delete does nothing (Destroy does relationships though), just marks it
 			- Point also has mElementIndex, queried by springs and triangles when rendering themselves
+				- Can make Ship::Render const again, then
 			- Pointers to fixed buffers (as arrays of vectors) are owned by Ship and
 			  are given by Ship to RenderContext at each Render via 
 			  RenderContext::UploadVertices(vec2f*, vec3f*, count)
@@ -28,30 +56,65 @@
 
 				glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
 				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
+			- Point's vector pointers and mElementIndex are populated by Point::Base(buf1, buf2, elementIndex),
+			  invoked by Ship at construction
 
-	- Texture mapping for 2nd image
-		- Load ship == Dialog with two textboxes and "browse" next to them
+	- Texture mapping:
+		- Land (sand)
+		- Water
+		- Ship with second imange
+			- Load ship == Dialog with two textboxes and "browse" next to them
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
 		- https://www.shadertoy.com/view/4tdXDl
-	- Water with OpenGL particle effects
 	- ocean depth bitmaps
 	- Save photos (opens SaveAs FileDialog)
 
 - Dynamics:
+	- See if during dynamics can assume no deletions (i.e. iff we break springs only at end) and thus optimize
+	  on checking deletions
 	- After OpenGL/Fixed buffers optimization: 
 		- Implement Ship::CalculatePointColors() (called at Render time) which does everything in parallel on 
 		  Colour buffer (before calling RenderContext::UploadVertices(.))
 			- Verify VS emits parallel instructions
 		- See other similar parallelization opportunities on Positions
+	- Water:
+		- GravitateWater: try inverse visit (from H to L)
+			- Requires PointerVector::rbegin,rend
+		- Try directional BalancePressure?
+	- Spring equilibrium: 
+		- Find right overshooting factor (may be slightly smaller)
+		- Compare behavior with old game
+			- Steel Ball in old game: explodes?
+	- DestroyAt:
+		- Test: Spring::Destroy() only destroys triangles that contain A-B
+			- Should definitely make both A and B leak, as they both now have an adjacent hole
+	+ Ship::LeakWater:
+		+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
+	- is Verlet implemented right?
+	- See if can continue queueing tasks without waiting for all blocks of chunks
+	- Water drag (already there?)
 
-- Water:
-	- GravitateWater: try inverse visit (from H to L)
-		- Requires PointerVector::rbegin,rend
-	- Try directional BalancePressure?
+- Controls:
+	- Smooth pan and zoom
+		- Takes 1 sec to get to final value (which is stored immediately as real value)
+	- SettingsDialog: save settings
+		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
+	- Settings:
+		- Strength Adjustment must be settable exponentially (slider=>exp)
+			- Formula: TODO
+			- Formula done by physics when calculating strengthfactor off strengthadjustment
+	= Zoom: inverse
+		= 0 - 1000
+		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
+		+ Also called by GameController's Screen2World 
+			+ also move GameController's Screen2World implementation to Renderer
+		- See if needs to be exponentially-slider'ed as well
 
-- SettingsDialog: save settings
-	- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
+
+- Code:
+	- Get rid of Game.cpp and move functionality to GameController
+	- Use perf analyzer (mem) to see leaks
 
 - Histograms:
 	- class Histogram
@@ -65,43 +128,18 @@
 			- if not visible, return;
 			- Draw Statistics
 
-+ Ship::LeakWater:
-	+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
 
-- Spring equilibrium: 
-	- Find right overshooting factor (may be slightly smaller)
-	- Compare behavior with old game
-		- Steel Ball in old game: explodes?
-
-- DestroyAt:
-	- Test: Spring::Destroy() only destroys triangles that contain A-B
-		- Should definitely make both A and B leak, as they both now have an adjacent hole
 
 - Y-center ship after loading
 	+ Log destroyAt world coordinates to see span of Y axis: Y=0 is sea level, - is down, + is up
 	- Use effective y-span (lowest and highest y of real points)
 
-- Use perf analyzer (mem) to see leaks
+
 
 
 - Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
 	- Also jellyfish fixed in 1.2.6?
 
-- Settings:
-	- Strength Adjustment must be settable exponentially (slider=>exp)
-		- Formula: TODO
-		- Formula done by physics when calculating strengthfactor off strengthadjustment
-= Zoom: inverse?
-	= 0 - 1000
-		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
-		+ Also called by GameController's Screen2World 
-			+ also move GameController's Screen2World implementation to Renderer
-		- See if needs to be exponentially-slider'ed as well
-
-- is Verlet implemented right?
-
-
-- See if can continue queueing tasks without waiting for all blocks of chunks
 
 - Game interactions:
 	- IGameEventHandler: individual methods, including parameter changes, all default-implemented
@@ -184,7 +222,6 @@
 	- GameController starts it upon OnStartedSinking() event, published by Game when total ship
 	  water level (always adjusted at Point::AdjustWater) reaches threshold
 	
-- Water drag
 
 ==============================================================================
 ==============================================================================

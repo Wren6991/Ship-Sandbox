@@ -7,9 +7,7 @@
 ***************************************************************************************/
 #include "Physics.h"
 
-#include "GameOpenGL.h"
 #include "Log.h"
-#include "RenderUtils.h"
 
 #include <algorithm>
 #include <cassert>
@@ -574,49 +572,99 @@ void Ship::Update(
 
 void Ship::Render(
 	GameParameters const & gameParameters,
-	RenderParameters const & renderParameters) const
+	RenderContext & renderContext) const
 {
-    if (renderParameters.DrawPointsOnly)
+    //
+    // Upload points
+    //
+
+    renderContext.UploadShipPointStart(mAllPoints.size());
+
+    int todoElementIndex = 0; // Temporary - we need to assign an index now as points get deleted over time
+    for (Point const * point : mAllPoints)
     {
-        glBegin(GL_POINTS);
+        assert(!point->IsDeleted());
 
-        for (Point const * point : mAllPoints)
-        {
-            RenderUtils::SetColour(point->GetColour(point->GetMaterial()->Colour));
-            glVertex3f(point->GetPosition().x, point->GetPosition().y, -1);
-        }
+        auto pointColour = point->GetColour(
+            point->GetMaterial()->Colour,
+            renderContext.GetAmbientLightIntensity());
 
-        glEnd();
+        renderContext.UploadShipPoint(
+            point->GetPosition().x,
+            point->GetPosition().y,
+            pointColour.x,
+            pointColour.y,
+            pointColour.z);
 
-        return;
+        Point * todoPoint = const_cast<Point *>(point);
+        todoPoint->TodoElementIndex = todoElementIndex++;
     }
 
-	// Draw all the springs
-    for (Spring const * spring : mAllSprings)
+    renderContext.UploadShipPointEnd();
+
+    if (renderContext.GetDrawPointsOnly())
     {
-        assert(!spring->IsDeleted());
-        spring->Render(false);
+        // Draw just the points
+        renderContext.RenderShipPoints();
     }
-
-	if (!renderParameters.UseXRayMode)
-	{
-		// Render triangles
-		for (Triangle const * triangle : mAllTriangles)
-		{
-            assert(!triangle->IsDeleted());
-			triangle->Render();
-		}
-	}
-
-    if (renderParameters.ShowStress)
+    else
     {
+        //
+        // Render all the springs
+        //
+
+        renderContext.RenderSpringsStart(mAllSprings.size());
+
         for (Spring const * spring : mAllSprings)
         {
             assert(!spring->IsDeleted());
-            if (spring->IsStressed(gameParameters.StrengthAdjustment))
+
+            renderContext.RenderSpring(
+                spring->GetPointA()->TodoElementIndex,
+                spring->GetPointB()->TodoElementIndex);
+        }
+
+        renderContext.RenderSpringsEnd();
+
+
+        //
+        // Render all triangles
+        //
+
+        if (!renderContext.GetUseXRayMode())
+        {
+            renderContext.RenderShipTrianglesStart(mAllTriangles.size());
+            
+            for (Triangle const * triangle : mAllTriangles)
             {
-                spring->Render(true);
+                assert(!triangle->IsDeleted());
+
+                renderContext.RenderShipTriangle(
+                    triangle->GetPointA()->TodoElementIndex,
+                    triangle->GetPointB()->TodoElementIndex,
+                    triangle->GetPointC()->TodoElementIndex);
             }
+
+            renderContext.RenderShipTrianglesEnd();
+        }
+
+        if (renderContext.GetShowStress())
+        {
+            renderContext.RenderStressedSpringsStart(mAllSprings.size());
+
+            for (Spring const * spring : mAllSprings)
+            {
+                assert(!spring->IsDeleted());
+
+                if (spring->IsStressed(gameParameters.StrengthAdjustment))
+                {
+                    renderContext.RenderStressedSpring(
+                        spring->GetPointA()->TodoElementIndex,
+                        spring->GetPointB()->TodoElementIndex);
+                }
+            }
+
+            renderContext.RenderStressedSpringsEnd();
         }
     }
 }

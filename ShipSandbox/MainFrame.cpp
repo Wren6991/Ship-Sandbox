@@ -55,10 +55,10 @@ const long ID_STATS_REFRESH_TIMER = wxNewId();
 static constexpr int CursorStep = 30;
 static constexpr int PowerBarThickness = 2;
 
-MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
+MainFrame::MainFrame()
 	: mMouseInfo()
 	, mCurrentToolType(ToolType::Smash)
-	, mGameController(std::move(gameController))
+	, mGameController()
 	, mFrameCount(0u)
 {
 	Create(
@@ -223,6 +223,22 @@ MainFrame::MainFrame(std::shared_ptr<GameController> gameController)
 	mainMenuBar->Append(helpMenu, _("Help"));
 
 	SetMenuBar(mainMenuBar);
+
+    //
+    // Create Game controller
+    //
+
+    try
+    {
+        mGameController = GameController::Create();
+    }
+    catch (GameException const & e)
+    {
+        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
+
+        Close();
+    }
+
 
 
 	//
@@ -410,7 +426,7 @@ void MainFrame::OnMainGLCanvasMouseWheel(wxMouseEvent& event)
 {
 	assert(!!mGameController);
 
-	mGameController->AdjustZoom(powf(0.998f, event.GetWheelRotation()));
+	mGameController->AdjustZoom(powf(1.002f, event.GetWheelRotation()));
 }
 
 
@@ -467,14 +483,14 @@ void MainFrame::OnZoomInMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	mGameController->AdjustZoom(0.66f);
+	mGameController->AdjustZoom(1.05f);
 }
 
 void MainFrame::OnZoomOutMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	mGameController->AdjustZoom(1.5f);
+	mGameController->AdjustZoom(0.95f);
 }
 
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)

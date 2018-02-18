@@ -463,11 +463,11 @@ void SettingsDialog::ApplySettings()
 			mGameController->GetMinDestroyRadius(),
 			mGameController->GetMaxDestroyRadius()));
 
-	mGameController->SetDoQuickWaterFix(mQuickWaterFixCheckBox->IsChecked());
+	mGameController->SetShowShipThroughWater(mQuickWaterFixCheckBox->IsChecked());
 
-	mGameController->SetDoShowStress(mShowStressCheckBox->IsChecked());
+	mGameController->SetShowStress(mShowStressCheckBox->IsChecked());
 
-	mGameController->SetDoUseXRayMode(mXRayCheckBox->IsChecked());
+	mGameController->SetUseXRayMode(mXRayCheckBox->IsChecked());
 
     mGameController->SetDrawPointsOnly(mDrawPointsOnlyCheckBox->IsChecked());
 }
@@ -530,11 +530,11 @@ void SettingsDialog::ReadSettings()
 	mDestroyRadiusTextCtrl->SetValue(std::to_string(mGameController->GetDestroyRadius()));
 
 
-	mQuickWaterFixCheckBox->SetValue(mGameController->GetDoQuickWaterFix());
+	mQuickWaterFixCheckBox->SetValue(mGameController->GetShowShipThroughWater());
 
-	mShowStressCheckBox->SetValue(mGameController->GetDoShowStress());
+	mShowStressCheckBox->SetValue(mGameController->GetShowStress());
 
-	mXRayCheckBox->SetValue(mGameController->GetDoUseXRayMode());
+	mXRayCheckBox->SetValue(mGameController->GetUseXRayMode());
 
     mDrawPointsOnlyCheckBox->SetValue(mGameController->GetDrawPointsOnly());
 

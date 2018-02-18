@@ -9,11 +9,9 @@
 
 #include "AABB.h"
 #include "FixedSizeVector.h"
-#include "GameOpenGL.h"
 #include "GameParameters.h"
 #include "Material.h"
 #include "Physics.h"
-#include "RenderUtils.h"
 #include "Vectors.h"
 
 #include <set>
@@ -25,6 +23,9 @@ namespace Physics
 class Point : public ShipElement<Point> 
 {
 public:
+
+    // TODO: temporary, until we destructure the point position and color
+    int TodoElementIndex;
 
 	Point(
 		Ship * parentShip,
@@ -137,20 +138,24 @@ public:
     }
 
 
-    inline vec3f GetColour(vec3f const & baseColour) const
+    inline vec3f GetColour(
+        vec3f const & baseColour,
+        float ambientLightIntensity) const
     {
+        static constexpr vec3f LightPointColour = vec3f(1.0f, 1.0f, 0.25f);
+        static constexpr vec3f WetPointColour = vec3f(0.0f, 0.0f, 0.8f);
+
         float const colorWetness = fminf(mWater, 1.0f) * 0.7f;
 
         vec3f colour1 = baseColour * (1.0f - colorWetness)
-            + RenderParameters::WetPointColour * colorWetness;
-     
-        if (mLight == 0.0f)
-            return colour1;
+            + WetPointColour * colorWetness;
 
-        float const colorLightness = fminf(mLight, 1.0f) * 0.95f;
+        colour1 *= ambientLightIntensity;
+
+        float const colorLightness = mLight;
 
         return colour1 * (1.0f - colorLightness)
-            + RenderParameters::LightPointColour * colorLightness;
+            + LightPointColour * colorLightness;
     }
 
     float GetExternalWaterPressure(

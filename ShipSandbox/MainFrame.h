@@ -31,7 +31,7 @@ class MainFrame : public wxFrame
 {
 public:
 
-	MainFrame(std::shared_ptr<GameController> gameController);
+	MainFrame();
 
 	virtual ~MainFrame();
 

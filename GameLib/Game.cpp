@@ -8,7 +8,6 @@
 #include "Game.h"
 
 #include "GameException.h"
-#include "GameOpenGL.h"
 #include "Log.h"
 #include "Utils.h"
 
@@ -104,7 +103,7 @@ void Game::LoadShip(std::string const & filepath)
 }
 
 void Game::DestroyAt(
-	vec2 worldCoordinates,
+	vec2f worldCoordinates,
 	float radius)
 {
 	assert(!!mWorld);
@@ -114,7 +113,7 @@ void Game::DestroyAt(
 }
 
 void Game::DrawTo(
-    vec2 worldCoordinates,
+    vec2f worldCoordinates,
     float strength)
 {
 	assert(!!mWorld);
@@ -142,48 +141,13 @@ void Game::Update(
 
 void Game::Render(
 	GameParameters const & gameParameters,
-	RenderParameters const & renderParameters) const
+	RenderContext & renderContext) const
 {
 	assert(!!mWorld);
 
-	float halfHeight = renderParameters.Zoom;
-	float halfWidth = static_cast<float>(renderParameters.CanvasWidth) / static_cast<float>(renderParameters.CanvasHeight) * halfHeight;
-
-	// Clear canvas (blue)
-	glViewport(0, 0, renderParameters.CanvasWidth, renderParameters.CanvasHeight);
-	glClearColor(0.529f, 0.808f, 0.980f, 1.0f); //(cornflower blue)
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// Set projection (ortho) and translation 
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-halfWidth, halfWidth, -halfHeight, halfHeight, 1, 1000);
-	glTranslatef(-renderParameters.CamX, -renderParameters.CamY, 0);
-
-    // Smooth lines and points
-	glEnable(GL_LINE_SMOOTH);
-	glHint(GL_LINE_SMOOTH, GL_NICEST);
-	glEnable(GL_POINT_SMOOTH);
-
-    // Set blending function
-	glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Set primitives' thickness
-	glPointSize(0.15f * renderParameters.CanvasHeight / renderParameters.Zoom);
-	glLineWidth(0.1f * renderParameters.CanvasHeight / renderParameters.Zoom);
-	glColor3f(0, 0, 0);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
 	mWorld->Render(
-		renderParameters.CamX - halfWidth,
-		renderParameters.CamX + halfWidth,
-		renderParameters.CamY - halfHeight,
-		renderParameters.CamY + halfHeight,
 		gameParameters,
-		renderParameters);
+		renderContext);
 
     glFlush();
 }

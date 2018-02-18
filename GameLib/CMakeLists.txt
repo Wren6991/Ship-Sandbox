@@ -19,8 +19,8 @@ set  (GAME_SOURCES
 	Material.cpp
 	Material.h
 	PointerContainer.h
-	RenderParameters.h
-	RenderUtils.h
+	RenderContext.cpp
+	RenderContext.h
 	Scheduler.cpp
 	Scheduler.h
 	Utils.cpp

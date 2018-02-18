@@ -22,15 +22,15 @@
 //
 
 Scheduler::Scheduler()
-	: mNThreads(std::thread::hardware_concurrency())
-	, mThreadPool()
-	, mAvailable()
-	, mCompleted()
-	, mTaskQueue()
-	, mTaskQueueMutex()
+    : mNThreads(std::thread::hardware_concurrency())
+    , mThreadPool()
+    , mAvailable()
+    , mCompleted()
+    , mTaskQueue()
+    , mTaskQueueMutex()
     , mCurrentScheduledTasks(0u)
 {
-	LogMessage("Number of threads: ", mNThreads);
+    LogMessage("Number of threads: ", mNThreads);
 }
 
 Scheduler::~Scheduler()
@@ -76,10 +76,10 @@ void Scheduler::Schedule(ITask *t)
 
 void Scheduler::WaitForAllTasks()
 {
-	for (; mCurrentScheduledTasks > 0; --mCurrentScheduledTasks)
-	{
-		mCompleted.Wait();
-	}
+    for (; mCurrentScheduledTasks > 0; --mCurrentScheduledTasks)
+    {
+        mCompleted.Wait();
+    }
 }
 
 //
@@ -98,10 +98,10 @@ void Scheduler::Semaphore::Wait()
 {
     std::unique_lock<std::mutex> lock(mMutex);
 
-	while (0 == mCount)
-	{
-		mCondition.wait(lock);
-	}
+    while (0 == mCount)
+    {
+        mCondition.wait(lock);
+    }
 
     --mCount;
 }
@@ -111,15 +111,15 @@ void Scheduler::Semaphore::Wait()
 //
 
 Scheduler::Thread::Thread(
-	Scheduler * parent,
-	int name)
-	: mParent(parent)
-	, mName(name)
+    Scheduler * parent,
+    int name)
+    : mParent(parent)
+    , mName(name)
     , mIsStopped(false)
 {
-	// Start thread
-	mThread = std::thread(Scheduler::Thread::Enter, this);
-	mThread.detach();
+    // Start thread
+    mThread = std::thread(Scheduler::Thread::Enter, this);
+    mThread.detach();
 }
 
 void Scheduler::Thread::Enter(void *arg)
@@ -136,25 +136,25 @@ void Scheduler::Thread::Enter(void *arg)
 #endif
 
     Scheduler::Thread * thisThread = static_cast<Scheduler::Thread *>(arg);
-	while (!thisThread->mIsStopped)
-	{
-		// Wait for a task to become available
-		thisThread->mParent->mAvailable.Wait();
+    while (!thisThread->mIsStopped)
+    {
+        // Wait for a task to become available
+        thisThread->mParent->mAvailable.Wait();
 
-		// Deque the task
-		{
-			std::lock_guard<std::mutex> lock(thisThread->mParent->mTaskQueueMutex);
-			
-			thisThread->mCurrentTask = thisThread->mParent->mTaskQueue.front();
-			thisThread->mParent->mTaskQueue.pop();
-		}
+        // Deque the task
+        {
+            std::lock_guard<std::mutex> lock(thisThread->mParent->mTaskQueueMutex);
+            
+            thisThread->mCurrentTask = thisThread->mParent->mTaskQueue.front();
+            thisThread->mParent->mTaskQueue.pop();
+        }
 
         // Run the task
-		thisThread->mCurrentTask->Process();
+        thisThread->mCurrentTask->Process();
 
-		// Notify completion
+        // Notify completion
         delete thisThread->mCurrentTask;
-		thisThread->mParent->mCompleted.Signal();
+        thisThread->mParent->mCompleted.Signal();
    }
 }
 

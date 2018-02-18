@@ -7,7 +7,7 @@
 
 #include "Game.h"
 #include "GameParameters.h"
-#include "RenderParameters.h"
+#include "RenderContext.h"
 #include "Vectors.h"
 
 #include <memory>
@@ -35,17 +35,25 @@ public:
 	// Interactions
 	//
 
-	void DestroyAt(vec2 const & screenCoordinates, float radiusMultiplier);
-	void DrawTo(vec2 const & screenCoordinates, float strengthMultiplier);
+	void DestroyAt(vec2f const & screenCoordinates, float radiusMultiplier);
+	void DrawTo(vec2f const & screenCoordinates, float strengthMultiplier);
     Physics::Point const * GetNearestPointAt(vec2 const & screenCoordinates) const;
 
-	void SetCanvasSize(int width, int height);
+    void SetCanvasSize(int width, int height) { mRenderContext->SetCanvasSize(width, height); }
 
-	void Pan(vec2 const & screenOffset);
-    void ResetPan();
+    void Pan(vec2f const & screenOffset)
+    {
+        vec2f worldOffset = mRenderContext->ScreenOffset2WorldOffset(screenOffset);
+        mRenderContext->AdjustCameraWorldPosition(worldOffset);
+    
+    }
+    void ResetPan()
+    {
+        mRenderContext->SetCameraWorldPosition(vec2f(0, 0));
+    }
 
-	void AdjustZoom(float amount);
-    void ResetZoom();
+    void AdjustZoom(float amount) { mRenderContext->AdjustZoom(amount); }
+    void ResetZoom() { mRenderContext->SetZoom(1.0); }
 
 	float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
 	void SetStrengthAdjustment(float value);
@@ -77,35 +85,48 @@ public:
 	float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
 	float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
 
-	bool GetDoQuickWaterFix() const { return mRenderParameters.QuickWaterFix;  }
-	void SetDoQuickWaterFix(bool value);
+    bool GetShowStress() const { return mRenderContext->GetShowStress(); }
+    void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }
 
-	bool GetDoShowStress() const { return mRenderParameters.ShowStress; }
-	void SetDoShowStress(bool value);
+    bool GetUseXRayMode() const { return mRenderContext->GetUseXRayMode(); }
+    void SetUseXRayMode(bool value) { mRenderContext->SetUseXRayMode(value); }
 
-	bool GetDoUseXRayMode() const { return mRenderParameters.UseXRayMode; }
-	void SetDoUseXRayMode(bool value);
+	bool GetShowShipThroughWater() const { return mRenderContext->GetShowShipThroughWater();  }
+    void SetShowShipThroughWater(bool value) { mRenderContext->SetShowShipThroughWater(value); }
 
-    bool GetDrawPointsOnly() const { return mRenderParameters.DrawPointsOnly; }
-    void SetDrawPointsOnly(bool value);
+    bool GetDrawPointsOnly() const { return mRenderContext->GetDrawPointsOnly(); }
+    void SetDrawPointsOnly(bool value) { mRenderContext->SetDrawPointsOnly(value); }
 
 private:
 
 	GameController(
 		std::unique_ptr<Game> && game,
 		std::string const & initialShipLoaded)
-		: mGameParameters()
-		, mRenderParameters()
+		: mGame(std::move(game))
+        , mGameParameters()
+		, mRenderContext(new RenderContext())
 		, mLastShipLoaded(initialShipLoaded)
-		, mGame(std::move(game))
 	{}
 	
 private:
 
+    //
+    // The game
+    //
+
+    std::unique_ptr<Game> mGame;
+
+    //
+    // The game (dynamics) parameters
+    //
+
 	GameParameters mGameParameters;
-	RenderParameters mRenderParameters;
 
-	std::string mLastShipLoaded;
+    //
+    // The render context
+    //
 
-	std::unique_ptr<Game> mGame;
+	std::unique_ptr<RenderContext> mRenderContext;
+
+    std::string mLastShipLoaded;
 };

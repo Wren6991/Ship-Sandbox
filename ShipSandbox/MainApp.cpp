@@ -12,11 +12,7 @@
 
 #include "MainFrame.h"
 
-#include <GameLib/GameController.h>
-#include <GameLib/GameException.h>
-
 #include <wx/app.h>
-#include <wx/msgdlg.h>
 
 #ifdef FLOATING_POINT_CHECKS
 #ifdef _MSC_VER
@@ -39,40 +35,18 @@ IMPLEMENT_APP(MainApp);
 bool MainApp::OnInit()
 {
     //
-    // Initialize OpenGL
-    //
-
-    InitOpenGL();
-
-    //
     // Initialize wxWidgets
     //
 
 	wxInitAllImageHandlers();
 
 
-    //
-	// Create Game controller
-    //
-
-	// TODO: splash screen and game controller progress
-	std::unique_ptr<GameController> gameController;
-	try
-	{
-		gameController = GameController::Create();
-	}
-	catch (GameException const & e)
-	{
-		wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
-		return false;
-	}
-
 
     //
     // Create frame and start
     //
 
-	MainFrame* frame = new MainFrame(std::move(gameController));
+	MainFrame* frame = new MainFrame();
 	frame->SetIcon(wxICON(AAA_SHIP_ICON));
 	frame->Show();
 	SetTopWindow(frame);

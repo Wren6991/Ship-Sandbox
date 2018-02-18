@@ -9,7 +9,7 @@
 
 #include "GameParameters.h"
 #include "Physics.h"
-#include "RenderParameters.h"
+#include "RenderContext.h"
 
 #include <memory>
 #include <vector>
@@ -46,7 +46,7 @@ public:
 	 */
 	void Render(
 		GameParameters const & gameParameters,
-		RenderParameters const & renderParameters) const;
+		RenderContext & renderContext) const;
 
 private:
 

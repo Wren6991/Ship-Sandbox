@@ -7,9 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
-#include "GameOpenGL.h"
 #include "Physics.h"
-#include "RenderUtils.h"
 
 namespace Physics
 {
@@ -29,17 +27,6 @@ public:
 	inline Point const * GetPointA() const { return mPointA; }
 	inline Point const * GetPointB() const { return mPointB; }
 	inline Point const * GetPointC() const { return mPointC; }
-
-	inline void Render() const
-	{
-		RenderUtils::RenderTriangle(
-			mPointA->GetPosition(),
-			mPointB->GetPosition(),
-			mPointC->GetPosition(),
-			mPointA->GetColour(mPointA->GetMaterial()->Colour),
-			mPointB->GetColour(mPointB->GetMaterial()->Colour),
-			mPointC->GetColour(mPointC->GetMaterial()->Colour));
-	}
 
 private:
 	

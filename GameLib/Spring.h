@@ -8,10 +8,8 @@
 #pragma once
 
 #include "Material.h"
-#include "GameOpenGL.h"
 #include "GameParameters.h"
 #include "Physics.h"
-#include "RenderUtils.h"
 #include "Vectors.h"
 
 namespace Physics
@@ -75,29 +73,6 @@ public:
 	void Update();
 
 	void DoDamping(float amount);
-
-	inline void Render(bool isStressed) const
-	{
-		//
-		// If member is stressed, highlight it in red
-		//
-
-		glBegin(GL_LINES);
-
-		if (isStressed)
-            RenderUtils::SetColour(1.f, 0.f, 0.f);
-		else
-			RenderUtils::SetColour(mPointA->GetColour(mMaterial->Colour));
-
-		glVertex3f(mPointA->GetPosition().x, mPointA->GetPosition().y, -1);
-
-		if (!isStressed)
-			RenderUtils::SetColour(mPointB->GetColour(mMaterial->Colour));
-
-		glVertex3f(mPointB->GetPosition().x, mPointB->GetPosition().y, -1);
-
-		glEnd();
-	}
 
 private:
 

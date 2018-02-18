@@ -1,6 +1,6 @@
 /***************************************************************************************
 * Original Author:		Gabriele Giuseppini
-* Created:				2018-01-19
+* Created:				2018-02-21
 * Copyright:			Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
 #pragma once
@@ -11,16 +11,16 @@
 #include <windows.h>
 #endif
 
-//TBD: my laptop does not support OpenGL 3, hence no need for me to move to glad at this moment.
-//#include <glad/glad.h>
-#include <GL/gl.h>
+#include <glad/glad.h>
+//#include <GL/gl.h>
 
 #include <stdexcept>
 
 inline void InitOpenGL()
 {
-    //if (!gladLoadGLLoader((GLADloadproc)GetProcAddress))
-    //{
-    //    throw std::runtime_error("Failed to initialize GLAD");
-    //}
+    int status = gladLoadGL();
+    if (!status)
+    {
+        throw std::runtime_error("Failed to initialize GLAD");
+    }
 }

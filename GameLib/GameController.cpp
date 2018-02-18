@@ -6,15 +6,11 @@
 #include "GameController.h"
 
 #include "Log.h"
-#include "RenderUtils.h"
 
 #include <IL/il.h>
 #include <IL/ilu.h>
 
-//
 // The dt of each step
-//
-
 static constexpr float StepTimeDuration = 0.02f;
 
 std::unique_ptr<GameController> GameController::Create()
@@ -74,7 +70,7 @@ void GameController::ReloadLastShip()
 
 void GameController::DoStep()
 {
-	// Update game, copying the parameters
+	// Update game
 	assert(!!mGame);
 	mGame->Update(
         StepTimeDuration,
@@ -83,9 +79,9 @@ void GameController::DoStep()
 
 void GameController::Render()
 {
-	// Render game, copying the parameters
+	// Render game
 	assert(!!mGame);
-	mGame->Render(mGameParameters, mRenderParameters);
+	mGame->Render(mGameParameters, *mRenderContext);
 }
 
 /////////////////////////////////////////////////////////////
@@ -93,12 +89,10 @@ void GameController::Render()
 /////////////////////////////////////////////////////////////
 
 void GameController::DestroyAt(
-    vec2 const & screenCoordinates, 
+    vec2f const & screenCoordinates, 
     float radiusMultiplier)
 {
-	vec2 worldCoordinates = RenderUtils::Screen2World(
-		screenCoordinates,
-		mRenderParameters);
+	vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
 
     LogMessage("DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
@@ -113,9 +107,7 @@ void GameController::DrawTo(
     vec2 const & screenCoordinates,
     float strengthMultiplier)
 {
-	vec2 worldCoordinates = RenderUtils::Screen2World(
-		screenCoordinates,
-		mRenderParameters);
+	vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
 
 	// Apply action
 	assert(!!mGame);
@@ -124,46 +116,10 @@ void GameController::DrawTo(
 
 Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoordinates) const
 {
-    vec2 worldCoordinates = RenderUtils::Screen2World(
-        screenCoordinates,
-        mRenderParameters);
+    vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
 
     assert(!!mGame);
     return mGame->GetNearestPointAt(worldCoordinates);
-}
-
-void GameController::SetCanvasSize(
-	int width,
-	int height)
-{
-	mRenderParameters.CanvasWidth = width;
-	mRenderParameters.CanvasHeight = height;
-}
-
-void GameController::Pan(vec2 const & screenOffset)
-{
-	vec2 worldOffset = RenderUtils::ScreenOffset2WorldOffset(
-		screenOffset,
-		mRenderParameters);
-
-	mRenderParameters.CamX -= worldOffset.x;
-	mRenderParameters.CamY -= worldOffset.y;
-}
-
-void GameController::ResetPan()
-{
-    mRenderParameters.CamX = RenderParameters::DefaultCamX;
-    mRenderParameters.CamY = RenderParameters::DefaultCamY;
-}
-
-void GameController::AdjustZoom(float amount)
-{
-	mRenderParameters.Zoom *= amount;
-}
-
-void GameController::ResetZoom()
-{
-    mRenderParameters.Zoom = RenderParameters::DefaultZoom;
 }
 
 void GameController::SetStrengthAdjustment(float value)
@@ -206,32 +162,4 @@ void GameController::SetDestroyRadius(float value)
 	LogDebug("GameController::SetDestroyRadius(", value, ")");
 
 	mGameParameters.DestroyRadius = value;
-}
-
-void GameController::SetDoQuickWaterFix(bool value)
-{
-	LogDebug("GameController::SetDoQuickWaterFix(", value, ")");
-
-	mRenderParameters.QuickWaterFix = value;
-}
-
-void GameController::SetDoShowStress(bool value)
-{
-	LogDebug("GameController::SetDoShowStress(", value, ")");
-
-	mRenderParameters.ShowStress = value;
-}
-
-void GameController::SetDoUseXRayMode(bool value)
-{
-	LogDebug("GameController::SetDoUseXRayMode(", value, ")");
-
-	mRenderParameters.UseXRayMode = value;
-}
-
-void GameController::SetDrawPointsOnly(bool value)
-{
-    LogDebug("GameController::SetDrawPointsOnly(", value, ")");
-
-    mRenderParameters.DrawPointsOnly = value;
 }
