@@ -181,17 +181,18 @@ public:
 
     inline void RenderLand(
         float x,
-        float bottom, // TODO: make param
         float top)
     {
         assert(mLandBufferSize + 1u <= mLandBufferMaxSize);
+
+        float const worldBottom = mCamY - (mWorldHeight / 2.0f);
 
         LandElement * landElement = &(mLandBuffer[mLandBufferSize]);
 
         landElement->x1 = x;
         landElement->y1 = top;
         landElement->x2 = x;
-        landElement->y2 = bottom;
+        landElement->y2 = worldBottom;
 
         ++mLandBufferSize;
     }
@@ -209,7 +210,7 @@ public:
         float x,
         float bottom,
         float top,
-        float seaDepth)
+        float restHeight)
     {
         assert(mWaterBufferSize + 1u <= mWaterBufferMaxSize);
 
@@ -217,7 +218,7 @@ public:
 
         waterElement->x1 = x;
         waterElement->y1 = top;
-        waterElement->textureY1 = seaDepth;
+        waterElement->textureY1 = restHeight;
 
         waterElement->x2 = x;
         waterElement->y2 = bottom;

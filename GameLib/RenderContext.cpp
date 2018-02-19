@@ -170,7 +170,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     mLandVBO = tmpGLuint;
 
     // Calculate scaling: we want a tile to be repeated every these many world units
-    static constexpr float LandTileWorldSize = 256.0f;
+    static constexpr float LandTileWorldSize = 128.0f;
     
     // Set hardcoded parameters
     glUseProgram(*mLandShaderProgram);

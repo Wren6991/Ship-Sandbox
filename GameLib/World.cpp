@@ -189,11 +189,9 @@ void World::RenderLand(
     GameParameters const & gameParameters,
     RenderContext & renderContext) const
 {
-    static constexpr size_t SlicesCount = 200;
+    static constexpr size_t SlicesCount = 300;
 
     float const worldWidth = renderContext.GetWorldSize().x;
-    float const worldHeight = renderContext.GetWorldSize().y;
-    float const worldBottom = renderContext.GetCameraWorldPosition().y - (worldHeight / 2.0f);
 
     renderContext.RenderLandStart(SlicesCount);    
 
@@ -203,7 +201,6 @@ void World::RenderLand(
     {
         renderContext.RenderLand(
             sliceX,
-            worldBottom,
             GetOceanFloorHeight(sliceX, gameParameters));
     }
 
@@ -214,7 +211,7 @@ void World::RenderWater(
     GameParameters const & gameParameters,
     RenderContext &  renderContext) const
 {
-    static constexpr size_t SlicesCount = 200;
+    static constexpr size_t SlicesCount = 300;
 
     float const worldWidth = renderContext.GetWorldSize().x;
     
