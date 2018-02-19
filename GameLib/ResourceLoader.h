@@ -27,7 +27,7 @@ public:
         unsigned char const * Data;
     };
 
-    std::unique_ptr<Texture const> LoadTexture(std::string const & name);
+    std::unique_ptr<Texture const> LoadTextureRgb(std::string const & name);
 
     struct StructureImage
     {
@@ -42,5 +42,7 @@ public:
 
 private:
 
-    std::tuple<int, int, unsigned char *> LoadImage(std::string const & filepath);
+    std::tuple<int, int, unsigned char *> LoadImage(
+        std::string const & filepath,
+        int format);
 };

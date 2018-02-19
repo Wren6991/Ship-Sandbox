@@ -285,7 +285,9 @@ void Ship::DrawTo(
     }
 }
 
-Point const * Ship::GetNearestPointAt(vec2 const & targetPos) const
+Point const * Ship::GetNearestPointAt(
+    vec2 const & targetPos, 
+    float radius) const
 {
     Point const * bestPoint = nullptr;
     float bestDistance = std::numeric_limits<float>::max();
@@ -295,7 +297,7 @@ Point const * Ship::GetNearestPointAt(vec2 const & targetPos) const
         if (!point->IsDeleted())
         {
             float distance = (point->GetPosition() - targetPos).length();
-            if (distance < bestDistance)
+            if (distance < radius && distance < bestDistance)
             {
                 bestPoint = point;
                 bestDistance = distance;

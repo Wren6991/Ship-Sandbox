@@ -33,7 +33,9 @@ public:
         vec2 worldCoordinates,         
         float strength);
 
-    Physics::Point const * GetNearestPointAt(vec2 const & worldCoordinates) const;
+    Physics::Point const * GetNearestPointAt(
+        vec2 const & worldCoordinates,
+        float radius) const;
 
 	/*
 	 * Runs a game simulation step.

@@ -28,10 +28,11 @@ ResourceLoader::ResourceLoader()
     iluInit();
 }
 
-std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTexture(std::string const & name)
+std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgb(std::string const & name)
 {
     std::tuple<int, int, unsigned char *> image = LoadImage(
-        (std::filesystem::path(std::string("Data")) / "Textures" / name).string());
+        (std::filesystem::path(std::string("Data")) / "Textures" / name).string(),
+        IL_RGB);
 
     Texture * texture = new Texture();
     texture->Width = std::get<0>(image);
@@ -43,7 +44,7 @@ std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTexture(std::
 
 std::unique_ptr<ResourceLoader::StructureImage const> ResourceLoader::LoadStructureImage(std::string const & filepath)
 {
-    std::tuple<int, int, unsigned char *> image = LoadImage(filepath);
+    std::tuple<int, int, unsigned char *> image = LoadImage(filepath, IL_RGB);
 
     StructureImage * structureImage = new StructureImage();
     structureImage->Width = std::get<0>(image);
@@ -79,7 +80,9 @@ std::vector<std::unique_ptr<Material const>> ResourceLoader::LoadMaterials()
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(std::string const & filepath)
+std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
+    std::string const & filepath,
+    int format)
 {
     //
     // Load image
@@ -103,9 +106,9 @@ std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(std::string cons
 
     int imageFormat = ilGetInteger(IL_IMAGE_FORMAT);
     int imageType = ilGetInteger(IL_IMAGE_TYPE);
-    if (IL_RGB != imageFormat || IL_UNSIGNED_BYTE != imageType)
+    if (format != imageFormat || IL_UNSIGNED_BYTE != imageType)
     {
-        if (!ilConvertImage(IL_RGB, IL_UNSIGNED_BYTE))
+        if (!ilConvertImage(format, IL_UNSIGNED_BYTE))
         {
             ILint devilError = ilGetError();
             std::string devilErrorMessage(iluErrorString(devilError));
@@ -121,9 +124,10 @@ std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(std::string cons
     ILubyte const * imageData = ilGetData();
     int const width = ilGetInteger(IL_IMAGE_WIDTH);
     int const height = ilGetInteger(IL_IMAGE_HEIGHT);
+    int const bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
 
-    unsigned char * data = new unsigned char[width * height * 3];
-    std::memcpy(data, imageData, width * height * 3);
+    unsigned char * data = new unsigned char[width * height * bpp];
+    std::memcpy(data, imageData, width * height * bpp);
 
 
     //

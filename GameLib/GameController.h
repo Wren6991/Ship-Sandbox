@@ -45,7 +45,7 @@ public:
 
     void Pan(vec2f const & screenOffset)
     {
-        vec2f worldOffset = mRenderContext->ScreenOffset2WorldOffset(screenOffset);
+        vec2f worldOffset = mRenderContext->ScreenOffsetToWorldOffset(screenOffset);
 
         mTargetCameraPosition = mTargetCameraPosition - worldOffset;
         mStartingCameraPosition = mCurrentCameraPosition;
@@ -54,7 +54,7 @@ public:
 
     void PanImmediate(vec2f const & screenOffset)
     {
-        vec2f worldOffset = mRenderContext->ScreenOffset2WorldOffset(screenOffset);
+        vec2f worldOffset = mRenderContext->ScreenOffsetToWorldOffset(screenOffset);
         mRenderContext->AdjustCameraWorldPosition(worldOffset);
 
         mTargetCameraPosition = mCurrentCameraPosition = mRenderContext->GetCameraWorldPosition();
@@ -107,6 +107,9 @@ public:
     float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
     float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
 
+    float GetAmbientLightIntensity() const { return mRenderContext->GetAmbientLightIntensity(); }
+    void SetAmbientLightIntensity(float value) { mRenderContext->SetAmbientLightIntensity(value); }
+
     bool GetShowStress() const { return mRenderContext->GetShowStress(); }
     void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }
 
@@ -118,6 +121,11 @@ public:
 
     bool GetDrawPointsOnly() const { return mRenderContext->GetDrawPointsOnly(); }
     void SetDrawPointsOnly(bool value) { mRenderContext->SetDrawPointsOnly(value); }
+
+    vec2f ScreenToWorld(vec2f const & screenCoordinates) const
+    {
+        return mRenderContext->ScreenToWorld(screenCoordinates);
+    }
 
 private:
 

@@ -20,15 +20,18 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     , mLandBufferMaxSize(0u)
     , mLandVBO(0u)
     , mLandTexture(0u)
+    , mLandTextureData()
     // Water
     , mWaterShaderProgram(0u)
-    , mWaterShaderWaterColorParameter(0)
     , mWaterShaderAmbientLightIntensityParameter(0)
+    , mWaterShaderWaterTransparencyParameter(0)
     , mWaterShaderOrthoMatrixParameter(0)
     , mWaterBuffer()
     , mWaterBufferSize(0u)
     , mWaterBufferMaxSize(0u)
     , mWaterVBO(0u)
+    , mWaterTexture(0u)
+    , mWaterTextureData()
     // Ship points
     , mShipPointShaderProgram(0u)
     , mShipPointShaderOrthoMatrixParameter(0)
@@ -104,7 +107,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     //
 
     // Load texture
-    mLandTextureData = mResourceLoader->LoadTexture("sand_1.jpg");
+    mLandTextureData = mResourceLoader->LoadTextureRgb("sand_1.jpg");
 
     // Create program
 
@@ -114,7 +117,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
 
         // Inputs
         attribute vec2 inputPos;
-
+        
         // Parameters
         uniform mat4 paramOrthoMatrix;
 
@@ -164,13 +167,16 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     // Create VBO    
     glGenBuffers(1, &tmpGLuint);
     mLandVBO = tmpGLuint;
+
+    // Calculate scaling: we want a tile to be repeated every these many world units
+    static constexpr float LandTileWorldSize = 256.0f;
     
     // Set hardcoded parameters
     glUseProgram(*mLandShaderProgram);
     glUniform2f(
         landShaderTextureScalingParameter, 
-        4.0f / static_cast<float>(mLandTextureData->Width), 
-        4.0f / static_cast<float>(mLandTextureData->Height));
+        1.0f / LandTileWorldSize,
+        1.0f / LandTileWorldSize);
     glUseProgram(0);
 
     // Create texture
@@ -197,25 +203,51 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     // Water 
     //
 
+    // Load texture
+    mWaterTextureData = mResourceLoader->LoadTextureRgb("water_1.jpg");
+
+    // Create program
+
     mWaterShaderProgram = glCreateProgram();
 
     char const * waterVertexShaderSource = R"(
+
+        // Inputs
         attribute vec2 inputPos;
+        attribute float inputTextureY;
+
+        // Parameters
         uniform mat4 paramOrthoMatrix;
+
+        // Outputs
+        varying vec2 texturePos;
+
         void main()
         {
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+            texturePos = vec2(inputPos.x, inputTextureY);
         }
     )";
 
     CompileShader(waterVertexShaderSource, GL_VERTEX_SHADER, mWaterShaderProgram);
 
     char const * waterFragmentShaderSource = R"(
-        uniform vec4 paramWaterColor;
+
+        // Inputs from previous shader
+        varying vec2 texturePos;
+
+        // The texture
+        uniform sampler2D inputTexture;
+
+        // Parameters        
         uniform float paramAmbientLightIntensity;
+        uniform float paramWaterTransparency;
+        uniform vec2 paramTextureScaling;
+
         void main()
         {
-            gl_FragColor = paramWaterColor * paramAmbientLightIntensity;
+            vec4 textureColor = texture2D(inputTexture, texturePos * paramTextureScaling);
+            gl_FragColor = vec4(textureColor.xyz, paramWaterTransparency) * paramAmbientLightIntensity;
         } 
     )";
 
@@ -223,23 +255,50 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
 
     // Bind attribute locations
     glBindAttribLocation(*mWaterShaderProgram, 0, "inputPos");
+    glBindAttribLocation(*mWaterShaderProgram, 1, "inputTextureY");
 
     // Link
     LinkProgram(mWaterShaderProgram, "Water");
 
     // Get uniform locations    
-    mWaterShaderWaterColorParameter = GetParameterLocation(mWaterShaderProgram, "paramWaterColor");
     mWaterShaderAmbientLightIntensityParameter = GetParameterLocation(mWaterShaderProgram, "paramAmbientLightIntensity");
+    mWaterShaderWaterTransparencyParameter = GetParameterLocation(mWaterShaderProgram, "paramWaterTransparency");    
+    GLint waterShaderTextureScalingParameter = GetParameterLocation(mWaterShaderProgram, "paramTextureScaling");
     mWaterShaderOrthoMatrixParameter = GetParameterLocation(mWaterShaderProgram, "paramOrthoMatrix");
 
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
     mWaterVBO = tmpGLuint;
 
+    // Calculate scaling: we want a tile to be repeated every these many world units
+    static constexpr float WaterTileWorldSize = 128.0f;
+
     // Set hardcoded parameters
     glUseProgram(*mWaterShaderProgram);
-    glUniform4f(mWaterShaderWaterColorParameter, 0.0f, 0.25f, 1.0f, 0.5f);
+    glUniform2f(
+        waterShaderTextureScalingParameter,
+        1.0f / WaterTileWorldSize,
+        1.0f / WaterTileWorldSize);
     glUseProgram(0);
+
+    // Create texture
+    glGenTextures(1, &tmpGLuint);
+    mWaterTexture = tmpGLuint;
+
+    glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
+
+    // Set repeat mode
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Upload texture data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWaterTextureData->Width, mWaterTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mWaterTextureData->Data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
 
     //
@@ -583,17 +642,26 @@ void RenderContext::RenderWaterEnd()
 
     // Set parameters
     glUniform1f(mWaterShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
+    // TODO: use new param    
+    glUniform1f(mWaterShaderWaterTransparencyParameter, 0.4f);
     glUniformMatrix4fv(mWaterShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+
+    // Bind Texture
+    glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
 
     // Upload water buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
     glBufferData(GL_ARRAY_BUFFER, mWaterBufferSize * sizeof(WaterElement), mWaterBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Describe InputPos
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    // Describe InputTextureY
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // Enable blend (to make water half-transparent, half-opaque)
+    // TODO: remove after we always do at end, with waterTransparency
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -838,10 +906,10 @@ GLint RenderContext::GetParameterLocation(
 void RenderContext::DescribeShipPointsVBO()
 {
     // Position    
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 3) * sizeof(float), (void*)(0));
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)(0));
     glEnableVertexAttribArray(0);
     // Color    
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (2 + 3) * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 }
 

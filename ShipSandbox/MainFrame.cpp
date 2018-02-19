@@ -310,22 +310,34 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
     if (event.GetKeyCode() == WXK_LEFT)
     {
         // Left
-        mGameController->Pan(vec2f(-10.0f, 0.0f));
+        mGameController->Pan(vec2f(20.0f, 0.0f));
     }
     else if (event.GetKeyCode() == WXK_UP)
     {
         // Up
-        mGameController->Pan(vec2f(00.0f, -10.0f));
+        mGameController->Pan(vec2f(00.0f, 20.0f));
     }
     else if (event.GetKeyCode() == WXK_RIGHT)
     {
         // Right
-        mGameController->Pan(vec2f(10.0f, 0.0f));
+        mGameController->Pan(vec2f(-20.0f, 0.0f));
     }
     else if (event.GetKeyCode() == WXK_DOWN)
     {
         // Down
-        mGameController->Pan(vec2f(0.0f, 10.0f));
+        mGameController->Pan(vec2f(0.0f, -20.0f));
+    }
+    else if (event.GetKeyCode() == WXK_PAGEUP)
+    {
+        // Ambient light up
+        float newAmbientLight = std::min(1.0f, mGameController->GetAmbientLightIntensity() * 1.05f);
+        mGameController->SetAmbientLightIntensity(newAmbientLight);
+    }
+    else if (event.GetKeyCode() == WXK_PAGEDOWN)
+    {
+        // Ambient light down
+        float newAmbientLight = mGameController->GetAmbientLightIntensity() * 0.95f;
+        mGameController->SetAmbientLightIntensity(newAmbientLight);
     }
     else if (event.GetKeyCode() == static_cast<int>(' '))
     {
@@ -335,11 +347,19 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 
         assert(!!mGameController);
 
-        Physics::Point const * point = mGameController->GetNearestPointAt(vec2(mMouseInfo.x, mMouseInfo.y));
+        vec2f screenCoordinates(mMouseInfo.x, mMouseInfo.y);
+        vec2f worldCoordinates = mGameController->ScreenToWorld(screenCoordinates);
+
+        Physics::Point const * point = mGameController->GetNearestPointAt(screenCoordinates);
         if (nullptr != point)
         {
             // TODO: write directly onto window
-            LogMessage("Point @ ", point->GetPosition().toString(), "; Light=", point->GetLight());
+            LogMessage("@ ", worldCoordinates.toString(), ": point @ ", point->GetPosition().toString(), "; Light=", point->GetLight());
+        }
+        else
+        {
+            // TODO: write directly onto window
+            LogMessage("@ ", worldCoordinates.toString(), ": no points");
         }
     }
 	
@@ -348,23 +368,24 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
-	assert(!!mGameController);
+    if (!!mGameController)
+    {
+        // Make the timer for the next step start now
+        mGameTimer->Start(0, true);
 
-	// Make the timer for the next step start now
-	mGameTimer->Start(0, true);
+        // Update the tool
+        UpdateTool();
 
-    // Update the tool
-    UpdateTool();
+        // Do a simulation step
+        if (!IsPaused())
+        {
+            mGameController->DoStep();
+        }
 
-    // Do a simulation step
-    if (!IsPaused())
-    {        
-        mGameController->DoStep();
+        // Render
+        RenderGame();
+        ++mFrameCount;
     }
-
-	// Render
-	RenderGame();	
-    ++mFrameCount;
 }
 
 void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
@@ -384,11 +405,12 @@ void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
 
 void MainFrame::OnMainGLCanvasResize(wxSizeEvent & event)
 {
-	assert(!!mGameController);
-
-	mGameController->SetCanvasSize(
-		event.GetSize().GetX(),
-		event.GetSize().GetY());
+    if (!!mGameController)
+    {
+        mGameController->SetCanvasSize(
+            event.GetSize().GetX(),
+            event.GetSize().GetY());
+    }
 }
 
 void MainFrame::OnMainGLCanvasLeftDown(wxMouseEvent & /*event*/)
@@ -798,12 +820,15 @@ bool MainFrame::IsPaused()
 
 void MainFrame::RenderGame()
 {
-	// Render
-	mGameController->Render();	
+    if (!!mGameController)
+    {
+        // Render
+        mGameController->Render();
 
-	// Flush all the draw operations and flip the back buffer onto the screen.	
-	mMainGLCanvas->SwapBuffers();
-	mMainGLCanvas->Refresh();
+        // Flush all the draw operations and flip the back buffer onto the screen.	
+        mMainGLCanvas->SwapBuffers();
+        mMainGLCanvas->Refresh();
+    }
 }
 
 

@@ -105,14 +105,16 @@ void World::DrawTo(
     }
 }
 
-Point const * World::GetNearestPointAt(vec2 const & targetPos) const
+Point const * World::GetNearestPointAt(
+    vec2 const & targetPos,
+    float radius) const
 {
     Point const * bestPoint = nullptr;
     float bestDistance = std::numeric_limits<float>::max();
 
     for (auto const & ship : mAllShips)
     {
-        Point const * shipBestPoint = ship->GetNearestPointAt(targetPos);
+        Point const * shipBestPoint = ship->GetNearestPointAt(targetPos, radius);
         if (nullptr != shipBestPoint)
         {
             float distance = (shipBestPoint->GetPosition() - targetPos).length();
@@ -225,7 +227,8 @@ void World::RenderWater(
         renderContext.RenderWater(
             sliceX,
             GetOceanFloorHeight(sliceX, gameParameters),
-            GetWaterHeight(sliceX, gameParameters));
+            GetWaterHeight(sliceX, gameParameters),
+            gameParameters.SeaDepth);
     }
 
     renderContext.RenderWaterEnd();

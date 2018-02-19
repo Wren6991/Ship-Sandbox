@@ -130,7 +130,7 @@ void GameController::DestroyAt(
     vec2f const & screenCoordinates, 
     float radiusMultiplier)
 {
-	vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
+	vec2f worldCoordinates = mRenderContext->ScreenToWorld(screenCoordinates);
 
     LogMessage("DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
@@ -145,7 +145,7 @@ void GameController::DrawTo(
     vec2 const & screenCoordinates,
     float strengthMultiplier)
 {
-	vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
+	vec2f worldCoordinates = mRenderContext->ScreenToWorld(screenCoordinates);
 
 	// Apply action
 	assert(!!mGame);
@@ -154,10 +154,10 @@ void GameController::DrawTo(
 
 Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoordinates) const
 {
-    vec2f worldCoordinates = mRenderContext->Screen2World(screenCoordinates);
+    vec2f worldCoordinates = mRenderContext->ScreenToWorld(screenCoordinates);
 
     assert(!!mGame);
-    return mGame->GetNearestPointAt(worldCoordinates);
+    return mGame->GetNearestPointAt(worldCoordinates, 1.0f);
 }
 
 void GameController::SetStrengthAdjustment(float value)

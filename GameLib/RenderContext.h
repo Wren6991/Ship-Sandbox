@@ -144,14 +144,14 @@ public:
         mDrawPointsOnly = drawPointsOnly;
     }
 
-    inline vec2 Screen2World(vec2 const & screenCoordinates)
+    inline vec2 ScreenToWorld(vec2 const & screenCoordinates)
     {
         return vec2(
             (screenCoordinates.x / static_cast<float>(mCanvasWidth) - 0.5f) * mWorldWidth + mCamX,
             (screenCoordinates.y / static_cast<float>(mCanvasHeight) - 0.5f) * -mWorldHeight + mCamY);
     }
 
-    inline vec2 ScreenOffset2WorldOffset(vec2 const & screenOffset)
+    inline vec2 ScreenOffsetToWorldOffset(vec2 const & screenOffset)
     {
         return vec2(
             screenOffset.x / static_cast<float>(mCanvasWidth) * mWorldWidth,
@@ -198,7 +198,8 @@ public:
     inline void RenderWater(
         float x,
         float bottom,
-        float top)
+        float top,
+        float seaDepth)
     {
         assert(mWaterBufferSize + 1u <= mWaterBufferMaxSize);
 
@@ -206,8 +207,11 @@ public:
 
         waterElement->x1 = x;
         waterElement->y1 = top;
+        waterElement->textureY1 = seaDepth;
+
         waterElement->x2 = x;
         waterElement->y2 = bottom;
+        waterElement->textureY2 = 0.0f;
 
         ++mWaterBufferSize;
     }
@@ -446,8 +450,8 @@ private:
     //
 
     OpenGLShaderProgram mWaterShaderProgram;
-    GLint mWaterShaderWaterColorParameter;
     GLint mWaterShaderAmbientLightIntensityParameter;
+    GLint mWaterShaderWaterTransparencyParameter;
     GLint mWaterShaderOrthoMatrixParameter;
 
 #pragma pack(push)
@@ -455,8 +459,11 @@ private:
     {
         float x1;
         float y1;
+        float textureY1;
+        
         float x2;
         float y2;
+        float textureY2;
     };
 #pragma pack(pop)
 
@@ -465,6 +472,9 @@ private:
     size_t mWaterBufferMaxSize;
 
     OpenGLVBO mWaterVBO;
+
+    std::unique_ptr<ResourceLoader::Texture const> mWaterTextureData;
+    OpenGLTexture mWaterTexture;
 
 
     //

@@ -45,7 +45,9 @@ public:
         vec2 const & targetPos,
         float strength);
 
-    Point const * GetNearestPointAt(vec2 const & targetPos) const;
+    Point const * GetNearestPointAt(
+        vec2 const & targetPos,
+        float radius) const;
 
 	void Update(
 		float dt,

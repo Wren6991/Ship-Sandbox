@@ -76,10 +76,12 @@ void Game::DrawTo(
 	// TODO: publish game event
 }
 
-Physics::Point const * Game::GetNearestPointAt(vec2 const & worldCoordinates) const
+Physics::Point const * Game::GetNearestPointAt(
+    vec2 const & worldCoordinates,
+    float radius) const
 {
     assert(!!mWorld);
-    return mWorld->GetNearestPointAt(worldCoordinates);
+    return mWorld->GetNearestPointAt(worldCoordinates,  radius);
 }
 
 void Game::Update(
