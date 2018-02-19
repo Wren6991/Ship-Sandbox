@@ -47,7 +47,7 @@ struct GameParameters
 		, StrengthAdjustment(0.0075f)
 		, BuoyancyAdjustment(4.0f)
 		, WaterPressureAdjustment(0.75f)
-		, WaveHeight(1.0f)
+		, WaveHeight(2.5f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.55f)
 	{

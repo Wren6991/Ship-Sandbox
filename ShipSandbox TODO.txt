@@ -42,8 +42,8 @@ Current perf
 		- Phase 2: with clock
 	- Texture mapping:
 		= Land (sand)
-			- bottom is not anymore a param but a uniform of F shader, set to +/- mWorldHeight/2
-				- only param is y: world y
+			- bottom is not anymore a param but it's filled by RenderLadn(.) with +/- mWorldHeight/2
+				- only param is x and y (world y)
 			+ texture coordinates are world coordinates
 			+ Magic number is based on desired tile world size
 		= Water
