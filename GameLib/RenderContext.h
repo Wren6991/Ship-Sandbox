@@ -104,6 +104,16 @@ public:
         mAmbientLightIntensity = intensity;
     }
 
+    float GetWaterTransparency() const
+    {
+        return mWaterTransparency;
+    }
+
+    void SetWaterTransparency(float transparency)
+    {
+        mWaterTransparency = transparency;
+    }
+
     bool GetShowStress() const
     {
         return mShowStress;
@@ -171,7 +181,7 @@ public:
 
     inline void RenderLand(
         float x,
-        float bottom,
+        float bottom, // TODO: make param
         float top)
     {
         assert(mLandBufferSize + 1u <= mLandBufferMaxSize);
@@ -580,7 +590,9 @@ private:
     float mCamY;
     int mCanvasWidth;
     int mCanvasHeight;
+
     float mAmbientLightIntensity;
+    float mWaterTransparency;
 
     bool mShowStress;
     bool mUseXRayMode;

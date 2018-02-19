@@ -43,13 +43,11 @@ Current perf
 	- Texture mapping:
 		= Land (sand)
 			- bottom is not anymore a param but a uniform of F shader, set to +/- mWorldHeight/2
-			- only param is y: world y
+				- only param is y: world y
 			+ texture coordinates are world coordinates
 			+ Magic number is based on desired tile world size
 		= Water
-			= Use "water transparency" uniform in shader that sets alpha value in result of texture
-				- If it works, get rid of quickwaterfix and replace with water transparency, also
-				  at SettingsDialog	
+			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
 			+ Make texture stretch wrt vertical height of water strip
 			+ Change map, this one's ugly
 			- Try to merge renderland and renderwater:

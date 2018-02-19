@@ -35,6 +35,7 @@ private:
 	void OnBuoyancySliderScroll(wxScrollEvent & event);
 	void OnWaterPressureSliderScroll(wxScrollEvent & event);
 	void OnWaveHeightSliderScroll(wxScrollEvent & event);
+    void OnWaterTransparencySliderScroll(wxScrollEvent & event);
 	void OnSeaDepthSliderScroll(wxScrollEvent & event);
 	void OnDestroyRadiusSliderScroll(wxScrollEvent & event);
 	void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
@@ -57,6 +58,8 @@ private:
 	wxTextCtrl * mWaterPressureTextCtrl;
 	wxSlider * mWaveHeightSlider;
 	wxTextCtrl * mWaveHeightTextCtrl;
+    wxSlider * mWaterTransparencySlider;
+    wxTextCtrl * mWaterTransparencyTextCtrl;
 	wxSlider * mSeaDepthSlider;
 	wxTextCtrl * mSeaDepthTextCtrl;
 	wxSlider * mDestroyRadiusSlider;

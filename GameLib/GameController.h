@@ -110,6 +110,9 @@ public:
     float GetAmbientLightIntensity() const { return mRenderContext->GetAmbientLightIntensity(); }
     void SetAmbientLightIntensity(float value) { mRenderContext->SetAmbientLightIntensity(value); }
 
+    float GetWaterTransparency() const { return mRenderContext->GetWaterTransparency(); }
+    void SetWaterTransparency(float value) { mRenderContext->SetWaterTransparency(value); }
+
     bool GetShowStress() const { return mRenderContext->GetShowStress(); }
     void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }
 

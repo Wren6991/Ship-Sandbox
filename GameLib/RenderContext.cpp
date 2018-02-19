@@ -68,6 +68,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     , mCanvasWidth(100)
     , mCanvasHeight(100)
     , mAmbientLightIntensity(1.0f)
+    , mWaterTransparency(0.66f)
     , mShowStress(false)
     , mUseXRayMode(false)
     , mShowShipThroughWater(false)
@@ -247,7 +248,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
         void main()
         {
             vec4 textureColor = texture2D(inputTexture, texturePos * paramTextureScaling);
-            gl_FragColor = vec4(textureColor.xyz, paramWaterTransparency) * paramAmbientLightIntensity;
+            gl_FragColor = vec4(textureColor.xyz, 1.0 - paramWaterTransparency) * paramAmbientLightIntensity;
         } 
     )";
 
@@ -642,8 +643,7 @@ void RenderContext::RenderWaterEnd()
 
     // Set parameters
     glUniform1f(mWaterShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
-    // TODO: use new param    
-    glUniform1f(mWaterShaderWaterTransparencyParameter, 0.4f);
+    glUniform1f(mWaterShaderWaterTransparencyParameter, mWaterTransparency);
     glUniformMatrix4fv(mWaterShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
     // Bind Texture
@@ -660,8 +660,7 @@ void RenderContext::RenderWaterEnd()
     glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // Enable blend (to make water half-transparent, half-opaque)
-    // TODO: remove after we always do at end, with waterTransparency
+    // Enable blend (to make water transparent)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
