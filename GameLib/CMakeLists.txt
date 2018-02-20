@@ -34,6 +34,7 @@ set  (GAME_SOURCES
 set  (PHYSICS_SOURCES
 	Cable.cpp
 	Cable.h
+	Cloud.h
 	ElectricalElement.cpp
 	ElectricalElement.h
 	Generator.cpp

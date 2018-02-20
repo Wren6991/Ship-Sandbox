@@ -8,6 +8,7 @@
 namespace Physics
 {
     class Cable;
+    class Cloud;
     class ElectricalElement;
     class Generator;
     class Lamp;
@@ -23,6 +24,7 @@ namespace Physics
 #include "ElectricalElement.h"
 
 #include "Cable.h"
+#include "Cloud.h"
 #include "Generator.h"
 #include "Lamp.h"
 #include "Point.h"

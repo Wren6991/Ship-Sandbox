@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <random>
 
 namespace /*anonymous*/ {
 
@@ -49,6 +50,8 @@ World::World()
     , mCurrentStepSequenceNumber(0u)
     , mCollisionTree(BVHNode::AllocateTree())
 {
+    std::seed_seq seed_seq({1, 242, 19730528});
+    mRandomEngine = std::ranlux48_base(seed_seq);
 }
 
 // Function of time and x (though time is constant during the update step, so no need to parameterise it)
@@ -151,6 +154,31 @@ void World::Update(
     }
 
     //buildBVHTree(true, points, collisionTree);
+
+    // Resize clouds vector
+    if (gameParameters.NumberOfClouds < mAllClouds.size())
+    {
+        mAllClouds.resize(gameParameters.NumberOfClouds);
+    }
+    else
+    {
+        std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+        for (size_t c = mAllClouds.size(); c < gameParameters.NumberOfClouds; ++c)
+        {
+            mAllClouds.emplace_back(
+                dis(mRandomEngine) * 100.0f,    // OffsetX
+                // TODO
+                //dis(mRandomEngine) * 0.3f,      // SpeedX1
+                dis(mRandomEngine) * 2.0f,      // SpeedX1
+                dis(mRandomEngine) * 0.01f,     // AmpX
+                dis(mRandomEngine) * 0.01f,     // SpeedX2
+                dis(mRandomEngine) * 100.0f,    // OffsetY
+                dis(mRandomEngine) * 0.001f,    // AmpY
+                dis(mRandomEngine) * 0.01f,     // SpeedY
+                dis(mRandomEngine) * 0.05f,     // AmpScale
+                dis(mRandomEngine) * 0.01f);    // SpeedScale
+        }
+    }
 }
 
 void World::Render(	
@@ -158,6 +186,9 @@ void World::Render(
     RenderContext & renderContext) const
 {
     renderContext.RenderStart();
+
+    // Render the clouds
+    RenderClouds(gameParameters, renderContext);
 
     // Render the ocean floor
     RenderLand(gameParameters, renderContext);
@@ -185,13 +216,32 @@ void World::Render(
 // Private Helpers
 ///////////////////////////////////////////////////////////////////////////////////
 
+void World::RenderClouds(
+    GameParameters const & gameParameters,
+    RenderContext & renderContext) const
+{
+    renderContext.RenderCloudsStart(mAllClouds.size());
+
+    for (Cloud const & cloud : mAllClouds)
+    {
+        vec3f cloudValues = cloud.CalculatePosAndScale(mCurrentTime);
+
+        renderContext.RenderCloud(
+            cloudValues.x,
+            cloudValues.y,
+            cloudValues.z);
+    }
+
+    renderContext.RenderCloudsEnd();
+}
+
 void World::RenderLand(
     GameParameters const & gameParameters,
     RenderContext & renderContext) const
 {
     static constexpr size_t SlicesCount = 300;
 
-    float const worldWidth = renderContext.GetWorldSize().x;
+    float const worldWidth = renderContext.GetVisibleWorldSize().x;
 
     renderContext.RenderLandStart(SlicesCount);    
 
@@ -213,7 +263,7 @@ void World::RenderWater(
 {
     static constexpr size_t SlicesCount = 300;
 
-    float const worldWidth = renderContext.GetWorldSize().x;
+    float const worldWidth = renderContext.GetVisibleWorldSize().x;
     
     renderContext.RenderWaterStart(SlicesCount);
 

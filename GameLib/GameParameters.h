@@ -40,6 +40,8 @@ struct GameParameters
 	static constexpr float MinDestroyRadius = 0.1f;
 	static constexpr float MaxDestroyRadius = 10.0f;
 
+    size_t NumberOfClouds;
+
 	GameParameters()
 		: Gravity(0.0f, -9.8f)
 		, GravityNormal(Gravity.normalise())
@@ -50,6 +52,7 @@ struct GameParameters
 		, WaveHeight(2.5f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.55f)
+        , NumberOfClouds(10)
 	{
 	}
 };

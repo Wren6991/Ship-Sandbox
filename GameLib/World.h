@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <random>
 #include <set>
 #include <vector>
 
@@ -59,6 +60,10 @@ public:
 
 private:
 
+    void RenderClouds(
+        GameParameters const & gameParameters,
+        RenderContext & renderContext) const;
+
 	void RenderLand(
 		GameParameters const & gameParameters,
         RenderContext & renderContext) const;
@@ -71,6 +76,7 @@ private:
 
 	// Repository
 	std::vector<std::unique_ptr<Ship>> mAllShips;
+    std::vector<Cloud> mAllClouds;
 
 	// The current time 
 	float mCurrentTime;
@@ -78,6 +84,9 @@ private:
     // The current step sequence number; used to avoid zero-ing out things.
     // Guaranteed to never be zero, but expected to rollover
     uint64_t mCurrentStepSequenceNumber;
+
+    // Our random generator
+    std::ranlux48_base mRandomEngine;
 
 private:
 

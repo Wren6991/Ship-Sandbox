@@ -33,7 +33,7 @@ public:
     {
         mZoom = zoom;
 
-        CalculateWorldCoordinates();
+        CalculateVisibleWorldCoordinates();
         CalculateOrthoMatrix();        
     }
 
@@ -41,7 +41,7 @@ public:
     {
         mZoom *= amount;
 
-        CalculateWorldCoordinates();
+        CalculateVisibleWorldCoordinates();
         CalculateOrthoMatrix();
     }
 
@@ -55,16 +55,16 @@ public:
         mCamX = pos.x;
         mCamY = pos.y;
 
-        CalculateWorldCoordinates();
+        CalculateVisibleWorldCoordinates();
         CalculateOrthoMatrix();
     }
 
     void AdjustCameraWorldPosition(vec2f const & worldOffset)
     {
-        mCamX -= worldOffset.x;
-        mCamY -= worldOffset.y;
+        mCamX += worldOffset.x;
+        mCamY += worldOffset.y;
 
-        CalculateWorldCoordinates();
+        CalculateVisibleWorldCoordinates();
         CalculateOrthoMatrix();
     }
 
@@ -85,13 +85,14 @@ public:
 
         glViewport(0, 0, mCanvasWidth, mCanvasHeight);
 
-        CalculateWorldCoordinates();
+        CalculateVisibleWorldCoordinates();
         CalculateOrthoMatrix();
     }
 
-    vec2f GetWorldSize() const
+    __declspec(deprecated)
+    vec2f GetVisibleWorldSize() const
     {
-        return vec2f(mWorldWidth, mWorldHeight);
+        return vec2f(mVisibleWorldWidth, mVisibleWorldHeight);
     }
 
     float GetAmbientLightIntensity() const
@@ -157,20 +158,90 @@ public:
     inline vec2 ScreenToWorld(vec2 const & screenCoordinates)
     {
         return vec2(
-            (screenCoordinates.x / static_cast<float>(mCanvasWidth) - 0.5f) * mWorldWidth + mCamX,
-            (screenCoordinates.y / static_cast<float>(mCanvasHeight) - 0.5f) * -mWorldHeight + mCamY);
+            (screenCoordinates.x / static_cast<float>(mCanvasWidth) - 0.5f) * mVisibleWorldWidth + mCamX,
+            (screenCoordinates.y / static_cast<float>(mCanvasHeight) - 0.5f) * -mVisibleWorldHeight + mCamY);
     }
 
     inline vec2 ScreenOffsetToWorldOffset(vec2 const & screenOffset)
     {
         return vec2(
-            screenOffset.x / static_cast<float>(mCanvasWidth) * mWorldWidth,
-            screenOffset.y / static_cast<float>(mCanvasHeight) * -mWorldHeight);
+            screenOffset.x / static_cast<float>(mCanvasWidth) * mVisibleWorldWidth,
+            screenOffset.y / static_cast<float>(mCanvasHeight) * -mVisibleWorldHeight);
     }
 
 public:
 
     void RenderStart();
+
+
+    //
+    // Clouds
+    //
+
+    void RenderCloudsStart(size_t clouds);
+
+    inline void RenderCloud(
+        float virtualX,
+        float virtualY,
+        float scale)
+    {
+        //
+        // First translate and roll coordinates into a 3 X 3 world,
+        // then take the central slice and map it into the visible world
+
+        // TODO: revisit translation
+        float rolledX = fmodf(virtualX, 3.0f);
+        if (rolledX < 0.0f)
+            rolledX += 3.0f;
+
+        float mappedX = -(mVisibleWorldWidth / 2.0f) + (rolledX - 1.0f) * (mVisibleWorldWidth / 2.0f);
+        mappedX -= mCamX;
+
+        float rolledY = fmodf(virtualY, 3.0f);
+        if (rolledY < 0.0f)
+            rolledY += 3.0f;
+
+        float mappedY = (rolledY - 1.5f) * mVisibleWorldHeight;
+        mappedY -= mCamY;
+
+        assert(mCloudBufferSize + 1u <= mCloudBufferMaxSize);
+        CloudElement * cloudElement = &(mCloudBuffer[mCloudBufferSize]);
+
+        // TODO: use texture width and height
+        float textureW = 40;
+        float textureH = 20;
+
+        // TODO: clip bottom y's and adjust texturey's accordingly OR use stencil with wave at bottom
+        // TODO: second addend needs also to scale opposite with zoom
+        float leftX = mappedX - textureW * scale / 2.0f;
+        float rightX = mappedX + textureW * scale / 2.0f;
+        float topY = mappedY - textureH * scale / 2.0f;
+        float bottomY = mappedY + textureH * scale / 2.0f;
+        
+        cloudElement->xtl = leftX;
+        cloudElement->ytl = topY;
+        cloudElement->texturextl = 0.0f;
+        cloudElement->textureytl = 0.0f;
+
+        cloudElement->xbl = leftX;
+        cloudElement->ybl = bottomY;
+        cloudElement->texturexbl = 0.0f;
+        cloudElement->textureybl = 1.0f;
+
+        cloudElement->xtr = rightX;
+        cloudElement->ytr = topY;
+        cloudElement->texturextr = 1.0f;
+        cloudElement->textureytr = 0.0f;
+
+        cloudElement->xbr = rightX;
+        cloudElement->ybr = bottomY;
+        cloudElement->texturexbr = 1.0f;
+        cloudElement->textureybr = 1.0f;
+
+        ++mCloudBufferSize;
+    }
+
+    void RenderCloudsEnd();
 
 
     //
@@ -183,10 +254,9 @@ public:
         float x,
         float top)
     {
+        float const worldBottom = mCamY - (mVisibleWorldHeight / 2.0f);
+
         assert(mLandBufferSize + 1u <= mLandBufferMaxSize);
-
-        float const worldBottom = mCamY - (mWorldHeight / 2.0f);
-
         LandElement * landElement = &(mLandBuffer[mLandBufferSize]);
 
         landElement->x1 = x;
@@ -213,7 +283,6 @@ public:
         float restHeight)
     {
         assert(mWaterBufferSize + 1u <= mWaterBufferMaxSize);
-
         WaterElement * waterElement = &(mWaterBuffer[mWaterBufferSize]);
 
         waterElement->x1 = x;
@@ -244,7 +313,6 @@ public:
         float b)
     {
         assert(mShipPointBufferSize + 1u <= mShipPointBufferMaxSize);
-
         ShipPointElement * shipPointElement = &(mShipPointBuffer[mShipPointBufferSize]);
 
         shipPointElement->x = x;
@@ -272,7 +340,6 @@ public:
         int shipPointIndex2)
     {
         assert(mSpringBufferSize + 1u <= mSpringBufferMaxSize);
-
         SpringElement * springElement = &(mSpringBuffer[mSpringBufferSize]);
 
         springElement->shipPointIndex1 = shipPointIndex1;
@@ -291,7 +358,6 @@ public:
         int shipPointIndex2)
     {
         assert(mStressedSpringBufferSize + 1u <= mStressedSpringBufferMaxSize);
-
         SpringElement * springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
 
         springElement->shipPointIndex1 = shipPointIndex1;
@@ -315,7 +381,6 @@ public:
         int shipPointIndex3)
     {
         assert(mShipTriangleBufferSize + 1u <= mShipTriangleBufferMaxSize);
-
         ShipTriangleElement * shipTriangleElement = &(mShipTriangleBuffer[mShipTriangleBufferSize]);
 
         shipTriangleElement->shipPointIndex1 = shipPointIndex1;
@@ -422,11 +487,54 @@ private:
 
     void CalculateOrthoMatrix();
 
-    void CalculateWorldCoordinates();
+    void CalculateVisibleWorldCoordinates();
 
 private:
 
     std::shared_ptr<ResourceLoader> mResourceLoader;
+
+    //
+    // Clouds
+    //
+
+    OpenGLShaderProgram mCloudShaderProgram;
+    GLint mCloudShaderAmbientLightIntensityParameter;
+    GLint mCloudShaderOrthoMatrixParameter;
+
+#pragma pack(push)
+    struct CloudElement
+    {
+        float xtl;
+        float ytl;
+        float texturextl;
+        float textureytl;
+
+        float xbl;
+        float ybl;
+        float texturexbl;
+        float textureybl;
+
+        float xtr;
+        float ytr;
+        float texturextr;
+        float textureytr;
+
+        float xbr;
+        float ybr;
+        float texturexbr;
+        float textureybr;
+    };
+#pragma pack(pop)
+
+    std::unique_ptr<CloudElement[]> mCloudBuffer;
+    size_t mCloudBufferSize;
+    size_t mCloudBufferMaxSize;
+    
+    OpenGLVBO mCloudVBO;
+
+    ////std::unique_ptr<ResourceLoader::Texture const> mLandTextureData;
+    ////OpenGLTexture mLandTexture;
+
 
     //
     // Land
@@ -577,9 +685,9 @@ private:
     // The Ortho matrix
     float mOrthoMatrix[4][4];
 
-    // The world coordinates
-    float mWorldWidth;
-    float mWorldHeight;
+    // The world coordinates of the visible portion
+    float mVisibleWorldWidth;
+    float mVisibleWorldHeight;
 
 
     //

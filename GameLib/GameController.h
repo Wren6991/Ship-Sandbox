@@ -47,7 +47,7 @@ public:
     {
         vec2f worldOffset = mRenderContext->ScreenOffsetToWorldOffset(screenOffset);
 
-        mTargetCameraPosition = mTargetCameraPosition - worldOffset;
+        mTargetCameraPosition = mTargetCameraPosition + worldOffset;
         mStartingCameraPosition = mCurrentCameraPosition;
         mStartCameraPositionTimestamp = std::chrono::steady_clock::now();
     }

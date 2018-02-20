@@ -11,6 +11,17 @@
 
 RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     : mResourceLoader(std::move(resourceLoader))
+    // Clouds
+    , mCloudShaderProgram(0u)
+    , mCloudShaderAmbientLightIntensityParameter(0)
+    , mCloudShaderOrthoMatrixParameter(0)
+    , mCloudBuffer()
+    , mCloudBufferSize(0u)
+    , mCloudBufferMaxSize(0u)    
+    , mCloudVBO(0u)
+    ////TODO
+    ////, mLandTexture(0u)
+    ////, mLandTextureData()
     // Land
     , mLandShaderProgram(0u)
     , mLandShaderAmbientLightIntensityParameter(0)
@@ -101,6 +112,97 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
         throw GameException("This game requires at least OpenGL 2.0 support; the version currently supported by your computer is " + std::string(glVersion));
     }
 
+
+    //
+    // Clouds 
+    //
+
+    ////TODO
+    ////// Load texture
+    ////mLandTextureData = mResourceLoader->LoadTextureRgb("sand_1.jpg");
+
+    // Create program
+
+    mCloudShaderProgram = glCreateProgram();
+
+    char const * cloudVertexShaderSource = R"(
+
+        // Inputs
+        attribute vec2 inputPos;
+        attribute vec2 inputTexturePos;
+        
+        // Parameters
+        uniform mat4 paramOrthoMatrix;
+
+        // Outputs
+        varying vec2 texturePos;
+
+        void main()
+        {
+            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+            texturePos = inputTexturePos;
+        }
+    )";
+
+    CompileShader(cloudVertexShaderSource, GL_VERTEX_SHADER, mCloudShaderProgram);
+
+    char const * cloudFragmentShaderSource = R"(
+
+        // Inputs from previous shader
+        varying vec2 texturePos;
+
+        // The texture
+        uniform sampler2D inputTexture;
+
+        // Parameters        
+        uniform float paramAmbientLightIntensity;
+
+        void main()
+        {
+            gl_FragColor = texture2D(inputTexture, texturePos) * paramAmbientLightIntensity;
+        } 
+    )";
+
+    CompileShader(cloudFragmentShaderSource, GL_FRAGMENT_SHADER, mCloudShaderProgram);
+
+    // Bind attribute locations
+    glBindAttribLocation(*mCloudShaderProgram, 0, "inputPos");
+    glBindAttribLocation(*mCloudShaderProgram, 1, "inputTexturePos");
+
+    // Link
+    LinkProgram(mCloudShaderProgram, "Cloud");
+
+    // Get uniform locations
+    mCloudShaderAmbientLightIntensityParameter = GetParameterLocation(mCloudShaderProgram, "paramAmbientLightIntensity");
+    mCloudShaderOrthoMatrixParameter = GetParameterLocation(mCloudShaderProgram, "paramOrthoMatrix");
+
+    // Create VBO    
+    glGenBuffers(1, &tmpGLuint);
+    mCloudVBO = tmpGLuint;
+
+    // Set hardcoded parameters
+    glUseProgram(*mCloudShaderProgram);
+    glUseProgram(0);
+
+    ////TODO
+    ////// Create texture
+    ////glGenTextures(1, &tmpGLuint);
+    ////mLandTexture = tmpGLuint;
+
+    ////glBindTexture(GL_TEXTURE_2D, *mLandTexture);
+
+    ////// Set repeat mode
+    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    ////// Set texture filtering parameters
+    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    ////// Upload texture data
+    ////glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data);
+
+    ////glBindTexture(GL_TEXTURE_2D, 0);
 
 
     //
@@ -561,6 +663,55 @@ RenderContext::~RenderContext()
 
 //////////////////////////////////////////////////////////////////////////////////
 
+void RenderContext::RenderCloudsStart(size_t clouds)
+{
+    if (clouds != mCloudBufferMaxSize)
+    {
+        // Realloc
+        mCloudBuffer.reset();
+        mCloudBuffer.reset(new CloudElement[clouds]);
+        mCloudBufferMaxSize = clouds;
+    }
+
+    mCloudBufferSize = 0u;
+}
+
+void RenderContext::RenderCloudsEnd()
+{
+    assert(mCloudBufferSize == mCloudBufferMaxSize);
+
+    // Use program
+    glUseProgram(*mCloudShaderProgram);
+
+    // Set parameters
+    glUniform1f(mCloudShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
+    glUniformMatrix4fv(mCloudShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+
+    //TODO
+    // Bind Texture
+    glBindTexture(GL_TEXTURE_2D, *mLandTexture);
+
+    // Upload cloud buffer 
+    glBindBuffer(GL_ARRAY_BUFFER, *mCloudVBO);
+    glBufferData(GL_ARRAY_BUFFER, mCloudBufferSize * sizeof(CloudElement), mCloudBuffer.get(), GL_DYNAMIC_DRAW);
+
+    // Describe InputPos
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // Describe InputTextureXY
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // Draw
+    for (size_t c = 0; c < mCloudBufferSize; ++c)
+    {
+        glDrawArrays(GL_TRIANGLE_STRIP, 4*c, 4);
+    }
+
+    // Stop using program
+    glUseProgram(0);
+}
+
 void RenderContext::RenderStart()
 {
     //
@@ -708,7 +859,7 @@ void RenderContext::RenderShipPoints()
     DescribeShipPointsVBO();
 
     // Set point size
-    glPointSize(0.15f * 2.0f * mCanvasHeight / mWorldHeight);
+    glPointSize(0.15f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
 
     // Draw
     glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(mShipPointBufferSize));
@@ -749,7 +900,7 @@ void RenderContext::RenderSpringsEnd()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mSpringBufferSize * sizeof(SpringElement), mSpringBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Set line size
-    glLineWidth(0.1f * 2.0f * mCanvasHeight / mWorldHeight);
+    glLineWidth(0.1f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
 
     // Draw
     glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mSpringBufferSize), GL_UNSIGNED_INT, 0);
@@ -791,7 +942,7 @@ void RenderContext::RenderStressedSpringsEnd()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(SpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Set line size
-    glLineWidth(0.1f * 2.0f * mCanvasHeight / mWorldHeight);
+    glLineWidth(0.1f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
 
     // Draw
     glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
@@ -917,17 +1068,17 @@ void RenderContext::CalculateOrthoMatrix()
     static constexpr float zFar = 1000.0f;
     static constexpr float zNear = 1.0f;
 
-    mOrthoMatrix[0][0] = 2.0f / mWorldWidth;
-    mOrthoMatrix[1][1] = 2.0f / mWorldHeight;
+    mOrthoMatrix[0][0] = 2.0f / mVisibleWorldWidth;
+    mOrthoMatrix[1][1] = 2.0f / mVisibleWorldHeight;
     mOrthoMatrix[2][2] = -2.0f / (zFar - zNear);
-    mOrthoMatrix[3][0] = -2.0f * mCamX / mWorldWidth; 
-    mOrthoMatrix[3][1] = -2.0f * mCamY / mWorldHeight; 
+    mOrthoMatrix[3][0] = -2.0f * mCamX / mVisibleWorldWidth;
+    mOrthoMatrix[3][1] = -2.0f * mCamY / mVisibleWorldHeight;
     mOrthoMatrix[3][2] = -(zFar + zNear) / (zFar - zNear);
     mOrthoMatrix[3][3] = 1.0f;
 }
 
-void RenderContext::CalculateWorldCoordinates()
+void RenderContext::CalculateVisibleWorldCoordinates()
 {
-    mWorldHeight = 2.0f * 70.0f / (mZoom + 0.001f);
-    mWorldWidth = static_cast<float>(mCanvasWidth) / static_cast<float>(mCanvasHeight) * mWorldHeight;
+    mVisibleWorldHeight = 2.0f * 70.0f / (mZoom + 0.001f);
+    mVisibleWorldWidth = static_cast<float>(mCanvasWidth) / static_cast<float>(mCanvasHeight) * mVisibleWorldHeight;
 }
