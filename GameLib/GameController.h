@@ -63,6 +63,8 @@ public:
     void ResetPan()
     {
         mRenderContext->SetCameraWorldPosition(vec2f(0, 0));
+
+        mTargetCameraPosition = mCurrentCameraPosition = mRenderContext->GetCameraWorldPosition();
     }
 
     void AdjustZoom(float amount) 
@@ -75,6 +77,8 @@ public:
     void ResetZoom() 
     { 
         mRenderContext->SetZoom(1.0); 
+
+        mTargetZoom = mCurrentZoom = mRenderContext->GetZoom();
     }
 
     float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
