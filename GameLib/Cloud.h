@@ -25,6 +25,7 @@ public:
     float AmpY;
     float SpeedY;
 
+    float OffsetScale;
     float AmpScale;
     float SpeedScale;
 
@@ -39,6 +40,7 @@ public:
         float offsetY,
         float ampY,
         float speedY,
+        float offsetScale,
         float ampScale,
         float speedScale)
         : OffsetX(offsetX)
@@ -48,6 +50,7 @@ public:
         , OffsetY(offsetY)
         , AmpY(ampY)
         , SpeedY(speedY)
+        , OffsetScale(offsetScale)
         , AmpScale(ampScale)
         , SpeedScale(speedScale)
     {
@@ -57,7 +60,7 @@ public:
     {
         float x = OffsetX + (t * SpeedX1) + (AmpX * sinf(SpeedX2 * t));
         float y = OffsetY + (AmpY * sinf(SpeedY * t));
-        float scale = (1.0f + AmpScale * sinf(SpeedScale * t)) / (1.0f + AmpScale);
+        float scale = OffsetScale + (AmpScale * sinf(SpeedScale * t));
 
         return vec3f(x, y, scale);
     }

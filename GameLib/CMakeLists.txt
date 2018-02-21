@@ -20,6 +20,7 @@ set  (GAME_SOURCES
 	Material.cpp
 	Material.h
 	PointerContainer.h
+	ProgressCallback.h
 	RenderContext.cpp
 	RenderContext.h
 	ResourceLoader.cpp

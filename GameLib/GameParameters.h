@@ -52,7 +52,8 @@ struct GameParameters
 		, WaveHeight(2.5f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.55f)
-        , NumberOfClouds(10)
+        // TODO: adjust
+        , NumberOfClouds(100)
 	{
 	}
 };

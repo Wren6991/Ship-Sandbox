@@ -46,9 +46,8 @@ bool MainApp::OnInit()
     // Create frame and start
     //
 
-	MainFrame* frame = new MainFrame();
+	MainFrame* frame = new MainFrame(this);
 	frame->SetIcon(wxICON(AAA_SHIP_ICON));
-	frame->Show();
 	SetTopWindow(frame);
 	
 	return true;

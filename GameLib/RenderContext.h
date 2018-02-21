@@ -6,6 +6,7 @@
 #pragma once
 
 #include "GameOpenGL.h"
+#include "ProgressCallback.h"
 #include "ResourceLoader.h"
 #include "Vectors.h"
 
@@ -18,7 +19,9 @@ class RenderContext
 {
 public:
 
-    RenderContext(std::shared_ptr<ResourceLoader> resourceLoader);
+    RenderContext(
+        ResourceLoader & resourceLoader,
+        ProgressCallback const & progressCallback);
     
     ~RenderContext();
 
@@ -186,57 +189,58 @@ public:
         float scale)
     {
         //
-        // First translate and roll coordinates into a 3 X 3 world,
-        // then take the central slice and map it into the visible world
+        // We use Normalized Device Coordinates here
+        //
 
-        // TODO: revisit translation
+        //
+        // Roll coordinates into a 3.0 X 2.0 view,
+        // then take the central slice and map it into NDC ((-1,-1) X (1,1))
+        //
+
         float rolledX = fmodf(virtualX, 3.0f);
         if (rolledX < 0.0f)
             rolledX += 3.0f;
+        float mappedX = -1.0f + 2.0f * (rolledX - 1.0f);
 
-        float mappedX = -(mVisibleWorldWidth / 2.0f) + (rolledX - 1.0f) * (mVisibleWorldWidth / 2.0f);
-        mappedX -= mCamX;
-
+        // TODO:tighter slice, 2.0 
         float rolledY = fmodf(virtualY, 3.0f);
         if (rolledY < 0.0f)
             rolledY += 3.0f;
-
-        float mappedY = (rolledY - 1.5f) * mVisibleWorldHeight;
-        mappedY -= mCamY;
+        float mappedY = 1.0f - 2.0f * (rolledY - 1.0f);
 
         assert(mCloudBufferSize + 1u <= mCloudBufferMaxSize);
         CloudElement * cloudElement = &(mCloudBuffer[mCloudBufferSize]);
 
-        // TODO: use texture width and height
-        float textureW = 40;
-        float textureH = 20;
+        // Calculate texture dimensions in NDC
+        // TODO: use actual texture width and height
+        float textureTileNdcW = 120.0f / 1024.0f;
+        float textureTileNdcH = 80.0f / 768.0f;
 
-        // TODO: clip bottom y's and adjust texturey's accordingly OR use stencil with wave at bottom
-        // TODO: second addend needs also to scale opposite with zoom
-        float leftX = mappedX - textureW * scale / 2.0f;
-        float rightX = mappedX + textureW * scale / 2.0f;
-        float topY = mappedY - textureH * scale / 2.0f;
-        float bottomY = mappedY + textureH * scale / 2.0f;
+        // TODO: use stencil with horizon (worldY=0) at bottom, or cap here adjusting texture H
+        float leftX = mappedX - textureTileNdcW * scale / 2.0f;
+        float rightX = mappedX + textureTileNdcW * scale / 2.0f;
+        float topY = mappedY - textureTileNdcH * scale / 2.0f;
+        float bottomY = mappedY + textureTileNdcH * scale / 2.0f;
         
-        cloudElement->xtl = leftX;
-        cloudElement->ytl = topY;
-        cloudElement->texturextl = 0.0f;
-        cloudElement->textureytl = 0.0f;
+        cloudElement->ndcXTopLeft = leftX;
+        cloudElement->ndcYTopLeft = topY;
+        cloudElement->ndcTextureXTopLeft = 0.0f;
+        cloudElement->ndcTextureYTopLeft = 0.0f;
 
-        cloudElement->xbl = leftX;
-        cloudElement->ybl = bottomY;
-        cloudElement->texturexbl = 0.0f;
-        cloudElement->textureybl = 1.0f;
+        cloudElement->ndcXBottomLeft = leftX;
+        cloudElement->ndcYBottomLeft = bottomY;
+        cloudElement->ndcTextureXBottomLeft = 0.0f;
+        cloudElement->ndcTextureYBottomLeft = 1.0f;
 
-        cloudElement->xtr = rightX;
-        cloudElement->ytr = topY;
-        cloudElement->texturextr = 1.0f;
-        cloudElement->textureytr = 0.0f;
+        cloudElement->ndcXTopRight = rightX;
+        cloudElement->ndcYTopRight = topY;
+        cloudElement->ndcTextureXTopRight = 1.0f;
+        cloudElement->ndcTextureYTopRight = 0.0f;
 
-        cloudElement->xbr = rightX;
-        cloudElement->ybr = bottomY;
-        cloudElement->texturexbr = 1.0f;
-        cloudElement->textureybr = 1.0f;
+        cloudElement->ndcXBottomRight = rightX;
+        cloudElement->ndcYBottomRight = bottomY;
+        cloudElement->ndcTextureXBottomRight = 1.0f;
+        cloudElement->ndcTextureYBottomRight = 1.0f;
 
         ++mCloudBufferSize;
     }
@@ -491,38 +495,35 @@ private:
 
 private:
 
-    std::shared_ptr<ResourceLoader> mResourceLoader;
-
     //
     // Clouds
     //
 
     OpenGLShaderProgram mCloudShaderProgram;
     GLint mCloudShaderAmbientLightIntensityParameter;
-    GLint mCloudShaderOrthoMatrixParameter;
 
 #pragma pack(push)
     struct CloudElement
     {
-        float xtl;
-        float ytl;
-        float texturextl;
-        float textureytl;
+        float ndcXTopLeft;
+        float ndcYTopLeft;
+        float ndcTextureXTopLeft;
+        float ndcTextureYTopLeft;
 
-        float xbl;
-        float ybl;
-        float texturexbl;
-        float textureybl;
+        float ndcXBottomLeft;
+        float ndcYBottomLeft;
+        float ndcTextureXBottomLeft;
+        float ndcTextureYBottomLeft;
 
-        float xtr;
-        float ytr;
-        float texturextr;
-        float textureytr;
+        float ndcXTopRight;
+        float ndcYTopRight;
+        float ndcTextureXTopRight;
+        float ndcTextureYTopRight;
 
-        float xbr;
-        float ybr;
-        float texturexbr;
-        float textureybr;
+        float ndcXBottomRight;
+        float ndcYBottomRight;
+        float ndcTextureXBottomRight;
+        float ndcTextureYBottomRight;
     };
 #pragma pack(pop)
 

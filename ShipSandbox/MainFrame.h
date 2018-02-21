@@ -31,7 +31,7 @@ class MainFrame : public wxFrame
 {
 public:
 
-	MainFrame();
+	MainFrame(wxApp * mainApp);
 
 	virtual ~MainFrame();
 
@@ -72,6 +72,7 @@ private:
 	// Timers
 	//
 
+    std::unique_ptr<wxTimer> mPostInitializeTimer;
 	std::unique_ptr<wxTimer> mGameTimer;
 	std::unique_ptr<wxTimer> mStatsRefreshTimer;
 
@@ -82,6 +83,7 @@ private:
 	//
 
 	// App
+    void OnPostInitializeTrigger(wxTimerEvent& event);
 	void OnMainFrameClose(wxCloseEvent& event);
 	void OnQuit(wxCommandEvent& event);
 	void OnPaint(wxPaintEvent& event);
@@ -122,6 +124,8 @@ private:
 	void RenderGame();
 
 private:
+
+    wxApp * const mMainApp;
 
 	struct MouseInfo
 	{

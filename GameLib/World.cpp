@@ -167,16 +167,15 @@ void World::Update(
         {
             mAllClouds.emplace_back(
                 dis(mRandomEngine) * 100.0f,    // OffsetX
-                // TODO
-                //dis(mRandomEngine) * 0.3f,      // SpeedX1
-                dis(mRandomEngine) * 2.0f,      // SpeedX1
-                dis(mRandomEngine) * 0.01f,     // AmpX
+                dis(mRandomEngine) * 0.05f,      // SpeedX1
+                dis(mRandomEngine) * 0.04f,     // AmpX
                 dis(mRandomEngine) * 0.01f,     // SpeedX2
                 dis(mRandomEngine) * 100.0f,    // OffsetY
                 dis(mRandomEngine) * 0.001f,    // AmpY
-                dis(mRandomEngine) * 0.01f,     // SpeedY
+                dis(mRandomEngine) * 0.005f,     // SpeedY
+                0.2f + static_cast<float>(c) / static_cast<float>(c + 1), // OffsetScale
                 dis(mRandomEngine) * 0.05f,     // AmpScale
-                dis(mRandomEngine) * 0.01f);    // SpeedScale
+                dis(mRandomEngine) * 0.005f);    // SpeedScale
         }
     }
 }

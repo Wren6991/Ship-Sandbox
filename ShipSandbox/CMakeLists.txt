@@ -11,6 +11,8 @@ set  (SHIP_SANDBOX_SOURCES
 	MainFrame.h
 	SettingsDialog.cpp
 	SettingsDialog.h
+	SplashScreenDialog.cpp
+	SplashScreenDialog.h
 	Version.h
 	)
 

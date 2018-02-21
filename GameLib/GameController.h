@@ -7,6 +7,7 @@
 
 #include "Game.h"
 #include "GameParameters.h"
+#include "ProgressCallback.h"
 #include "RenderContext.h"
 #include "ResourceLoader.h"
 #include "Vectors.h"
@@ -23,7 +24,7 @@ class GameController
 {
 public:
 
-    static std::unique_ptr<GameController> Create();
+    static std::unique_ptr<GameController> Create(ProgressCallback const & progressCallback);
 
     void ResetAndLoadShip(std::string const & filepath);
     void AddShip(std::string const & filepath);
@@ -137,14 +138,15 @@ public:
 private:
 
     GameController(
-        std::unique_ptr<Game> game,
+        std::unique_ptr<Game> game,        
         std::string const & initialShipLoaded,
+        std::unique_ptr<RenderContext> renderContext,
         std::shared_ptr<ResourceLoader> resourceLoader)
         : mResourceLoader(std::move(resourceLoader))
         , mGame(std::move(game))
         , mLastShipLoaded(initialShipLoaded)
         , mGameParameters()
-        , mRenderContext(new RenderContext(mResourceLoader))
+        , mRenderContext(std::move(renderContext))
         , mCurrentZoom(mRenderContext->GetZoom())
         , mTargetZoom(mCurrentZoom)
         , mStartingZoom(mCurrentZoom)

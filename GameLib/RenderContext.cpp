@@ -9,12 +9,12 @@
 
 #include <cstring>
 
-RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
-    : mResourceLoader(std::move(resourceLoader))
-    // Clouds
-    , mCloudShaderProgram(0u)
+RenderContext::RenderContext(
+    ResourceLoader & resourceLoader,
+    ProgressCallback const & progressCallback)
+    : // Clouds
+      mCloudShaderProgram(0u)
     , mCloudShaderAmbientLightIntensityParameter(0)
-    , mCloudShaderOrthoMatrixParameter(0)
     , mCloudBuffer()
     , mCloudBufferSize(0u)
     , mCloudBufferMaxSize(0u)    
@@ -131,15 +131,12 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
         attribute vec2 inputPos;
         attribute vec2 inputTexturePos;
         
-        // Parameters
-        uniform mat4 paramOrthoMatrix;
-
         // Outputs
         varying vec2 texturePos;
 
         void main()
         {
-            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+            gl_Position = vec4(inputPos.xy, -1.0, 1.0);
             texturePos = inputTexturePos;
         }
     )";
@@ -174,7 +171,6 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
 
     // Get uniform locations
     mCloudShaderAmbientLightIntensityParameter = GetParameterLocation(mCloudShaderProgram, "paramAmbientLightIntensity");
-    mCloudShaderOrthoMatrixParameter = GetParameterLocation(mCloudShaderProgram, "paramOrthoMatrix");
 
     // Create VBO    
     glGenBuffers(1, &tmpGLuint);
@@ -210,7 +206,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     //
 
     // Load texture
-    mLandTextureData = mResourceLoader->LoadTextureRgb("sand_1.jpg");
+    mLandTextureData = resourceLoader.LoadTextureRgb("sand_1.jpg");
 
     // Create program
 
@@ -307,7 +303,7 @@ RenderContext::RenderContext(std::shared_ptr<ResourceLoader> resourceLoader)
     //
 
     // Load texture
-    mWaterTextureData = mResourceLoader->LoadTextureRgb("water_1.jpg");
+    mWaterTextureData = resourceLoader.LoadTextureRgb("water_1.jpg");
 
     // Create program
 
@@ -663,6 +659,27 @@ RenderContext::~RenderContext()
 
 //////////////////////////////////////////////////////////////////////////////////
 
+void RenderContext::RenderStart()
+{
+    //
+    // Clear canvas 
+    //
+
+    static const vec3f ClearColorBase(0.529f, 0.808f, 0.980f); // (cornflower blue)
+    vec3f clearColor = ClearColorBase * mAmbientLightIntensity;
+    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Set anti-aliasing for lines and polygons
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH, GL_NICEST);
+    glEnable(GL_POLYGON_SMOOTH);
+    glHint(GL_POLYGON_SMOOTH, GL_NICEST);
+
+    // Set nearest interpolation for textures
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+}
+
 void RenderContext::RenderCloudsStart(size_t clouds)
 {
     if (clouds != mCloudBufferMaxSize)
@@ -685,7 +702,6 @@ void RenderContext::RenderCloudsEnd()
 
     // Set parameters
     glUniform1f(mCloudShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
-    glUniformMatrix4fv(mCloudShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
     //TODO
     // Bind Texture
@@ -698,7 +714,7 @@ void RenderContext::RenderCloudsEnd()
     // Describe InputPos
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // Describe InputTextureXY
+    // Describe InputTexturePos
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
@@ -710,24 +726,6 @@ void RenderContext::RenderCloudsEnd()
 
     // Stop using program
     glUseProgram(0);
-}
-
-void RenderContext::RenderStart()
-{
-    //
-    // Clear canvas 
-    //
-
-    static const vec3f ClearColorBase(0.529f, 0.808f, 0.980f); // (cornflower blue)
-    vec3f clearColor = ClearColorBase * mAmbientLightIntensity;
-    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f); 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Set anti-aliasing for lines and polygons
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH, GL_NICEST);
-    glEnable(GL_POLYGON_SMOOTH);
-    glHint(GL_POLYGON_SMOOTH, GL_NICEST);
 }
 
 void RenderContext::RenderLandStart(size_t slices)

@@ -6,6 +6,8 @@
 *						Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
 #include "MainFrame.h"
+
+#include "SplashScreenDialog.h"
 #include "Version.h"
 
 #include <GameLib/GameException.h>
@@ -49,14 +51,16 @@ const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
 
 const long ID_ABOUT_MENUITEM = wxNewId();
 
+const long ID_POSTIINITIALIZE_TIMER = wxNewId();
 const long ID_GAME_TIMER = wxNewId();
 const long ID_STATS_REFRESH_TIMER = wxNewId();
 
 static constexpr int CursorStep = 30;
 static constexpr int PowerBarThickness = 2;
 
-MainFrame::MainFrame()
-	: mMouseInfo()
+MainFrame::MainFrame(wxApp * mainApp)
+	: mMainApp(mainApp)
+    , mMouseInfo()
 	, mCurrentToolType(ToolType::Smash)
 	, mGameController()
 	, mFrameCount(0u)
@@ -224,22 +228,6 @@ MainFrame::MainFrame()
 
 	SetMenuBar(mainMenuBar);
 
-    //
-    // Create Game controller
-    //
-
-    try
-    {
-        mGameController = GameController::Create();
-    }
-    catch (GameException const & e)
-    {
-        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
-
-        Close();
-    }
-
-
 
 	//
 	// Finalize frame
@@ -262,17 +250,13 @@ MainFrame::MainFrame()
     SwitchCursor();
 
 
-	//
-	// Initialize timers
-	//
-	
-	mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
-	Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);	
-	mGameTimer->Start(0, true); 
+    //
+    // Post a PostInitialize, so that we can complete initialization with a main loop running
+    //
 
-	mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
-	Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);	
-	mStatsRefreshTimer->Start(1000, false);
+    mPostInitializeTimer = std::make_unique<wxTimer>(this, ID_POSTIINITIALIZE_TIMER);
+    Connect(ID_POSTIINITIALIZE_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnPostInitializeTrigger);
+    mPostInitializeTimer->Start(0, true);
 }
 
 MainFrame::~MainFrame()
@@ -282,6 +266,69 @@ MainFrame::~MainFrame()
 //
 // App event handlers
 //
+
+void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
+{
+    //
+    // Create splash screen
+    //
+
+    std::unique_ptr<SplashScreenDialog> splash = std::make_unique<SplashScreenDialog>();
+    mMainApp->Yield();
+
+    auto startInit = std::chrono::steady_clock::now();
+
+    //
+    // Create Game controller
+    //
+
+    try
+    {
+        mGameController = GameController::Create(
+            [&splash, this](float progress, std::string const & message)
+        {
+            splash->UpdateProgress(progress, message);
+            this->mMainApp->Yield();
+        });
+    }
+    catch (GameException const & e)
+    {
+        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
+
+        this->Close();
+
+        return;
+    }
+
+    auto endInit = std::chrono::steady_clock::now();
+    while ((endInit - startInit) < std::chrono::milliseconds(1000))
+    {
+        this->mMainApp->Yield();
+        Sleep(10);
+        endInit = std::chrono::steady_clock::now();
+    }
+
+    splash->Destroy();
+
+
+    //
+    // Initialize timers
+    //
+
+    mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
+    Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
+    mGameTimer->Start(0, true);
+
+    mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
+    Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);
+    mStatsRefreshTimer->Start(1000, false);
+
+    //
+    // Show ourselves now
+    //
+
+    this->Show();
+}
 
 void MainFrame::OnMainFrameClose(wxCloseEvent & /*event*/)
 {

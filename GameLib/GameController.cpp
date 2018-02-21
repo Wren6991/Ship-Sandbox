@@ -11,7 +11,7 @@
 // The dt of each step
 static constexpr float StepTimeDuration = 0.02f;
 
-std::unique_ptr<GameController> GameController::Create()
+std::unique_ptr<GameController> GameController::Create(ProgressCallback const & progressCallback)
 {
 	// Create resource loader
     std::shared_ptr<ResourceLoader> resourceLoader = std::make_shared<ResourceLoader>();
@@ -19,19 +19,29 @@ std::unique_ptr<GameController> GameController::Create()
 	// Create game
 	std::unique_ptr<Game> game = Game::Create(resourceLoader);
 
+    // Create render context
+    std::unique_ptr<RenderContext> renderContext = std::make_unique<RenderContext>(
+        *resourceLoader,
+        [&progressCallback](float progress, std::string const & message)
+        {
+            progressCallback(0.9f * progress, message);
+        });
+
 	//
 	// Initialize game
 	//
 
 	// Load initial ship
 	std::string initialShipFilename = "Data/default_ship.png";
+    progressCallback(1.0f, "Loading initial ship...");
 	game->LoadShip(initialShipFilename);
 
 	return std::unique_ptr<GameController>(
 		new GameController(
 			std::move(game),
 			initialShipFilename,
-            resourceLoader));
+            std::move(renderContext),
+            std::move(resourceLoader)));
 }
 
 void GameController::ResetAndLoadShip(std::string const & filepath)
