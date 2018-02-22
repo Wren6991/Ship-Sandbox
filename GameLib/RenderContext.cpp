@@ -19,9 +19,8 @@ RenderContext::RenderContext(
     , mCloudBufferSize(0u)
     , mCloudBufferMaxSize(0u)    
     , mCloudVBO(0u)
-    ////TODO
-    ////, mLandTexture(0u)
-    ////, mLandTextureData()
+    , mCloudTextureDatas()
+    , mCloudTextures()
     // Land
     , mLandShaderProgram(0u)
     , mLandShaderAmbientLightIntensityParameter(0)
@@ -125,9 +124,10 @@ RenderContext::RenderContext(
     // Clouds 
     //
 
-    ////TODO
-    ////// Load texture
-    ////mLandTextureData = mResourceLoader->LoadTextureRgb("sand_1.jpg");
+    // Load textures
+    // TODO: vector
+    // TODO: progress callback
+    mCloudTextureDatas.push_back(resourceLoader.LoadTextureRgba("cloud_1.png"));
 
     // Create program
 
@@ -188,25 +188,28 @@ RenderContext::RenderContext(
     glUseProgram(*mCloudShaderProgram);
     glUseProgram(0);
 
-    ////TODO
-    ////// Create texture
-    ////glGenTextures(1, &tmpGLuint);
-    ////mLandTexture = tmpGLuint;
+    // Create textures
+    for (size_t i = 0; i < mCloudTextureDatas.size(); ++i)
+    {
+        // Create texture
+        glGenTextures(1, &tmpGLuint);
+        mCloudTextures.emplace_back(tmpGLuint);
 
-    ////glBindTexture(GL_TEXTURE_2D, *mLandTexture);
+        glBindTexture(GL_TEXTURE_2D, *mCloudTextures.back());
 
-    ////// Set repeat mode
-    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // Set repeat mode
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    ////// Set texture filtering parameters
-    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    ////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    ////// Upload texture data
-    ////glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data);
+        // Upload texture data
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i]->Width, mCloudTextureDatas[i]->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i]->Data);
 
-    ////glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
 
     //
@@ -855,10 +858,6 @@ void RenderContext::RenderCloudsEnd()
     // Set parameters
     glUniform1f(mCloudShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
 
-    //TODO
-    // Bind Texture
-    glBindTexture(GL_TEXTURE_2D, *mLandTexture);
-
     // Upload cloud buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mCloudVBO);
     glBufferData(GL_ARRAY_BUFFER, mCloudBufferSize * sizeof(CloudElement), mCloudBuffer.get(), GL_DYNAMIC_DRAW);
@@ -876,7 +875,11 @@ void RenderContext::RenderCloudsEnd()
     // Draw
     for (size_t c = 0; c < mCloudBufferSize; ++c)
     {
-        glDrawArrays(GL_TRIANGLE_STRIP, 4*c, 4);
+        // Bind Texture
+        glBindTexture(GL_TEXTURE_2D, *mCloudTextures[c % mCloudTextures.size()]);
+
+        // Draw
+        glDrawArrays(GL_TRIANGLE_STRIP, static_cast<GLint>(4 * c), 4);
     }
 
     // Disable stenciling - draw always

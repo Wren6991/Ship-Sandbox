@@ -32,7 +32,23 @@ std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgb(st
 {
     std::tuple<int, int, unsigned char *> image = LoadImage(
         (std::filesystem::path(std::string("Data")) / "Textures" / name).string(),
-        IL_RGB);
+        IL_RGB,
+        IL_ORIGIN_LOWER_LEFT);
+
+    Texture * texture = new Texture();
+    texture->Width = std::get<0>(image);
+    texture->Height = std::get<1>(image);
+    texture->Data = std::get<2>(image);
+
+    return std::unique_ptr<Texture>(texture);
+}
+
+std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgba(std::string const & name)
+{
+    std::tuple<int, int, unsigned char *> image = LoadImage(
+        (std::filesystem::path(std::string("Data")) / "Textures" / name).string(),
+        IL_RGBA,
+        IL_ORIGIN_LOWER_LEFT);
 
     Texture * texture = new Texture();
     texture->Width = std::get<0>(image);
@@ -44,7 +60,7 @@ std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgb(st
 
 std::unique_ptr<ResourceLoader::StructureImage const> ResourceLoader::LoadStructureImage(std::string const & filepath)
 {
-    std::tuple<int, int, unsigned char *> image = LoadImage(filepath, IL_RGB);
+    std::tuple<int, int, unsigned char *> image = LoadImage(filepath, IL_RGB, IL_ORIGIN_UPPER_LEFT);
 
     StructureImage * structureImage = new StructureImage();
     structureImage->Width = std::get<0>(image);
@@ -82,7 +98,8 @@ std::vector<std::unique_ptr<Material const>> ResourceLoader::LoadMaterials()
 
 std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
     std::string const & filepath,
-    int format)
+    int format,
+    int origin)
 {
     //
     // Load image
@@ -116,6 +133,11 @@ std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
         }
     }
 
+    int imageOrigin = ilGetInteger(IL_IMAGE_ORIGIN);
+    if (imageOrigin != origin)
+    {
+        iluFlipImage();
+    }
 
     //
     // Create data

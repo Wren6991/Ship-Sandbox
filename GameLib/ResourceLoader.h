@@ -28,6 +28,7 @@ public:
     };
 
     std::unique_ptr<Texture const> LoadTextureRgb(std::string const & name);
+    std::unique_ptr<Texture const> LoadTextureRgba(std::string const & name);
 
     struct StructureImage
     {
@@ -44,5 +45,6 @@ private:
 
     std::tuple<int, int, unsigned char *> LoadImage(
         std::string const & filepath,
-        int format);
+        int format,
+        int origin);
 };

@@ -212,8 +212,8 @@ public:
 
         // Calculate texture dimensions in NDC
         // TODO: use actual texture width and height
-        float textureTileNdcW = 120.0f / 1024.0f;
-        float textureTileNdcH = 80.0f / 768.0f;
+        float textureTileNdcW = 500.0f / 1024.0f;
+        float textureTileNdcH = 273.0f / 768.0f;
 
         float leftX = mappedX - textureTileNdcW * scale / 2.0f;
         float rightX = mappedX + textureTileNdcW * scale / 2.0f;
@@ -416,6 +416,8 @@ private:
 
         OpenGLObject(OpenGLObject const & other) = delete;
 
+        OpenGLObject(OpenGLObject && other) = default;
+
         OpenGLObject & operator=(OpenGLObject const & other) = delete;
 
         OpenGLObject & operator=(OpenGLObject && other)
@@ -534,8 +536,8 @@ private:
     
     OpenGLVBO mCloudVBO;
 
-    ////std::unique_ptr<ResourceLoader::Texture const> mLandTextureData;
-    ////OpenGLTexture mLandTexture;
+    std::vector<std::unique_ptr<ResourceLoader::Texture const>> mCloudTextureDatas;
+    std::vector<OpenGLTexture> mCloudTextures;
 
 
     //
