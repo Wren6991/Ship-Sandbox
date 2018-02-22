@@ -211,6 +211,7 @@ RenderContext::RenderContext(
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    assert(mCloudTextureDatas.size() == mCloudTextures.size());
 
     //
     // Land 
@@ -876,7 +877,7 @@ void RenderContext::RenderCloudsEnd()
     for (size_t c = 0; c < mCloudBufferSize; ++c)
     {
         // Bind Texture
-        glBindTexture(GL_TEXTURE_2D, *mCloudTextures[c % mCloudTextures.size()]);
+        glBindTexture(GL_TEXTURE_2D, *mCloudTextures[GetCloudTextureIndex(c)]);
 
         // Draw
         glDrawArrays(GL_TRIANGLE_STRIP, static_cast<GLint>(4 * c), 4);

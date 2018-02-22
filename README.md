@@ -50,22 +50,22 @@ Here's a list of the major changes I've been doing:
 - Upgraded to C++17
 - Restructured interactions between the UI and the game, splitting settings between physics-related settings and render-related settings
 - Rearchitected lifetime management of elements - originally elements were removed from vectors while these are being iterated, and the entire "points-to" graph was a tad too complex 
-- Completely re-written the OpenGL interactions, targeting 2.0 "core profile" (i.e. no compatibility API) with custom shaders
+- Completely re-written the OpenGL interactions, targeting 2.0 "core profile" (i.e. no compatibility API) with custom shaders and adding texture mapping
 -- At this moment, the fps rate on my laptop reached 16fps
 - Inlined critical functions
 - Added unit tests
 
 ..and here's a rought list of the major changes I want to do:
-- Texture mapping for ship, water, and land
+- Texture mapping for ships
 - Leverage vectorized instructions for dynamics calculations 
 - Add sounds and cued music
-- Add lights that would turn off on when generator is wet or when electrical cables break
-- Add time-of-day (i.e. daylight change during the game)
+- Add lights that would turn off (after flickering) when generator is wet or when electrical cables break
+- Add time-of-day (i.e. day light change during the game)
 
 I tried to do my best to craft the CMake files in a platform-independent way, but I'm working on this exclusively in Visual Studio, hence I'm sure some unportable features have slipped in. Feel free to send pull requests for CMake edits for other platforms.
 You'll need the following libraries in order to build the game:
-- <a href="https://www.wxwidgets.org/">WxWidgets</a> (cross-platform GUI library)
-- <a href="http://openil.sourceforge.net/">DevIL</a> (cross-platform image library)
--- I've actually built my own DevIL with a statically-linked CRT, as the DevIL DLL's come only with a dynamically-linked CRT
+- <a href="https://www.wxwidgets.org/">WxWidgets</a> (cross-platform GUI library) (on Windows, has to be built with statically-linked CRT libraries)
+- <a href="http://openil.sourceforge.net/">DevIL</a> (cross-platform image library) (on Windows, has to be built with statically-linked CRT libraries)
+-- I've actually built my own DevIL, as the DevIL DLL's come only with a dynamically-linked CRT
 - <a href="https://github.com/kazuho/picojson">picojson</a> (header-only JSON parser and serializer)
 The top of the main CMakeFiles.txt contains a section with hardcoded paths to these three libraries; you'll have to edit your CMakeFiles to match your environment.

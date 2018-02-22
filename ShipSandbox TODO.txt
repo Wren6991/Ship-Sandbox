@@ -53,9 +53,10 @@ Current perf
 		- Phase 2: with clock
 	- Texture mapping:
 		= Clouds
-			- Use N textures, each has own rectangular size
+			+ Use N textures, each has own rectangular size
 			- RenderContext loads all available textures and uses them for the clouds, modulo
-				- initProgressSink lambda
+				- ResourceLoader::LoadTexturesRgba(prefix)
+					- initProgressSink lambda 
 			+ GameParameters.NumberOfClouds (constants)
 			+ World takes numberOfClouds and allocates clouds buffer with random values
 			+ Then, RenderContext::RenderCloudsStart()/./End()

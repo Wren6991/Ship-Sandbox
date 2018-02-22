@@ -210,10 +210,10 @@ public:
         assert(mCloudBufferSize + 1u <= mCloudBufferMaxSize);
         CloudElement * cloudElement = &(mCloudBuffer[mCloudBufferSize]);
 
-        // Calculate texture dimensions in NDC
-        // TODO: use actual texture width and height
-        float textureTileNdcW = 500.0f / 1024.0f;
-        float textureTileNdcH = 273.0f / 768.0f;
+        // Calculate texture dimensions in NDC, as proportion in 1280 X 1024
+        // (totally arbitrary, a texture this size would fill the entire screen)
+        float textureTileNdcW = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)]->Width) / 1280.0f;
+        float textureTileNdcH = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)]->Height) / 1024.0f;
 
         float leftX = mappedX - textureTileNdcW * scale / 2.0f;
         float rightX = mappedX + textureTileNdcW * scale / 2.0f;
@@ -539,6 +539,12 @@ private:
     std::vector<std::unique_ptr<ResourceLoader::Texture const>> mCloudTextureDatas;
     std::vector<OpenGLTexture> mCloudTextures;
 
+    inline size_t GetCloudTextureIndex(size_t cloudIndex) const
+    {
+        assert(mCloudTextureDatas.size() == mCloudTextures.size());
+
+        return cloudIndex % mCloudTextures.size();
+    }
 
     //
     // Land
