@@ -248,58 +248,61 @@ public:
 
 
     //
-    // Land
+    // Land and Water
     //
 
-    void RenderLandStart(size_t slices);
+    void UploadLandAndWaterStart(size_t slices);
 
-    inline void RenderLand(
+    inline void UploadLandAndWater(
         float x,
-        float top)
+        float yLand,
+        float yWater,
+        float restWaterHeight)
     {
+        assert(mLandBufferMaxSize == mWaterBufferMaxSize);
+        assert(mLandBufferMaxSize > 0);
+
         float const worldBottom = mCamY - (mVisibleWorldHeight / 2.0f);
+
+        //
+        // Store Land element
+        //
 
         assert(mLandBufferSize + 1u <= mLandBufferMaxSize);
         LandElement * landElement = &(mLandBuffer[mLandBufferSize]);
 
         landElement->x1 = x;
-        landElement->y1 = top;
+        landElement->y1 = yLand;
         landElement->x2 = x;
         landElement->y2 = worldBottom;
 
         ++mLandBufferSize;
-    }
-
-    void RenderLandEnd();
 
 
-    //
-    // Water
-    //
+        //
+        // Store water element
+        //
 
-    void RenderWaterStart(size_t slices);
-
-    inline void RenderWater(
-        float x,
-        float bottom,
-        float top,
-        float restHeight)
-    {
         assert(mWaterBufferSize + 1u <= mWaterBufferMaxSize);
         WaterElement * waterElement = &(mWaterBuffer[mWaterBufferSize]);
 
         waterElement->x1 = x;
-        waterElement->y1 = top;
-        waterElement->textureY1 = restHeight;
+        waterElement->y1 = yWater;
+        waterElement->textureY1 = restWaterHeight;
 
         waterElement->x2 = x;
-        waterElement->y2 = bottom;
+        waterElement->y2 = yLand;
         waterElement->textureY2 = 0.0f;
 
         ++mWaterBufferSize;
     }
 
-    void RenderWaterEnd();
+    void UploadLandAndWaterEnd();
+
+    void RenderLand();
+
+    void RenderWater();
+
 
 
     //

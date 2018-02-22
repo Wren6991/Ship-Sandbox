@@ -186,15 +186,18 @@ void World::Render(
 {
     renderContext.RenderStart();
 
+    // Upload land and water data
+    UploadLandAndWater(gameParameters, renderContext);
+
     // Render the clouds
     RenderClouds(gameParameters, renderContext);
 
     // Render the ocean floor
-    RenderLand(gameParameters, renderContext);
+    renderContext.RenderLand();
 
     // Render the water now, if we want to see the ship through the water
     if (renderContext.GetShowShipThroughWater())
-        RenderWater(gameParameters, renderContext);
+        renderContext.RenderWater();
 
     // Render all ships
     for (auto const & ship : mAllShips)
@@ -206,7 +209,7 @@ void World::Render(
 
     // Render the water now, if we want to see the ship *in* the water instead
     if (!renderContext.GetShowShipThroughWater())
-        RenderWater(gameParameters, renderContext);
+        renderContext.RenderWater();
 
     renderContext.RenderEnd();
 }
@@ -234,50 +237,28 @@ void World::RenderClouds(
     renderContext.RenderCloudsEnd();
 }
 
-void World::RenderLand(
+void World::UploadLandAndWater(
     GameParameters const & gameParameters,
     RenderContext & renderContext) const
 {
     static constexpr size_t SlicesCount = 300;
 
     float const worldWidth = renderContext.GetVisibleWorldSize().x;
-
-    renderContext.RenderLandStart(SlicesCount);    
-
     float const sliceWidth = worldWidth / static_cast<float>(SlicesCount);
     float sliceX = renderContext.GetCameraWorldPosition().x - (worldWidth / 2.0f);
+
+    renderContext.UploadLandAndWaterStart(SlicesCount);    
+
     for (size_t i = 0; i <= SlicesCount; ++i, sliceX += sliceWidth)
     {
-        renderContext.RenderLand(
-            sliceX,
-            GetOceanFloorHeight(sliceX, gameParameters));
-    }
-
-    renderContext.RenderLandEnd();
-}
-
-void World::RenderWater(
-    GameParameters const & gameParameters,
-    RenderContext &  renderContext) const
-{
-    static constexpr size_t SlicesCount = 300;
-
-    float const worldWidth = renderContext.GetVisibleWorldSize().x;
-    
-    renderContext.RenderWaterStart(SlicesCount);
-
-    float const sliceWidth = worldWidth / static_cast<float>(SlicesCount);
-    float sliceX = renderContext.GetCameraWorldPosition().x - (worldWidth / 2.0f);
-    for (size_t i = 0; i <= SlicesCount; ++i, sliceX += sliceWidth)
-    {
-        renderContext.RenderWater(
+        renderContext.UploadLandAndWater(
             sliceX,
             GetOceanFloorHeight(sliceX, gameParameters),
             GetWaterHeight(sliceX, gameParameters),
             gameParameters.SeaDepth);
     }
 
-    renderContext.RenderWaterEnd();
+    renderContext.UploadLandAndWaterEnd();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

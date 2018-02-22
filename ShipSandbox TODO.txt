@@ -52,17 +52,14 @@ Current perf
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
 	- Texture mapping:
-		- UploadLandAndWaterStart()/./End()
-			- Specify iSlice instead of x
-			- Just specify land y and water y
-			- Impl:
-				- x: RenderContext transforms iSlice using visible world width
-				- y:
-					- To LandBuffer
-					- To WaterBuffer
-			- RenderLand()
-			- RenderWater()
-		- Hide GetWorldBoundaries() ("Visible...")
+		+ UploadLandAndWaterStart()/./End()
+			+ Just specify land y and water y
+			+ Impl:
+				+ y:
+					+ To LandBuffer
+					+ To WaterBuffer
+			+ RenderLand()
+			+ RenderWater()
 
 		- Clouds stencil: 
 			- Draw waterbuffer without texture, but reverse stencil op

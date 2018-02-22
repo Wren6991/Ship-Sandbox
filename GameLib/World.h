@@ -64,12 +64,8 @@ private:
         GameParameters const & gameParameters,
         RenderContext & renderContext) const;
 
-	void RenderLand(
+	void UploadLandAndWater(
 		GameParameters const & gameParameters,
-        RenderContext & renderContext) const;
-
-	void RenderWater(
-        GameParameters const & gameParameters,
         RenderContext & renderContext) const;
 
 private:

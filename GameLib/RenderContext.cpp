@@ -842,8 +842,12 @@ void RenderContext::RenderCloudsEnd()
     glUseProgram(0);
 }
 
-void RenderContext::RenderLandStart(size_t slices)
+void RenderContext::UploadLandAndWaterStart(size_t slices)
 {
+    //
+    // Prepare land buffer
+    //
+
     if (slices + 1 != mLandBufferMaxSize)
     {
         // Realloc
@@ -852,13 +856,48 @@ void RenderContext::RenderLandStart(size_t slices)
         mLandBufferMaxSize = slices + 1;
     }
 
-    mLandBufferSize = 0u;    
+    mLandBufferSize = 0u;
+
+    //
+    // Prepare water buffer
+    //
+
+    if (slices + 1 != mWaterBufferMaxSize)
+    {
+        // Realloc
+        mWaterBuffer.reset();
+        mWaterBuffer.reset(new WaterElement[slices + 1]);
+        mWaterBufferMaxSize = slices + 1;
+    }
+
+    mWaterBufferSize = 0u;
 }
 
-void RenderContext::RenderLandEnd()
+void RenderContext::UploadLandAndWaterEnd()
 {
+    //
+    // Upload land buffer
+    //
+
     assert(mLandBufferSize == mLandBufferMaxSize);
 
+    glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);
+    glBufferData(GL_ARRAY_BUFFER, mLandBufferSize * sizeof(LandElement), mLandBuffer.get(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+    //
+    // Upload water buffer
+    //
+
+    assert(mWaterBufferSize == mWaterBufferMaxSize);
+
+    glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
+    glBufferData(GL_ARRAY_BUFFER, mWaterBufferSize * sizeof(WaterElement), mWaterBuffer.get(), GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+}
+
+void RenderContext::RenderLand()
+{
     // Use program
     glUseProgram(*mLandShaderProgram);
 
@@ -869,9 +908,8 @@ void RenderContext::RenderLandEnd()
     // Bind Texture
     glBindTexture(GL_TEXTURE_2D, *mLandTexture);
 
-    // Upload land buffer 
+    // Bind land buffer
     glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);
-    glBufferData(GL_ARRAY_BUFFER, mLandBufferSize * sizeof(LandElement), mLandBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Describe InputPos
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
@@ -884,23 +922,8 @@ void RenderContext::RenderLandEnd()
     glUseProgram(0);
 }
 
-void RenderContext::RenderWaterStart(size_t slices)
+void RenderContext::RenderWater()
 {
-    if (slices + 1 != mWaterBufferMaxSize)
-    {
-        // Realloc
-        mWaterBuffer.reset();
-        mWaterBuffer.reset(new WaterElement[slices + 1]);
-        mWaterBufferMaxSize = slices + 1;
-    }
-
-    mWaterBufferSize = 0u;
-}
-
-void RenderContext::RenderWaterEnd()
-{
-    assert(mWaterBufferSize == mWaterBufferMaxSize);
-
     // Use program
     glUseProgram(*mWaterShaderProgram);
 
@@ -912,9 +935,8 @@ void RenderContext::RenderWaterEnd()
     // Bind Texture
     glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
 
-    // Upload water buffer 
+    // Bind water buffer
     glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
-    glBufferData(GL_ARRAY_BUFFER, mWaterBufferSize * sizeof(WaterElement), mWaterBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Describe InputPos
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)0);
