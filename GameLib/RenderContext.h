@@ -215,7 +215,6 @@ public:
         float textureTileNdcW = 120.0f / 1024.0f;
         float textureTileNdcH = 80.0f / 768.0f;
 
-        // TODO: use stencil with horizon (worldY=0) at bottom, or cap here adjusting texture H
         float leftX = mappedX - textureTileNdcW * scale / 2.0f;
         float rightX = mappedX + textureTileNdcW * scale / 2.0f;
         float topY = mappedY - textureTileNdcH * scale / 2.0f;
@@ -691,6 +690,11 @@ private:
     OpenGLShaderProgram mMatteNdcShaderProgram;
     GLint mMatteNdcShaderColorParameter;
     OpenGLVBO mMatteNdcVBO;
+
+    OpenGLShaderProgram mMatteWorldShaderProgram;    
+    GLint mMatteWorldShaderColorParameter;
+    GLint mMatteWorldShaderOrthoMatrixParameter;
+    OpenGLVBO mMatteWorldVBO;
 
 private:
 

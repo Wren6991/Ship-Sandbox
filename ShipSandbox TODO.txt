@@ -52,37 +52,18 @@ Current perf
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
 	- Texture mapping:
-		+ UploadLandAndWaterStart()/./End()
-			+ Just specify land y and water y
-			+ Impl:
-				+ y:
-					+ To LandBuffer
-					+ To WaterBuffer
-			+ RenderLand()
-			+ RenderWater()
-
-		- Clouds stencil: 
-			- Draw waterbuffer without texture, but reverse stencil op
-
-
-		+ Land (sand)
-			+ bottom is not anymore a param but it's filled by RenderLadn(.) with +/- mWorldHeight/2
-				+ only param is x and y (world y)
-			+ texture coordinates are world coordinates
-			+ Magic number is based on desired tile world size
-		+ Water
-			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
-			+ Make texture stretch wrt vertical height of water strip
-			+ Change map, this one's ugly
 		= Clouds
 			- Use N textures, each has own rectangular size
+			- RenderContext loads all available textures and uses them for the clouds, modulo
+				- initProgressSink lambda
 			+ GameParameters.NumberOfClouds (constants)
 			+ World takes numberOfClouds and allocates clouds buffer with random values
 			+ Then, RenderContext::RenderCloudsStart()/./End()
 				+ Buffer contains virtualX and virtualY, and scale
 				+ RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
-			- RenderContext loads all available textures and uses them for the clouds, modulo
-				- initProgressSink lambda
+			+ Clouds stencil: 
+				+ Draw waterbuffer without texture, but reverse stencil op
+
 
 		- Ship, using second image
 			- Load ship == Dialog with two textboxes and "browse" next to them
@@ -587,3 +568,22 @@ IF WX:
 		+ Also called by GameController's Screen2World 
 			+ also move GameController's Screen2World implementation to Renderer
 		+ See if needs to be exponentially-slider'ed as well
++ Gfx:
+	+ Texture mapping:
+		+ UploadLandAndWaterStart()/./End()
+			+ Just specify land y and water y
+			+ Impl:
+				+ y:
+					+ To LandBuffer
+					+ To WaterBuffer
+			+ RenderLand()
+			+ RenderWater()
+		+ Land (sand)
+			+ bottom is not anymore a param but it's filled by RenderLadn(.) with +/- mWorldHeight/2
+				+ only param is x and y (world y)
+			+ texture coordinates are world coordinates
+			+ Magic number is based on desired tile world size
+		+ Water
+			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
+			+ Make texture stretch wrt vertical height of water strip
+			+ Change map, this one's ugly

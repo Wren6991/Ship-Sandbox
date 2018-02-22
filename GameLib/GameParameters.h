@@ -56,7 +56,7 @@ struct GameParameters
 		, DestroyRadius(0.55f)
         // TODO: adjust
         , LightDiffusionAdjustment(0.5f)
-        , NumberOfClouds(100)
+        , NumberOfClouds(50)
 	{
 	}
 };

@@ -76,6 +76,10 @@ RenderContext::RenderContext(
     , mMatteNdcShaderProgram(0u)
     , mMatteNdcShaderColorParameter(0)
     , mMatteNdcVBO(0u)
+    , mMatteWorldShaderProgram(0u)
+    , mMatteWorldShaderColorParameter(0)
+    , mMatteWorldShaderOrthoMatrixParameter(0)
+    , mMatteWorldVBO(0u)
     // Render parameters
     , mZoom(1.0f)
     , mCamX(0.0f)
@@ -647,7 +651,7 @@ RenderContext::RenderContext(
 
 
     //
-    // Multi-purpose shaders
+    // Multi-purpose Matte NDC shader
     //
 
     mMatteNdcShaderProgram = glCreateProgram();
@@ -690,6 +694,56 @@ RenderContext::RenderContext(
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
     mMatteNdcVBO = tmpGLuint;
+
+
+    //
+    // Multi-purpose Matte World shader
+    //
+
+    mMatteWorldShaderProgram = glCreateProgram();
+
+    char const * matteWorldShaderSource = R"(
+
+        // Inputs
+        attribute vec2 inputPos;
+
+        // Params
+        uniform mat4 paramOrthoMatrix;
+
+        void main()
+        {
+            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+        }
+    )";
+
+    CompileShader(matteWorldShaderSource, GL_VERTEX_SHADER, mMatteWorldShaderProgram);
+
+    char const * matteWorldFragmentShaderSource = R"(
+
+        // Params
+        uniform vec4 paramCol;
+
+        void main()
+        {
+            gl_FragColor = paramCol;
+        } 
+    )";
+
+    CompileShader(matteWorldFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteWorldShaderProgram);
+
+    // Bind attribute locations
+    glBindAttribLocation(*mMatteWorldShaderProgram, 0, "inputPos");
+
+    // Link
+    LinkProgram(mMatteWorldShaderProgram, "Matte World");
+
+    // Get uniform locations
+    mMatteWorldShaderColorParameter = GetParameterLocation(mMatteWorldShaderProgram, "paramCol");
+    mMatteWorldShaderOrthoMatrixParameter = GetParameterLocation(mMatteWorldShaderProgram, "paramOrthoMatrix");
+
+    // Create VBO
+    glGenBuffers(1, &tmpGLuint);
+    mMatteWorldVBO = tmpGLuint;
 
 
     //
@@ -754,28 +808,18 @@ void RenderContext::RenderCloudsEnd()
     // Draw stencil
     //
 
-    // Use matte NDC program
-    glUseProgram(*mMatteNdcShaderProgram);
+    // Use matte world program
+    glUseProgram(*mMatteWorldShaderProgram);
 
     // Set parameters
-    glUniform4f(mMatteNdcShaderColorParameter, 1.0f, 1.0f, 1.0f, 1.0f);
-    
-    // Setup mask buffer
-    float ndcZeroY = -2.0f * mCamY / mVisibleWorldHeight;
-    float mask[] =
-    {
-        -1.0f, 1.0f,
-        -1.0f, ndcZeroY,
-        1.0f, 1.0f,
-        1.0f, ndcZeroY
-    };
-    
-    // Upload mask buffer 
-    glBindBuffer(GL_ARRAY_BUFFER, *mMatteNdcVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(mask), &(mask[0]), GL_DYNAMIC_DRAW);
+    glUniform4f(mMatteWorldShaderColorParameter, 1.0f, 1.0f, 1.0f, 1.0f);
+    glUniformMatrix4fv(mMatteWorldShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+
+    // Bind water buffer
+    glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
 
     // Describe InputPos
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Disable writing to the color buffer
@@ -787,7 +831,7 @@ void RenderContext::RenderCloudsEnd()
     glStencilMask(0xFF);
 
     // Draw
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(2 * mWaterBufferSize));
 
     // Don't write anything to stencil buffer now
     glStencilMask(0x00);
@@ -826,8 +870,8 @@ void RenderContext::RenderCloudsEnd()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    // Enable stenciling - only draw where there are one's
-    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    // Enable stenciling - only draw where there are no 1's
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 
     // Draw
     for (size_t c = 0; c < mCloudBufferSize; ++c)

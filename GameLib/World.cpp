@@ -167,7 +167,7 @@ void World::Update(
         {
             mAllClouds.emplace_back(
                 dis(mRandomEngine) * 100.0f,    // OffsetX
-                dis(mRandomEngine) * 0.05f,      // SpeedX1
+                dis(mRandomEngine) * 0.01f,      // SpeedX1
                 dis(mRandomEngine) * 0.04f,     // AmpX
                 dis(mRandomEngine) * 0.01f,     // SpeedX2
                 dis(mRandomEngine) * 100.0f,    // OffsetY
@@ -241,7 +241,7 @@ void World::UploadLandAndWater(
     GameParameters const & gameParameters,
     RenderContext & renderContext) const
 {
-    static constexpr size_t SlicesCount = 300;
+    static constexpr size_t SlicesCount = 500;
 
     float const worldWidth = renderContext.GetVisibleWorldSize().x;
     float const sliceWidth = worldWidth / static_cast<float>(SlicesCount);
