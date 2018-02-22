@@ -173,7 +173,7 @@ void World::Update(
                 dis(mRandomEngine) * 100.0f,    // OffsetY
                 dis(mRandomEngine) * 0.001f,    // AmpY
                 dis(mRandomEngine) * 0.005f,     // SpeedY
-                0.2f + static_cast<float>(c) / static_cast<float>(c + 1), // OffsetScale
+                0.2f + static_cast<float>(c) / static_cast<float>(c + 3), // OffsetScale
                 dis(mRandomEngine) * 0.05f,     // AmpScale
                 dis(mRandomEngine) * 0.005f);    // SpeedScale
         }

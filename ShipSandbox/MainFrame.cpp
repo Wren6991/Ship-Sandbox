@@ -94,7 +94,7 @@ MainFrame::MainFrame(wxApp * mainApp)
 		WX_GL_RGBA,
 		WX_GL_DOUBLEBUFFER,
         WX_GL_DEPTH_SIZE,      16,
-        WX_GL_STENCIL_SIZE,    0,
+        WX_GL_STENCIL_SIZE,    1,
 
         // We want to use OpenGL 3.3, Core Profile        
         // TBD: Not now, my laptop does not support OpenGL 3 :-(
@@ -300,6 +300,10 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
         return;
     }
 
+    this->mMainApp->Yield();
+
+#ifndef _DEBUG
+    // Make sure the splash screen shows for at least one sec, or else it's weird
     auto endInit = std::chrono::steady_clock::now();
     while ((endInit - startInit) < std::chrono::milliseconds(1000))
     {
@@ -307,6 +311,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
         Sleep(10);
         endInit = std::chrono::steady_clock::now();
     }
+#endif
 
     splash->Destroy();
 
@@ -813,11 +818,11 @@ void MainFrame::UpdateTool()
 		    {
                 // Calculate strength multiplier
                 // 0-500ms      = 1.0
-                // 10000ms-+INF = 10.0
+                // 5000ms-+INF = 10.0
 
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 10000.0f);
+                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 5000.0f);
 
                 // Draw
 			    mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y), strengthMultiplier);
@@ -832,11 +837,11 @@ void MainFrame::UpdateTool()
 		    {
                 // Calculate radius multiplier
                 // 0-500ms      = 1.0
-                // 10000ms-+INF = 10.0
+                // 5000ms-+INF = 10.0
 
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 10000.0f);
+                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 5000.0f);
 
                 // Destroy
 			    mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y), radiusMultiplier);

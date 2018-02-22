@@ -8,4 +8,5 @@
 #include <functional>
 #include <string>
 
+// The progress value is the progress that will be reached at the end of the operation
 using ProgressCallback = std::function<void(float progress, std::string const & message)>;

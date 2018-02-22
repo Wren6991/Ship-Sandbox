@@ -15,6 +15,10 @@ Current perf
 		- ShipTriangles: 16.55%
 		- Springs: 10.72%%
 =================================================
+
+= Debug light/drag issue
+	+ Could be due to distance too close and shooting light to sky
+
 - Gfx:
 	- OpenGL optimizations:
 		- Try without buffer population: 			
@@ -48,28 +52,38 @@ Current perf
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
 	- Texture mapping:
-		= Land (sand)
+		- UploadLandAndWaterStart()/./End()
+			- Specify iSlice instead of x
+			- Just specify land y and water y
+			- Impl:
+				- x: RenderContext transforms iSlice using visible world width
+				- y:
+					- To LandBuffer
+					- To WaterBuffer
+			- RenderLand()
+			- RenderWater()
+		- Hide GetWorldBoundaries() ("Visible...")
+
+		- Clouds stencil: 
+			- Draw waterbuffer without texture, but reverse stencil op
+
+
+		+ Land (sand)
 			+ bottom is not anymore a param but it's filled by RenderLadn(.) with +/- mWorldHeight/2
 				+ only param is x and y (world y)
 			+ texture coordinates are world coordinates
 			+ Magic number is based on desired tile world size
-			- Specify iSlice instead of x, and RenderContext transforms using visible world width
-		= Water
+		+ Water
 			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
 			+ Make texture stretch wrt vertical height of water strip
 			+ Change map, this one's ugly
-			- Specify iSlice instead of x, and RenderContext transforms using visible world width
-			- Try to merge renderland and renderwater:
-				- However, need to call RenderWaterEnd() later than RenderLandEnd()...how?
-				- Just have RenderLandAndWaterStart(), RenderWater(), and RenderLandEnd()! No Start/End
-		- Clouds
+		= Clouds
 			- Use N textures, each has own rectangular size
 			+ GameParameters.NumberOfClouds (constants)
-			- World takes numberOfClouds and allocates clouds buffer with random values
-			- Then, RenderContext::RenderCloudsStart()/./End()
-				- Buffer contains virtualX and virtualY, and scale
-				- RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
-					- Hide GetWorldBoundaries() ("Visible...")
+			+ World takes numberOfClouds and allocates clouds buffer with random values
+			+ Then, RenderContext::RenderCloudsStart()/./End()
+				+ Buffer contains virtualX and virtualY, and scale
+				+ RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
 			- RenderContext loads all available textures and uses them for the clouds, modulo
 				- initProgressSink lambda
 
@@ -121,21 +135,13 @@ Current perf
 	- Water drag (already there?)
 
 - Controls:
-	+ Smooth pan and zoom
-		+ Takes 1 sec to get to final value (which is stored immediately as real value)
 	- SettingsDialog: save settings
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 	- Settings:
 		- Strength Adjustment must be settable exponentially (slider=>exp)
 			- Formula: TODO
 			- Formula done by physics when calculating strengthfactor off strengthadjustment
-	+ Zoom: inverse
-		+ 0 - 1000
-		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
-		+ Also called by GameController's Screen2World 
-			+ also move GameController's Screen2World implementation to Renderer
-		+ See if needs to be exponentially-slider'ed as well
-
+	- Page up and page down in menu
 
 - Code:
 	- Get rid of Game.cpp and move functionality to GameController
@@ -247,6 +253,8 @@ Current perf
 	- GameController starts it upon OnStartedSinking() event, published by Game when total ship
 	  water level (always adjusted at Point::AdjustWater) reaches threshold
 	
+- Put credits
+	- Splash: https://www.artstation.com/stukata/profile, contact the guy
 
 ==============================================================================
 ==============================================================================
@@ -572,4 +580,13 @@ IF WX:
 + Menu entry to reset pan and zoom
 + Get rid of unicode
 	+ Can, really?
-
++ Add splash screen
++ Controls:
+	+ Smooth pan and zoom
+		+ Takes 1 sec to get to final value (which is stored immediately as real value)
+	+ Zoom: inverse
+		+ 0 - 1000
+		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
+		+ Also called by GameController's Screen2World 
+			+ also move GameController's Screen2World implementation to Renderer
+		+ See if needs to be exponentially-slider'ed as well

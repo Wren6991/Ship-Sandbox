@@ -464,12 +464,20 @@ void Ship::DiffuseLight(
 
                             if (nullptr != connectedPoint)
                             {
+                                assert(0 == visitedPoints.count(connectedPoint));
                                 visitedPoints.insert(connectedPoint);
 
+                                //
                                 // Calculate light to push into this point, and stop if it's too little
-                                float squareDistance = (connectedPoint->GetPosition() - lampPoint->GetPosition()).squareLength();
-                                assert(squareDistance != 0.0f);
-                                float light = lampPoint->GetLight() / squareDistance;
+                                //
+
+                                // Greater adjustment => underrated distance => wider diffusion
+                                float adjustmentCoefficient = 1.0f - gameParameters.LightDiffusionAdjustment;
+                                float distance = std::max(
+                                    1.0f, 
+                                    (connectedPoint->GetPosition() - lampPoint->GetPosition()).length() * adjustmentCoefficient);
+                                assert(distance >= 1.0f);
+                                float light = lampPoint->GetLight() / (distance * distance);
                                 if (light > 0.02)
                                 {
                                     connectedPoint->AdjustLight(light);

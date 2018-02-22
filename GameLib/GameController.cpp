@@ -31,9 +31,9 @@ std::unique_ptr<GameController> GameController::Create(ProgressCallback const & 
 	// Initialize game
 	//
 
-	// Load initial ship
-	std::string initialShipFilename = "Data/default_ship.png";
+	// Load initial ship	
     progressCallback(1.0f, "Loading initial ship...");
+    std::string initialShipFilename = "Data/default_ship.png";
 	game->LoadShip(initialShipFilename);
 
 	return std::unique_ptr<GameController>(

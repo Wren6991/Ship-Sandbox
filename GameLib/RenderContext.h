@@ -202,11 +202,10 @@ public:
             rolledX += 3.0f;
         float mappedX = -1.0f + 2.0f * (rolledX - 1.0f);
 
-        // TODO:tighter slice, 2.0 
-        float rolledY = fmodf(virtualY, 3.0f);
+        float rolledY = fmodf(virtualY, 2.0f);
         if (rolledY < 0.0f)
-            rolledY += 3.0f;
-        float mappedY = 1.0f - 2.0f * (rolledY - 1.0f);
+            rolledY += 2.0f;
+        float mappedY = -1.0f + 2.0f * (rolledY - 0.5f);
 
         assert(mCloudBufferSize + 1u <= mCloudBufferMaxSize);
         CloudElement * cloudElement = &(mCloudBuffer[mCloudBufferSize]);
@@ -680,6 +679,15 @@ private:
     size_t mShipTriangleBufferMaxSize;
 
     OpenGLVBO mShipTriangleVBO;
+
+
+    //
+    // Multi-purpose shaders
+    //
+
+    OpenGLShaderProgram mMatteNdcShaderProgram;
+    GLint mMatteNdcShaderColorParameter;
+    OpenGLVBO mMatteNdcVBO;
 
 private:
 

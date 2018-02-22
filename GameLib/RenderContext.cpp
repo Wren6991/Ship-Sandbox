@@ -72,6 +72,10 @@ RenderContext::RenderContext(
     , mShipTriangleBufferSize(0u)
     , mShipTriangleBufferMaxSize(0u)
     , mShipTriangleVBO(0u)
+    // Multi-purpose shaders
+    , mMatteNdcShaderProgram(0u)
+    , mMatteNdcShaderColorParameter(0)
+    , mMatteNdcVBO(0u)
     // Render parameters
     , mZoom(1.0f)
     , mCamX(0.0f)
@@ -206,6 +210,8 @@ RenderContext::RenderContext(
     //
 
     // Load texture
+    if (progressCallback)
+        progressCallback(0.5f, "Loading textures: land...");
     mLandTextureData = resourceLoader.LoadTextureRgb("sand_1.jpg");
 
     // Create program
@@ -303,6 +309,8 @@ RenderContext::RenderContext(
     //
 
     // Load texture
+    if (progressCallback)
+        progressCallback(1.0f, "Loading textures: water...");
     mWaterTextureData = resourceLoader.LoadTextureRgb("water_1.jpg");
 
     // Create program
@@ -632,12 +640,57 @@ RenderContext::RenderContext(
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
     mShipTriangleVBO = tmpGLuint;
-
-    glUseProgram(*mShipTriangleShaderProgram);
-
+    
     // Set hardcoded parameters    
-        
+    glUseProgram(*mShipTriangleShaderProgram);
     glUseProgram(0);
+
+
+    //
+    // Multi-purpose shaders
+    //
+
+    mMatteNdcShaderProgram = glCreateProgram();
+
+    char const * matteNdcShaderSource = R"(
+
+        // Inputs
+        attribute vec2 inputPos;
+
+        void main()
+        {
+            gl_Position = vec4(inputPos.xy, -1.0, 1.0);
+        }
+    )";
+
+    CompileShader(matteNdcShaderSource, GL_VERTEX_SHADER, mMatteNdcShaderProgram);
+
+    char const * matteNdcFragmentShaderSource = R"(
+
+        // Params
+        uniform vec4 paramCol;
+
+        void main()
+        {
+            gl_FragColor = paramCol;
+        } 
+    )";
+
+    CompileShader(matteNdcFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteNdcShaderProgram);
+
+    // Bind attribute locations
+    glBindAttribLocation(*mMatteNdcShaderProgram, 0, "inputPos");
+
+    // Link
+    LinkProgram(mMatteNdcShaderProgram, "Matte NDC");
+
+    // Get uniform locations
+    mMatteNdcShaderColorParameter = GetParameterLocation(mMatteNdcShaderProgram, "paramCol");
+
+    // Create VBO
+    glGenBuffers(1, &tmpGLuint);
+    mMatteNdcVBO = tmpGLuint;
+
 
     //
     // Initialize ortho matrix
@@ -661,15 +714,6 @@ RenderContext::~RenderContext()
 
 void RenderContext::RenderStart()
 {
-    //
-    // Clear canvas 
-    //
-
-    static const vec3f ClearColorBase(0.529f, 0.808f, 0.980f); // (cornflower blue)
-    vec3f clearColor = ClearColorBase * mAmbientLightIntensity;
-    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     // Set anti-aliasing for lines and polygons
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH, GL_NICEST);
@@ -678,6 +722,17 @@ void RenderContext::RenderStart()
 
     // Set nearest interpolation for textures
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // Enable stencil test    
+    glEnable(GL_STENCIL_TEST);    
+
+    // Clear canvas 
+    static const vec3f ClearColorBase(0.529f, 0.808f, 0.980f); // (cornflower blue)
+    vec3f clearColor = ClearColorBase * mAmbientLightIntensity;
+    glClearColor(clearColor.x, clearColor.y, clearColor.z, 1.0f);
+    glStencilMask(0xFF);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glStencilMask(0x00);
 }
 
 void RenderContext::RenderCloudsStart(size_t clouds)
@@ -695,6 +750,59 @@ void RenderContext::RenderCloudsStart(size_t clouds)
 
 void RenderContext::RenderCloudsEnd()
 {
+    //
+    // Draw stencil
+    //
+
+    // Use matte NDC program
+    glUseProgram(*mMatteNdcShaderProgram);
+
+    // Set parameters
+    glUniform4f(mMatteNdcShaderColorParameter, 1.0f, 1.0f, 1.0f, 1.0f);
+    
+    // Setup mask buffer
+    float ndcZeroY = -2.0f * mCamY / mVisibleWorldHeight;
+    float mask[] =
+    {
+        -1.0f, 1.0f,
+        -1.0f, ndcZeroY,
+        1.0f, 1.0f,
+        1.0f, ndcZeroY
+    };
+    
+    // Upload mask buffer 
+    glBindBuffer(GL_ARRAY_BUFFER, *mMatteNdcVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(mask), &(mask[0]), GL_DYNAMIC_DRAW);
+
+    // Describe InputPos
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Disable writing to the color buffer
+    glColorMask(false, false, false, false);
+
+    // Write all one's to stencil buffer
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
+    // Draw
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Don't write anything to stencil buffer now
+    glStencilMask(0x00);
+
+    // Re-enable writing to the color buffer
+    glColorMask(true, true, true, true);
+    
+    // Stop using program
+    glUseProgram(0);
+
+
+    //
+    // Draw clouds
+    //
+
     assert(mCloudBufferSize == mCloudBufferMaxSize);
 
     // Use program
@@ -718,11 +826,17 @@ void RenderContext::RenderCloudsEnd()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (2 + 2) * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+    // Enable stenciling - only draw where there are one's
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+
     // Draw
     for (size_t c = 0; c < mCloudBufferSize; ++c)
     {
         glDrawArrays(GL_TRIANGLE_STRIP, 4*c, 4);
     }
+
+    // Disable stenciling - draw always
+    glStencilFunc(GL_ALWAYS, 0, 0x00);
 
     // Stop using program
     glUseProgram(0);
