@@ -18,15 +18,19 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-= Merge DetectConnectedComponents with LeakWaterAndZeroLight as "PreparePointsForFinalStep"
++ Merge DetectConnectedComponents with LeakWaterAndZeroLight as "PreparePointsForFinalStep"
 
 - Now that we have connected components:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
+		+ Ship keeps track of # of connected components and of each size
 		- At render time, allocate N buffers for the vertex indices and dispatch each triangle/spring
-		  to the buffer based off the connected component of the (first) point of the primitive
+		  to the correct buffer based off the connected component of the (first) point of the primitive
+			- Note: points themselves are not affected by this; they're still uploaded in their entirety 
+			  once per cycle
+		- This then enables full light diffusion in shaders (see below)
 	- Rethink impact of connected components on the below (if any):
 		- Points/OpenGL buffers
-		- ship textures
+		- Ship textures
 
 - Gfx:
 	- OpenGL optimizations:
@@ -60,6 +64,16 @@ Current perf
 		+ Use also in RenderContext::RenderStart() for clear (sky) color
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
+
+	- Try light diffusion rearc:
+		- No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs and points):
+			- Prerequisite: draw ship triangles by connected component (see above)
+			- For each component: pass array of all lamps in that component; each lamp has {x, y, intensity};
+			- Draw each connected component N times (use additive blending), once for each lamp, 
+			  each time passing the single lamp properties as uniform to shaders, 
+			  which calculate distance and do final light blending
+			- If it works, no more mLight at point and no more diffusion
+
 	- Texture mapping:
 		= Clouds
 			+ Use N textures, each has own rectangular size

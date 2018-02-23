@@ -186,6 +186,9 @@ private:
 
 	// The scheduler we use for parallelizing updates
 	Scheduler mScheduler;
+
+    // Connected components metadata
+    std::vector<std::size_t> mConnectedComponentSizes;
 };
 
 template<>

@@ -319,6 +319,7 @@ void Ship::PreparePointsForFinalStep(
 
     uint64_t currentConnectedComponentId = 0;
     std::queue<Point *> pointsToVisitForConnectedComponents;
+    mConnectedComponentSizes.clear();
 
 	for (Point * point : mAllPoints)
 	{
@@ -354,6 +355,7 @@ void Ship::PreparePointsForFinalStep(
         {
             // This node has not been visited, hence it's the beginning of a new connected component
             ++currentConnectedComponentId;
+            size_t pointsInCurrentConnectedComponent = 0;
 
             //
             // Propagate the connected component ID to all points reachable from this point
@@ -370,6 +372,7 @@ void Ship::PreparePointsForFinalStep(
 
                 // Assign the connected component ID
                 currentPoint->SetConnectedComponentId(currentConnectedComponentId);
+                ++pointsInCurrentConnectedComponent;
 
                 // Go through this point's adjacents
                 for (Spring * spring : currentPoint->GetConnectedSprings())
@@ -393,6 +396,9 @@ void Ship::PreparePointsForFinalStep(
                     }
                 }
             }
+
+            // Store number of connected components
+            mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
         }
 	}
 }
@@ -480,7 +486,7 @@ void Ship::DiffuseLight(
     //
 
     // Greater adjustment => underrated distance => wider diffusion
-    float const adjustmentCoefficient = 1.0f - gameParameters.LightDiffusionAdjustment;
+    float const adjustmentCoefficient = powf(1.0f - gameParameters.LightDiffusionAdjustment, 2.0f);
 
     // Visit all points
     for (Point * point : mAllPoints)
