@@ -315,27 +315,27 @@ void Ship::LeakWaterAndZeroLight(
 	// We use this point loop for everything that needs to be done on all points
 	for (Point * point : mAllPoints)
 	{
-        if (!point->IsDeleted())
-        {            
-            // Stuff some water into all the leaking nodes that are underwater, if the external pressure is larger
-            if (point->IsLeaking())
+        assert(!point->IsDeleted());
+        
+        //
+        // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
+        //    if the external pressure is larger
+        //
+
+        if (point->IsLeaking())
+        {
+            float waterLevel = mParentWorld->GetWaterHeight(
+                point->GetPosition().x, 
+                gameParameters);                
+
+            float const externalWaterPressure = point->GetExternalWaterPressure(
+                waterLevel,
+                gameParameters);
+
+            if (externalWaterPressure > point->GetWater())
             {
-                float waterLevel = mParentWorld->GetWaterHeight(
-                    point->GetPosition().x, 
-                    gameParameters);                
-
-                float const externalWaterPressure = point->GetExternalWaterPressure(
-                    waterLevel,
-                    gameParameters);
-
-                if (externalWaterPressure > point->GetWater())
-                {
-                    point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
-                }
+                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
             }
-
-            // Zero-out the quantity of light at this point
-            point->ZeroLight();
         }
 	}
 }
@@ -355,24 +355,23 @@ void Ship::GravitateWater(
     // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring * spring : mAllSprings)
     {
-        if (!spring->IsDeleted())
+        assert(!spring->IsDeleted());
+        
+        if (!spring->GetMaterial()->IsHull)
         {
-            if (!spring->GetMaterial()->IsHull)
-            {
-                Point * const pointA = spring->GetPointA();
-                assert(!pointA->IsDeleted());
+            Point * const pointA = spring->GetPointA();
+            assert(!pointA->IsDeleted());
 
-                Point * const pointB = spring->GetPointB();
-                assert(!pointB->IsDeleted());
+            Point * const pointB = spring->GetPointB();
+            assert(!pointB->IsDeleted());
 
-                // cos_theta > 0 => pointA above pointB
-                float cos_theta = (pointB->GetPosition() - pointA->GetPosition()).normalise().dot(gameParameters.GravityNormal);                
+            // cos_theta > 0 => pointA above pointB
+            float cos_theta = (pointB->GetPosition() - pointA->GetPosition()).normalise().dot(gameParameters.GravityNormal);                
                 
-                // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
-                pointA->AdjustWater(-correction);
-                pointB->AdjustWater(correction);
-            }
+            // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+            float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
+            pointA->AdjustWater(-correction);
+            pointB->AdjustWater(correction);
         }
     }
 }
@@ -390,26 +389,25 @@ void Ship::BalancePressure(float dt)
     // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring * spring : mAllSprings)
     {
-        if (!spring->IsDeleted())
+        assert(!spring->IsDeleted());
+        
+        if (!spring->GetMaterial()->IsHull)
         {
-            if (!spring->GetMaterial()->IsHull)
-            {
-                Point * const pointA = spring->GetPointA();
-                assert(!pointA->IsDeleted());
-                float const aWater = pointA->GetWater();
+            Point * const pointA = spring->GetPointA();
+            assert(!pointA->IsDeleted());
+            float const aWater = pointA->GetWater();
 
-                Point * const pointB = spring->GetPointB();
-                assert(!pointB->IsDeleted());
-                float const bWater = pointB->GetWater();
+            Point * const pointB = spring->GetPointB();
+            assert(!pointB->IsDeleted());
+            float const bWater = pointB->GetWater();
 
-                if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
-                    continue;
+            if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
+                continue;
 
-                // Move water from more wet to less wet
-                float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-                pointA->AdjustWater(correction);
-                pointB->AdjustWater(-correction);
-            }
+            // Move water from more wet to less wet
+            float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+            pointA->AdjustWater(correction);
+            pointB->AdjustWater(-correction);
         }
     }
 }
@@ -427,83 +425,38 @@ void Ship::DiffuseLight(
     // Greater adjustment => underrated distance => wider diffusion
     float const adjustmentCoefficient = 1.0f - gameParameters.LightDiffusionAdjustment;
 
-    // We start at each lamp and do a graph flood from there, stopping at a maximum distance
-    for (ElectricalElement * el : mAllElectricalElements)
+    // Visit all points
+    for (Point * point : mAllPoints)
     {
-        if (!el->IsDeleted())
+        assert(!point->IsDeleted());
+
+        point->ZeroLight();
+
+        vec2f const & pointPosition = point->GetPosition();
+
+        // Go through all lamps in the same connected component
+        for (ElectricalElement * el : mAllElectricalElements)
         {
-            if (ElectricalElement::Type::Lamp == el->GetType())
+            assert(!el->IsDeleted());
+
+            if (ElectricalElement::Type::Lamp == el->GetType()
+                && el->GetPoint()->GetConnectedComponentId() == point->GetConnectedComponentId())
             {
                 Point * const lampPoint = el->GetPoint();
-                assert(nullptr != lampPoint && !lampPoint->IsDeleted());
 
-                vec2f const & lampPosition = lampPoint->GetPosition();
+                assert(!lampPoint->IsDeleted());
 
-                // Set light on lamp's point
-                // TBD: this needs to be based off the current at this lamp
-                lampPoint->AdjustLight(1.0f);
+                // TODO: this needs to be replaced with a previous step in which we set light
+                // quantity based off current, and thus we use the lamp point's light
+                float const lampLight = 1.0f;
 
-                std::set<Point *> visitedPoints;
-                visitedPoints.insert(lampPoint);
+                float squareDistance = std::max(
+                    1.0f, 
+                    (pointPosition - lampPoint->GetPosition()).squareLength() * adjustmentCoefficient);
 
-                std::queue<Point *> pointsToVisit;
+                assert(squareDistance >= 1.0f);
 
-                Point * currentPoint = lampPoint;                
-                while (true)
-                {
-                    // Go through this point's adjacents
-                    for (Spring * spring : currentPoint->GetConnectedSprings())
-                    {
-                        if (!spring->IsDeleted())
-                        {
-                            Point * connectedPoint = nullptr;
-                            if (0 == visitedPoints.count(spring->GetPointA()))
-                            {
-                                assert(1 == visitedPoints.count(spring->GetPointB()));
-                                connectedPoint = spring->GetPointA();
-                            }
-                            else if (0 == visitedPoints.count(spring->GetPointB()))
-                            {
-                                connectedPoint = spring->GetPointB();
-                            }
-
-                            if (nullptr != connectedPoint)
-                            {
-                                assert(0 == visitedPoints.count(connectedPoint));
-                                visitedPoints.insert(connectedPoint);
-
-                                //
-                                // Calculate light to push into this point, and stop if it's too little
-                                //
-
-                                float squareDistance = std::max(
-                                    1.0f, 
-                                    (connectedPoint->GetPosition() - lampPosition).squareLength() * adjustmentCoefficient);
-                                assert(squareDistance >= 1.0f);
-                                float light = lampPoint->GetLight() / squareDistance;
-                                if (light > 0.02)
-                                {
-                                    connectedPoint->AdjustLight(light);
-
-                                    // Visit this point next
-                                    pointsToVisit.push(connectedPoint);
-                                }
-                            }
-                        }
-                    }
-
-                    //
-                    // Get next point to visit
-                    //
-
-                    if (pointsToVisit.empty())
-                    {
-                        break;
-                    }
-
-                    currentPoint = pointsToVisit.front();
-                    pointsToVisit.pop();
-                }
+                point->AdjustLight(lampLight / squareDistance);
             }
         }
     }
@@ -551,11 +504,27 @@ void Ship::Update(
         LogDebug("Broken springs: ", brokenSprings);
     }
 
+    //
+    // Clear up pointer containers, in case there have been deletions
+    // during or before this update step
+    //
+
+    mAllPoints.shrink_to_fit();
+    mAllSprings.shrink_to_fit();
+    mAllTriangles.shrink_to_fit();
+
+    //
+    // Detect connected components
+    //
+
+    DetectConnectedComponents(currentStepSequenceNumber);
+
 
     //
 	// Update all electrical and water stuff
     //
 
+    // TODO: should merge this with Detect Connected Components
     LeakWaterAndZeroLight(dt, gameParameters);
 
     for (int i = 0; i < 4; i++)
@@ -571,21 +540,6 @@ void Ship::Update(
         dt, 
         currentStepSequenceNumber,
         gameParameters);
-
-    //
-    // Clear up pointer containers, in case there have been deletions
-    // during or before this update step
-    //
-
-    mAllPoints.shrink_to_fit();
-    mAllSprings.shrink_to_fit();
-    mAllTriangles.shrink_to_fit();
-
-    //
-    // Detect connected components
-    //
-
-    DetectConnectedComponents(currentStepSequenceNumber);
 }
 
 void Ship::Render(
