@@ -424,6 +424,9 @@ void Ship::DiffuseLight(
     // inversely-proportional to the square of the distance
     //
 
+    // Greater adjustment => underrated distance => wider diffusion
+    float const adjustmentCoefficient = 1.0f - gameParameters.LightDiffusionAdjustment;
+
     // We start at each lamp and do a graph flood from there, stopping at a maximum distance
     for (ElectricalElement * el : mAllElectricalElements)
     {
@@ -434,6 +437,8 @@ void Ship::DiffuseLight(
                 Point * const lampPoint = el->GetPoint();
                 assert(nullptr != lampPoint && !lampPoint->IsDeleted());
 
+                vec2f const & lampPosition = lampPoint->GetPosition();
+
                 // Set light on lamp's point
                 // TBD: this needs to be based off the current at this lamp
                 lampPoint->AdjustLight(1.0f);
@@ -443,7 +448,7 @@ void Ship::DiffuseLight(
 
                 std::queue<Point *> pointsToVisit;
 
-                Point * currentPoint = lampPoint;
+                Point * currentPoint = lampPoint;                
                 while (true)
                 {
                     // Go through this point's adjacents
@@ -471,13 +476,11 @@ void Ship::DiffuseLight(
                                 // Calculate light to push into this point, and stop if it's too little
                                 //
 
-                                // Greater adjustment => underrated distance => wider diffusion
-                                float adjustmentCoefficient = 1.0f - gameParameters.LightDiffusionAdjustment;
-                                float distance = std::max(
+                                float squareDistance = std::max(
                                     1.0f, 
-                                    (connectedPoint->GetPosition() - lampPoint->GetPosition()).length() * adjustmentCoefficient);
-                                assert(distance >= 1.0f);
-                                float light = lampPoint->GetLight() / (distance * distance);
+                                    (connectedPoint->GetPosition() - lampPosition).squareLength() * adjustmentCoefficient);
+                                assert(squareDistance >= 1.0f);
+                                float light = lampPoint->GetLight() / squareDistance;
                                 if (light > 0.02)
                                 {
                                     connectedPoint->AdjustLight(light);

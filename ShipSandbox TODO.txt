@@ -1,19 +1,20 @@
 =================================================
 Current perf
 =================================================
-- fps: 15/16 (Samsung: )	
-- World::Update: 61.72%
-	- DoSprings: 42.59%
-		- Spring::Update: 34.46%
-		- Spring::DoDamping: 3.90%
-	- BalancePressure: 7.07%
-	- GravitateWater: 5.48%
-	- DiffuseLight: 3.17%
+- fps: 15/16 (Samsung: 12)	
+- World::Update: 62.63%
+	- DoSprings: 37.90%
+		- Spring::Update: 30.57%
+		- Spring::DoDamping: 3.61%
+	- BalancePressure: 6.26%
+	- GravitateWater: 4.94%
+	- DiffuseLight: 10.54%
 	- Point::Update: 1.70%
-- Game::Render: 31.48%
-	- Ship::Render: 30.21%
-		- ShipTriangles: 16.55%
-		- Springs: 10.72%%
+- Game::Render: 27.69%
+	- Ship::Render: 27.69%
+		- ShipTriangles: 14.39%
+		- Springs: 10.49%%
+	- RenderContext::RenderCloudsEnd: 1.04%
 =================================================
 
 = Debug light/drag issue
@@ -74,11 +75,12 @@ Current perf
 				  RenderContext::SetShipTexture(iShip, img data, imgW, imgH, textureCoords)
 				  with textureCoords being buffer of texture X's and Y's (i.e. real pixel coords) for
 				  each of the points (i.e. aligned with the point buffer which will be continuosly uploaded)
-				- Still keeps blending color buffer for water and light color blending, which F shader
+					- Why does ship need to own or even know its texture?
+				- Still keeps a "blending color" buffer for water and light color blending, which F shader
 				  uses to blend on top of texture
 					- Ship also remembers whether or not it has a texture, and if so it does not
 					  do springs nor triangles (but it does stressed springs) and makes Point::Color 
-					  not use own color and do blend color instead
+					  not use own color and just do blend color instead
 					- Or just use light and water buffer, see above
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
@@ -214,6 +216,9 @@ Current perf
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
                   and makes alpha blend just like water
+		- Need "off" color (in material) to use at lamp point when Lamp is off (independently from mLight),
+		  used when rendering point in springs/triangles/points
+			- Not used when using textures, of course
 	- Current Propagation Algo:
 		- create new generation seq number; if new is 0 => 1
 		- visit all generator points and count the points in their graphs; for each connected component:

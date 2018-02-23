@@ -83,32 +83,32 @@ public:
     }
 
     float GetStrengthAdjustment() const { return mGameParameters.StrengthAdjustment; }
-    void SetStrengthAdjustment(float value);
+    void SetStrengthAdjustment(float value) { mGameParameters.StrengthAdjustment = value; }
     float GetMinStrengthAdjustment() const { return GameParameters::MinStrengthAdjustment;  }
     float GetMaxStrengthAdjustment() const { return GameParameters::MaxStrengthAdjustment; }
 
     float GetBuoyancyAdjustment() const { return mGameParameters.BuoyancyAdjustment; }
-    void SetBuoyancyAdjustment(float value);
+    void SetBuoyancyAdjustment(float value) { mGameParameters.BuoyancyAdjustment = value; }
     float GetMinBuoyancyAdjustment() const { return GameParameters::MinBuoyancyAdjustment; }
     float GetMaxBuoyancyAdjustment() const { return GameParameters::MaxBuoyancyAdjustment; }
 
     float GetWaterPressureAdjustment() const { return mGameParameters.WaterPressureAdjustment; }
-    void SetWaterPressureAdjustment(float value);
+    void SetWaterPressureAdjustment(float value) { mGameParameters.WaterPressureAdjustment = value; }
     float GetMinWaterPressureAdjustment() const { return GameParameters::MinWaterPressureAdjustment; }
     float GetMaxWaterPressureAdjustment() const { return GameParameters::MaxWaterPressureAdjustment; }
 
     float GetWaveHeight() const { return mGameParameters.WaveHeight; }
-    void SetWaveHeight(float value);
+    void SetWaveHeight(float value) { mGameParameters.WaveHeight = value; }
     float GetMinWaveHeight() const { return GameParameters::MinWaveHeight; }
     float GetMaxWaveHeight() const { return GameParameters::MaxWaveHeight; }
 
     float GetSeaDepth() const { return mGameParameters.SeaDepth; }
-    void SetSeaDepth(float value);
+    void SetSeaDepth(float value) { mGameParameters.SeaDepth = value; }
     float GetMinSeaDepth() const { return GameParameters::MinSeaDepth; }
     float GetMaxSeaDepth() const { return GameParameters::MaxSeaDepth; }
 
     float GetDestroyRadius() const { return mGameParameters.DestroyRadius; }
-    void SetDestroyRadius(float value);
+    void SetDestroyRadius(float value) { mGameParameters.DestroyRadius = value; }
     float GetMinDestroyRadius() const { return GameParameters::MinDestroyRadius; }
     float GetMaxDestroyRadius() const { return GameParameters::MaxDestroyRadius; }
 
@@ -117,6 +117,9 @@ public:
 
     float GetWaterTransparency() const { return mRenderContext->GetWaterTransparency(); }
     void SetWaterTransparency(float value) { mRenderContext->SetWaterTransparency(value); }
+
+    float GetLightDiffusionAdjustment() const { return mGameParameters.LightDiffusionAdjustment; }
+    void SetLightDiffusionAdjustment(float value) { mGameParameters.LightDiffusionAdjustment = value; }
 
     bool GetShowStress() const { return mRenderContext->GetShowStress(); }
     void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }

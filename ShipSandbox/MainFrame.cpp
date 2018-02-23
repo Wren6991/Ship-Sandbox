@@ -512,8 +512,8 @@ void MainFrame::OnMainGLCanvasMouseMove(wxMouseEvent& event)
 	mMouseInfo.y = event.GetY();
 	if (mMouseInfo.rdown)
 	{
-		// Pan
-		vec2 screenOffset = vec2(mMouseInfo.x, mMouseInfo.y) - vec2(oldx, oldy);
+		// Pan (opposite direction)
+		vec2 screenOffset = vec2(oldx, oldy) - vec2(mMouseInfo.x, mMouseInfo.y);
 		mGameController->PanImmediate(screenOffset);
 	}
 }

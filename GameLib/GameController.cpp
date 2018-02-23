@@ -170,48 +170,6 @@ Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoor
     return mGame->GetNearestPointAt(worldCoordinates, 1.0f);
 }
 
-void GameController::SetStrengthAdjustment(float value)
-{
-	LogDebug("GameController::SetStrengthAdjustment(", value, ")");
-
-	mGameParameters.StrengthAdjustment = value;
-}
-
-void GameController::SetBuoyancyAdjustment(float value)
-{
-	LogDebug("GameController::SetBuoyancyAdjustment(", value, ")");
-
-	mGameParameters.BuoyancyAdjustment = value;
-}
-
-void GameController::SetWaterPressureAdjustment(float value)
-{
-	LogDebug("GameController::SetWaterPressureAdjustment(", value, ")");
-
-	mGameParameters.WaterPressureAdjustment = value;
-}
-
-void GameController::SetWaveHeight(float value)
-{
-	LogDebug("GameController::SetWaveHeight(", value, ")");
-
-	mGameParameters.WaveHeight = value;
-}
-
-void GameController::SetSeaDepth(float value)
-{
-	LogDebug("GameController::SetSeaDepth(", value, ")");
-
-	mGameParameters.SeaDepth = value;
-}
-
-void GameController::SetDestroyRadius(float value)
-{
-	LogDebug("GameController::SetDestroyRadius(", value, ")");
-
-	mGameParameters.DestroyRadius = value;
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////
 
 void GameController::SmoothToTarget(

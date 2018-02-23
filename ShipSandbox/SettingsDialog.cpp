@@ -20,7 +20,8 @@ const long ID_STRENGTH_SLIDER = wxNewId();
 const long ID_BUOYANCY_SLIDER = wxNewId();
 const long ID_WATER_PRESSURE_SLIDER = wxNewId();
 const long ID_WAVE_HEIGHT_SLIDER = wxNewId();
-const long ID_WATER_TRANSPARENCY_SLIDE = wxNewId();
+const long ID_WATER_TRANSPARENCY_SLIDER = wxNewId();
+const long ID_LIGHT_DIFFUSION_SLIDER = wxNewId();
 const long ID_SEA_DEPTH_SLIDER = wxNewId();
 const long ID_DESTROY_RADIUS_SLIDER = wxNewId();
 
@@ -34,7 +35,8 @@ wxBEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
 	EVT_COMMAND_SCROLL(ID_BUOYANCY_SLIDER, SettingsDialog::OnBuoyancySliderScroll)
 	EVT_COMMAND_SCROLL(ID_WATER_PRESSURE_SLIDER, SettingsDialog::OnWaterPressureSliderScroll)
 	EVT_COMMAND_SCROLL(ID_WAVE_HEIGHT_SLIDER, SettingsDialog::OnWaveHeightSliderScroll)
-    EVT_COMMAND_SCROLL(ID_WATER_TRANSPARENCY_SLIDE, SettingsDialog::OnWaterTransparencySliderScroll)
+    EVT_COMMAND_SCROLL(ID_WATER_TRANSPARENCY_SLIDER, SettingsDialog::OnWaterTransparencySliderScroll)
+    EVT_COMMAND_SCROLL(ID_LIGHT_DIFFUSION_SLIDER, SettingsDialog::OnLightDiffusionSliderScroll)
 	EVT_COMMAND_SCROLL(ID_SEA_DEPTH_SLIDER, SettingsDialog::OnSeaDepthSliderScroll)
 	EVT_COMMAND_SCROLL(ID_DESTROY_RADIUS_SLIDER, SettingsDialog::OnDestroyRadiusSliderScroll)
 wxEND_EVENT_TABLE()
@@ -89,7 +91,7 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(strengthSizer, 0);
 	
-	controlsSizer->AddSpacer(40);
+	controlsSizer->AddSpacer(20);
 
 
 	// Buoyancy
@@ -111,7 +113,7 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(buoyancySizer, 0);
 	
-	controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
 
 
 	// Water Pressure
@@ -133,7 +135,7 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(waterPressureSizer, 0);
 
-	controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
 
 
 	// Wave Height
@@ -155,20 +157,20 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(waveHeightSizer, 0);
 
-	controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
 
     
     // Water Transparency
 
     wxBoxSizer* waterTransparencySizer = new wxBoxSizer(wxVERTICAL);
 
-    mWaterTransparencySlider = new wxSlider(this, ID_WATER_TRANSPARENCY_SLIDE, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
+    mWaterTransparencySlider = new wxSlider(this, ID_WATER_TRANSPARENCY_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
         wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Water Transparency Slider"));
     mWaterTransparencySlider->SetTickFreq(4);
     waterTransparencySizer->Add(mWaterTransparencySlider, 0, wxALIGN_CENTRE);
 
-    wxStaticText * waterTransparencyHeightLabel = new wxStaticText(this, wxID_ANY, _("Water Transparency"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Transparency Label"));
-    waterTransparencySizer->Add(waterTransparencyHeightLabel, 0, wxALIGN_CENTRE);
+    wxStaticText * waterTransparencyLabel = new wxStaticText(this, wxID_ANY, _("Water Transparency"), wxDefaultPosition, wxDefaultSize, 0, _T("Water Transparency Label"));
+    waterTransparencySizer->Add(waterTransparencyLabel, 0, wxALIGN_CENTRE);
 
     mWaterTransparencyTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
     waterTransparencySizer->Add(mWaterTransparencyTextCtrl, 0, wxALIGN_CENTRE);
@@ -177,7 +179,29 @@ SettingsDialog::SettingsDialog(
 
     controlsSizer->Add(waterTransparencySizer, 0);
 
-    controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
+
+
+    // Light Diffusion
+
+    wxBoxSizer* lightDiffusionSizer = new wxBoxSizer(wxVERTICAL);
+
+    mLightDiffusionSlider = new wxSlider(this, ID_LIGHT_DIFFUSION_SLIDER, 50, 0, SliderTicks, wxDefaultPosition, wxSize(50, 200),
+        wxSL_VERTICAL | wxSL_LEFT | wxSL_INVERSE | wxSL_AUTOTICKS, wxDefaultValidator, _T("Light Diffusion Slider"));
+    mLightDiffusionSlider->SetTickFreq(4);
+    lightDiffusionSizer->Add(mLightDiffusionSlider, 0, wxALIGN_CENTRE);
+
+    wxStaticText * lightDiffusionLabel = new wxStaticText(this, wxID_ANY, _("Light Diffusion"), wxDefaultPosition, wxDefaultSize, 0, _T("Light Diffusion Label"));
+    lightDiffusionSizer->Add(lightDiffusionLabel, 0, wxALIGN_CENTRE);
+
+    mLightDiffusionTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
+    lightDiffusionSizer->Add(mLightDiffusionTextCtrl, 0, wxALIGN_CENTRE);
+
+    lightDiffusionSizer->AddSpacer(20);
+
+    controlsSizer->Add(lightDiffusionSizer, 0);
+
+    controlsSizer->AddSpacer(20);
 
 
 	// Sea Depth
@@ -199,7 +223,7 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(seaDepthSizer, 0);
 
-	controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
 
 
 	// Destroy Radius
@@ -221,7 +245,7 @@ SettingsDialog::SettingsDialog(
 
 	controlsSizer->Add(destroyRadiusSizer, 0);
 
-	controlsSizer->AddSpacer(40);
+    controlsSizer->AddSpacer(20);
 
 	
 	// Check boxes
@@ -384,6 +408,21 @@ void SettingsDialog::OnWaterTransparencySliderScroll(wxScrollEvent & /*event*/)
     mApplyButton->Enable(true);
 }
 
+void SettingsDialog::OnLightDiffusionSliderScroll(wxScrollEvent & /*event*/)
+{
+    assert(!!mGameController);
+
+    float realValue = SliderToRealValue(
+        mLightDiffusionSlider,
+        0.0f,
+        1.0f);
+
+    mLightDiffusionTextCtrl->SetValue(std::to_string(realValue));
+
+    // Remember we're dirty now
+    mApplyButton->Enable(true);
+}
+
 void SettingsDialog::OnSeaDepthSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
@@ -496,6 +535,12 @@ void SettingsDialog::ApplySettings()
             0.0f,
             1.0f));
 
+    mGameController->SetLightDiffusionAdjustment(
+        SliderToRealValue(
+            mLightDiffusionSlider,
+            0.0f,
+            1.0f));
+
 	mGameController->SetSeaDepth(
 		SliderToRealValue(
 			mSeaDepthSlider,
@@ -564,6 +609,15 @@ void SettingsDialog::ReadSettings()
         mWaterTransparencySlider);
 
     mWaterTransparencyTextCtrl->SetValue(std::to_string(mGameController->GetWaterTransparency()));
+
+
+    RealValueToSlider(
+        mGameController->GetLightDiffusionAdjustment(),
+        0.0f,
+        1.0f,
+        mLightDiffusionSlider);
+
+    mLightDiffusionTextCtrl->SetValue(std::to_string(mGameController->GetLightDiffusionAdjustment()));
 
 
 	RealValueToSlider(
