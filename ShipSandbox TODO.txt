@@ -1,30 +1,30 @@
 =================================================
 Current perf
 =================================================
-- fps: 14/15 (Samsung: 12)	
-- World::Update: 66.46%
-	- DoSprings: 43.08%
-		- Spring::Update: 35.29%
-		- Spring::DoDamping: 4.00%
-	- BalancePressure: 6.55%
-	- GravitateWater: 5.28%
-	- DiffuseLight: 5.57%
-	- Point::Update: 1.62%
-	- DetectConnectedComponents: 2.83%
-- Game::Render: 32.13%
-	- Ship::Render: 28.91%
-		- ShipTriangles: 15.00%
-		- Springs: 10.82%%
-	- RenderContext::RenderCloudsEnd: 1.15%
+- fps: 15/16 (Samsung: 12)	
+- World::Update: 59.61%
+	- DoSprings: 42.26%
+		- Spring::Update: 34.26%
+		- Spring::DoDamping: 4.07%
+	- BalancePressure: 5.84%
+	- GravitateWater: 5.05%
+	- DiffuseLight: 0.60%
+	- Point::Update: 1.54%
+	- PreparePointsForFinalStep: 3.01%
+- Game::Render: 30.79%
+	- Ship::Render: 28.09%
+		- ShipTriangles: 14.71%
+		- Springs: 10.29%%
+	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-- Merge DetectConnectedComponents with LeakWaterAndZeroLight as "PreparePointsForFinalStep"
+= Merge DetectConnectedComponents with LeakWaterAndZeroLight as "PreparePointsForFinalStep"
 
 - Now that we have connected components:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		- At render time, allocate N buffers for the vertex indices and dispatch each triangle/spring
 		  to the buffer based off the connected component of the (first) point of the primitive
-	- Rethink the below:
+	- Rethink impact of connected components on the below (if any):
 		- Points/OpenGL buffers
 		- ship textures
 

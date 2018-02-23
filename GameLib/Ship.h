@@ -62,8 +62,9 @@ public:
         vec2 const & targetPos,
         float radius) const;
 
-	void LeakWaterAndZeroLight(
+	void PreparePointsForFinalStep(
 		float dt,
+        uint64_t currentStepSequenceNumber,
 		GameParameters const & gameParameters);
 
 	void GravitateWater(
@@ -172,8 +173,6 @@ private:
 		size_t const mLastPointIndex;
 		float const mDt;
 	};
-
-    void DetectConnectedComponents(uint64_t currentStepSequenceNumber);
 
 private:
 

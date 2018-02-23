@@ -308,11 +308,18 @@ Point const * Ship::GetNearestPointAt(
     return bestPoint;
 }
 
-void Ship::LeakWaterAndZeroLight(
+void Ship::PreparePointsForFinalStep(
 	float dt,
+    uint64_t currentStepSequenceNumber,
 	GameParameters const & gameParameters)
 {
+    //
 	// We use this point loop for everything that needs to be done on all points
+    //
+
+    uint64_t currentConnectedComponentId = 0;
+    std::queue<Point *> pointsToVisitForConnectedComponents;
+
 	for (Point * point : mAllPoints)
 	{
         assert(!point->IsDeleted());
@@ -335,6 +342,56 @@ void Ship::LeakWaterAndZeroLight(
             if (externalWaterPressure > point->GetWater())
             {
                 point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
+            }
+        }
+
+        //
+        // 2) Detect connected components
+        //
+
+        // Check if visited
+        if (point->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+        {
+            // This node has not been visited, hence it's the beginning of a new connected component
+            ++currentConnectedComponentId;
+
+            //
+            // Propagate the connected component ID to all points reachable from this point
+            //
+
+            assert(pointsToVisitForConnectedComponents.empty());
+            pointsToVisitForConnectedComponents.push(point);
+            point->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+
+            while (!pointsToVisitForConnectedComponents.empty())
+            {
+                Point * currentPoint = pointsToVisitForConnectedComponents.front();
+                pointsToVisitForConnectedComponents.pop();
+
+                // Assign the connected component ID
+                currentPoint->SetConnectedComponentId(currentConnectedComponentId);
+
+                // Go through this point's adjacents
+                for (Spring * spring : currentPoint->GetConnectedSprings())
+                {
+                    assert(!spring->IsDeleted());
+
+                    Point * const pointA = spring->GetPointA();
+                    assert(!pointA->IsDeleted());
+                    if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                    {
+                        pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                        pointsToVisitForConnectedComponents.push(pointA);
+                    }
+
+                    Point * const pointB = spring->GetPointB();
+                    assert(!pointB->IsDeleted());
+                    if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                    {
+                        pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                        pointsToVisitForConnectedComponents.push(pointB);
+                    }
+                }
             }
         }
 	}
@@ -513,19 +570,12 @@ void Ship::Update(
     mAllSprings.shrink_to_fit();
     mAllTriangles.shrink_to_fit();
 
-    //
-    // Detect connected components
-    //
-
-    DetectConnectedComponents(currentStepSequenceNumber);
-
 
     //
 	// Update all electrical and water stuff
     //
 
-    // TODO: should merge this with Detect Connected Components
-    LeakWaterAndZeroLight(dt, gameParameters);
+    PreparePointsForFinalStep(dt, currentStepSequenceNumber, gameParameters);
 
     for (int i = 0; i < 4; i++)
         BalancePressure(dt);
@@ -717,67 +767,6 @@ void Ship::PointIntegrateTask::Process()
             point->ZeroForce();
         }
 	}
-}
-
-void Ship::DetectConnectedComponents(uint64_t currentStepSequenceNumber)
-{
-    uint64_t currentConnectedComponentId = 0;
-
-    std::queue<Point *> pointsToVisit;
-
-    // Visit all points 
-    for (Point * originPoint : mAllPoints)
-    {
-        assert(!originPoint->IsDeleted());
-
-        // Check if visited
-        if (originPoint->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-        {
-            // This node has not been visited, hence it's the beginning of a new connected component
-            ++currentConnectedComponentId;
-
-            //
-            // Propagate the connected component ID to all points reachable from this point
-            //
-
-            assert(pointsToVisit.empty());
-            pointsToVisit.push(originPoint);
-            originPoint->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-
-            while (!pointsToVisit.empty())
-            {
-                Point * currentPoint = pointsToVisit.front();
-                pointsToVisit.pop();
-
-                // Assign the connected component ID
-                currentPoint->SetConnectedComponentId(currentConnectedComponentId);
-
-                // Go through this point's adjacents
-                for (Spring * spring : currentPoint->GetConnectedSprings())
-                {
-                    assert(!spring->IsDeleted());
-
-                    Point * const pointA = spring->GetPointA();
-                    assert(!pointA->IsDeleted());
-                    if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                    {
-                        pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                        pointsToVisit.push(pointA);
-                    }
-
-                    Point * const pointB = spring->GetPointB();
-                    assert(!pointB->IsDeleted());
-                    if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                    {
-                        pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                        pointsToVisit.push(pointB);
-                    }
-                }
-            }
-        }
-    }
-
-    LogDebug("Number of connected components: ", currentConnectedComponentId);
 }
 
 }
