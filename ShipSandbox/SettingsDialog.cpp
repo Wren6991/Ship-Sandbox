@@ -191,7 +191,7 @@ SettingsDialog::SettingsDialog(
     mLightDiffusionSlider->SetTickFreq(4);
     lightDiffusionSizer->Add(mLightDiffusionSlider, 0, wxALIGN_CENTRE);
 
-    wxStaticText * lightDiffusionLabel = new wxStaticText(this, wxID_ANY, _("Light Diffusion"), wxDefaultPosition, wxDefaultSize, 0, _T("Light Diffusion Label"));
+    wxStaticText * lightDiffusionLabel = new wxStaticText(this, wxID_ANY, _("Light Diffusion Adjust"), wxDefaultPosition, wxDefaultSize, 0, _T("Light Diffusion Label"));
     lightDiffusionSizer->Add(lightDiffusionLabel, 0, wxALIGN_CENTRE);
 
     mLightDiffusionTextCtrl = new wxTextCtrl(this, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTRE);
