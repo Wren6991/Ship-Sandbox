@@ -173,6 +173,8 @@ private:
 		float const mDt;
 	};
 
+    void DetectConnectedComponents(uint64_t currentStepSequenceNumber);
+
 private:
 
 	World * const mParentWorld;

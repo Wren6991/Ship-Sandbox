@@ -1,24 +1,22 @@
 =================================================
 Current perf
 =================================================
-- fps: 15/16 (Samsung: 12)	
-- World::Update: 62.63%
-	- DoSprings: 37.90%
-		- Spring::Update: 30.57%
-		- Spring::DoDamping: 3.61%
-	- BalancePressure: 6.26%
-	- GravitateWater: 4.94%
-	- DiffuseLight: 10.54%
-	- Point::Update: 1.70%
-- Game::Render: 27.69%
-	- Ship::Render: 27.69%
-		- ShipTriangles: 14.39%
-		- Springs: 10.49%%
-	- RenderContext::RenderCloudsEnd: 1.04%
+- fps: 14/15 (Samsung: 12)	
+- World::Update: 66.46%
+	- DoSprings: 43.08%
+		- Spring::Update: 35.29%
+		- Spring::DoDamping: 4.00%
+	- BalancePressure: 6.55%
+	- GravitateWater: 5.28%
+	- DiffuseLight: 5.57%
+	- Point::Update: 1.62%
+	- DetectConnectedComponents: 2.83%
+- Game::Render: 32.13%
+	- Ship::Render: 28.91%
+		- ShipTriangles: 15.00%
+		- Springs: 10.82%%
+	- RenderContext::RenderCloudsEnd: 1.15%
 =================================================
-
-= Debug light/drag issue
-	+ Could be due to distance too close and shooting light to sky
 
 - Gfx:
 	- OpenGL optimizations:
@@ -97,6 +95,7 @@ Current perf
 		- Implement Ship::CalculatePointColors() (called at Render time) which does everything in parallel on 
 		  Colour buffer (before calling RenderContext::UploadVertices(.))
 			- Verify VS emits parallel instructions
+			- Might not be needed if we move blending to shader
 		- See other similar parallelization opportunities on Positions
 	- Water:
 		- GravitateWater: try inverse visit (from H to L)
@@ -111,7 +110,7 @@ Current perf
 			- Should definitely make both A and B leak, as they both now have an adjacent hole
 	+ Ship::LeakWater:
 		+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
-	- is Verlet implemented right?
+	- Is Verlet implemented right?
 	- See if can continue queueing tasks without waiting for all blocks of chunks
 	- Water drag (already there?)
 
@@ -218,6 +217,7 @@ Current perf
 			  point just go through all lamps to calc (nearest) distance
 				- For a given point, ideally we can do a quick test on each lamp to
 				  determine whether it's closer than the nearest so far
+				- For a given point, need to only consider lamps in the same connected component
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
                   and makes alpha blend just like water
 		- Need "off" color (in material) to use at lamp point when Lamp is off (independently from mLight),
@@ -597,3 +597,7 @@ IF WX:
 			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
 			+ Make texture stretch wrt vertical height of water strip
 			+ Change map, this one's ugly
++ Debug light/drag issue
+	+ Could be due to distance too close and shooting light to sky
++ Do connected component detection
+	+ Get new baseline

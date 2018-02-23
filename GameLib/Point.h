@@ -137,6 +137,12 @@ public:
         mConnectedElectricalElement = electricalElement;
     }
 
+    inline uint64_t GetConnectedComponentId() const { return mConnectedComponentId;  }
+    inline void SetConnectedComponentId(uint64_t connectedComponentId) { mConnectedComponentId = connectedComponentId; }
+
+    inline uint64_t GetCurrentConnectedComponentDetectionStepSequenceNumber() const { return mCurrentConnectedComponentDetectionStepSequenceNumber; }
+    inline void SetConnectedComponentDetectionStepSequenceNumber(uint64_t connectedComponentDetectionStepSequenceNumber) { mCurrentConnectedComponentDetectionStepSequenceNumber = connectedComponentDetectionStepSequenceNumber; }
+
 
     inline vec3f GetColour(
         vec3f const & baseColour,
@@ -208,6 +214,9 @@ private:
     FixedSizeVector<Spring *, 8U> mConnectedSprings;
     FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    
     ElectricalElement * mConnectedElectricalElement;
+
+    size_t mConnectedComponentId;
+    size_t mCurrentConnectedComponentDetectionStepSequenceNumber;
 
 private:
 

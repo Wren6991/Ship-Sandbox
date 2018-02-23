@@ -406,7 +406,7 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
         if (nullptr != point)
         {
             // TODO: write directly onto window
-            LogMessage("@ ", worldCoordinates.toString(), ": point @ ", point->GetPosition().toString(), "; Light=", point->GetLight());
+            LogMessage("@ ", worldCoordinates.toString(), ": point @ ", point->GetPosition().toString(), "; Light=", point->GetLight(), "; ConnectedComponentId=", point->GetConnectedComponentId());
         }
         else
         {

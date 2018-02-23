@@ -41,6 +41,9 @@ Point::Point(
     , mConnectedSprings()
     , mConnectedTriangles()
     , mConnectedElectricalElement(nullptr)
+    , mConnectedComponentId(0u)
+    , mCurrentConnectedComponentDetectionStepSequenceNumber(0u)
+
 {
 }
 

@@ -546,6 +546,11 @@ void Ship::Update(
 		}
 	}
 
+    if (brokenSprings > 0)
+    {
+        LogDebug("Broken springs: ", brokenSprings);
+    }
+
 
     //
 	// Update all electrical and water stuff
@@ -576,12 +581,12 @@ void Ship::Update(
     mAllSprings.shrink_to_fit();
     mAllTriangles.shrink_to_fit();
 
-    if (brokenSprings > 0)
-    {
-        LogDebug("Broken springs: ", brokenSprings);
-    }
-}
+    //
+    // Detect connected components
+    //
 
+    DetectConnectedComponents(currentStepSequenceNumber);
+}
 
 void Ship::Render(
 	GameParameters const & gameParameters,
@@ -758,6 +763,67 @@ void Ship::PointIntegrateTask::Process()
             point->ZeroForce();
         }
 	}
+}
+
+void Ship::DetectConnectedComponents(uint64_t currentStepSequenceNumber)
+{
+    uint64_t currentConnectedComponentId = 0;
+
+    std::queue<Point *> pointsToVisit;
+
+    // Visit all points 
+    for (Point * originPoint : mAllPoints)
+    {
+        assert(!originPoint->IsDeleted());
+
+        // Check if visited
+        if (originPoint->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+        {
+            // This node has not been visited, hence it's the beginning of a new connected component
+            ++currentConnectedComponentId;
+
+            //
+            // Propagate the connected component ID to all points reachable from this point
+            //
+
+            assert(pointsToVisit.empty());
+            pointsToVisit.push(originPoint);
+            originPoint->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+
+            while (!pointsToVisit.empty())
+            {
+                Point * currentPoint = pointsToVisit.front();
+                pointsToVisit.pop();
+
+                // Assign the connected component ID
+                currentPoint->SetConnectedComponentId(currentConnectedComponentId);
+
+                // Go through this point's adjacents
+                for (Spring * spring : currentPoint->GetConnectedSprings())
+                {
+                    assert(!spring->IsDeleted());
+
+                    Point * const pointA = spring->GetPointA();
+                    assert(!pointA->IsDeleted());
+                    if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                    {
+                        pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                        pointsToVisit.push(pointA);
+                    }
+
+                    Point * const pointB = spring->GetPointB();
+                    assert(!pointB->IsDeleted());
+                    if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                    {
+                        pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                        pointsToVisit.push(pointB);
+                    }
+                }
+            }
+        }
+    }
+
+    LogDebug("Number of connected components: ", currentConnectedComponentId);
 }
 
 }
