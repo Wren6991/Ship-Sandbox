@@ -214,6 +214,10 @@ Current perf
 						- Sets and returns own lightIntensity = f(incoming current, flicker state machine, ...)
 				+ Diffusion: propagate mLight to adjacent points (incl. other lamps),
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
+			- Note: this visit is costly; see if can do it going through all points and for each
+			  point just go through all lamps to calc (nearest) distance
+				- For a given point, ideally we can do a quick test on each lamp to
+				  determine whether it's closer than the nearest so far
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
                   and makes alpha blend just like water
 		- Need "off" color (in material) to use at lamp point when Lamp is off (independently from mLight),
