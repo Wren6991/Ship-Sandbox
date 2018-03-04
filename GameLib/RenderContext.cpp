@@ -121,13 +121,37 @@ RenderContext::RenderContext(
 
 
     //
-    // Clouds 
+    // Load textures
     //
 
-    // Load textures
-    // TODO: vector
-    // TODO: progress callback
-    mCloudTextureDatas.push_back(resourceLoader.LoadTextureRgba("cloud_1.png"));
+    mCloudTextureDatas = resourceLoader.LoadTexturesRgba(
+        "cloud",
+        [&progressCallback](float progress, std::string const &)
+        {
+            if (progressCallback)
+                progressCallback(progress / 3.0f, "Loading textures...");
+        });
+
+    if (progressCallback)
+        progressCallback(0.666f, "Loading textures...");
+
+    mLandTextureData = resourceLoader.LoadTextureRgb("sand_1.jpg");
+
+    if (progressCallback)
+        progressCallback(1.0f, "Loading textures...");
+
+    mWaterTextureData = resourceLoader.LoadTextureRgb("water_1.jpg");
+
+    // Generate all texture names
+    size_t const numberOfTextures = mCloudTextureDatas.size() + 2U;
+    std::vector<GLuint> textureNames(numberOfTextures, 0U);
+    glGenTextures(numberOfTextures, textureNames.data());
+
+
+
+    //
+    // Clouds 
+    //
 
     // Create program
 
@@ -192,8 +216,8 @@ RenderContext::RenderContext(
     for (size_t i = 0; i < mCloudTextureDatas.size(); ++i)
     {
         // Create texture
-        glGenTextures(1, &tmpGLuint);
-        mCloudTextures.emplace_back(tmpGLuint);
+        mCloudTextures.emplace_back(textureNames.back());
+        textureNames.pop_back();
 
         glBindTexture(GL_TEXTURE_2D, *mCloudTextures.back());
 
@@ -206,7 +230,11 @@ RenderContext::RenderContext(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i]->Width, mCloudTextureDatas[i]->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i]->Data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i]->Width, mCloudTextureDatas[i]->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i]->Data.get());
+        if (GL_NO_ERROR != glGetError())
+        {
+            throw GameException("Error uploading cloud texture onto GPU");
+        }
 
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -216,11 +244,6 @@ RenderContext::RenderContext(
     //
     // Land 
     //
-
-    // Load texture
-    if (progressCallback)
-        progressCallback(0.5f, "Loading textures: land...");
-    mLandTextureData = resourceLoader.LoadTextureRgb("sand_1.jpg");
 
     // Create program
 
@@ -293,8 +316,8 @@ RenderContext::RenderContext(
     glUseProgram(0);
 
     // Create texture
-    glGenTextures(1, &tmpGLuint);
-    mLandTexture = tmpGLuint;
+    mLandTexture = textureNames.back();
+    textureNames.pop_back(); 
 
     glBindTexture(GL_TEXTURE_2D, *mLandTexture);
 
@@ -307,7 +330,11 @@ RenderContext::RenderContext(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data.get());
+    if (GL_NO_ERROR != glGetError())
+    {
+        throw GameException("Error uploading land texture onto GPU");
+    }
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -315,11 +342,6 @@ RenderContext::RenderContext(
     //
     // Water 
     //
-
-    // Load texture
-    if (progressCallback)
-        progressCallback(1.0f, "Loading textures: water...");
-    mWaterTextureData = resourceLoader.LoadTextureRgb("water_1.jpg");
 
     // Create program
 
@@ -397,8 +419,8 @@ RenderContext::RenderContext(
     glUseProgram(0);
 
     // Create texture
-    glGenTextures(1, &tmpGLuint);
-    mWaterTexture = tmpGLuint;
+    mWaterTexture = textureNames.back();
+    textureNames.pop_back();
 
     glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
 
@@ -411,7 +433,11 @@ RenderContext::RenderContext(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWaterTextureData->Width, mWaterTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mWaterTextureData->Data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWaterTextureData->Width, mWaterTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mWaterTextureData->Data.get());
+    if (GL_NO_ERROR != glGetError())
+    {
+        throw GameException("Error uploading water texture onto GPU");
+    }
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -761,6 +787,8 @@ RenderContext::RenderContext(
             mOrthoMatrix[r][c] = 0.0f;
         }
     }
+
+    assert(textureNames.empty());
 }
 
 RenderContext::~RenderContext()
@@ -877,7 +905,7 @@ void RenderContext::RenderCloudsEnd()
     for (size_t c = 0; c < mCloudBufferSize; ++c)
     {
         // Bind Texture
-        glBindTexture(GL_TEXTURE_2D, *mCloudTextures[GetCloudTextureIndex(c)]);
+        glBindTexture(GL_TEXTURE_2D, *(mCloudTextures[GetCloudTextureIndex(c)]));
 
         // Draw
         glDrawArrays(GL_TRIANGLE_STRIP, static_cast<GLint>(4 * c), 4);

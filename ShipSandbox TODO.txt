@@ -18,7 +18,7 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-+ Merge DetectConnectedComponents with LeakWaterAndZeroLight as "PreparePointsForFinalStep"
+= Fix multiple clouds
 
 - Now that we have connected components:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely

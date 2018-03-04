@@ -416,7 +416,11 @@ private:
 
         OpenGLObject(OpenGLObject const & other) = delete;
 
-        OpenGLObject(OpenGLObject && other) = default;
+        OpenGLObject(OpenGLObject && other)
+        {
+            mValue = other.mValue;
+            other.mValue = 0;
+        }
 
         OpenGLObject & operator=(OpenGLObject const & other) = delete;
 

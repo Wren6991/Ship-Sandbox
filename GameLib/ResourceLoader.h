@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Material.h"
+#include "ProgressCallback.h"
 
 #include <cstdint>
 #include <memory>
@@ -24,17 +25,22 @@ public:
     {
         int Width;
         int Height;
-        unsigned char const * Data;
+        std::unique_ptr<unsigned char const []> Data;
     };
 
     std::unique_ptr<Texture const> LoadTextureRgb(std::string const & name);
+
     std::unique_ptr<Texture const> LoadTextureRgba(std::string const & name);
+
+    std::vector<std::unique_ptr<Texture const>> LoadTexturesRgba(
+        std::string const & prefix, 
+        ProgressCallback progressCallback);
 
     struct StructureImage
     {
         int Width;
         int Height;
-        unsigned char const * Data;
+        std::unique_ptr<unsigned char const[]> Data;
     };
 
     std::unique_ptr<StructureImage const> LoadStructureImage(std::string const & filepath);
