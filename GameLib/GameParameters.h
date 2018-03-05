@@ -44,6 +44,8 @@ struct GameParameters
 
     size_t NumberOfClouds;
 
+    float WindSpeed;
+
 	GameParameters()
 		: Gravity(0.0f, -9.8f)
 		, GravityNormal(Gravity.normalise())
@@ -57,6 +59,7 @@ struct GameParameters
         // TODO: adjust
         , LightDiffusionAdjustment(0.5f)
         , NumberOfClouds(50)
+        , WindSpeed(3.0f)
 	{
 	}
 };

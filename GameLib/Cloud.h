@@ -56,9 +56,9 @@ public:
     {
     }
 
-    inline vec3f CalculatePosAndScale(float t) const
+    inline vec3f CalculatePosAndScale(float t, float windSpeed) const
     {
-        float x = OffsetX + (t * SpeedX1) + (AmpX * sinf(SpeedX2 * t));
+        float x = OffsetX + (t * SpeedX1 * windSpeed) + (AmpX  * windSpeed * sinf(SpeedX2 * t));
         float y = OffsetY + (AmpY * sinf(SpeedY * t));
         float scale = OffsetScale + (AmpScale * sinf(SpeedScale * t));
 

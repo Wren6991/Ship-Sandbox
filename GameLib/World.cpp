@@ -226,7 +226,7 @@ void World::RenderClouds(
 
     for (Cloud const & cloud : mAllClouds)
     {
-        vec3f cloudValues = cloud.CalculatePosAndScale(mCurrentTime);
+        vec3f cloudValues = cloud.CalculatePosAndScale(mCurrentTime, gameParameters.WindSpeed);
 
         renderContext.RenderCloud(
             cloudValues.x,

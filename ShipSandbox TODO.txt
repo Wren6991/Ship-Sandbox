@@ -18,9 +18,13 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-= Fix multiple clouds
++ Fix multiple clouds
 
-- Now that we have connected components:
+- More clouds
+	- Rotate, etc. w/Photoshop
+
+
+- Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
 		- At render time, allocate N buffers for the vertex indices and dispatch each triangle/spring
@@ -28,9 +32,18 @@ Current perf
 			- Note: points themselves are not affected by this; they're still uploaded in their entirety 
 			  once per cycle
 		- This then enables full light diffusion in shaders (see below)
-	- Rethink impact of connected components on the below (if any):
-		- Points/OpenGL buffers
-		- Ship textures
+	- Compare perf of batch-by-conn_comp above with simply points having Z dependent on conn comp ID
+		- Requires depth test & 3d buffer for each point
+			- UploadPoints assigns Z based off point's connected component ID and # conn components
+		- How do we do with full light diffusion in shaders (see below) ?
+		- If we go for Z of each point, do SeeShipThroughWater by playing with Z's
+			- And then also clouds, no stencil
+		- Plan:
+			- 1: Enable depth test and fix land, clouds (no stencil), and water (off SeeShipThroughWater)
+				- Use hardcoded Z value in these shaders, except for water which takes uniform
+				- See perf; if better => keep this anyway
+			- 2: UploadPoints: assign Z based off point's connected component ID and # conn components
+				- Modify shaders to work on 3D
 
 - Gfx:
 	- OpenGL optimizations:
@@ -143,8 +156,8 @@ Current perf
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 	- Settings:
 		- Strength Adjustment must be settable exponentially (slider=>exp)
-			- Formula: TODO
 			- Formula done by physics when calculating strengthfactor off strengthadjustment
+			- Formula: TODO, but lowest must be lower than now
 	- Page up and page down in menu
 
 - Code:
@@ -212,6 +225,9 @@ Current perf
 	- MainApp registers SoundController as Handler with GameController
 	- MainApp passes SoundController as shared_ptr to MainFrame (exactly like GameController)
 		- So MainFrame can call its Update(.) and also configure it via options
+	- Sinking music
+		- GameController starts it upon OnStartedSinking() event, published by Game when total ship
+	  	  water level (always adjusted at Point::AdjustWater) reaches threshold
 
 - Lights
 	+ need Optional()
@@ -256,10 +272,10 @@ Current perf
 					- base off clock time, not simulation step
 			- else: nop (will be rendered as lighted, depending on current)
 
-- Sinking music
-	- GameController starts it upon OnStartedSinking() event, published by Game when total ship
-	  water level (always adjusted at Point::AdjustWater) reaches threshold
-	
+
+- Smoke
+	- Smoke-material points, emitting particles with a lifetime and a transparency connected to age
+
 - Put credits
 	- Splash: https://www.artstation.com/stukata/profile, contact the guy
 
@@ -620,3 +636,12 @@ IF WX:
 	+ Could be due to distance too close and shooting light to sky
 + Do connected component detection
 	+ Get new baseline
++ See perf of merged LeakWater+DetectConnectedComponents vs Separate
+	+ Use perf analyzer:
+		+ Merged:
+			- Ship::Update: 60.64%
+				- PreparePointsForFinalStep: 3.14%
+		+ Separate: 
+			- Ship::Update: 63.69%
+				- LeakWater: 0.11%
+				- DetectConnectedComponents: 3.02%
