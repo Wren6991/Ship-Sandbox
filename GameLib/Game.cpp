@@ -14,7 +14,9 @@
 #include <map>
 #include <string>
 
-std::unique_ptr<Game> Game::Create(std::shared_ptr<ResourceLoader> resourceLoader)
+std::unique_ptr<Game> Game::Create(
+    std::shared_ptr<IGameEventHandler> gameEventHandler,
+    std::shared_ptr<ResourceLoader> resourceLoader)
 {
 	auto materials = resourceLoader->LoadMaterials();
 	auto oceanDepth = LoadOceanDepth("Data/depth.png");
@@ -26,6 +28,7 @@ std::unique_ptr<Game> Game::Create(std::shared_ptr<ResourceLoader> resourceLoade
 			std::move(materials),
 			std::move(oceanDepth),
 			std::move(world),
+            gameEventHandler,
             resourceLoader));
 }
 

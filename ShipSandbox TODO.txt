@@ -199,8 +199,8 @@ Current perf
 				+ e.g.: OnBreak: keep distinct Material * and sum for size
 				+ Clears aggregations at OnStepStart() (from GameController) and publishes them
 				  to registered sinks at OnStepEnd()
-	- GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
-	- GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
+	+ GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
+	+ GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
 	- First GameEventHandler: EventTicker
 		- It's custom panel at bottom with text ticker
 		- EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)

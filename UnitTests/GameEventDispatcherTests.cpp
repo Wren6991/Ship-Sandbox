@@ -21,7 +21,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy)
 {
     MockHandler handler;
 
-    GameEventDispacther dispatcher;
+    GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
     Material * pm1 = reinterpret_cast<Material *>(7);
@@ -46,7 +46,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy_MultipleMaterials)
 {
     MockHandler handler;
 
-    GameEventDispacther dispatcher;
+    GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
     Material * pm1 = reinterpret_cast<Material *>(7);
@@ -76,7 +76,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak)
 {
     MockHandler handler;
 
-    GameEventDispacther dispatcher;
+    GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
     Material * pm1 = reinterpret_cast<Material *>(7);
@@ -101,7 +101,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak_MultipleMaterials)
 {
     MockHandler handler;
 
-    GameEventDispacther dispatcher;
+    GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
     Material * pm1 = reinterpret_cast<Material *>(7);
@@ -131,7 +131,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnSinkingBegin)
 {
     MockHandler handler;
 
-    GameEventDispacther dispatcher;
+    GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
     EXPECT_CALL(handler, OnSinkingBegin()).Times(0);

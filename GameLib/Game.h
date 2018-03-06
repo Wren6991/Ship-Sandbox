@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GameParameters.h"
+#include "IGameEventHandler.h"
 #include "Physics.h"
 #include "RenderContext.h"
 #include "ResourceLoader.h"
@@ -19,7 +20,9 @@ class Game
 {
 public:
 
-	static std::unique_ptr<Game> Create(std::shared_ptr<ResourceLoader> resourceLoader);
+	static std::unique_ptr<Game> Create(
+        std::shared_ptr<IGameEventHandler> gameEventHandler,
+        std::shared_ptr<ResourceLoader> resourceLoader);
 
 	void Reset();
 
@@ -58,10 +61,12 @@ private:
 		std::vector<std::unique_ptr<Material const>> materials,
 		std::vector<float> oceanDepth,
 		std::unique_ptr<Physics::World> world,
+        std::shared_ptr<IGameEventHandler> gameEventHandler,
         std::shared_ptr<ResourceLoader> resourceLoader)
 		: mMaterials(std::move(materials))
 		, mOceanDepth(std::move(oceanDepth))
 		, mWorld(std::move(world))
+        , mGameEventHandler(std::move(gameEventHandler))
         , mResourceLoader(std::move(resourceLoader))
 	{
 	}
@@ -75,5 +80,6 @@ private:
 
     std::unique_ptr<Physics::World> mWorld;
 
+    std::shared_ptr<IGameEventHandler> mGameEventHandler;
     std::shared_ptr<ResourceLoader> mResourceLoader;
 };

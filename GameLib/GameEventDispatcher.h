@@ -10,11 +10,11 @@
 #include <unordered_map>
 #include <vector>
 
-class GameEventDispacther : public IGameEventHandler
+class GameEventDispatcher : public IGameEventHandler
 {
 public:
 
-    GameEventDispacther()
+    GameEventDispatcher()
         : mDestroyEvents()
         , mBreakEvents()
         , mIsSinkingBeginEventFired(false)

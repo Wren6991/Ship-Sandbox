@@ -13,11 +13,16 @@ static constexpr float StepTimeDuration = 0.02f;
 
 std::unique_ptr<GameController> GameController::Create(ProgressCallback const & progressCallback)
 {
+    // Create game dispatcher
+    std::shared_ptr<GameEventDispatcher> gameEventDispatcher = std::make_shared<GameEventDispatcher>();
+
 	// Create resource loader
     std::shared_ptr<ResourceLoader> resourceLoader = std::make_shared<ResourceLoader>();
 
 	// Create game
-	std::unique_ptr<Game> game = Game::Create(resourceLoader);
+	std::unique_ptr<Game> game = Game::Create(
+        gameEventDispatcher,
+        resourceLoader);
 
     // Create render context
     std::unique_ptr<RenderContext> renderContext = std::make_unique<RenderContext>(
@@ -41,7 +46,14 @@ std::unique_ptr<GameController> GameController::Create(ProgressCallback const & 
 			std::move(game),
 			initialShipFilename,
             std::move(renderContext),
+            std::move(gameEventDispatcher),
             std::move(resourceLoader)));
+}
+
+void GameController::RegisterGameEventHandler(IGameEventHandler * gameEventHandler)
+{
+    assert(!!mGameEventDispatcher);
+    mGameEventDispatcher->RegisterSink(gameEventHandler);
 }
 
 void GameController::ResetAndLoadShip(std::string const & filepath)
@@ -78,11 +90,18 @@ void GameController::ReloadLastShip()
 
 void GameController::DoStep()
 {
+    // Initialize event dispatcher
+    assert(!!mGameEventDispatcher);
+    mGameEventDispatcher->OnStepStart();
+
 	// Update game
 	assert(!!mGame);
 	mGame->Update(
         StepTimeDuration,
 		mGameParameters);
+
+    // Flush events
+    mGameEventDispatcher->OnStepEnd();
 }
 
 void GameController::Render()

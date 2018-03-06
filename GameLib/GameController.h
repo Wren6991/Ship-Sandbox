@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Game.h"
+#include "GameEventDispatcher.h"
 #include "GameParameters.h"
 #include "ProgressCallback.h"
 #include "RenderContext.h"
@@ -25,6 +26,8 @@ class GameController
 public:
 
     static std::unique_ptr<GameController> Create(ProgressCallback const & progressCallback);
+
+    void RegisterGameEventHandler(IGameEventHandler * gameEventHandler);
 
     void ResetAndLoadShip(std::string const & filepath);
     void AddShip(std::string const & filepath);
@@ -144,8 +147,10 @@ private:
         std::unique_ptr<Game> game,        
         std::string const & initialShipLoaded,
         std::unique_ptr<RenderContext> renderContext,
+        std::shared_ptr<GameEventDispatcher> gameEventDispatcher,
         std::shared_ptr<ResourceLoader> resourceLoader)
-        : mResourceLoader(std::move(resourceLoader))
+        : mGameEventDispatcher(std::move(gameEventDispatcher))
+        , mResourceLoader(std::move(resourceLoader))
         , mGame(std::move(game))
         , mLastShipLoaded(initialShipLoaded)
         , mGameParameters()
@@ -169,6 +174,7 @@ private:
 
 private:
 
+    std::shared_ptr<GameEventDispatcher> mGameEventDispatcher;
     std::shared_ptr<ResourceLoader> mResourceLoader;
 
     //
