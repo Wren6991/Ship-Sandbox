@@ -11,10 +11,12 @@ set  (GAME_SOURCES
 	Game.h
 	GameController.cpp
 	GameController.h
+	GameEventDispatcher.h
 	GameException.h
 	GameMath.h
 	GameOpenGL.h
 	GameParameters.h
+	IGameEventHandler.h
 	Log.cpp
 	Log.h
 	Material.cpp

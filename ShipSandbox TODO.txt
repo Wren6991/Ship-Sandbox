@@ -18,29 +18,28 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-+ Fix multiple clouds
-
-- More clouds
-	- Rotate, etc. w/Photoshop
-
-
 - Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
-		- At render time, allocate N buffers for the vertex indices and dispatch each triangle/spring
-		  to the correct buffer based off the connected component of the (first) point of the primitive
+		- At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
+		  to the correct buffer based off ConnectedComponentID 
+			- ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
+			  of the primitive
+				- assert other points have same ID
 			- Note: points themselves are not affected by this; they're still uploaded in their entirety 
 			  once per cycle
+		- At RenderXYZEnd(), draw each connected component buffer from last to first
 		- This then enables full light diffusion in shaders (see below)
 	- Compare perf of batch-by-conn_comp above with simply points having Z dependent on conn comp ID
 		- Requires depth test & 3d buffer for each point
 			- UploadPoints assigns Z based off point's connected component ID and # conn components
 		- How do we do with full light diffusion in shaders (see below) ?
+			- We do both!
 		- If we go for Z of each point, do SeeShipThroughWater by playing with Z's
 			- And then also clouds, no stencil
 		- Plan:
 			- 1: Enable depth test and fix land, clouds (no stencil), and water (off SeeShipThroughWater)
-				- Use hardcoded Z value in these shaders, except for water which takes uniform
+				- Use hardcoded Z value in these shaders, except for water which takes uniform (off SeeShipThroughWater)
 				- See perf; if better => keep this anyway
 			- 2: UploadPoints: assign Z based off point's connected component ID and # conn components
 				- Modify shaders to work on 3D
@@ -88,11 +87,11 @@ Current perf
 			- If it works, no more mLight at point and no more diffusion
 
 	- Texture mapping:
-		= Clouds
+		+ Clouds
 			+ Use N textures, each has own rectangular size
-			- RenderContext loads all available textures and uses them for the clouds, modulo
-				- ResourceLoader::LoadTexturesRgba(prefix)
-					- initProgressSink lambda 
+			+ RenderContext loads all available textures and uses them for the clouds, modulo
+				+ ResourceLoader::LoadTexturesRgba(prefix)
+					+ initProgressSink lambda 
 			+ GameParameters.NumberOfClouds (constants)
 			+ World takes numberOfClouds and allocates clouds buffer with random values
 			+ Then, RenderContext::RenderCloudsStart()/./End()
@@ -190,15 +189,18 @@ Current perf
 
 
 - Game interactions:
-	- IGameEventHandler: individual methods, including parameter changes, all default-implemented
-		- OnDestroy(Material const *, size)
-		- OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=N
-	- GameController::RegisterGameEventHandler(IGameEventHandler *)
-		- calls into GameEventDispatcher::RegisterGameEventHandler, who does:
-			- Registration of sinks
-			- Aggregation of duplicate events (is called at step start/step end)
-				- e.g.: OnBreak: keep distinct Material * and count for size
+	+ IGameEventHandler: individual methods, including parameter changes, all default-implemented
+		+ OnDestroy(Material const *, size) // size=1 for each destroy, but Dispatcher aggregates assuming size=anything
+		+ OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=anything
+	+ GameController::RegisterGameEventHandler(IGameEventHandler *)
+		+ calls into GameEventDispatcher::RegisterGameEventHandler, who does:
+			+ Registration of real sinks (vector of plain IGameEventHandler *)
+			+ Aggregation of duplicate events 
+				+ e.g.: OnBreak: keep distinct Material * and sum for size
+				+ Clears aggregations at OnStepStart() (from GameController) and publishes them
+				  to registered sinks at OnStepEnd()
 	- GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
+	- GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
 	- First GameEventHandler: EventTicker
 		- It's custom panel at bottom with text ticker
 		- EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
@@ -207,27 +209,41 @@ Current perf
 
 - Sound:
 	- MainApp initializes SoundController, which implements IGameEventHandler
-		- Initializes off visit of Data/Sounds, w/Music and Sounds
+		- Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			- Mapping of sounds with IGameEventHandler events via:
 				- Material::optional<SoundProperties>
 					- SoundMaterial: enum(wood, metal, ...)
-				- Filename patterns of sounds and music (e.g. destroy_wood_1.wav)
+				- Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
 					- Parse: if 'destroy'=>expect SoundMaterial next, then ...
 						- Material enums have StrToX()
 				- Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
-					- Material's enums used as coordinates
-		- wxSound or SFML (with https://www.sfml-dev.org/tutorials/2.4/audio-sounds.php)
-		- Need to manage lifetime of Sound objects 
-			- Use queue and, when full, visit and pop (deleting Sound) those sounds that are done
-				- If still full, stop last and pop it (use doubly-linked list)
-		- Exposes Update(GameParameters const &) for own state machine (e.g. waves with frequency) and for aggregations (distinct sounds are played at this moment, provided not too close to previous)
-			- MainFrame calls at timer, after
-	- MainApp registers SoundController as Handler with GameController
-	- MainApp passes SoundController as shared_ptr to MainFrame (exactly like GameController)
-		- So MainFrame can call its Update(.) and also configure it via options
+					- Material's enums used as coordinates, together with SoundController's own
+					  enums (e.g. action, size, underwater type)
+					- Values are vectors (of wxSound) of all the variations of the sounds, and 
+					  SoundController chooses randomly
+				- ResourceLoader just has LoadSounds() -> all sounds and their filenames
+		- SFML:
+			- https://www.sfml-dev.org/tutorials/2.4/audio-sounds.php
+			- https://www.sfml-dev.org/tutorials/2.4/compile-with-cmake.php
+			- Wrap in own Sound and Music classes, with same methods for now as SFML
+		- Need to manage number of currently-playing sounds
+			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
+			  ones
+				- If still full, stop oldest and pop it 
+			- Similarly for music (max = 1), for now (will get more complicated later if we go to cueing in the future)
+		- Exposes Update(GameParameters const &) for own state machine (e.g. wave sounds with frequency) and for 
+		  eventual additional sound-based aggregations (distinct sounds are played at this moment, provided not 
+		  too close to previous)
+			- MainFrame calls at timer, after GameController::DoStep()
+			- IGameEventHandler methods just store in std::vector<wxSound *> mSoundsToPlay,
+			  which is then consumed at Update(), eventually discarding if too close to currently-playing
+			  ones, which are stored in unordered_map<wxSound *, time_point> mCurrentlyPlayingSounds
+	- MainFrame registers SoundController as Handler with GameController
+	- MainFrame calls its Update(.) at timer, after GameController::DoStep(), and also configures it via options
 	- Sinking music
 		- GameController starts it upon OnStartedSinking() event, published by Game when total ship
-	  	  water level (always adjusted at Point::AdjustWater) reaches threshold
+	  	  water level (incremented at LeakWater by all new water) reaches threshold 
+			- Threshold based on total leaked water vs. total number of (current) points
 
 - Lights
 	+ need Optional()
@@ -645,3 +661,4 @@ IF WX:
 			- Ship::Update: 63.69%
 				- LeakWater: 0.11%
 				- DetectConnectedComponents: 3.02%
++ Fix multiple clouds
