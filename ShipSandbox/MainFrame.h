@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
+#include "EventTickerPanel.h"
 #include "LoggingDialog.h"
 #include "SettingsDialog.h"
 
@@ -48,7 +49,10 @@ private:
     // Controls that we're interacting with
     //
 
+    wxBoxSizer * mMainFrameSizer;
     wxMenuItem * mPauseMenuItem;
+    wxMenuItem * mShowEventTickerMenuItem;
+    std::unique_ptr<EventTickerPanel> mEventTickerPanel;
 
 	//
 	// Dialogs
@@ -110,7 +114,8 @@ private:
 	void OnSmashMenuItemSelected(wxCommandEvent& event);
 	void OnGrabMenuItemSelected(wxCommandEvent& event);
 	void OnOpenSettingsWindowMenuItemSelected(wxCommandEvent& event);
-	void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);	
+    void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);
+    void OnShowEventTickerMenuItemSelected(wxCommandEvent& event);
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
 private:

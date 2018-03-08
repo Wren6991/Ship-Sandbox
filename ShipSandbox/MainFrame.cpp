@@ -48,6 +48,7 @@ const long ID_GRAB_MENUITEM = wxNewId();
 
 const long ID_OPEN_SETTINGS_WINDOW_MENUITEM = wxNewId();
 const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
+const long ID_SHOW_EVENT_TICKER_MENUITEM = wxNewId();
 
 const long ID_ABOUT_MENUITEM = wxNewId();
 
@@ -79,7 +80,7 @@ MainFrame::MainFrame(wxApp * mainApp)
 	wxPanel* mainPanel = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS);
 	mainPanel->Bind(wxEVT_CHAR_HOOK, (wxObjectEventFunction)&MainFrame::OnKeyDown, this);
 
-	wxBoxSizer * mainFrameSizer = new wxBoxSizer(wxHORIZONTAL);
+    mMainFrameSizer = new wxBoxSizer(wxVERTICAL);
 
 	Connect(this->GetId(), wxEVT_CLOSE_WINDOW, (wxObjectEventFunction)&MainFrame::OnMainFrameClose);
 	Connect(this->GetId(), wxEVT_PAINT, (wxObjectEventFunction)&MainFrame::OnPaint);
@@ -122,7 +123,7 @@ MainFrame::MainFrame(wxApp * mainApp)
 	mMainGLCanvas->Connect(wxEVT_MOTION, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasMouseMove, 0, this);
 	mMainGLCanvas->Connect(wxEVT_MOUSEWHEEL, (wxObjectEventFunction)&MainFrame::OnMainGLCanvasMouseWheel, 0, this);
 	
-	mainFrameSizer->Add(
+    mMainFrameSizer->Add(
 		mMainGLCanvas.get(),
 		1,					// Proportion
 		wxALL | wxEXPAND,	// Flags
@@ -212,7 +213,12 @@ MainFrame::MainFrame(wxApp * mainApp)
 	wxMenuItem * openLogWindowMenuItem = new wxMenuItem(optionsMenu, ID_OPEN_LOG_WINDOW_MENUITEM, _("Open Log Window\tCtrl+L"), wxEmptyString, wxITEM_NORMAL);
 	optionsMenu->Append(openLogWindowMenuItem);
 	Connect(ID_OPEN_LOG_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenLogWindowMenuItemSelected);
-	
+
+    mShowEventTickerMenuItem = new wxMenuItem(optionsMenu, ID_SHOW_EVENT_TICKER_MENUITEM, _("Show Event Ticker"), wxEmptyString, wxITEM_CHECK);
+    optionsMenu->Append(mShowEventTickerMenuItem);
+    mShowEventTickerMenuItem->Check(false);
+    Connect(ID_SHOW_EVENT_TICKER_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnShowEventTickerMenuItemSelected);
+
 	mainMenuBar->Append(optionsMenu, _("Options"));
 
 
@@ -228,12 +234,22 @@ MainFrame::MainFrame(wxApp * mainApp)
 
 	SetMenuBar(mainMenuBar);
 
+    //
+    // Event ticker panel
+    //
+
+    mEventTickerPanel = std::make_unique<EventTickerPanel>(mainPanel);
+    
+    mMainFrameSizer->Add(mEventTickerPanel.get(), 0, wxEXPAND);
+
+    mMainFrameSizer->Hide(mEventTickerPanel.get());
+
 
 	//
 	// Finalize frame
 	//
 
-	mainPanel->SetSizerAndFit(mainFrameSizer);
+	mainPanel->SetSizerAndFit(mMainFrameSizer);
 	
 	Maximize();
 	Centre();
@@ -286,10 +302,12 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     {
         mGameController = GameController::Create(
             [&splash, this](float progress, std::string const & message)
-        {
-            splash->UpdateProgress(progress, message);
-            this->mMainApp->Yield();
-        });
+            {
+                splash->UpdateProgress(progress, message);
+                this->mMainApp->Yield();
+                this->mMainApp->Yield();
+                this->mMainApp->Yield();
+            });
     }
     catch (GameException const & e)
     {
@@ -314,6 +332,13 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
 #endif
 
     splash->Destroy();
+
+
+    //
+    // Register event ticker to handle game events
+    //
+
+    mGameController->RegisterGameEventHandler(mEventTickerPanel.get());
 
 
     //
@@ -350,7 +375,7 @@ void MainFrame::OnQuit(wxCommandEvent & /*event*/)
 	Close();
 }
 
-void MainFrame::OnPaint(wxPaintEvent& event)
+void MainFrame::OnPaint(wxPaintEvent & event)
 {
 	RenderGame();
 
@@ -420,24 +445,29 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
-    if (!!mGameController)
+    assert(!!mGameController);
+
+    
+    // Make the timer for the next step start now
+    mGameTimer->Start(0, true);
+
+    // Update the tool
+    UpdateTool();
+
+    // Do a simulation step
+    if (!IsPaused())
     {
-        // Make the timer for the next step start now
-        mGameTimer->Start(0, true);
-
-        // Update the tool
-        UpdateTool();
-
-        // Do a simulation step
-        if (!IsPaused())
-        {
-            mGameController->DoStep();
-        }
-
-        // Render
-        RenderGame();
-        ++mFrameCount;
+        mGameController->DoStep();
     }
+
+    // Render
+    RenderGame();
+
+    // Update event ticker
+    assert(!!mEventTickerPanel);
+    mEventTickerPanel->Update();
+
+    ++mFrameCount;
 }
 
 void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
@@ -623,6 +653,21 @@ void MainFrame::OnOpenLogWindowMenuItemSelected(wxCommandEvent & /*event*/)
 	}
 
 	mLoggingDialog->Open();
+}
+
+void MainFrame::OnShowEventTickerMenuItemSelected(wxCommandEvent & /*event*/)
+{
+    assert(!!mEventTickerPanel);
+    if (mShowEventTickerMenuItem->IsChecked())
+    {
+        mMainFrameSizer->Show(mEventTickerPanel.get());
+    }
+    else
+    {
+        mMainFrameSizer->Hide(mEventTickerPanel.get());
+    }
+
+    mMainFrameSizer->Layout();
 }
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)

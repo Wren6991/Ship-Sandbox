@@ -7,6 +7,7 @@
 
 #include "IGameEventHandler.h"
 
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -17,7 +18,7 @@ public:
     GameEventDispatcher()
         : mDestroyEvents()
         , mBreakEvents()
-        , mIsSinkingBeginEventFired(false)
+        , mSinkingBeginEvents()
         , mSinks()
     {
     }
@@ -38,21 +39,20 @@ public:
         mBreakEvents[material] += size;
     }
 
-    virtual void OnSinkingBegin() override
+    virtual void OnSinkingBegin(unsigned int shipId) override
     {
-        mIsSinkingBeginEventFired = true;
+        if (mSinkingBeginEvents.end() == std::find(mSinkingBeginEvents.begin(), mSinkingBeginEvents.end(), shipId))
+        {
+            mSinkingBeginEvents.push_back(shipId);
+        }
     }
 
 public:
 
-    void OnStepStart()
-    {
-        mDestroyEvents.clear();
-        mBreakEvents.clear();
-        mIsSinkingBeginEventFired = false;
-    }
-
-    void OnStepEnd()
+    /*
+     * Flushes all events aggregated so far and clears the state.
+     */
+    void Flush()
     {
         // Publish aggregations
         for (IGameEventHandler * sink : mSinks)
@@ -67,11 +67,16 @@ public:
                 sink->OnBreak(entry.first, entry.second);
             }
 
-            if (mIsSinkingBeginEventFired)
+            for (auto const & shipId : mSinkingBeginEvents)
             {
-                sink->OnSinkingBegin();
+                sink->OnSinkingBegin(shipId);
             }
         }
+
+        // Clear collections
+        mDestroyEvents.clear();
+        mBreakEvents.clear();
+        mSinkingBeginEvents.clear();
     }
 
     void RegisterSink(IGameEventHandler * sink)
@@ -84,7 +89,7 @@ private:
     // The current events being aggregated
     std::unordered_map<Material const *, unsigned int> mDestroyEvents;
     std::unordered_map<Material const *, unsigned int> mBreakEvents;
-    bool mIsSinkingBeginEventFired;
+    std::vector<unsigned int> mSinkingBeginEvents;
 
     // The registered sinks
     std::vector<IGameEventHandler *> mSinks;

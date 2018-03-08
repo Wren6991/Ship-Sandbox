@@ -58,17 +58,18 @@ public:
     inline float GetBuoyancy() const { return mBuoyancy;  }
 
 
+    inline bool IsLeaking() const { return mIsLeaking; }
+
+    inline void SetLeaking() { mIsLeaking = true; }
+
+
     // Dimensionally akin to Water Pressure
 	inline float GetWater() const { return mWater; }
 
-	inline void AdjustWater(float dWater) 
+	inline void AddWater(float dWater) 
     { 
         mWater += dWater; 
     }
-
-	inline bool IsLeaking() const { return mIsLeaking;  }
-
-	inline void SetLeaking() { mIsLeaking = true; }
 
 
     inline float GetLight() const { return mLight; }
@@ -201,14 +202,18 @@ private:
 
 	vec2 mPosition;
 	vec2 mLastPosition;
+    vec2 mForce;
 
 	Material const * mMaterial;
-	vec2 mForce;
+	
 	float mBuoyancy;
-	// TBD: WaterPressure?
-	float mWater;
-	bool mIsLeaking;
 
+    bool mIsLeaking;
+
+	// Total quantity of water, 0->+INF (== internal water pressure)
+	float mWater;
+
+    // Total illumination, 0->1
     float mLight;
 
     FixedSizeVector<Spring *, 8U> mConnectedSprings;

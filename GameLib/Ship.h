@@ -25,6 +25,7 @@ class Ship
 public:
 
 	static std::unique_ptr<Ship> Create(
+        unsigned int id,
 		World * parentWorld,
 		unsigned char const * structureImageData,
 		int structureImageWidth,
@@ -101,7 +102,9 @@ public:
 
 private:
 
-    Ship(World * parentWorld);
+    Ship(
+        unsigned int id,
+        World * parentWorld);
 
     void Initialize(
         std::vector<ElectricalElement *> && allElectricalElements,
@@ -176,6 +179,7 @@ private:
 
 private:
 
+    unsigned int const mId;
 	World * const mParentWorld;
 
 	// Repository
@@ -189,6 +193,10 @@ private:
 
     // Connected components metadata
     std::vector<std::size_t> mConnectedComponentSizes;
+
+    // Sinking detection
+    bool mIsSinking;
+    float mTotalWater;
 };
 
 template<>

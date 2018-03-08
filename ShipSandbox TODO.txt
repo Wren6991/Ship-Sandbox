@@ -68,7 +68,7 @@ Current perf
 			- Try: could also use buffer with mLight and mWater (uploaded each time to GPU) to be used by F shader 
 			  to blend fragColor with two fixed colors (water blended before ambient light, light after)
 				- F shader needs to start doing ambient light now
-				- Need CalculateWaterColorIntensity() (clamps and copies mWater*Pressure* to buffer), 
+				- Need CalculateWaterColorIntensity() (clamps and copies mWater to buffer), 
 				  and a dummy FinalizeLightColorIntensity() (dummy because mLightColorIntensity (rename
                                   of mLight) is already finalized)
 			 
@@ -201,13 +201,17 @@ Current perf
 				  to registered sinks at OnStepEnd()
 	+ GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
 	+ GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
-	- First GameEventHandler: EventTicker
-		- It's custom panel at bottom with text ticker
-		- EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
-		- Created by MainFrame and registered by MainFrame on GameController
-		- Algo for ticker: TBD
+	+ Invoke events at Game and below (pass handler at XYZ.Update())
+	= First GameEventHandler: EventTicker
+		+ It's custom panel at bottom with text ticker
+		+ EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
+		+ Created by MainFrame and registered by MainFrame on GameController
+		= Hide it by default and only show via MainFrame menu option
+		+ Complete event handlers
+		= Do ship sinking event notify in ship (mWater > 1/3 points)
 
 - Sound:
+	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	- MainApp initializes SoundController, which implements IGameEventHandler
 		- Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			- Mapping of sounds with IGameEventHandler events via:
@@ -231,19 +235,13 @@ Current perf
 			  ones
 				- If still full, stop oldest and pop it 
 			- Similarly for music (max = 1), for now (will get more complicated later if we go to cueing in the future)
-		- Exposes Update(GameParameters const &) for own state machine (e.g. wave sounds with frequency) and for 
-		  eventual additional sound-based aggregations (distinct sounds are played at this moment, provided not 
-		  too close to previous)
-			- MainFrame calls at timer, after GameController::DoStep()
-			- IGameEventHandler methods just store in std::vector<wxSound *> mSoundsToPlay,
-			  which is then consumed at Update(), eventually discarding if too close to currently-playing
+		- Sounds are played right off event invocations
+			- Eventually discards sounds if too close to currently-playing
 			  ones, which are stored in unordered_map<wxSound *, time_point> mCurrentlyPlayingSounds
 	- MainFrame registers SoundController as Handler with GameController
-	- MainFrame calls its Update(.) at timer, after GameController::DoStep(), and also configures it via options
+	- MainFrame configures it via options
 	- Sinking music
-		- GameController starts it upon OnStartedSinking() event, published by Game when total ship
-	  	  water level (incremented at LeakWater by all new water) reaches threshold 
-			- Threshold based on total leaked water vs. total number of (current) points
+		- GameController starts it upon OnStartedSinking() event
 
 - Lights
 	+ need Optional()

@@ -35,7 +35,7 @@ public:
         // Default-implemented
     }
 
-    virtual void OnSinkingBegin()
+    virtual void OnSinkingBegin(unsigned int /*shipId*/)
     {
         // Default-implemented
     }

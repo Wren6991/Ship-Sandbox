@@ -8,7 +8,7 @@ public:
     
     MOCK_METHOD2(OnDestroy, void(Material const * material, unsigned int size));
     MOCK_METHOD2(OnBreak, void(Material const * material, unsigned int size));
-    MOCK_METHOD0(OnSinkingBegin, void());
+    MOCK_METHOD1(OnSinkingBegin, void(unsigned int shipId));
 };
 
 using namespace ::testing;
@@ -28,8 +28,6 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy)
 
     EXPECT_CALL(handler, OnDestroy(_, _)).Times(0);
 
-    dispatcher.OnStepStart();    
-
     dispatcher.OnDestroy(pm1, 3);
     dispatcher.OnDestroy(pm1, 2);
 
@@ -37,7 +35,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy)
 
     EXPECT_CALL(handler, OnDestroy(pm1, 5)).Times(1);
 
-    dispatcher.OnStepEnd();
+    dispatcher.Flush();
 
     Mock::VerifyAndClear(&handler);
 }
@@ -54,8 +52,6 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy_MultipleMaterials)
 
     EXPECT_CALL(handler, OnDestroy(_, _)).Times(0);
 
-    dispatcher.OnStepStart();
-
     dispatcher.OnDestroy(pm2, 1);
     dispatcher.OnDestroy(pm1, 3);
     dispatcher.OnDestroy(pm2, 2);
@@ -67,7 +63,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnDestroy_MultipleMaterials)
     EXPECT_CALL(handler, OnDestroy(pm1, 13)).Times(1);
     EXPECT_CALL(handler, OnDestroy(pm2, 3)).Times(1);
 
-    dispatcher.OnStepEnd();
+    dispatcher.Flush();
 
     Mock::VerifyAndClear(&handler);
 }
@@ -83,8 +79,6 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak)
 
     EXPECT_CALL(handler, OnBreak(_, _)).Times(0);
 
-    dispatcher.OnStepStart();
-
     dispatcher.OnBreak(pm1, 3);
     dispatcher.OnBreak(pm1, 2);
 
@@ -92,7 +86,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak)
 
     EXPECT_CALL(handler, OnBreak(pm1, 5)).Times(1);
 
-    dispatcher.OnStepEnd();
+    dispatcher.Flush();
 
     Mock::VerifyAndClear(&handler);
 }
@@ -109,8 +103,6 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak_MultipleMaterials)
 
     EXPECT_CALL(handler, OnBreak(_, _)).Times(0);
 
-    dispatcher.OnStepStart();
-
     dispatcher.OnBreak(pm2, 1);
     dispatcher.OnBreak(pm1, 3);
     dispatcher.OnBreak(pm2, 2);
@@ -122,7 +114,7 @@ TEST(GameEventDispatcherTests, Aggregates_OnBreak_MultipleMaterials)
     EXPECT_CALL(handler, OnBreak(pm1, 13)).Times(1);
     EXPECT_CALL(handler, OnBreak(pm2, 3)).Times(1);
 
-    dispatcher.OnStepEnd();
+    dispatcher.Flush();
 
     Mock::VerifyAndClear(&handler);
 }
@@ -134,18 +126,67 @@ TEST(GameEventDispatcherTests, Aggregates_OnSinkingBegin)
     GameEventDispatcher dispatcher;
     dispatcher.RegisterSink(&handler);
 
-    EXPECT_CALL(handler, OnSinkingBegin()).Times(0);
+    EXPECT_CALL(handler, OnSinkingBegin(_)).Times(0);
 
-    dispatcher.OnStepStart();
-
-    dispatcher.OnSinkingBegin();
-    dispatcher.OnSinkingBegin();
+    dispatcher.OnSinkingBegin(7);
+    dispatcher.OnSinkingBegin(7);
 
     Mock::VerifyAndClear(&handler);
 
-    EXPECT_CALL(handler, OnSinkingBegin()).Times(1);
+    EXPECT_CALL(handler, OnSinkingBegin(7)).Times(1);
 
-    dispatcher.OnStepEnd();
+    dispatcher.Flush();
+
+    Mock::VerifyAndClear(&handler);
+}
+
+TEST(GameEventDispatcherTests, Aggregates_OnSinkingBegin_MultipleShips)
+{
+    MockHandler handler;
+
+    GameEventDispatcher dispatcher;
+    dispatcher.RegisterSink(&handler);
+
+    EXPECT_CALL(handler, OnSinkingBegin(_)).Times(0);
+
+    dispatcher.OnSinkingBegin(7);
+    dispatcher.OnSinkingBegin(3);
+
+    Mock::VerifyAndClear(&handler);
+
+    EXPECT_CALL(handler, OnSinkingBegin(3)).Times(1);
+    EXPECT_CALL(handler, OnSinkingBegin(7)).Times(1);
+
+    dispatcher.Flush();
+
+    Mock::VerifyAndClear(&handler);
+}
+
+TEST(GameEventDispatcherTests, ClearsStateAtUpdate)
+{
+    MockHandler handler;
+
+    GameEventDispatcher dispatcher;
+    dispatcher.RegisterSink(&handler);
+
+    Material * pm1 = reinterpret_cast<Material *>(7);
+
+    EXPECT_CALL(handler, OnDestroy(_, _)).Times(0);
+
+    dispatcher.OnDestroy(pm1, 3);
+    dispatcher.OnDestroy(pm1, 2);
+
+    Mock::VerifyAndClear(&handler);
+
+    EXPECT_CALL(handler, OnDestroy(pm1, 5)).Times(1);
+
+    dispatcher.Flush();
+
+    Mock::VerifyAndClear(&handler);
+
+    EXPECT_CALL(handler, OnDestroy(_, _)).Times(0);
+
+    dispatcher.Flush();
 
     Mock::VerifyAndClear(&handler);
 }

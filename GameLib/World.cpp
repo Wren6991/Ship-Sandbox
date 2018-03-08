@@ -44,11 +44,13 @@ namespace Physics {
 //  W W W    O   O   R    R   L        D  DDD
 //   W W      OOO    R     R  LLLLLLL  DDDD
 
-World::World()
+World::World(std::shared_ptr<IGameEventHandler> gameEventHandler)
     : mAllShips()
     , mCurrentTime(0.0f)
     , mCurrentStepSequenceNumber(0u)
     , mCollisionTree(BVHNode::AllocateTree())
+    , mGameEventHandler(std::move(gameEventHandler))
+    , mNextShipId(0u)
 {
     std::seed_seq seed_seq({1, 242, 19730528});
     mRandomEngine = std::ranlux48_base(seed_seq);

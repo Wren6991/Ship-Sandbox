@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GameParameters.h"
+#include "IGameEventHandler.h"
 #include "Material.h"
 #include "Physics.h"
 #include "RenderContext.h"
@@ -26,7 +27,7 @@ class World
 {
 public:
 
-	World();
+	World(std::shared_ptr<IGameEventHandler> gameEventHandler);
 
 	float GetWaterHeight(		
 		float x,
@@ -36,7 +37,17 @@ public:
 		float x,
 		GameParameters const & gameParameters) const;
 
+    IGameEventHandler * GetGameEventHandler()
+    {
+        return mGameEventHandler.get();
+    }
+
 	void AddShip(std::unique_ptr<Ship> && newShip);
+
+    unsigned int GenerateNewShipId()
+    {
+        return mNextShipId++;
+    }
 
 	void DestroyAt(
 		vec2 const & targetPos, 
@@ -83,6 +94,12 @@ private:
 
     // Our random generator
     std::ranlux48_base mRandomEngine;
+
+    // The game event handler
+    std::shared_ptr<IGameEventHandler> mGameEventHandler;
+
+    // The next ship ID we'll generate
+    unsigned int mNextShipId;
 
 private:
 

@@ -28,6 +28,7 @@ namespace Physics {
 //   SSS    H     H  IIIIIII  P
 
 std::unique_ptr<Ship> Ship::Create(
+    unsigned int id,
 	World * parentWorld,
 	unsigned char const * structureImageData,
 	int structureImageWidth,
@@ -43,7 +44,7 @@ std::unique_ptr<Ship> Ship::Create(
 	// Process image points and create points, springs, and triangles for this ship
 	//
 
-    Ship *ship = new Ship(parentWorld);
+    Ship *ship = new Ship(id, parentWorld);
 
     std::vector<ElectricalElement*> shipElectricalElements;
 
@@ -234,12 +235,18 @@ std::unique_ptr<Ship> Ship::Create(
 	return std::unique_ptr<Ship>(ship);
 }
 
-Ship::Ship(World * parentWorld)
-    : mParentWorld(parentWorld)
+Ship::Ship(
+    unsigned int id,
+    World * parentWorld)
+    : mId(id)
+    , mParentWorld(parentWorld)    
     , mAllPoints()
     , mAllSprings()
     , mAllTriangles()
     , mScheduler()
+    , mConnectedComponentSizes()
+    , mIsSinking(false)
+    , mTotalWater(0.0)
 {
 }
 
@@ -258,6 +265,10 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
         {
             if ((point->GetPosition() - targetPos).length() < radius)
             {
+                // Notify
+                mParentWorld->GetGameEventHandler()->OnDestroy(point->GetMaterial(), 1u);
+
+                // Destroy point
                 point->Destroy();
             }
         }
@@ -342,7 +353,9 @@ void Ship::PreparePointsForFinalStep(
 
             if (externalWaterPressure > point->GetWater())
             {
-                point->AdjustWater(dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater()));
+                float newWater = dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater());
+                point->AddWater(newWater);
+                mTotalWater += newWater;
             }
         }
 
@@ -401,6 +414,18 @@ void Ship::PreparePointsForFinalStep(
             mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
         }
 	}
+
+    //
+    // Check whether we've started sinking
+    //
+
+    if (!mIsSinking
+        && mTotalWater > static_cast<float>(mAllPoints.size()) / 3.0f)
+    {
+        // Started sinking
+        mParentWorld->GetGameEventHandler()->OnSinkingBegin(mId);
+        mIsSinking = true;
+    }
 }
 
 void Ship::GravitateWater(
@@ -433,8 +458,8 @@ void Ship::GravitateWater(
                 
             // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
             float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
-            pointA->AdjustWater(-correction);
-            pointB->AdjustWater(correction);
+            pointA->AddWater(-correction);
+            pointB->AddWater(correction);
         }
     }
 }
@@ -469,8 +494,8 @@ void Ship::BalancePressure(float dt)
 
             // Move water from more wet to less wet
             float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-            pointA->AdjustWater(correction);
-            pointB->AdjustWater(-correction);
+            pointA->AddWater(correction);
+            pointB->AddWater(-correction);
         }
     }
 }
@@ -530,7 +555,10 @@ void Ship::Update(
     uint64_t currentStepSequenceNumber,
 	GameParameters const & gameParameters)
 {
+    //
 	// Advance simulation for points (velocity and forces)
+    //
+
     for (Point * point : mAllPoints)
     {
         if (!point->IsDeleted())
@@ -548,24 +576,20 @@ void Ship::Update(
 	DoSprings(dt);
 
 	// Check if any springs exceed their breaking strain
-    size_t brokenSprings = 0u; // TBD: remove and replace with IGameSink call(material) 
 	for (Spring * spring : mAllSprings)
 	{
 		if (!spring->IsDeleted())
 		{
 			if (spring->IsBroken(gameParameters.StrengthAdjustment))
 			{
-				spring->Destroy();
+                // Notify
+                mParentWorld->GetGameEventHandler()->OnBreak(spring->GetMaterial(), 1u);
 
-                ++brokenSprings;
+                // Destroy spring
+				spring->Destroy();
 			}
 		}
 	}
-
-    if (brokenSprings > 0)
-    {
-        LogDebug("Broken springs: ", brokenSprings);
-    }
 
     //
     // Clear up pointer containers, in case there have been deletions

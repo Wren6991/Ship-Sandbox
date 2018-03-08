@@ -21,7 +21,7 @@ std::unique_ptr<Game> Game::Create(
 	auto materials = resourceLoader->LoadMaterials();
 	auto oceanDepth = LoadOceanDepth("Data/depth.png");
 
-	std::unique_ptr<Physics::World> world = std::make_unique<Physics::World>();
+	std::unique_ptr<Physics::World> world = std::make_unique<Physics::World>(gameEventHandler);
 
 	return std::unique_ptr<Game>(
 		new Game(
@@ -34,7 +34,7 @@ std::unique_ptr<Game> Game::Create(
 
 void Game::Reset()
 {
-	mWorld.reset(new Physics::World());
+	mWorld.reset(new Physics::World(mGameEventHandler));
 }
 
 void Game::LoadShip(std::string const & filepath)
@@ -46,6 +46,7 @@ void Game::LoadShip(std::string const & filepath)
 	//
 
 	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
+        mWorld->GenerateNewShipId(),
 		mWorld.get(),
         structureImage->Data.get(),
         structureImage->Width,

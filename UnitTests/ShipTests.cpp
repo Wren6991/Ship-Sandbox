@@ -1,3 +1,4 @@
+#include <GameLib/GameEventDispatcher.h>
 #include <GameLib/Physics.h>
 
 #include <initializer_list>
@@ -6,9 +7,21 @@
 #include "gtest/gtest.h"
 
 #include <algorithm>
+#include <memory>
 
 class ShipTests : public ::testing::Test
 {
+
+    virtual void SetUp() override
+    {
+        std::shared_ptr<GameEventDispatcher> dispatcher = std::make_shared<GameEventDispatcher>();
+        mWorld = std::make_unique<Physics::World>(dispatcher);
+    }
+
+    virtual void TearDown() override
+    {
+    }
+
 protected:
 
 	static std::vector<std::unique_ptr<Material const>> MakeMaterials(std::vector<Material> && materials)	
@@ -19,6 +32,8 @@ protected:
 
 		return res;
 	}
+
+    std::unique_ptr<Physics::World> mWorld;
 };
 
 
@@ -28,8 +43,6 @@ protected:
 
 TEST_F(ShipTests, BuildsPoints_OnePoint)
 {
-	Physics::World wld;
-
 	auto materials = MakeMaterials(
 		{
 			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
@@ -46,7 +59,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+		mWorld.get(),
 		imageData,
 		4,
 		5,
@@ -67,7 +80,6 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 TEST_F(ShipTests, BuildsPoints_TwoPoints)
 {
-	Physics::World wld;
 
 	auto materials = MakeMaterials(
 		{
@@ -85,7 +97,7 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+        mWorld.get(),
 		imageData,
 		4,
 		5,
@@ -116,8 +128,6 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
 TEST_F(ShipTests, BuildsPoints_EmptyShip)
 {
-	Physics::World wld;
-
 	auto materials = MakeMaterials(
 		{
 			{ "Mat1", 1.0f, 1.0f,{ 1, 1, 1 }, false, std::nullopt, std::nullopt },
@@ -132,7 +142,7 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+        mWorld.get(),
 		imageData,
 		4,
 		3,
@@ -149,8 +159,6 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 
 TEST_F(ShipTests, BuildsSprings_OneSpring)
 {
-	Physics::World wld;
-
 	auto materials = MakeMaterials(
 		{
             { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
@@ -167,7 +175,7 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+        mWorld.get(),
 		imageData,
 		4,
 		5,
@@ -191,8 +199,6 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 {
-	Physics::World wld;
-
 	auto materials = MakeMaterials(
 		{
             { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
@@ -209,7 +215,7 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+        mWorld.get(),
 		imageData,
 		4,
 		5,
@@ -246,8 +252,6 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 TEST_F(ShipTests, DestroyAt)
 {
-	Physics::World wld;
-
 	auto materials = MakeMaterials(
 		{
             { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
@@ -267,7 +271,7 @@ TEST_F(ShipTests, DestroyAt)
 	};
 
 	auto ship = Physics::Ship::Create(
-		&wld,
+        mWorld.get(),
 		imageData,
 		4,
 		5,
@@ -324,8 +328,6 @@ TEST_F(ShipTests, DestroyAt)
 
 TEST_F(ShipTests, BuildsLamps_OneLamp)
 {
-    Physics::World wld;
-
     auto materials = MakeMaterials(
         {
             { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
@@ -342,7 +344,7 @@ TEST_F(ShipTests, BuildsLamps_OneLamp)
     };
 
     auto ship = Physics::Ship::Create(
-        &wld,
+        mWorld.get(),
         imageData,
         4,
         5,

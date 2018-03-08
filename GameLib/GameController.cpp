@@ -90,10 +90,6 @@ void GameController::ReloadLastShip()
 
 void GameController::DoStep()
 {
-    // Initialize event dispatcher
-    assert(!!mGameEventDispatcher);
-    mGameEventDispatcher->OnStepStart();
-
 	// Update game
 	assert(!!mGame);
 	mGame->Update(
@@ -101,7 +97,7 @@ void GameController::DoStep()
 		mGameParameters);
 
     // Flush events
-    mGameEventDispatcher->OnStepEnd();
+    mGameEventDispatcher->Flush();
 }
 
 void GameController::Render()
@@ -168,6 +164,9 @@ void GameController::DestroyAt(
 	mGame->DestroyAt(
 		worldCoordinates,
 		mGameParameters.DestroyRadius * radiusMultiplier);
+
+    // Flush events
+    mGameEventDispatcher->Flush();
 }
 
 void GameController::DrawTo(
@@ -179,6 +178,9 @@ void GameController::DrawTo(
 	// Apply action
 	assert(!!mGame);
 	mGame->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
+
+    // Flush events
+    mGameEventDispatcher->Flush();
 }
 
 Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoordinates) const
