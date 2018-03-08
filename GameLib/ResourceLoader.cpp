@@ -161,6 +161,27 @@ std::string ResourceLoader::GetMusicFilepath(std::string const & filename) const
 // Sounds
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+std::vector<std::string> ResourceLoader::GetSoundFilenames() const
+{
+    std::vector<std::string> filenames;
+    for (auto const & entryIt : std::filesystem::directory_iterator(std::filesystem::path("Data") / "Sounds"))
+    {
+        if (std::filesystem::is_regular_file(entryIt.path())
+            && entryIt.path().extension().string() == ".wav")
+        {
+            filenames.push_back(entryIt.path().stem().string());
+        }
+    }
+
+    return filenames;
+}
+
+std::string ResourceLoader::GetSoundFilepath(std::string const & filename) const
+{
+    std::filesystem::path localPath = std::filesystem::path("Data") / "Sounds" / (filename + ".wav");
+    return std::filesystem::absolute(localPath).string();
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////

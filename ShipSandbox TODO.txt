@@ -189,24 +189,28 @@ Current perf
 
 
 - Sound:
+	- Fix splash progress
 	+ SFML:
 		+ Build own
 		+ Add bins reference to ship CMake
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
-	= MainApp initializes SoundController, which implements IGameEventHandler
+	= MainFrame initializes SoundController, which implements IGameEventHandler
 		- Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			- Mapping of sounds with IGameEventHandler events via:
-				- Material::optional<SoundProperties>
-					- SoundMaterial: enum(wood, metal, ...)
+				= Material::optional<SoundProperties>
+					+ SoundMaterial: enum(wood, metal, ...)
+					- Material enums have StrToX()
 				- Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
 					- Parse: if 'destroy'=>expect SoundMaterial next, then ...
-						- Material enums have StrToX()
 				- Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
 					- Material's enums used as coordinates, together with SoundController's own
 					  enums (e.g. action, size, underwater type)
 					- Values are vectors (of wxSound) of all the variations of the sounds, and 
 					  SoundController chooses randomly
-				- ResourceLoader just has LoadSounds() -> all sounds and their filenames
+				- ResourceLoader has: 
+					- GetSoundFilenames() -> all sound (relative) filenames
+					- GetSoundFilepath(filename)
+				- SoundController then loads all into maps
 		- Need to manage number of currently-playing sounds
 			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
 			  ones

@@ -309,6 +309,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
                 splash->UpdateProgress(progress / 2.0f, message);
                 this->mMainApp->Yield();
                 this->mMainApp->Yield();
+                this->mMainApp->Yield();
             });
     }
     catch (GameException const & e)
@@ -334,6 +335,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
             [&splash, this](float progress, std::string const & message)
             {
                 splash->UpdateProgress(0.5f + progress / 2.0f, message);
+                this->mMainApp->Yield();
                 this->mMainApp->Yield();
                 this->mMainApp->Yield();
             });

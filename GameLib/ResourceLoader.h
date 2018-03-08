@@ -72,6 +72,10 @@ public:
     // Sounds
     //
 
+    std::vector<std::string> GetSoundFilenames() const;
+
+    std::string GetSoundFilepath(std::string const & filename) const;
+
 private:
 
     std::tuple<int, int, unsigned char *> LoadImage(

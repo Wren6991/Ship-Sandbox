@@ -31,9 +31,14 @@ SoundController::SoundController(
     // Sounds
     //
 
-    progressCallback(1.0f, "Loading sounds...");
+    auto filenames = mResourceLoader->GetSoundFilenames();
+    for (size_t i = 0; i < filenames.size(); ++i)    
+    {
+        progressCallback(static_cast<float>(i + 1) / static_cast<float>(filenames.size()), "Loading sounds...");
 
-    // TODO
+        std::string const & filename = filenames[i];
+        // TODOHERE
+    }
 }
 
 SoundController::~SoundController()
