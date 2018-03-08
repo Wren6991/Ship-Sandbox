@@ -25,7 +25,6 @@ class Ship
 public:
 
 	static std::unique_ptr<Ship> Create(
-        unsigned int id,
 		World * parentWorld,
 		unsigned char const * structureImageData,
 		int structureImageWidth,
@@ -102,9 +101,7 @@ public:
 
 private:
 
-    Ship(
-        unsigned int id,
-        World * parentWorld);
+    Ship(World * parentWorld);
 
     void Initialize(
         std::vector<ElectricalElement *> && allElectricalElements,

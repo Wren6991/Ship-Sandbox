@@ -25,7 +25,9 @@ class GameController
 {
 public:
 
-    static std::unique_ptr<GameController> Create(ProgressCallback const & progressCallback);
+    static std::unique_ptr<GameController> Create(
+        std::shared_ptr<ResourceLoader> resourceLoader,
+        ProgressCallback const & progressCallback);
 
     void RegisterGameEventHandler(IGameEventHandler * gameEventHandler);
 

@@ -15,7 +15,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 list(APPEND CMAKE_PREFIX_PATH "C:/Users/Neurodancer/source/SDK/DevIL")
 list(APPEND CMAKE_PREFIX_PATH "C:/Users/Neurodancer/source/SDK/PicoJSON")
+list(APPEND CMAKE_PREFIX_PATH "C:/Users/Neurodancer/source/SDK/SFML")
 list(APPEND CMAKE_LIBRARY_PATH "C:/Users/Neurodancer/source/SDK/DevIL")
+set(SFML_ROOT "C:/Users/Neurodancer/source/SDK/SFML")
 set(wxWidgets_ROOT_DIR "C:/Users/Neurodancer/source/SDK/wxWidgets")
 
 find_path(PICOJSON_INCLUDE_DIRS
@@ -25,12 +27,30 @@ find_package(wxWidgets REQUIRED base gl core media)
 
 find_package(DevIL REQUIRED)
 if (WIN32)
-	find_path(DEVIL_LIB_DIRS 
+	find_path(DEVIL_LIB_DIR
 		NAMES DevIL.lib
-		PATH_SUFFIXES DevIL lib)
+		PATH_SUFFIXES DevIL libx32 lib64 lib lib32)
 	file(GLOB DEVIL_RUNTIME_LIBRARIES 
-		${DEVIL_LIB_DIRS}/*.dll)
+		${DEVIL_LIB_DIR}/*.dll)
 endif()
+
+find_package(SFML COMPONENTS system audio REQUIRED)
+if (WIN32)
+	find_path(SFML_BIN_DIR
+		NAMES sfml-system-2.dll openal32.dll
+		PATH_SUFFIXES SFML bin)
+
+	file(GLOB SFML_RUNTIME_RELEASE_LIBRARIES 
+		${SFML_BIN_DIR}/*.dll)
+	list(FILTER SFML_RUNTIME_RELEASE_LIBRARIES EXCLUDE REGEX "-d-") 
+
+	file(GLOB SFML_RUNTIME_DEBUG_LIBRARIES 
+		${SFML_BIN_DIR}/*.dll)
+	list(FILTER SFML_RUNTIME_DEBUG_LIBRARIES INCLUDE REGEX "-d-") 
+	list(APPEND SFML_RUNTIME_DEBUG_LIBRARIES ${SFML_BIN_DIR}/openal32.dll) 
+
+endif()
+
 
 find_package(OpenGL REQUIRED)
 

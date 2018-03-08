@@ -46,7 +46,6 @@ void Game::LoadShip(std::string const & filepath)
 	//
 
 	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
-        mWorld->GenerateNewShipId(),
 		mWorld.get(),
         structureImage->Data.get(),
         structureImage->Width,

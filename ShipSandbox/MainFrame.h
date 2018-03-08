@@ -10,8 +10,10 @@
 #include "EventTickerPanel.h"
 #include "LoggingDialog.h"
 #include "SettingsDialog.h"
+#include "SoundController.h"
 
 #include <GameLib/GameController.h>
+#include <GameLib/ResourceLoader.h>
 
 #include <wx/filedlg.h>
 #include <wx/frame.h>
@@ -191,6 +193,9 @@ private:
 
     ToolState mToolState;
 
+    std::shared_ptr<ResourceLoader> mResourceLoader;
 	std::shared_ptr<GameController> mGameController;
+    std::unique_ptr<SoundController> mSoundController;
+
 	uint64_t mFrameCount;	
 };

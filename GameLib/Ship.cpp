@@ -28,7 +28,6 @@ namespace Physics {
 //   SSS    H     H  IIIIIII  P
 
 std::unique_ptr<Ship> Ship::Create(
-    unsigned int id,
 	World * parentWorld,
 	unsigned char const * structureImageData,
 	int structureImageWidth,
@@ -44,7 +43,7 @@ std::unique_ptr<Ship> Ship::Create(
 	// Process image points and create points, springs, and triangles for this ship
 	//
 
-    Ship *ship = new Ship(id, parentWorld);
+    Ship *ship = new Ship(parentWorld);
 
     std::vector<ElectricalElement*> shipElectricalElements;
 
@@ -235,10 +234,8 @@ std::unique_ptr<Ship> Ship::Create(
 	return std::unique_ptr<Ship>(ship);
 }
 
-Ship::Ship(
-    unsigned int id,
-    World * parentWorld)
-    : mId(id)
+Ship::Ship(World * parentWorld)
+    : mId(parentWorld->GenerateNewShipId())
     , mParentWorld(parentWorld)    
     , mAllPoints()
     , mAllSprings()

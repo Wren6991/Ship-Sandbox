@@ -21,6 +21,10 @@ public:
 
 public:
 
+    //
+    // Textures
+    //
+
     struct Texture
     {
         int Width;
@@ -36,6 +40,10 @@ public:
         std::string const & prefix, 
         ProgressCallback progressCallback);
 
+    //
+    // Structure images
+    //
+
     struct StructureImage
     {
         int Width;
@@ -45,7 +53,24 @@ public:
 
     std::unique_ptr<StructureImage const> LoadStructureImage(std::string const & filepath);
 
+
+    //
+    // Materials
+    //
+
     std::vector<std::unique_ptr<Material const>> LoadMaterials();
+
+
+    //
+    // Music
+    //
+
+    std::string GetMusicFilepath(std::string const & filename) const;
+
+
+    //
+    // Sounds
+    //
 
 private:
 

@@ -11,13 +11,12 @@
 // The dt of each step
 static constexpr float StepTimeDuration = 0.02f;
 
-std::unique_ptr<GameController> GameController::Create(ProgressCallback const & progressCallback)
+std::unique_ptr<GameController> GameController::Create(
+    std::shared_ptr<ResourceLoader> resourceLoader,
+    ProgressCallback const & progressCallback)
 {
     // Create game dispatcher
     std::shared_ptr<GameEventDispatcher> gameEventDispatcher = std::make_shared<GameEventDispatcher>();
-
-	// Create resource loader
-    std::shared_ptr<ResourceLoader> resourceLoader = std::make_shared<ResourceLoader>();
 
 	// Create game
 	std::unique_ptr<Game> game = Game::Create(

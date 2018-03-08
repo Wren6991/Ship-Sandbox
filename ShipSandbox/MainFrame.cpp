@@ -63,7 +63,9 @@ MainFrame::MainFrame(wxApp * mainApp)
 	: mMainApp(mainApp)
     , mMouseInfo()
 	, mCurrentToolType(ToolType::Smash)
+    , mResourceLoader(new ResourceLoader())
 	, mGameController()
+    , mSoundController()
 	, mFrameCount(0u)
 {
 	Create(
@@ -301,10 +303,10 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     try
     {
         mGameController = GameController::Create(
+            mResourceLoader,
             [&splash, this](float progress, std::string const & message)
             {
-                splash->UpdateProgress(progress, message);
-                this->mMainApp->Yield();
+                splash->UpdateProgress(progress / 2.0f, message);
                 this->mMainApp->Yield();
                 this->mMainApp->Yield();
             });
@@ -319,6 +321,34 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     }
 
     this->mMainApp->Yield();
+
+
+    //
+    // Create Sound controller
+    //
+
+    try
+    {
+        mSoundController = std::make_unique<SoundController>(
+            mResourceLoader,
+            [&splash, this](float progress, std::string const & message)
+            {
+                splash->UpdateProgress(0.5f + progress / 2.0f, message);
+                this->mMainApp->Yield();
+                this->mMainApp->Yield();
+            });
+    }
+    catch (GameException const & e)
+    {
+        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
+
+        this->Close();
+
+        return;
+    }
+
+    this->mMainApp->Yield();
+
 
 #ifndef _DEBUG
     // Make sure the splash screen shows for at least one sec, or else it's weird
@@ -335,10 +365,11 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
 
 
     //
-    // Register event ticker to handle game events
+    // Register game event handlers
     //
 
     mGameController->RegisterGameEventHandler(mEventTickerPanel.get());
+    mGameController->RegisterGameEventHandler(mSoundController.get());
 
 
     //
@@ -582,6 +613,9 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 	{
 		std::string filename = mFileOpenDialog->GetPath().ToStdString();
 
+        assert(!!mSoundController);
+        mSoundController->Reset();
+
 		assert(!!mGameController);
 		mGameController->ResetAndLoadShip(filename);
 	}
@@ -589,6 +623,9 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 {
+    assert(!!mSoundController);
+    mSoundController->Reset();
+
 	assert(!!mGameController);
 	mGameController->ReloadLastShip();
 }

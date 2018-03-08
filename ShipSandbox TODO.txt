@@ -188,31 +188,12 @@ Current perf
 	- Also jellyfish fixed in 1.2.6?
 
 
-- Game interactions:
-	+ IGameEventHandler: individual methods, including parameter changes, all default-implemented
-		+ OnDestroy(Material const *, size) // size=1 for each destroy, but Dispatcher aggregates assuming size=anything
-		+ OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=anything
-	+ GameController::RegisterGameEventHandler(IGameEventHandler *)
-		+ calls into GameEventDispatcher::RegisterGameEventHandler, who does:
-			+ Registration of real sinks (vector of plain IGameEventHandler *)
-			+ Aggregation of duplicate events 
-				+ e.g.: OnBreak: keep distinct Material * and sum for size
-				+ Clears aggregations at OnStepStart() (from GameController) and publishes them
-				  to registered sinks at OnStepEnd()
-	+ GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
-	+ GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
-	+ Invoke events at Game and below (pass handler at XYZ.Update())
-	= First GameEventHandler: EventTicker
-		+ It's custom panel at bottom with text ticker
-		+ EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
-		+ Created by MainFrame and registered by MainFrame on GameController
-		= Hide it by default and only show via MainFrame menu option
-		+ Complete event handlers
-		= Do ship sinking event notify in ship (mWater > 1/3 points)
-
 - Sound:
+	+ SFML:
+		+ Build own
+		+ Add bins reference to ship CMake
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
-	- MainApp initializes SoundController, which implements IGameEventHandler
+	= MainApp initializes SoundController, which implements IGameEventHandler
 		- Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			- Mapping of sounds with IGameEventHandler events via:
 				- Material::optional<SoundProperties>
@@ -226,10 +207,6 @@ Current perf
 					- Values are vectors (of wxSound) of all the variations of the sounds, and 
 					  SoundController chooses randomly
 				- ResourceLoader just has LoadSounds() -> all sounds and their filenames
-		- SFML:
-			- https://www.sfml-dev.org/tutorials/2.4/audio-sounds.php
-			- https://www.sfml-dev.org/tutorials/2.4/compile-with-cmake.php
-			- Wrap in own Sound and Music classes, with same methods for now as SFML
 		- Need to manage number of currently-playing sounds
 			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
 			  ones
@@ -238,10 +215,9 @@ Current perf
 		- Sounds are played right off event invocations
 			- Eventually discards sounds if too close to currently-playing
 			  ones, which are stored in unordered_map<wxSound *, time_point> mCurrentlyPlayingSounds
-	- MainFrame registers SoundController as Handler with GameController
-	- MainFrame configures it via options
-	- Sinking music
-		- GameController starts it upon OnStartedSinking() event
+	+ MainFrame registers SoundController as Handler with GameController
+	+ Sinking music
+		+ GameController starts it upon OnStartedSinking() event
 
 - Lights
 	+ need Optional()
@@ -660,3 +636,25 @@ IF WX:
 				- LeakWater: 0.11%
 				- DetectConnectedComponents: 3.02%
 + Fix multiple clouds
+
++ Game interactions:
+	+ IGameEventHandler: individual methods, including parameter changes, all default-implemented
+		+ OnDestroy(Material const *, size) // size=1 for each destroy, but Dispatcher aggregates assuming size=anything
+		+ OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=anything
+	+ GameController::RegisterGameEventHandler(IGameEventHandler *)
+		+ calls into GameEventDispatcher::RegisterGameEventHandler, who does:
+			+ Registration of real sinks (vector of plain IGameEventHandler *)
+			+ Aggregation of duplicate events 
+				+ e.g.: OnBreak: keep distinct Material * and sum for size
+				+ Clears aggregations at OnStepStart() (from GameController) and publishes them
+				  to registered sinks at OnStepEnd()
+	+ GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
+	+ GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
+	+ Invoke events at Game and below (pass handler at XYZ.Update())
+	+ First GameEventHandler: EventTicker
+		+ It's custom panel at bottom with text ticker
+		+ EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
+		+ Created by MainFrame and registered by MainFrame on GameController
+		+ Hide it by default and only show via MainFrame menu option
+		+ Complete event handlers
+		+ Do ship sinking event notify in ship (mWater > 1/3 points)
