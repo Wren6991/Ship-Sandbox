@@ -35,9 +35,11 @@ std::unique_ptr<Ship> Ship::Create(
 	std::vector<std::unique_ptr<Material const>> const & allMaterials)
 {
 	// Prepare materials dictionary
-	std::map<std::array<uint8_t, 3u>, Material const *> rgbColourMap;
-	for (auto const & material: allMaterials)
-        rgbColourMap[material->RgbColour] = material.get();
+	std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
+    for (auto const & material : allMaterials)
+    {
+        structuralColourMap[material->StructuralColourRgb] = material.get();
+    }
 
 	//
 	// Process image points and create points, springs, and triangles for this ship
@@ -75,8 +77,8 @@ std::unique_ptr<Ship> Ship::Create(
                 structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1],
                 structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2]};
 
-            auto srchIt = rgbColourMap.find(rgbColour);
-			if (srchIt != rgbColourMap.end())
+            auto srchIt = structuralColourMap.find(rgbColour);
+			if (srchIt != structuralColourMap.end())
 			{
                 auto mtl = srchIt->second;
 
@@ -634,7 +636,7 @@ void Ship::Render(
         assert(!point->IsDeleted());
 
         auto pointColour = point->GetColour(
-            point->GetMaterial()->Colour,
+            point->GetMaterial()->RenderColour,
             renderContext.GetAmbientLightIntensity());
 
         renderContext.UploadShipPoint(

@@ -18,8 +18,6 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-- Destroy: need to pass down IGameEventHandler to be invoked for *each* point destroyed
-
 - Fix: When land is above water, water is upside down
 
 - Now that we have connected components, fix covering of ship pieces:
@@ -212,7 +210,7 @@ Current perf
 						  SoundController chooses randomly
 					- Sounds are created when played and stored in queue together with timestamp
 						- Identifying sounds: Sound.getBuffer()
-					= Scavenging happens at SoundController::Update() (resuscitate its invocation 
+					- Scavenging happens at SoundController::Update() (resuscitate its invocation 
 					  by MainFrame, @ LowFrequencyTimer (rename Stats to this and do two fps's))
 				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
 					+ Material's enums used as coordinates, together with SoundController's own
@@ -224,7 +222,6 @@ Current perf
 			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
 			  ones
 				- If still full, stop oldest and pop it 
-			- Similarly for music (max = 1), for now (will get more complicated later if we go to cueing in the future)
 		- Sounds are played right off event invocations
 			- Eventually discards sounds if too close to currently-playing
 			  ones, which are stored in unordered_map<wxSound *, time_point> mCurrentlyPlayingSounds
@@ -295,10 +292,10 @@ Current perf
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
                   and makes alpha blend just like water
-		- Need "off" color to use at lamp point when Lamp is off (different than structural color),
+		+ Need "off" color to use at lamp point when Lamp is off (different than structural color),
 		  used when rendering point in springs/triangles/points
-			- Not used when using textures, of course
-			- Needs material's Color to split in StructuralColor and RenderColor (set to the same except for lamps)
+			+ Not used when using textures, of course
+			+ Needs material's Color to split in StructuralColor and RenderColor (set to the same except for lamps)
 	- See if it still makes sense for ship to have mAllElectricalComponents - might be able to get away with mAllLamps
 	
 

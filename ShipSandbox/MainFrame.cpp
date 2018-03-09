@@ -298,6 +298,11 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     std::unique_ptr<SplashScreenDialog> splash = std::make_unique<SplashScreenDialog>();
     mMainApp->Yield();
 
+#ifdef _DEBUG
+    // The guy is pesky while debugging
+    splash->Hide();
+#endif
+
     auto startInit = std::chrono::steady_clock::now();
 
     //

@@ -27,8 +27,9 @@ struct Material
     std::string const Name;
     float const Strength;
     float const Mass;
-    vec3f const Colour;
-    std::array<uint8_t, 3u> RgbColour;
+    vec3f const StructuralColour;
+    std::array<uint8_t, 3u> StructuralColourRgb;
+    vec3f const RenderColour;    
     bool const IsHull;
 
 	//
@@ -90,6 +91,7 @@ struct Material
         {
             Glass,
             Metal,
+            String,
             Wood
         };
 
@@ -106,6 +108,8 @@ struct Material
                 return SoundElementType::Glass;
             else if (lstr == "metal")
                 return SoundElementType::Metal;
+            else if (lstr == "string")
+                return SoundElementType::String;
             else if (lstr == "wood")
                 return SoundElementType::Wood;
             else
@@ -131,15 +135,17 @@ public:
         std::string name,
         float strength,
         float mass,
-        std::array<uint8_t, 3u> rgbColour,
+        std::array<uint8_t, 3u> structuralColourRgb,
+        std::array<uint8_t, 3u> renderColourRgb,
 		bool isHull,
 		std::optional<ElectricalProperties> electricalProperties,
         std::optional<SoundProperties> soundProperties)
 		: Name(std::move(name))
 		, Strength(strength)
 		, Mass(mass)
-		, Colour(RgbToVec(rgbColour))
-        , RgbColour(rgbColour)
+		, StructuralColour(RgbToVec(structuralColourRgb))
+        , StructuralColourRgb(structuralColourRgb)
+        , RenderColour(RgbToVec(renderColourRgb))
 		, IsHull(isHull)
 		, Electrical(std::move(electricalProperties))
         , Sound(std::move(soundProperties))

@@ -46,6 +46,29 @@ public:
 
 private:
 
+    enum class SoundType
+    {
+        Break,
+        Destroy
+    };
+
+    static SoundType StrToSoundType(std::string const & str)
+    {
+        std::string lstr = str;
+        std::transform(
+            lstr.begin(),
+            lstr.end(),
+            lstr.begin(),
+            [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+
+        if (lstr == "break")
+            return SoundType::Break;
+        else if (lstr == "destroy")
+            return SoundType::Destroy;
+        else
+            throw GameException("Unrecognized SoundType \"" + str + "\"");
+    }
+
     enum class SizeType : int
     {
         Min = 0,
@@ -79,6 +102,7 @@ private:
 private:
 
     void PlayCrashSound(
+        SoundType soundType,
         Material const * material,
         unsigned int size,
         bool isUnderwater);
@@ -94,7 +118,7 @@ private:
     //
 
     unordered_tuple_map<
-        std::tuple<Material::SoundProperties::SoundElementType, SizeType, bool>,
+        std::tuple<SoundType, Material::SoundProperties::SoundElementType, SizeType, bool>,
         std::vector<std::unique_ptr<sf::SoundBuffer>>> mCrashSoundBuffers;
 
     struct PlayingSound
