@@ -531,8 +531,7 @@ void Ship::DiffuseLight(
 
                 assert(!lampPoint->IsDeleted());
 
-                // TODO: this needs to be replaced with a previous step in which we set light
-                // quantity based off current, and thus we use the lamp point's light
+                // TODO: this needs to be replaced with getting the light from the lamp itself
                 float const lampLight = 1.0f;
 
                 float squareDistance = std::max(

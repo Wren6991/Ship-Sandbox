@@ -29,6 +29,7 @@ set  (GAME_SOURCES
 	ResourceLoader.h
 	Scheduler.cpp
 	Scheduler.h
+	TupleKeys.h
 	Utils.cpp
 	Utils.h	
 	Vectors.cpp

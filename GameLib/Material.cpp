@@ -7,7 +7,6 @@
 ***************************************************************************************/
 #include "Material.h"
 
-#include "GameException.h"
 #include "Utils.h"
 
 #include <sstream>
@@ -24,16 +23,8 @@ std::unique_ptr<Material> Material::Create(picojson::object const & materialJson
 	std::optional<picojson::object> electricalPropertiesJson = Utils::GetOptionalJsonObject(materialJson, "electrical_properties");
 	if (!!electricalPropertiesJson)
 	{
-		ElectricalProperties::ElectricalElementType elementType;
-		std::string elementTypeJson = Utils::GetMandatoryJsonMember<std::string>(*electricalPropertiesJson, "element_type");
-		if (elementTypeJson == "Lamp")
-			elementType = ElectricalProperties::ElectricalElementType::Lamp;
-		else if (elementTypeJson == "Cable")
-			elementType = ElectricalProperties::ElectricalElementType::Cable;
-		else if (elementTypeJson == "Generator")
-			elementType = ElectricalProperties::ElectricalElementType::Generator;
-		else
-			throw GameException("Electrical element_type \"" + elementTypeJson + "\" is not recognized");
+		std::string elementTypeStr = Utils::GetMandatoryJsonMember<std::string>(*electricalPropertiesJson, "element_type");
+        ElectricalProperties::ElectricalElementType elementType = ElectricalProperties::StrToElectricalElementType(elementTypeStr);
 
 		float resistance = static_cast<float>(Utils::GetOptionalJsonMember<double>(*electricalPropertiesJson, "resistance", 0.0));
 		float generatedVoltage = static_cast<float>(Utils::GetOptionalJsonMember<double>(*electricalPropertiesJson, "generated_voltage", 0.0));
@@ -47,17 +38,9 @@ std::unique_ptr<Material> Material::Create(picojson::object const & materialJson
     std::optional<SoundProperties> soundProperties;
     std::optional<picojson::object> soundPropertiesJson = Utils::GetOptionalJsonObject(materialJson, "sound_properties");
     if (!!soundPropertiesJson)
-    {
-        SoundProperties::SoundElementType elementType;
-        std::string elementTypeJson = Utils::GetMandatoryJsonMember<std::string>(*soundPropertiesJson, "element_type");
-        if (elementTypeJson == "Glass")
-            elementType = SoundProperties::SoundElementType::Glass;
-        else if (elementTypeJson == "Metal")
-            elementType = SoundProperties::SoundElementType::Metal;
-        else if (elementTypeJson == "Wood")
-            elementType = SoundProperties::SoundElementType::Wood;
-        else
-            throw GameException("Sound element_type \"" + elementTypeJson + "\" is not recognized");
+    {        
+        std::string elementTypeStr = Utils::GetMandatoryJsonMember<std::string>(*soundPropertiesJson, "element_type");
+        SoundProperties::SoundElementType elementType = SoundProperties::StrToSoundElementType(elementTypeStr);
 
         soundProperties.emplace(
             elementType);

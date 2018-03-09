@@ -80,7 +80,7 @@ private:
 
     std::unique_ptr<wxTimer> mPostInitializeTimer;
 	std::unique_ptr<wxTimer> mGameTimer;
-	std::unique_ptr<wxTimer> mStatsRefreshTimer;
+	std::unique_ptr<wxTimer> mLowFrequencyTimer;
 
 private:
 
@@ -95,7 +95,7 @@ private:
 	void OnPaint(wxPaintEvent& event);
 	void OnKeyDown(wxKeyEvent& event);
 	void OnGameTimerTrigger(wxTimerEvent& event);
-	void OnStatsRefreshTimerTrigger(wxTimerEvent& event);
+	void OnLowFrequencyTimerTrigger(wxTimerEvent& event);
 
 	// Main GL canvas
 	void OnMainGLCanvasResize(wxSizeEvent& event);
@@ -197,5 +197,8 @@ private:
 	std::shared_ptr<GameController> mGameController;
     std::unique_ptr<SoundController> mSoundController;
 
-	uint64_t mFrameCount;	
+	uint64_t mTotalFrameCount;	
+    uint64_t mLastFrameCount;
+    std::chrono::steady_clock::time_point mFrameCountStatsOriginTimestamp;
+    std::chrono::steady_clock::time_point mFrameCountStatsLastTimestamp;
 };

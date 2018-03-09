@@ -18,6 +18,10 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
+- Destroy: need to pass down IGameEventHandler to be invoked for *each* point destroyed
+
+- Fix: When land is above water, water is upside down
+
 - Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
@@ -195,22 +199,27 @@ Current perf
 		+ Add bins reference to ship CMake
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	= MainFrame initializes SoundController, which implements IGameEventHandler
-		- Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
-			- Mapping of sounds with IGameEventHandler events via:
-				= Material::optional<SoundProperties>
+		= Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
+			= Mapping of sounds with IGameEventHandler events via:
+				+ Material::optional<SoundProperties>
 					+ SoundMaterial: enum(wood, metal, ...)
-					- Material enums have StrToX()
-				- Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
-					- Parse: if 'destroy'=>expect SoundMaterial next, then ...
-				- Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
-					- Material's enums used as coordinates, together with SoundController's own
+					+ Material enums have StrToX()
+				+ Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
+					+ Parse: if 'destroy'=>expect SoundMaterial next, then ...
+				- Storage of sounds:
+					+ Maps store vector<SoundBuffer>
+						+ Values are all the variations of the sounds, and 
+						  SoundController chooses randomly
+					- Sounds are created when played and stored in queue together with timestamp
+						- Identifying sounds: Sound.getBuffer()
+					= Scavenging happens at SoundController::Update() (resuscitate its invocation 
+					  by MainFrame, @ LowFrequencyTimer (rename Stats to this and do two fps's))
+				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
+					+ Material's enums used as coordinates, together with SoundController's own
 					  enums (e.g. action, size, underwater type)
-					- Values are vectors (of wxSound) of all the variations of the sounds, and 
-					  SoundController chooses randomly
-				- ResourceLoader has: 
-					- GetSoundFilenames() -> all sound (relative) filenames
-					- GetSoundFilepath(filename)
-				- SoundController then loads all into maps
+				+ ResourceLoader has: 
+					+ GetSoundFilenames() -> all sound (relative) filenames
+					+ GetSoundFilepath(filename)
 		- Need to manage number of currently-playing sounds
 			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
 			  ones
@@ -224,6 +233,7 @@ Current perf
 		+ GameController starts it upon OnStartedSinking() event
 
 - Lights
+	- Try additive water @ diffusion (with cap @ Point::CalculateColour)
 	+ need Optional()
 	+ Material:
 		+ use picojson
@@ -233,6 +243,42 @@ Current perf
 	+ class Lamp()
 		+ points to Point and Point points optionally to ElectricalElement (base abstract of Lamp, Cable, Generator)
 			+ ElectricalElement::GetType(){return mType;}: non-virtual, it's optimized by compiler
+	- Current Propagation Algo:
+		+ create new generation seq number; if new is 0 => 1
+		- All of the following @ new ad-hoc update step
+		- visit whole electrical graph, as:
+			- For each generator point:
+				- if not visited=>flood from here
+					- for each node: set to visisted
+					- Use a single visited set
+			- Then, lamps will be considered lighted if visited at this generation
+		- OLD:
+			- visit all generator points and count the points in their graphs; for each connected component:
+				- # nodes in component => current
+				- propagate from each of these points to all adjacent cables until light
+				- at a light: add up all incoming currents (compare seq number to decide whether to zero or not) 
+				  and then lower them by distance(==ohm), and then update gen number of lamp
+		- then, visit all lamps:
+			- call Lamp->UpdateLightIntensity(currentGenerationNumber, IGameEventHandler) -> void
+				- Looks at own (generationVisitNumber, state) and:
+					- Updates state
+					- Eventually starts flicker state machine:
+						- iff: state==On and generationVisitNumber != current
+						- Invokes IGameEventHandler->StartFlicker("whichOne")
+							- After choosing "whichOne" and compiling the plan
+						- Sets gen_number = 0
+						- Flicker state machine is based off clock time, not simulation step
+					- Sets own lightIntensity = f(generationVisitNumber, state, flicker state machine)
+
+			TODOOLD:
+			- if gen number != current: just interrupted
+				- set gen_number = 0
+				- start flicker state machine (consumed by diffusion)
+					- based off clock time, not simulation step
+			- else: consider lighted:
+		- Then, go ahead with DiffuseLight as now
+
+
 	= Lamp render:
 		+ Can test it by itself, by using light material and by cheating with current!
 		= After current propagation:
@@ -249,23 +295,12 @@ Current perf
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
 		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
                   and makes alpha blend just like water
-		- Need "off" color (in material) to use at lamp point when Lamp is off (independently from mLight),
+		- Need "off" color to use at lamp point when Lamp is off (different than structural color),
 		  used when rendering point in springs/triangles/points
 			- Not used when using textures, of course
-	- Current Propagation Algo:
-		- create new generation seq number; if new is 0 => 1
-		- visit all generator points and count the points in their graphs; for each connected component:
-			- # nodes in component => current
-			- propagate from each of these points to all adjacent cables until light
-			- at a light: add up all incoming currents (compare seq number to decide whether to zero or not) 
-			  and then lower them by distance(==ohm), and then update gen number of lamp
-		- visit all lamps:
-			- if gen number != current: just interrupted
-				- set gen_number = 0
-				- start flicker state machine (consumed by diffusion below)
-					- base off clock time, not simulation step
-			- else: nop (will be rendered as lighted, depending on current)
-
+			- Needs material's Color to split in StructuralColor and RenderColor (set to the same except for lamps)
+	- See if it still makes sense for ship to have mAllElectricalComponents - might be able to get away with mAllLamps
+	
 
 - Smoke
 	- Smoke-material points, emitting particles with a lifetime and a transparency connected to age

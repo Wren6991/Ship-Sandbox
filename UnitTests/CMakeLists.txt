@@ -12,6 +12,7 @@ set (UNIT_TEST_SOURCES
 	GameEventDispatcherTests.cpp
 	PointerContainerTests.cpp
 	ShipTests.cpp
+	TupleKeysTests.cpp
 	VectorsTests.cpp)
 
 add_executable (UnitTests ${UNIT_TEST_SOURCES})

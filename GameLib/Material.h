@@ -7,9 +7,12 @@
 ***************************************************************************************/
 #pragma once
 
+#include "GameException.h"
 #include "Vectors.h"
 
+#include <algorithm>
 #include <array>
+#include <cctype>
 #include <memory>
 #include <optional>
 #include <picojson/picojson.h>
@@ -41,6 +44,25 @@ struct Material
 			Generator
 		};
 
+        static ElectricalElementType StrToElectricalElementType(std::string const & str)
+        {
+            std::string lstr = str;
+            std::transform(
+                lstr.begin(),
+                lstr.end(),
+                lstr.begin(),
+                [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+
+            if (lstr == "lamp")
+                return ElectricalElementType::Lamp;
+            else if (lstr == "cable")
+                return ElectricalElementType::Cable;
+            else if (lstr == "generator")
+                return ElectricalElementType::Generator;
+            else
+                throw GameException("Unrecognized ElectricalElementType \"" + str + "\"");
+        }
+
 		ElectricalElementType ElementType;
 		float const Resistance;
 		float const GeneratedVoltage;
@@ -70,6 +92,25 @@ struct Material
             Metal,
             Wood
         };
+
+        static SoundElementType StrToSoundElementType(std::string const & str)
+        {
+            std::string lstr = str;
+            std::transform(
+                lstr.begin(), 
+                lstr.end(), 
+                lstr.begin(), 
+                [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+
+            if (lstr == "glass")
+                return SoundElementType::Glass;
+            else if (lstr == "metal")
+                return SoundElementType::Metal;
+            else if (lstr == "wood")
+                return SoundElementType::Wood;
+            else
+                throw GameException("Unrecognized SoundElementType \"" + str + "\"");
+        }
 
         SoundElementType ElementType;
 

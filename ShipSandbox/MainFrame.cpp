@@ -21,6 +21,7 @@
 #include <wx/string.h>
 
 #include <cassert>
+#include <iomanip>
 #include <map>
 #include <sstream>
 
@@ -54,7 +55,7 @@ const long ID_ABOUT_MENUITEM = wxNewId();
 
 const long ID_POSTIINITIALIZE_TIMER = wxNewId();
 const long ID_GAME_TIMER = wxNewId();
-const long ID_STATS_REFRESH_TIMER = wxNewId();
+const long ID_LOW_FREQUENCY_TIMER = wxNewId();
 
 static constexpr int CursorStep = 30;
 static constexpr int PowerBarThickness = 2;
@@ -66,7 +67,10 @@ MainFrame::MainFrame(wxApp * mainApp)
     , mResourceLoader(new ResourceLoader())
 	, mGameController()
     , mSoundController()
-	, mFrameCount(0u)
+    , mTotalFrameCount(0u)
+    , mLastFrameCount(0u)
+    , mFrameCountStatsOriginTimestamp(std::chrono::steady_clock::time_point::min())
+    , mFrameCountStatsLastTimestamp(std::chrono::steady_clock::time_point::min())
 {
 	Create(
 		nullptr, 
@@ -382,9 +386,13 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
     mGameTimer->Start(0, true);
 
-    mStatsRefreshTimer = std::make_unique<wxTimer>(this, ID_STATS_REFRESH_TIMER);
-    Connect(ID_STATS_REFRESH_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnStatsRefreshTimerTrigger);
-    mStatsRefreshTimer->Start(1000, false);
+    mLowFrequencyTimer = std::make_unique<wxTimer>(this, ID_LOW_FREQUENCY_TIMER);
+    Connect(ID_LOW_FREQUENCY_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnLowFrequencyTimerTrigger);
+    mLowFrequencyTimer->Start(1000, false);
+
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    mFrameCountStatsOriginTimestamp = now;
+    mFrameCountStatsLastTimestamp = now;
 
     //
     // Show ourselves now
@@ -397,8 +405,8 @@ void MainFrame::OnMainFrameClose(wxCloseEvent & /*event*/)
 {
     if (!!mGameTimer)
 	    mGameTimer->Stop();
-    if (!!mStatsRefreshTimer)
-	    mStatsRefreshTimer->Stop();
+    if (!!mLowFrequencyTimer)
+	    mLowFrequencyTimer->Stop();
 
 	Destroy();
 }
@@ -500,18 +508,42 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
     assert(!!mEventTickerPanel);
     mEventTickerPanel->Update();
 
-    ++mFrameCount;
+    // Update stats
+    ++mTotalFrameCount;
+    ++mLastFrameCount;
 }
 
-void MainFrame::OnStatsRefreshTimerTrigger(wxTimerEvent & /*event*/)
+void MainFrame::OnLowFrequencyTimerTrigger(wxTimerEvent & /*event*/)
 {
-	std::wostringstream ss;
-	ss << GetWindowTitle();
-	ss << "  FPS: " << mFrameCount;
+    //
+    // Update fps
+    //
 
-	SetTitle(ss.str());
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 
-	mFrameCount = 0u;
+    auto totalElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsOriginTimestamp);
+    auto lastElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsLastTimestamp);
+
+    float totalFps = static_cast<float>(mTotalFrameCount) * 1000.0f / static_cast<float>(totalElapsed.count());
+    float lastFps = static_cast<float>(mLastFrameCount) * 1000 / static_cast<float>(lastElapsed.count());
+
+    std::ostringstream ss;
+
+    ss << GetWindowTitle();
+    ss << "  FPS: " << std::fixed << std::setprecision(2) << totalFps << " (" << lastFps << ")";
+
+    SetTitle(ss.str());        
+
+    mLastFrameCount = 0u;
+    mFrameCountStatsLastTimestamp = now;
+
+
+    //
+    // Update sound controller
+    //
+
+    assert(!!mSoundController);
+    mSoundController->Update();
 }
 
 //
