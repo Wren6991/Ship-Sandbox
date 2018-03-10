@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
+#include "IGameEventHandler.h"
 #include "Material.h"
 #include "GameParameters.h"
 #include "Physics.h"
@@ -37,29 +38,52 @@ public:
 		Ship * parentShip,
 		Point * a,
 		Point * b,
-		float length,
+		float restLength,
 		Material const *material);
 
 	void Destroy();
 
     void DestroyFromPoint(Point const * pointSource);
 
-	inline bool IsStressed(float strengthAdjustment) const
-	{
-		// Check whether strain is more than a fraction of the word's base strength * this object's relative strength
-		return GetTensionStrain() > 1 + 0.25f * (strengthAdjustment * mMaterial->Strength);
-	}
+    /*
+     * Calculates the current tension strain and acts depending on it.
+     */
+    inline void UpdateTensionStrain(        
+        float strengthAdjustment,
+        IGameEventHandler * gameEventHandler)
+    {
+        float const effectiveStrength = strengthAdjustment * mMaterial->Strength;
 
-	inline bool IsBroken(float strengthAdjustment) const
-	{
-		// Check whether strain is more than the whole word's base strength * this object's relative strength
-		return GetTensionStrain() > 1 + (strengthAdjustment * mMaterial->Strength);
-	}
+        float tensionStrain = GetTensionStrain();
+        if (tensionStrain > 1.0f + effectiveStrength)
+        {
+            // It's broken!
+            this->Destroy();
 
-	// Tension strain: <1=no tension stress, >1=stressed
-	inline float GetTensionStrain() const
+            // Notify
+            gameEventHandler->OnBreak(mMaterial, 1);
+        }
+        else if (tensionStrain > 1.0f + 0.25f * effectiveStrength)
+        {
+            // It's stressed!
+            if (!mIsStressed)
+            {
+                mIsStressed = true;
+
+                // Notify
+                gameEventHandler->OnStress(mMaterial, 1);
+            }
+        }
+        else
+        {
+            // Just fine
+            mIsStressed = false;
+        }
+    }
+
+	inline bool IsStressed() const
 	{
-		return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mLength;
+        return mIsStressed;
 	}
 
     inline Point * GetPointA() { return mPointA; }
@@ -76,10 +100,22 @@ public:
 
 private:
 
+    // Tension strain: <1=no tension stress, >1=stressed
+    inline float GetTensionStrain() const
+    {
+        return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mRestLength;
+    }
+
+private:
+
 	Point * const mPointA;
 	Point * const mPointB;
-	float mLength;
+	
+    float const mRestLength;
 	Material const * const mMaterial;
+
+    // State variable to track when we enter and exit the stressed state
+    bool mIsStressed;
 };
 
 }

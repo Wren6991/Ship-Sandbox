@@ -16,6 +16,7 @@
 #include <chrono>
 #include <deque>
 #include <memory>
+#include <random>
 #include <string>
 
 class SoundController : public IGameEventHandler
@@ -28,6 +29,10 @@ public:
 
 	virtual ~SoundController();
 
+    void SetMute(bool isMute);
+
+    void SetVolume(float volume);
+
     void Update();
 
     void Reset();
@@ -35,6 +40,10 @@ public:
 public:
 
     virtual void OnDestroy(
+        Material const * material,
+        unsigned int size) override;
+
+    virtual void OnStress(
         Material const * material,
         unsigned int size) override;
 
@@ -49,7 +58,8 @@ private:
     enum class SoundType
     {
         Break,
-        Destroy
+        Destroy,
+        Stress,
     };
 
     static SoundType StrToSoundType(std::string const & str)
@@ -65,6 +75,8 @@ private:
             return SoundType::Break;
         else if (lstr == "destroy")
             return SoundType::Destroy;
+        else if (lstr == "stress")
+            return SoundType::Stress;
         else
             throw GameException("Unrecognized SoundType \"" + str + "\"");
     }
@@ -112,6 +124,10 @@ private:
 private:
 
     std::shared_ptr<ResourceLoader> mResourceLoader;
+
+    std::ranlux48_base mRandomEngine;
+
+    float mCurrentVolume;
 
     //
     // Sounds

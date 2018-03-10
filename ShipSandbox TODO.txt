@@ -191,40 +191,51 @@ Current perf
 
 
 - Sound:
+	+ Mute @ Menu
 	- Fix splash progress
-	+ SFML:
-		+ Build own
-		+ Add bins reference to ship CMake
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	= MainFrame initializes SoundController, which implements IGameEventHandler
-		= Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
-			= Mapping of sounds with IGameEventHandler events via:
+		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
+			+ Mapping of sounds with IGameEventHandler events via:
 				+ Material::optional<SoundProperties>
 					+ SoundMaterial: enum(wood, metal, ...)
 					+ Material enums have StrToX()
 				+ Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
 					+ Parse: if 'destroy'=>expect SoundMaterial next, then ...
-				- Storage of sounds:
+				+ Storage of sounds:
 					+ Maps store vector<SoundBuffer>
 						+ Values are all the variations of the sounds, and 
 						  SoundController chooses randomly
-					- Sounds are created when played and stored in queue together with timestamp
-						- Identifying sounds: Sound.getBuffer()
-					- Scavenging happens at SoundController::Update() (resuscitate its invocation 
-					  by MainFrame, @ LowFrequencyTimer (rename Stats to this and do two fps's))
+					+ Sounds are created when played and stored in queue together with timestamp
 				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
 					+ Material's enums used as coordinates, together with SoundController's own
 					  enums (e.g. action, size, underwater type)
 				+ ResourceLoader has: 
 					+ GetSoundFilenames() -> all sound (relative) filenames
 					+ GetSoundFilepath(filename)
+		- Do random choice
 		- Need to manage number of currently-playing sounds
-			- When > MaxPlayingSounds (constexpr), visit mCurrentlyPlayingSounds (below) and pop completed 
-			  ones
-				- If still full, stop oldest and pop it 
-		- Sounds are played right off event invocations
-			- Eventually discards sounds if too close to currently-playing
-			  ones, which are stored in unordered_map<wxSound *, time_point> mCurrentlyPlayingSounds
+			- When currently playing > MaxPlayingSounds (constexpr):
+				- ScavengeCompletedSounds()
+				- If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
+			- ScavengeCompletedSounds() also called at SoundController::Update()
+		- Avoid identical sounds too close to each other
+			- Eventually discards itself if too close to currently-playing
+			  ones with same identical sound.getBuffer()
+	- Stress event
+		- At break loop: for each spring:
+			- Spring->UpdateTensionStrain(..., IGameEventHandler):
+				- If is broken=> this->Destroy(); break event (calc undewater); 
+				- else if is stressed=>
+					- If !mIsStressed:
+						- set; stress event (calc undewater)
+				- else:
+					mIsStressed = false;
+		- Spring::IsStressed()->mIsStressed, used for rendering
+	- Sounds:
+		+ destroy, stress
+		- underwater: with reverb effect
+
 	+ MainFrame registers SoundController as Handler with GameController
 	+ Sinking music
 		+ GameController starts it upon OnStartedSinking() event
@@ -694,3 +705,8 @@ IF WX:
 		+ Hide it by default and only show via MainFrame menu option
 		+ Complete event handlers
 		+ Do ship sinking event notify in ship (mWater > 1/3 points)
+
++ Sound:
+	+ SFML:
+		+ Build own
+		+ Add bins reference to ship CMake

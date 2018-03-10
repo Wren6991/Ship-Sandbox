@@ -25,13 +25,14 @@ Spring::Spring(
 	Ship * parentShip,
 	Point * a,
 	Point * b,
-	float length,
+	float restLength,
 	Material const *material)
 	: ShipElement(parentShip)
 	, mPointA(a)
 	, mPointB(b)
-	, mLength(length)
+	, mRestLength(restLength)
 	, mMaterial(material)
+    , mIsStressed(false)
 {
     // Add ourselves to our endpoints
     a->AddConnectedSpring(this);
@@ -94,11 +95,11 @@ void Spring::Update()
 	float currentlength = correction_dir.length();
 
     // ORIGINAL:
-	//correction_dir *= (mLength - currentlength) / (mLength * (mPointA->GetMass() + mPointB->GetMass()) * 0.85f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+	//correction_dir *= (mRestLength - currentlength) / (mRestLength * (mPointA->GetMass() + mPointB->GetMass()) * 0.85f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
 
     // NEW:
     correction_dir = correction_dir.normalise();
-    correction_dir *= (mLength - currentlength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    correction_dir *= (mRestLength - currentlength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
 
 	mPointA->SubtractFromPosition(correction_dir * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
 	mPointB->AddToPosition(correction_dir * mPointA->GetMass());    // (and vice versa...)

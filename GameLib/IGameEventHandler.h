@@ -28,6 +28,13 @@ public:
         // Default-implemented
     }
 
+    virtual void OnStress(
+        Material const * /*material*/,
+        unsigned int /*size*/)
+    {
+        // Default-implemented
+    }
+
     virtual void OnBreak(
         Material const * /*material*/,
         unsigned int /*size*/)

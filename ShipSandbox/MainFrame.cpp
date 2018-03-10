@@ -50,6 +50,7 @@ const long ID_GRAB_MENUITEM = wxNewId();
 const long ID_OPEN_SETTINGS_WINDOW_MENUITEM = wxNewId();
 const long ID_OPEN_LOG_WINDOW_MENUITEM = wxNewId();
 const long ID_SHOW_EVENT_TICKER_MENUITEM = wxNewId();
+const long ID_MUTE_MENUITEM = wxNewId();
 
 const long ID_ABOUT_MENUITEM = wxNewId();
 
@@ -224,6 +225,13 @@ MainFrame::MainFrame(wxApp * mainApp)
     optionsMenu->Append(mShowEventTickerMenuItem);
     mShowEventTickerMenuItem->Check(false);
     Connect(ID_SHOW_EVENT_TICKER_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnShowEventTickerMenuItemSelected);
+
+    optionsMenu->Append(new wxMenuItem(optionsMenu, wxID_SEPARATOR));
+
+    mMuteMenuItem = new wxMenuItem(optionsMenu, ID_MUTE_MENUITEM, _("Mute\tM"), wxEmptyString, wxITEM_CHECK);
+    optionsMenu->Append(mMuteMenuItem);
+    mMuteMenuItem->Check(false);
+    Connect(ID_MUTE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnMuteMenuItemSelected);
 
 	mainMenuBar->Append(optionsMenu, _("Options"));
 
@@ -744,6 +752,12 @@ void MainFrame::OnShowEventTickerMenuItemSelected(wxCommandEvent & /*event*/)
     }
 
     mMainFrameSizer->Layout();
+}
+
+void MainFrame::OnMuteMenuItemSelected(wxCommandEvent & /*event*/)
+{
+    assert(!!mSoundController);
+    mSoundController->SetMute(mMuteMenuItem->IsChecked());
 }
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)

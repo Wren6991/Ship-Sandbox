@@ -112,7 +112,7 @@
 	"render_colour": "#000000",
         "isHull": true,
 	"sound_properties": {
-		"element_type": "String"
+		"element_type": "Cable"
 	}
     },
     {
@@ -842,7 +842,7 @@
 		"generated_voltage": 0
 	},
 	"sound_properties": {
-		"element_type": "String"
+		"element_type": "Cable"
 	}
     }
 ]

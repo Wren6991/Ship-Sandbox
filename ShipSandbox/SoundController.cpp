@@ -15,10 +15,18 @@ SoundController::SoundController(
     std::shared_ptr<ResourceLoader> resourceLoader,
     ProgressCallback const & progressCallback)
     : mResourceLoader(std::move(resourceLoader))
+    , mCurrentVolume(100.0f)
     , mCrashSoundBuffers()
     , mCurrentlyPlayingSounds()
     , mSinkingMusic()
 {    
+    //
+    // Initialize random engine
+    //
+
+    std::seed_seq seed_seq({ 1, 242, 19730528 });
+    mRandomEngine = std::ranlux48_base(seed_seq);
+
     //
     // Music
     //
@@ -29,7 +37,6 @@ SoundController::SoundController(
     }
 
     mSinkingMusic.setLoop(true);
-    mSinkingMusic.setVolume(50.0f);
 
 
     //
@@ -70,7 +77,7 @@ SoundController::SoundController(
 
         assert(soundTypeMatch.size() == 1 + 1);
         SoundType soundType = StrToSoundType(soundTypeMatch[1].str());
-        if (soundType == SoundType::Break || soundType == SoundType::Destroy)
+        if (soundType == SoundType::Break || soundType == SoundType::Destroy || soundType == SoundType::Stress)
         {
             //
             // Crash sound
@@ -122,6 +129,20 @@ SoundController::~SoundController()
     Reset();
 }
 
+void SoundController::SetMute(bool isMute)
+{
+    if (isMute)
+        sf::Listener::setGlobalVolume(0.0f);
+    else
+        sf::Listener::setGlobalVolume(mCurrentVolume);
+}
+
+void SoundController::SetVolume(float volume)
+{
+    mCurrentVolume = volume;
+    sf::Listener::setGlobalVolume(mCurrentVolume);
+}
+
 void SoundController::Update()
 {
     // TODO: scavenge mCurrentlyPlayingSounds
@@ -141,6 +162,15 @@ void SoundController::OnDestroy(
     assert(nullptr != material);
 
     PlayCrashSound(SoundType::Destroy, material, size, /*TODO*/false);
+}
+
+void SoundController::OnStress(
+    Material const * material,
+    unsigned int size)
+{
+    assert(nullptr != material);
+
+    PlayCrashSound(SoundType::Stress, material, size, /*TODO*/false);
 }
 
 void SoundController::OnBreak(
@@ -231,14 +261,20 @@ void SoundController::PlayCrashSound(
 
 void SoundController::ChooseAndPlaySound(std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers)
 {
+    //
+    // Choose sound buffer
+    //
+
     assert(!soundBuffers.empty());
 
-    // TODO: choose, see if playing since too little, etc.
+    std::uniform_int_distribution<size_t> dis(0, soundBuffers.size() - 1);
+    sf::SoundBuffer * soundBuffer = soundBuffers[dis(mRandomEngine)].get();
+
+    // TODO: see if playing since too little, etc.
 
     // TODOTEST
     std::unique_ptr<sf::Sound> sound = std::make_unique<sf::Sound>();
-    sound->setBuffer(*soundBuffers.front());
-    sound->setVolume(50);
+    sound->setBuffer(*soundBuffer);
 
     sound->play();
 

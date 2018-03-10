@@ -84,6 +84,18 @@ void EventTickerPanel::OnDestroy(
     AppendFutureTickerText(ss.str());
 }
 
+void EventTickerPanel::OnStress(
+    Material const * material,
+    unsigned int size)
+{
+    assert(nullptr != material);
+
+    std::stringstream ss;
+    ss << "Stressed " << size << "x" << material->Name << "!";
+
+    AppendFutureTickerText(ss.str());
+}
+
 void EventTickerPanel::OnBreak(
     Material const * material,
     unsigned int size)

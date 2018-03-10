@@ -553,6 +553,8 @@ void Ship::Update(
     uint64_t currentStepSequenceNumber,
 	GameParameters const & gameParameters)
 {
+    IGameEventHandler * const gameEventHandler = mParentWorld->GetGameEventHandler();
+
     //
 	// Advance simulation for points (velocity and forces)
     //
@@ -573,19 +575,12 @@ void Ship::Update(
 	// Iterate the spring relaxation
 	DoSprings(dt);
 
-	// Check if any springs exceed their breaking strain
+	// Update tension strain for all springs; might cause springs to break
 	for (Spring * spring : mAllSprings)
 	{
 		if (!spring->IsDeleted())
 		{
-			if (spring->IsBroken(gameParameters.StrengthAdjustment))
-			{
-                // Notify
-                mParentWorld->GetGameEventHandler()->OnBreak(spring->GetMaterial(), 1u);
-
-                // Destroy spring
-				spring->Destroy();
-			}
+            spring->UpdateTensionStrain(gameParameters.StrengthAdjustment, gameEventHandler);
 		}
 	}
 
@@ -706,7 +701,7 @@ void Ship::Render(
             {
                 assert(!spring->IsDeleted());
 
-                if (spring->IsStressed(gameParameters.StrengthAdjustment))
+                if (spring->IsStressed())
                 {
                     renderContext.RenderStressedSpring(
                         spring->GetPointA()->TodoElementIndex,

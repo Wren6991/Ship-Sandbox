@@ -90,15 +90,19 @@ void Point::Update(
 
     //
     // 1 - Apply forces:
-    //  Force1: Gravity on point mass + water mass (for all points)
+    //  Force1: Gravity on (point mass + water mass) (for all points)
     //  Force2: Buoyancy of point mass (only for underwater points)
     //
 
-    float effectiveMassMultiplier = 1.0f + fminf(mWater, 1.0f) * gameParameters.BuoyancyAdjustment * mBuoyancy; // clamp water to 1, so high pressure areas are not heavier.
+    // TODO: optimize with early if and two formulas
+
+    // Clamp water to 1, so high pressure areas are not heavier
+    float const effectiveBuoyancy = gameParameters.BuoyancyAdjustment * mBuoyancy;
+    float effectiveMassMultiplier = 1.0f + fminf(mWater, 1.0f) * effectiveBuoyancy; 
     if (mPosition.y < waterHeightAtThisPoint)
     {
         // Also consider buoyancy of own mass
-        effectiveMassMultiplier -= gameParameters.BuoyancyAdjustment * mBuoyancy;
+        effectiveMassMultiplier -= effectiveBuoyancy;
     }
 
     this->ApplyForce(gameParameters.Gravity * mass * effectiveMassMultiplier);
@@ -127,14 +131,17 @@ void Point::Update(
     //
  	// 4 - Handle collision with seafloor
     //
-    // (Note: to be checked)
-    //
 
 	float const floorheight = GetParentShip()->GetParentWorld()->GetOceanFloorHeight(mPosition.x, gameParameters);
 	if (mPosition.y < floorheight)
 	{
-		vec2f dir = vec2f(floorheight - GetParentShip()->GetParentWorld()->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 0.01f).normalise();   // -1 / derivative  => perpendicular to surface!
-		mPosition += dir * (floorheight - mPosition.y);
+        // Calculate normal to surface
+		vec2f surfaceNormal = vec2f(
+            floorheight - GetParentShip()->GetParentWorld()->GetOceanFloorHeight(mPosition.x + 0.01f, gameParameters), 
+            0.01f).normalise();   
+
+        // Move point back along normal (this is *not* a bounce)
+		mPosition += surfaceNormal * (floorheight - mPosition.y);
  	}
 	
  

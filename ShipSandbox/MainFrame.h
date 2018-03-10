@@ -52,8 +52,9 @@ private:
     //
 
     wxBoxSizer * mMainFrameSizer;
-    wxMenuItem * mPauseMenuItem;
+    wxMenuItem * mPauseMenuItem;    
     wxMenuItem * mShowEventTickerMenuItem;
+    wxMenuItem * mMuteMenuItem;
     std::unique_ptr<EventTickerPanel> mEventTickerPanel;
 
 	//
@@ -110,7 +111,7 @@ private:
 	void OnZoomInMenuItemSelected(wxCommandEvent& event);
 	void OnZoomOutMenuItemSelected(wxCommandEvent& event);
 	void OnPauseMenuItemSelected(wxCommandEvent& event);
-    void OnResetViewMenuItemSelected(wxCommandEvent& event);
+    void OnResetViewMenuItemSelected(wxCommandEvent& event);    
 	void OnLoadShipMenuItemSelected(wxCommandEvent& event);
 	void OnReloadLastShipMenuItemSelected(wxCommandEvent& event);
 	void OnSmashMenuItemSelected(wxCommandEvent& event);
@@ -118,6 +119,7 @@ private:
 	void OnOpenSettingsWindowMenuItemSelected(wxCommandEvent& event);
     void OnOpenLogWindowMenuItemSelected(wxCommandEvent& event);
     void OnShowEventTickerMenuItemSelected(wxCommandEvent& event);
+    void OnMuteMenuItemSelected(wxCommandEvent& event);
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
 private:
