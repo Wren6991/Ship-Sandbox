@@ -1,12 +1,13 @@
 Alpha 2.0 (Gabriele Giuseppini) - Changes:
  - Quite faster (on my single-core laptop: improved from 7fps to 15fps)
+ - Added music and sounds
+ - Added textures for land and water, and clouds in the sky
  - More realistic water dynamics
  - Faster smash tool
  - The strength of the smash and grab tools depends on how long the mouse button is kept pressed for
  - Added menu and keyboard shortcuts (+/-) for zoom
  - Revamped settings window
  - Added an application icon and cursors 
- - Added textures for land and water, and clouds in the sky
 
 Alpha 1.3 - Changes:
  - Stress markers are visible through panels

@@ -1,6 +1,26 @@
 =================================================
 Current perf
 =================================================
+- fps: 14 (Samsung: 13.8)	
+- World::Update: 59.85%
+	- DoSprings: 42.48%
+		- Spring::Update: 34.26%
+		- Spring::DoDamping: 4.07%
+	- BalancePressure: 5.66%
+	- GravitateWater: 5.14%
+	- PreparePointsForFinalStep: 3.07%
+	- Point::Update: 1.50%
+	- DiffuseLight: 0.62%
+- Game::Render: 31.07%
+	- Ship::Render: 27.92%
+		- ShipTriangles: 14.66%
+		- Springs: 10.42%%
+	- RenderContext::RenderCloudsEnd: 1.50%
+=================================================
+
+=================================================
+Prev perf (before sounds & strain)
+=================================================
 - fps: 15/16 (Samsung: 12)	
 - World::Update: 59.61%
 	- DoSprings: 42.26%
@@ -191,64 +211,11 @@ Current perf
 
 
 - Sound:
-	+ Mute @ Menu
-	+ Fix splash progress - make sure final "Complete" shows
-	+ Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	= Draw event: 
 		+ GameController fires Grab, simple
 		= SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
 			+ Uses two consecutive Update() w/no Draw in-between as stop
 			- how to loop though?
-	+ MainFrame initializes SoundController, which implements IGameEventHandler
-		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
-			+ Mapping of sounds with IGameEventHandler events via:
-				+ Material::optional<SoundProperties>
-					+ SoundMaterial: enum(wood, metal, ...)
-					+ Material enums have StrToX()
-				+ Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
-					+ Parse: if 'destroy'=>expect SoundMaterial next, then ...
-				+ Storage of sounds:
-					+ Maps store vector<SoundBuffer>
-						+ Values are all the variations of the sounds, and 
-						  SoundController chooses randomly
-					+ Sounds are created when played and stored in queue together with timestamp
-				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
-					+ Material's enums used as coordinates, together with SoundController's own
-					  enums (e.g. action, size, underwater type)
-				+ ResourceLoader has: 
-					+ GetSoundFilenames() -> all sound (relative) filenames
-					+ GetSoundFilepath(filename)
-		+ Do random choice
-		+ Need to manage number of currently-playing sounds
-			+ When currently playing > MaxPlayingSounds (constexpr):
-				+ ScavengeCompletedSounds()
-				+ If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
-			+ ScavengeCompletedSounds() also called at SoundController::Update()
-	+ Stress event
-		+ At break loop: for each spring:
-			+ Spring->UpdateTensionStrain(..., IGameEventHandler):
-				+ If is broken=> this->Destroy(); break event (calc undewater); 
-				+ else if is stressed=>
-					+ If !mIsStressed:
-						+ set; stress event (calc undewater)
-				+ else:
-					+ mIsStressed = false;
-		+ Spring::IsStressed()->mIsStressed, used for rendering
-	+ Don't play soundbuffer if already playing for < 20ms
-	+ Sounds:
-		+ destroy, stress
-		+ finish destroy 
-		+ better cable snap
-		+ Listen to all materials
-		+ fix destroy cable/string's
-		+ Batch convert all to flac
-			+ Test and commit
-		+ underwater: with reverb effect
-			+ Batch mode, save aside current underwater's first!
-
-	+ MainFrame registers SoundController as Handler with GameController
-	+ Sinking music
-		+ GameController starts it upon OnStartedSinking() event
 
 - Lights
 	- Try additive water @ diffusion (with cap @ Point::CalculateColour)
@@ -720,3 +687,56 @@ IF WX:
 	+ SFML:
 		+ Build own
 		+ Add bins reference to ship CMake
+	+ Mute @ Menu
+	+ Fix splash progress - make sure final "Complete" shows
+	+ Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
+	+ MainFrame initializes SoundController, which implements IGameEventHandler
+		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
+			+ Mapping of sounds with IGameEventHandler events via:
+				+ Material::optional<SoundProperties>
+					+ SoundMaterial: enum(wood, metal, ...)
+					+ Material enums have StrToX()
+				+ Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
+					+ Parse: if 'destroy'=>expect SoundMaterial next, then ...
+				+ Storage of sounds:
+					+ Maps store vector<SoundBuffer>
+						+ Values are all the variations of the sounds, and 
+						  SoundController chooses randomly
+					+ Sounds are created when played and stored in queue together with timestamp
+				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
+					+ Material's enums used as coordinates, together with SoundController's own
+					  enums (e.g. action, size, underwater type)
+				+ ResourceLoader has: 
+					+ GetSoundFilenames() -> all sound (relative) filenames
+					+ GetSoundFilepath(filename)
+		+ Do random choice
+		+ Need to manage number of currently-playing sounds
+			+ When currently playing > MaxPlayingSounds (constexpr):
+				+ ScavengeCompletedSounds()
+				+ If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
+			+ ScavengeCompletedSounds() also called at SoundController::Update()
+	+ Stress event
+		+ At break loop: for each spring:
+			+ Spring->UpdateTensionStrain(..., IGameEventHandler):
+				+ If is broken=> this->Destroy(); break event (calc undewater); 
+				+ else if is stressed=>
+					+ If !mIsStressed:
+						+ set; stress event (calc undewater)
+				+ else:
+					+ mIsStressed = false;
+		+ Spring::IsStressed()->mIsStressed, used for rendering
+	+ Don't play soundbuffer if already playing for < 20ms
+	+ Sounds:
+		+ destroy, stress
+		+ finish destroy 
+		+ better cable snap
+		+ Listen to all materials
+		+ fix destroy cable/string's
+		+ Batch convert all to flac
+			+ Test and commit
+		+ underwater: with reverb effect
+			+ Batch mode, save aside current underwater's first!
+
+	+ MainFrame registers SoundController as Handler with GameController
+	+ Sinking music
+		+ GameController starts it upon OnStartedSinking() event

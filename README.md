@@ -51,16 +51,16 @@ Here's a list of the major changes I've been doing:
 - Restructured interactions between the UI and the game, splitting settings between physics-related settings and render-related settings
 - Rearchitected lifetime management of elements - originally elements were removed from vectors while these are being iterated, and the entire "points-to" graph was a tad too complex 
 - Completely re-written the OpenGL interactions, targeting 2.0 "core profile" (i.e. no compatibility API) with custom shaders and adding texture mapping
--- At this moment, the fps rate on my laptop reached 16fps
 - Inlined critical functions
 - Added unit tests
-- Added cued music
+- Added sounds and cued music
+- Added initial proof of concept of lights
+- Optimized existing code to the point that the fps rate on my laptop reached 16fps (from 8fps)
 
 ..and here's a rought list of the major changes I want to do:
 - Texture mapping for ships
 - Leverage vectorized instructions for dynamics calculations 
-- Add sounds
-- Add lights that would turn off (after flickering) when generator is wet or when electrical cables break
+- MAke lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)
 
 I tried to do my best to craft the CMake files in a platform-independent way, but I'm working on this exclusively in Visual Studio, hence I'm sure some unportable features have slipped in. Feel free to send pull requests for CMake edits for other platforms.
