@@ -192,7 +192,7 @@ Current perf
 
 - Sound:
 	+ Mute @ Menu
-	= Fix splash progress - make sure final "Complete" shows
+	+ Fix splash progress - make sure final "Complete" shows
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	= Draw event: 
 		+ GameController fires Grab, simple
@@ -241,10 +241,11 @@ Current perf
 		+ better cable snap
 		+ Listen to all materials
 		+ fix destroy cable/string's
+		+ Batch convert all to flac
+			+ Test and commit
 		- underwater: with reverb effect
 			- Batch mode, save aside current underwater's first!
-			- Then remove all failover code at crash
-	- Batch convert all to flac?
+			- Then remove all failover code at crash		
 
 	+ MainFrame registers SoundController as Handler with GameController
 	+ Sinking music

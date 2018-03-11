@@ -155,15 +155,8 @@ void SoundController::SetVolume(float volume)
     sf::Listener::setGlobalVolume(mCurrentVolume);
 }
 
-void SoundController::Update()
+void SoundController::HighFrequencyUpdate()
 {
-    //
-    // Scavenge stopped sounds
-    //
-
-    ScavengeStoppedSounds();
-
-
     //
     // Check if we need to stop the drawing sound
     //
@@ -175,6 +168,15 @@ void SoundController::Update()
 
     // Set flag to detect next time
     mIsDrawing = false;
+}
+
+void SoundController::LowFrequencyUpdate()
+{
+    //
+    // Scavenge stopped sounds
+    //
+
+    ScavengeStoppedSounds();
 }
 
 void SoundController::Reset()

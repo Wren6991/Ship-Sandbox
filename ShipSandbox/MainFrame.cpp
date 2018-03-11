@@ -503,7 +503,6 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
     assert(!!mGameController);
-
     
     // Make the timer for the next step start now
     mGameTimer->Start(0, true);
@@ -523,6 +522,10 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
     // Update event ticker
     assert(!!mEventTickerPanel);
     mEventTickerPanel->Update();
+
+    // Update sound controller
+    assert(!!mSoundController);
+    mSoundController->HighFrequencyUpdate();
 
     // Update stats
     ++mTotalFrameCount;
@@ -559,7 +562,7 @@ void MainFrame::OnLowFrequencyTimerTrigger(wxTimerEvent & /*event*/)
     //
 
     assert(!!mSoundController);
-    mSoundController->Update();
+    mSoundController->LowFrequencyUpdate();
 }
 
 //

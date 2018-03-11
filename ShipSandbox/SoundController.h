@@ -33,7 +33,9 @@ public:
 
     void SetVolume(float volume);
 
-    void Update();
+    void HighFrequencyUpdate();
+
+    void LowFrequencyUpdate();
 
     void Reset();
 
