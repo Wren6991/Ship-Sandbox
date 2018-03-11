@@ -65,6 +65,13 @@ float World::GetWaterHeight(
     return (c1 + c2) * gameParameters.WaveHeight;
 }
 
+bool World::IsUnderwater(
+    Point const * point,
+    GameParameters const & gameParameters) const
+{
+    return point->GetPosition().y < GetWaterHeight(point->GetPosition().x, gameParameters);
+}
+
 float World::GetOceanFloorHeight(
     float x,
     GameParameters const & gameParameters) const
@@ -87,13 +94,15 @@ void World::AddShip(std::unique_ptr<Ship> && newShip)
 
 void World::DestroyAt(
     vec2 const & targetPos, 
-    float radius)
+    float radius,
+    GameParameters const & gameParameters)
 {
     for (auto & ship : mAllShips)
     {
         ship->DestroyAt(
             targetPos,
-            radius);
+            radius,
+            gameParameters);
     }
 }
 

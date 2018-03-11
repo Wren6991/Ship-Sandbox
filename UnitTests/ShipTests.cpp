@@ -1,4 +1,5 @@
 #include <GameLib/GameEventDispatcher.h>
+#include <GameLib/GameParameters.h>
 #include <GameLib/Physics.h>
 
 #include <initializer_list>
@@ -11,7 +12,6 @@
 
 class ShipTests : public ::testing::Test
 {
-
     virtual void SetUp() override
     {
         std::shared_ptr<GameEventDispatcher> dispatcher = std::make_shared<GameEventDispatcher>();
@@ -45,8 +45,8 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 {
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -83,8 +83,8 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, true, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -130,8 +130,8 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 {
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f,{ 1, 1, 1 }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -161,8 +161,8 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 {
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
         }
 	);
 
@@ -201,8 +201,8 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 {
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
         }
 	);
 
@@ -252,13 +252,15 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 TEST_F(ShipTests, DestroyAt)
 {
+    GameParameters gameParameters;
+
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, std::nullopt, std::nullopt },
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt },
 
-            { "XXXX", 1.0f, 1.0f,{ 77, 77, 77 }, false, std::nullopt, std::nullopt },
-            { "YYYY", 1.0f, 1.0f,{ 66, 66, 66 }, false, std::nullopt, std::nullopt }
+            { "XXXX", 1.0f, 1.0f, { 77, 77, 77 }, { 77, 77, 77 }, false, std::nullopt, std::nullopt },
+            { "YYYY", 1.0f, 1.0f, { 66, 66, 66 }, { 66, 66, 66 }, false, std::nullopt, std::nullopt }
 		}
 	);
 
@@ -307,7 +309,10 @@ TEST_F(ShipTests, DestroyAt)
     // Destroy test point now
     //
 
-	ship->DestroyAt(vec2f(-1.0f, 2.0f), 0.1f);
+	ship->DestroyAt(
+        vec2f(-1.0f, 2.0f), 
+        0.1f,
+        gameParameters);
 
     ship->GetPoints().shrink_to_fit();
     ship->GetSprings().shrink_to_fit();
@@ -330,8 +335,8 @@ TEST_F(ShipTests, BuildsLamps_OneLamp)
 {
     auto materials = MakeMaterials(
         {
-            { "Mat1", 1.0f, 1.0f,{ 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f,{ 25, 30, 35 }, false, {{Material::ElectricalProperties::ElectricalElementType::Lamp, 0.0f, 0.0f}}, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, {{Material::ElectricalProperties::ElectricalElementType::Lamp, 0.0f, 0.0f}}, std::nullopt }
         }
     );
 

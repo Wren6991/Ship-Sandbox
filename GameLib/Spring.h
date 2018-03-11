@@ -49,10 +49,10 @@ public:
      * Calculates the current tension strain and acts depending on it.
      */
     inline void UpdateTensionStrain(        
-        float strengthAdjustment,
+        GameParameters const & gameParameters,
         IGameEventHandler * gameEventHandler)
     {
-        float const effectiveStrength = strengthAdjustment * mMaterial->Strength;
+        float const effectiveStrength = gameParameters.StrengthAdjustment * mMaterial->Strength;
 
         float tensionStrain = GetTensionStrain();
         if (tensionStrain > 1.0f + effectiveStrength)
@@ -61,7 +61,10 @@ public:
             this->Destroy();
 
             // Notify
-            gameEventHandler->OnBreak(mMaterial, 1);
+            gameEventHandler->OnBreak(
+                mMaterial, 
+                GetParentShip()->GetParentWorld()->IsUnderwater(mPointA, gameParameters),
+                1);
         }
         else if (tensionStrain > 1.0f + 0.25f * effectiveStrength)
         {
@@ -71,7 +74,10 @@ public:
                 mIsStressed = true;
 
                 // Notify
-                gameEventHandler->OnStress(mMaterial, 1);
+                gameEventHandler->OnStress(
+                    mMaterial, 
+                    GetParentShip()->GetParentWorld()->IsUnderwater(mPointA, gameParameters),
+                    1);
             }
         }
         else

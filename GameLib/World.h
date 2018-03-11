@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
+#include "AABB.h"
 #include "GameParameters.h"
 #include "IGameEventHandler.h"
 #include "Material.h"
@@ -33,7 +34,11 @@ public:
 		float x,
 		GameParameters const & gameParameters) const;
 
-	float GetOceanFloorHeight(
+    bool IsUnderwater(
+        Point const * point,
+        GameParameters const & gameParameters) const;
+	
+    float GetOceanFloorHeight(
 		float x,
 		GameParameters const & gameParameters) const;
 
@@ -51,7 +56,8 @@ public:
 
 	void DestroyAt(
 		vec2 const & targetPos, 
-		float radius);
+		float radius,
+        GameParameters const & gameParameters);
 
 	void DrawTo(
         vec2 const & targetPos,

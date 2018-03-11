@@ -6,9 +6,9 @@
 #pragma once
 
 #include "IGameEventHandler.h"
+#include "TupleKeys.h"
 
 #include <algorithm>
-#include <unordered_map>
 #include <vector>
 
 class GameEventDispatcher : public IGameEventHandler
@@ -28,10 +28,11 @@ public:
 public:
 
     virtual void OnDestroy(
-        Material const * material, 
+        Material const * material,
+        bool isUnderwater,
         unsigned int size) override
     {
-        mDestroyEvents[material] += size;
+        mDestroyEvents[std::make_tuple(material, isUnderwater)] += size;
     }
 
     virtual void OnDraw() override
@@ -41,16 +42,18 @@ public:
 
     virtual void OnStress(
         Material const * material,
+        bool isUnderwater,
         unsigned int size) override
     {
-        mStressEvents[material] += size;
+        mStressEvents[std::make_tuple(material, isUnderwater)] += size;
     }
 
     virtual void OnBreak(
-        Material const * material, 
+        Material const * material,
+        bool isUnderwater,
         unsigned int size) override
     {
-        mBreakEvents[material] += size;
+        mBreakEvents[std::make_tuple(material, isUnderwater)] += size;
     }
 
     virtual void OnSinkingBegin(unsigned int shipId) override
@@ -73,7 +76,7 @@ public:
         {
             for (auto const & entry : mDestroyEvents)
             {
-                sink->OnDestroy(entry.first, entry.second);
+                sink->OnDestroy(std::get<0>(entry.first), std::get<1>(entry.first), entry.second);
             }
 
             if (mDrawEvent)
@@ -83,12 +86,12 @@ public:
 
             for (auto const & entry : mStressEvents)
             {
-                sink->OnStress(entry.first, entry.second);
+                sink->OnStress(std::get<0>(entry.first), std::get<1>(entry.first), entry.second);
             }
 
             for (auto const & entry : mBreakEvents)
             {
-                sink->OnBreak(entry.first, entry.second);
+                sink->OnBreak(std::get<0>(entry.first), std::get<1>(entry.first), entry.second);
             }
 
             for (auto const & shipId : mSinkingBeginEvents)
@@ -113,10 +116,10 @@ public:
 private:
 
     // The current events being aggregated
-    std::unordered_map<Material const *, unsigned int> mDestroyEvents;
+    unordered_tuple_map<std::tuple<Material const *, bool>, unsigned int> mDestroyEvents;
     bool mDrawEvent;
-    std::unordered_map<Material const *, unsigned int> mStressEvents;
-    std::unordered_map<Material const *, unsigned int> mBreakEvents;
+    unordered_tuple_map<std::tuple<Material const *, bool>, unsigned int> mStressEvents;
+    unordered_tuple_map<std::tuple<Material const *, bool>, unsigned int> mBreakEvents;
     std::vector<unsigned int> mSinkingBeginEvents;
 
     // The registered sinks

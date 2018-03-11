@@ -74,12 +74,13 @@ void EventTickerPanel::Update()
 
 void EventTickerPanel::OnDestroy(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
     std::stringstream ss;
-    ss << "Destroyed " << size << "x" << material->Name << "!";
+    ss << "Destroyed " << size << "x" << material->Name << (isUnderwater ? " underwater" : "") << "!";
 
     AppendFutureTickerText(ss.str());
 }
@@ -91,24 +92,26 @@ void EventTickerPanel::OnDraw()
 
 void EventTickerPanel::OnStress(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
     std::stringstream ss;
-    ss << "Stressed " << size << "x" << material->Name << "!";
+    ss << "Stressed " << size << "x" << material->Name << (isUnderwater ? " underwater" : "") << "!";
 
     AppendFutureTickerText(ss.str());
 }
 
 void EventTickerPanel::OnBreak(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
     std::stringstream ss;
-    ss << "Broken " << size << "x" << material->Name << "!";
+    ss << "Broken " << size << "x" << material->Name << (isUnderwater ? " underwater" : "") << "!";
 
     AppendFutureTickerText(ss.str());
 }

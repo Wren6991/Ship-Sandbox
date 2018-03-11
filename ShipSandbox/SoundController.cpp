@@ -188,11 +188,12 @@ void SoundController::Reset()
 
 void SoundController::OnDestroy(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
-    PlayCrashSound(SoundType::Destroy, material, size, /*TODO*/false);
+    PlayCrashSound(SoundType::Destroy, material, size, isUnderwater);
 }
 
 void SoundController::OnDraw()
@@ -210,20 +211,22 @@ void SoundController::OnDraw()
 
 void SoundController::OnStress(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
-    PlayCrashSound(SoundType::Stress, material, size, /*TODO*/false);
+    PlayCrashSound(SoundType::Stress, material, size, isUnderwater);
 }
 
 void SoundController::OnBreak(
     Material const * material,
+    bool isUnderwater,
     unsigned int size)
 {
     assert(nullptr != material);
 
-    PlayCrashSound(SoundType::Break, material, size, /*TODO*/false);
+    PlayCrashSound(SoundType::Break, material, size, isUnderwater);
 }
 
 void SoundController::OnSinkingBegin(unsigned int /*shipId*/)

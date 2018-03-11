@@ -23,6 +23,7 @@ namespace Physics
 
 #include "ElectricalElement.h"
 
+#include "World.h"
 #include "Cable.h"
 #include "Cloud.h"
 #include "Generator.h"
@@ -31,4 +32,3 @@ namespace Physics
 #include "Ship.h"
 #include "Spring.h"
 #include "Triangle.h"
-#include "World.h"

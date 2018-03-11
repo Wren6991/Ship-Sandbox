@@ -255,7 +255,10 @@ Ship::~Ship()
     // in a PointerContainer
 }
 
-void Ship::DestroyAt(vec2 const & targetPos, float radius)
+void Ship::DestroyAt(
+    vec2 const & targetPos, 
+    float radius,
+    GameParameters const & gameParameters)
 {
     // Destroy all points within the radius
     for (Point * point : mAllPoints)
@@ -265,7 +268,10 @@ void Ship::DestroyAt(vec2 const & targetPos, float radius)
             if ((point->GetPosition() - targetPos).length() < radius)
             {
                 // Notify
-                mParentWorld->GetGameEventHandler()->OnDestroy(point->GetMaterial(), 1u);
+                mParentWorld->GetGameEventHandler()->OnDestroy(
+                    point->GetMaterial(), 
+                    mParentWorld->IsUnderwater(point, gameParameters),
+                    1u);
 
                 // Destroy point
                 point->Destroy();
@@ -580,7 +586,7 @@ void Ship::Update(
 	{
 		if (!spring->IsDeleted())
 		{
-            spring->UpdateTensionStrain(gameParameters.StrengthAdjustment, gameEventHandler);
+            spring->UpdateTensionStrain(gameParameters, gameEventHandler);
 		}
 	}
 

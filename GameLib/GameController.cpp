@@ -162,7 +162,8 @@ void GameController::DestroyAt(
 	assert(!!mGame);
 	mGame->DestroyAt(
 		worldCoordinates,
-		mGameParameters.DestroyRadius * radiusMultiplier);
+		mGameParameters.DestroyRadius * radiusMultiplier,
+        mGameParameters);
 
     // Flush events
     mGameEventDispatcher->Flush();

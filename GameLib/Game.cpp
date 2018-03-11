@@ -61,10 +61,11 @@ void Game::LoadShip(std::string const & filepath)
 
 void Game::DestroyAt(
 	vec2f worldCoordinates,
-	float radius)
+	float radius,
+    GameParameters const & gameParameters)
 {
 	assert(!!mWorld);
-	mWorld->DestroyAt(worldCoordinates, radius);
+	mWorld->DestroyAt(worldCoordinates, radius, gameParameters);
 
 	// TODO: publish game event
 }

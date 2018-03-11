@@ -22,8 +22,9 @@ public:
     }
 
     virtual void OnDestroy(
-        Material const * /*material*/, 
-        unsigned int /*size*/ )
+        Material const * /*material*/,
+        bool /*isUnderwater*/,
+        unsigned int /*size*/)
     {
         // Default-implemented
     }
@@ -35,6 +36,7 @@ public:
 
     virtual void OnStress(
         Material const * /*material*/,
+        bool /*isUnderwater*/,
         unsigned int /*size*/)
     {
         // Default-implemented
@@ -42,6 +44,7 @@ public:
 
     virtual void OnBreak(
         Material const * /*material*/,
+        bool /*isUnderwater*/,
         unsigned int /*size*/)
     {
         // Default-implemented

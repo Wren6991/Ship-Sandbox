@@ -193,13 +193,13 @@ Current perf
 - Sound:
 	+ Mute @ Menu
 	+ Fix splash progress - make sure final "Complete" shows
-	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
+	+ Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
 	= Draw event: 
 		+ GameController fires Grab, simple
 		= SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
 			+ Uses two consecutive Update() w/no Draw in-between as stop
 			- how to loop though?
-	= MainFrame initializes SoundController, which implements IGameEventHandler
+	+ MainFrame initializes SoundController, which implements IGameEventHandler
 		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			+ Mapping of sounds with IGameEventHandler events via:
 				+ Material::optional<SoundProperties>
@@ -235,7 +235,7 @@ Current perf
 					+ mIsStressed = false;
 		+ Spring::IsStressed()->mIsStressed, used for rendering
 	+ Don't play soundbuffer if already playing for < 20ms
-	= Sounds:
+	+ Sounds:
 		+ destroy, stress
 		+ finish destroy 
 		+ better cable snap
@@ -243,9 +243,8 @@ Current perf
 		+ fix destroy cable/string's
 		+ Batch convert all to flac
 			+ Test and commit
-		- underwater: with reverb effect
-			- Batch mode, save aside current underwater's first!
-			- Then remove all failover code at crash		
+		+ underwater: with reverb effect
+			+ Batch mode, save aside current underwater's first!
 
 	+ MainFrame registers SoundController as Handler with GameController
 	+ Sinking music

@@ -30,7 +30,8 @@ public:
 
 	void DestroyAt(
         vec2 worldCoordinates, 
-        float radius);
+        float radius,
+        GameParameters const & gameParameters);
 
 	void DrawTo(
         vec2 worldCoordinates,         

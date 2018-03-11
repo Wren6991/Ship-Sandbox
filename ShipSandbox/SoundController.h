@@ -43,16 +43,19 @@ public:
 
     virtual void OnDestroy(
         Material const * material,
+        bool isUnderwater,
         unsigned int size) override;
 
     virtual void OnDraw() override;
 
     virtual void OnStress(
         Material const * material,
+        bool isUnderwater,
         unsigned int size) override;
 
     virtual void OnBreak(
         Material const * material,
+        bool isUnderwater,
         unsigned int size) override;
 
     virtual void OnSinkingBegin(unsigned int shipId) override;
