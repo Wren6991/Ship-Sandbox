@@ -92,10 +92,14 @@ public:
         CalculateOrthoMatrix();
     }
 
-    __declspec(deprecated)
-    vec2f GetVisibleWorldSize() const
+    float GetVisibleWorldWidth() const
     {
-        return vec2f(mVisibleWorldWidth, mVisibleWorldHeight);
+        return mVisibleWorldWidth;
+    }
+
+    float GetVisibleWorldHeight() const
+    {
+        return mVisibleWorldHeight;
     }
 
     float GetAmbientLightIntensity() const

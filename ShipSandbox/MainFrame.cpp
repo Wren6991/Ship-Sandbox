@@ -311,7 +311,6 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     splash->Hide();
 #endif
 
-    auto startInit = std::chrono::steady_clock::now();
 
     //
     // Create Game controller
@@ -366,18 +365,22 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
         return;
     }
 
+    splash->UpdateProgress(1.0f, "Ready!");
+
     this->mMainApp->Yield();
 
-
 #ifndef _DEBUG
-    // Make sure the splash screen shows for at least one sec, or else it's weird
-    auto endInit = std::chrono::steady_clock::now();
-    while ((endInit - startInit) < std::chrono::milliseconds(1000))
+
+    // Make sure the splash screen shows for at least half a sec, or else it's weird
+    auto start = std::chrono::steady_clock::now();
+    auto end = std::chrono::steady_clock::now();
+    while ((end - start) < std::chrono::milliseconds(500))
     {
         this->mMainApp->Yield();
         Sleep(10);
-        endInit = std::chrono::steady_clock::now();
+        end = std::chrono::steady_clock::now();
     }
+
 #endif
 
     splash->Destroy();

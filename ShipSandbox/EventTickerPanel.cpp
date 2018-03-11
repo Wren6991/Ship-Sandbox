@@ -84,6 +84,11 @@ void EventTickerPanel::OnDestroy(
     AppendFutureTickerText(ss.str());
 }
 
+void EventTickerPanel::OnDraw()
+{
+    AppendFutureTickerText("Draw!");
+}
+
 void EventTickerPanel::OnStress(
     Material const * material,
     unsigned int size)

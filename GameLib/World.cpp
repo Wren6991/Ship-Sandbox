@@ -244,7 +244,7 @@ void World::UploadLandAndWater(
 {
     static constexpr size_t SlicesCount = 500;
 
-    float const worldWidth = renderContext.GetVisibleWorldSize().x;
+    float const worldWidth = renderContext.GetVisibleWorldWidth();
     float const sliceWidth = worldWidth / static_cast<float>(SlicesCount);
     float sliceX = renderContext.GetCameraWorldPosition().x - (worldWidth / 2.0f);
 

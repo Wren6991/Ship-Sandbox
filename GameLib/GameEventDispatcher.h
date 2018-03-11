@@ -17,6 +17,7 @@ public:
 
     GameEventDispatcher()
         : mDestroyEvents()
+        , mDrawEvent(false)
         , mStressEvents()
         , mBreakEvents()
         , mSinkingBeginEvents()
@@ -31,6 +32,11 @@ public:
         unsigned int size) override
     {
         mDestroyEvents[material] += size;
+    }
+
+    virtual void OnDraw() override
+    {
+        mDrawEvent = true;
     }
 
     virtual void OnStress(
@@ -70,6 +76,11 @@ public:
                 sink->OnDestroy(entry.first, entry.second);
             }
 
+            if (mDrawEvent)
+            {
+                sink->OnDraw();
+            }
+
             for (auto const & entry : mStressEvents)
             {
                 sink->OnStress(entry.first, entry.second);
@@ -88,6 +99,7 @@ public:
 
         // Clear collections
         mDestroyEvents.clear();
+        mDrawEvent = false;
         mStressEvents.clear();
         mBreakEvents.clear();
         mSinkingBeginEvents.clear();
@@ -102,6 +114,7 @@ private:
 
     // The current events being aggregated
     std::unordered_map<Material const *, unsigned int> mDestroyEvents;
+    bool mDrawEvent;
     std::unordered_map<Material const *, unsigned int> mStressEvents;
     std::unordered_map<Material const *, unsigned int> mBreakEvents;
     std::vector<unsigned int> mSinkingBeginEvents;

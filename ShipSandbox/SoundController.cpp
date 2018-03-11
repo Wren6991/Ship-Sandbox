@@ -6,9 +6,11 @@
 #include "SoundController.h"
 
 #include <GameLib/GameException.h>
+#include <GameLib/Log.h>
 #include <GameLib/Material.h>
 
 #include <cassert>
+#include <limits>
 #include <regex>
 
 SoundController::SoundController(
@@ -17,6 +19,9 @@ SoundController::SoundController(
     : mResourceLoader(std::move(resourceLoader))
     , mCurrentVolume(100.0f)
     , mCrashSoundBuffers()
+    , mDrawSoundBuffer()
+    , mDrawSound()
+    , mIsDrawing(false)
     , mCurrentlyPlayingSounds()
     , mSinkingMusic()
 {    
@@ -28,7 +33,7 @@ SoundController::SoundController(
     mRandomEngine = std::ranlux48_base(seed_seq);
 
     //
-    // Music
+    // Initialize Music
     //
 
     if (!mSinkingMusic.openFromFile(mResourceLoader->GetMusicFilepath("sinking_ship")))
@@ -37,10 +42,11 @@ SoundController::SoundController(
     }
 
     mSinkingMusic.setLoop(true);
+    mSinkingMusic.setVolume(50);
 
 
     //
-    // Sounds
+    // Initialize Sounds
     //
 
     auto filenames = mResourceLoader->GetSoundFilenames();
@@ -68,7 +74,7 @@ SoundController::SoundController(
         // Parse filename
         //        
 
-        std::regex soundTypeRegex(R"(([^_]+)_.+)");
+        std::regex soundTypeRegex(R"(([^_]+)(_.+)?)");
         std::smatch soundTypeMatch;
         if (!std::regex_match(filename, soundTypeMatch, soundTypeRegex))
         {
@@ -83,7 +89,7 @@ SoundController::SoundController(
             // Crash sound
             //
 
-            std::regex crashRegex(R"((\w+)_(\w+)_(\w+)_(?:(underwater)_)?\d+)");
+            std::regex crashRegex(R"(([^_]+)_([^_]+)_([^_]+)_(?:(underwater)_)?\d+)");
             std::smatch crashMatch;
             if (!std::regex_match(filename, crashMatch, crashRegex))
             {
@@ -117,6 +123,12 @@ SoundController::SoundController(
 
             mCrashSoundBuffers[std::make_tuple(soundType, soundElementType, sizeType, isUnderwater)].emplace_back(std::move(soundBuffer));
         }
+        else if (soundType == SoundType::Draw)
+        {
+            mDrawSoundBuffer= std::move(soundBuffer);
+            mDrawSound = std::make_unique<sf::Sound>();
+            mDrawSound->setBuffer(*mDrawSoundBuffer);
+        }
         else
         {
             throw GameException("Sound type of sound filename \"" + filename + "\" is not recognized");
@@ -145,7 +157,24 @@ void SoundController::SetVolume(float volume)
 
 void SoundController::Update()
 {
-    // TODO: scavenge mCurrentlyPlayingSounds
+    //
+    // Scavenge stopped sounds
+    //
+
+    ScavengeStoppedSounds();
+
+
+    //
+    // Check if we need to stop the drawing sound
+    //
+
+    if (!mIsDrawing && !!mDrawSound && sf::Sound::Status::Playing == mDrawSound->getStatus())
+    {
+        mDrawSound->stop();
+    }
+
+    // Set flag to detect next time
+    mIsDrawing = false;
 }
 
 void SoundController::Reset()
@@ -162,6 +191,19 @@ void SoundController::OnDestroy(
     assert(nullptr != material);
 
     PlayCrashSound(SoundType::Destroy, material, size, /*TODO*/false);
+}
+
+void SoundController::OnDraw()
+{
+    if (!!mDrawSound)
+    {
+        if (sf::Sound::Status::Playing != mDrawSound->getStatus())
+        {
+            mDrawSound->play();
+        }
+    }
+
+    mIsDrawing = true;
 }
 
 void SoundController::OnStress(
@@ -182,7 +224,7 @@ void SoundController::OnBreak(
     PlayCrashSound(SoundType::Break, material, size, /*TODO*/false);
 }
 
-void SoundController::OnSinkingBegin(unsigned int shipId)
+void SoundController::OnSinkingBegin(unsigned int /*shipId*/)
 {
     if (sf::SoundSource::Status::Playing != mSinkingMusic.getStatus())
     {
@@ -212,6 +254,7 @@ void SoundController::PlayCrashSound(
     else
         sizeType = SizeType::Large;
 
+    LogMessage("CrashSound: <", static_cast<int>(soundType), ",", static_cast<int>(material->Sound->ElementType), ",", static_cast<int>(sizeType), ">");
 
     //
     // Find vector
@@ -256,11 +299,17 @@ void SoundController::PlayCrashSound(
     // Play sound
     //
 
-    ChooseAndPlaySound(it->second);
+    ChooseAndPlaySound(
+        soundType,
+        it->second);
 }
 
-void SoundController::ChooseAndPlaySound(std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers)
+void SoundController::ChooseAndPlaySound(
+    SoundType soundType,
+    std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers)
 {
+    auto const now = std::chrono::steady_clock::now();
+
     //
     // Choose sound buffer
     //
@@ -270,15 +319,109 @@ void SoundController::ChooseAndPlaySound(std::vector<std::unique_ptr<sf::SoundBu
     std::uniform_int_distribution<size_t> dis(0, soundBuffers.size() - 1);
     sf::SoundBuffer * soundBuffer = soundBuffers[dis(mRandomEngine)].get();
 
-    // TODO: see if playing since too little, etc.
+    //
+    // Make sure there isn't already a sound with this sound buffer that started
+    // playing too recently
+    //
 
-    // TODOTEST
+    for (auto const & currentlyPlayingSound : mCurrentlyPlayingSounds)
+    {
+        assert(!!currentlyPlayingSound.Sound);
+        if (currentlyPlayingSound.Sound->getBuffer() == soundBuffer
+            && std::chrono::duration_cast<std::chrono::milliseconds>(now - currentlyPlayingSound.StartedTimestamp) < MinDeltaTimeSound)
+        {
+            return;
+        }
+    }
+
+
+    //
+    // Make sure there's room for this sound
+    //
+
+    if (mCurrentlyPlayingSounds.size() >= MaxPlayingSounds)
+    {
+        ScavengeStoppedSounds();
+
+        if (mCurrentlyPlayingSounds.size() >= MaxPlayingSounds)
+        { 
+            // Need to stop sound that's been playing for the longest
+            ScavengeOldestSound(soundType);
+        }
+    }
+
+    assert(mCurrentlyPlayingSounds.size() < MaxPlayingSounds);
+
+
+
+    //
+    // Create and play sound
+    //
+
     std::unique_ptr<sf::Sound> sound = std::make_unique<sf::Sound>();
     sound->setBuffer(*soundBuffer);
 
     sound->play();
 
     mCurrentlyPlayingSounds.emplace_back(
+        soundType,
         std::move(sound),
-        std::chrono::steady_clock::now());
+        now);
+}
+
+void SoundController::ScavengeStoppedSounds()
+{
+    for (size_t i = 0; i < mCurrentlyPlayingSounds.size(); /*incremented in loop*/)
+    {
+        assert(!!mCurrentlyPlayingSounds[i].Sound);
+        if (sf::Sound::Status::Playing != mCurrentlyPlayingSounds[i].Sound->getStatus())
+        {
+            // Scavenge
+            mCurrentlyPlayingSounds.erase(mCurrentlyPlayingSounds.begin() + i);
+        }
+        else
+        {
+            ++i;
+        }
+    }
+}
+
+void SoundController::ScavengeOldestSound(SoundType soundType)
+{
+    assert(!mCurrentlyPlayingSounds.empty());
+
+    size_t iOldestSound = std::numeric_limits<size_t>::max();
+    auto oldestSoundStartTimestamp = std::chrono::steady_clock::time_point::max();
+    size_t iOldestSoundForType = std::numeric_limits<size_t>::max();
+    auto oldestSoundForTypeStartTimestamp = std::chrono::steady_clock::time_point::max();    
+    for (size_t i = 0; i < mCurrentlyPlayingSounds.size(); ++i)
+    {
+        if (mCurrentlyPlayingSounds[i].StartedTimestamp < oldestSoundStartTimestamp)
+        {
+            iOldestSound = i;
+            oldestSoundStartTimestamp = mCurrentlyPlayingSounds[i].StartedTimestamp;
+        }
+
+        if (mCurrentlyPlayingSounds[i].StartedTimestamp < oldestSoundForTypeStartTimestamp
+            && mCurrentlyPlayingSounds[i].Type == soundType)
+        {
+            iOldestSoundForType = i;
+            oldestSoundForTypeStartTimestamp = mCurrentlyPlayingSounds[i].StartedTimestamp;
+        }
+    }
+
+    size_t iStop;
+    if (oldestSoundForTypeStartTimestamp != std::chrono::steady_clock::time_point::max())
+    {
+        iStop = iOldestSoundForType;
+    }
+    else 
+    {
+        assert((oldestSoundStartTimestamp != std::chrono::steady_clock::time_point::max()));
+        iStop = iOldestSound;
+    }
+
+    assert(!!mCurrentlyPlayingSounds[iStop].Sound);
+    mCurrentlyPlayingSounds[iStop].Sound->stop();
+    mCurrentlyPlayingSounds.erase(mCurrentlyPlayingSounds.begin() + iStop);
 }

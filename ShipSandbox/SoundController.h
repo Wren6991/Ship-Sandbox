@@ -14,10 +14,10 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
-#include <deque>
 #include <memory>
 #include <random>
 #include <string>
+#include <vector>
 
 class SoundController : public IGameEventHandler
 {
@@ -43,6 +43,8 @@ public:
         Material const * material,
         unsigned int size) override;
 
+    virtual void OnDraw() override;
+
     virtual void OnStress(
         Material const * material,
         unsigned int size) override;
@@ -59,6 +61,7 @@ private:
     {
         Break,
         Destroy,
+        Draw,
         Stress,
     };
 
@@ -75,6 +78,8 @@ private:
             return SoundType::Break;
         else if (lstr == "destroy")
             return SoundType::Destroy;
+        else if (lstr == "draw")
+            return SoundType::Draw;
         else if (lstr == "stress")
             return SoundType::Stress;
         else
@@ -119,7 +124,13 @@ private:
         unsigned int size,
         bool isUnderwater);
 
-    void ChooseAndPlaySound(std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers);
+    void ChooseAndPlaySound(
+        SoundType soundType,
+        std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers);
+
+    void ScavengeStoppedSounds();
+
+    void ScavengeOldestSound(SoundType soundType);    
 
 private:
 
@@ -133,26 +144,35 @@ private:
     // Sounds
     //
 
+    static constexpr size_t MaxPlayingSounds{ 100 };
+    static constexpr std::chrono::milliseconds MinDeltaTimeSound{ 50 };
+
     unordered_tuple_map<
         std::tuple<SoundType, Material::SoundProperties::SoundElementType, SizeType, bool>,
         std::vector<std::unique_ptr<sf::SoundBuffer>>> mCrashSoundBuffers;
 
+    std::unique_ptr<sf::SoundBuffer> mDrawSoundBuffer;
+    std::unique_ptr<sf::Sound> mDrawSound;
+    bool mIsDrawing;
+
     struct PlayingSound
     {
-        std::unique_ptr<sf::Sound> const Sound;
-        std::chrono::steady_clock::time_point const StartedTimestamp;
+        SoundType Type;
+        std::unique_ptr<sf::Sound> Sound;
+        std::chrono::steady_clock::time_point StartedTimestamp;
 
         PlayingSound(
+            SoundType type,
             std::unique_ptr<sf::Sound> sound,
             std::chrono::steady_clock::time_point startedTimestamp)
-            : Sound(std::move(sound))
+            : Type(type)
+            , Sound(std::move(sound))
             , StartedTimestamp(startedTimestamp)
         {
         }
-
     };
 
-    std::deque<PlayingSound> mCurrentlyPlayingSounds;
+    std::vector<PlayingSound> mCurrentlyPlayingSounds;
 
     //
     // Music

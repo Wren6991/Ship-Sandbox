@@ -28,6 +28,8 @@ public:
         Material const * material,
         unsigned int size) override;
 
+    virtual void OnDraw() override;
+
     virtual void OnStress(
         Material const * material,
         unsigned int size) override;

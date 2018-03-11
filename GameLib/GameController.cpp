@@ -178,6 +178,9 @@ void GameController::DrawTo(
 	assert(!!mGame);
 	mGame->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
 
+    // Notify
+    mGameEventDispatcher->OnDraw();
+
     // Flush events
     mGameEventDispatcher->Flush();
 }

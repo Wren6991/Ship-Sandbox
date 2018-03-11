@@ -192,8 +192,13 @@ Current perf
 
 - Sound:
 	+ Mute @ Menu
-	- Fix splash progress
+	= Fix splash progress - make sure final "Complete" shows
 	- Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
+	= Draw event: 
+		+ GameController fires Grab, simple
+		= SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
+			+ Uses two consecutive Update() w/no Draw in-between as stop
+			- how to loop though?
 	= MainFrame initializes SoundController, which implements IGameEventHandler
 		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
 			+ Mapping of sounds with IGameEventHandler events via:
@@ -213,28 +218,33 @@ Current perf
 				+ ResourceLoader has: 
 					+ GetSoundFilenames() -> all sound (relative) filenames
 					+ GetSoundFilepath(filename)
-		- Do random choice
-		- Need to manage number of currently-playing sounds
-			- When currently playing > MaxPlayingSounds (constexpr):
-				- ScavengeCompletedSounds()
-				- If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
-			- ScavengeCompletedSounds() also called at SoundController::Update()
-		- Avoid identical sounds too close to each other
-			- Eventually discards itself if too close to currently-playing
-			  ones with same identical sound.getBuffer()
-	- Stress event
-		- At break loop: for each spring:
-			- Spring->UpdateTensionStrain(..., IGameEventHandler):
-				- If is broken=> this->Destroy(); break event (calc undewater); 
-				- else if is stressed=>
-					- If !mIsStressed:
-						- set; stress event (calc undewater)
-				- else:
-					mIsStressed = false;
-		- Spring::IsStressed()->mIsStressed, used for rendering
-	- Sounds:
+		+ Do random choice
+		+ Need to manage number of currently-playing sounds
+			+ When currently playing > MaxPlayingSounds (constexpr):
+				+ ScavengeCompletedSounds()
+				+ If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
+			+ ScavengeCompletedSounds() also called at SoundController::Update()
+	+ Stress event
+		+ At break loop: for each spring:
+			+ Spring->UpdateTensionStrain(..., IGameEventHandler):
+				+ If is broken=> this->Destroy(); break event (calc undewater); 
+				+ else if is stressed=>
+					+ If !mIsStressed:
+						+ set; stress event (calc undewater)
+				+ else:
+					+ mIsStressed = false;
+		+ Spring::IsStressed()->mIsStressed, used for rendering
+	+ Don't play soundbuffer if already playing for < 20ms
+	= Sounds:
 		+ destroy, stress
+		+ finish destroy 
+		+ better cable snap
+		+ Listen to all materials
+		+ fix destroy cable/string's
 		- underwater: with reverb effect
+			- Batch mode, save aside current underwater's first!
+			- Then remove all failover code at crash
+	- Batch convert all to flac?
 
 	+ MainFrame registers SoundController as Handler with GameController
 	+ Sinking music

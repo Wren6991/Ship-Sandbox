@@ -28,6 +28,11 @@ public:
         // Default-implemented
     }
 
+    virtual void OnDraw()
+    {
+        // Default-implemented
+    }
+
     virtual void OnStress(
         Material const * /*material*/,
         unsigned int /*size*/)
