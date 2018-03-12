@@ -290,7 +290,7 @@ public:
         WaterElement * waterElement = &(mWaterBuffer[mWaterBufferSize]);
 
         waterElement->x1 = x;
-        waterElement->y1 = yWater;
+        waterElement->y1 = yWater > yLand ? yWater : yLand; // Make sure that islands are not covered in water!
         waterElement->textureY1 = restWaterHeight;
 
         waterElement->x2 = x;

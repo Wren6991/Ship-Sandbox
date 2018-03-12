@@ -38,7 +38,7 @@ Prev perf (before sounds & strain)
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-- Fix: When land is above water, water is upside down
+= Fix: When land is above water, water is upside down
 
 - Optimization: to improve locality: points in contiguous buffer
 	- No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
@@ -215,15 +215,6 @@ Prev perf (before sounds & strain)
 - Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
 	- Also jellyfish fixed in 1.2.6?
 
-
-- Sound:
-	- See if sounds should be spaced more apart
-	- See underwater cable sounds - sound like metal?
-	= Draw event: 
-		+ GameController fires Grab, simple
-		= SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
-			+ Uses two consecutive Update() w/no Draw in-between as stop
-			= how to loop though?
 
 - Lights
 	- Try additive water @ diffusion (with cap @ Point::CalculateColour)
@@ -744,7 +735,16 @@ IF WX:
 			+ Test and commit
 		+ underwater: with reverb effect
 			+ Batch mode, save aside current underwater's first!
-
 	+ MainFrame registers SoundController as Handler with GameController
 	+ Sinking music
 		+ GameController starts it upon OnStartedSinking() event
+	+ See if sounds should be spaced more apart
+	+ See underwater cable sounds - sound like metal?
+		+ break small 1, 3, 4
+		+ destroy medium 1
+		+ destroy small 4
+	+ Draw event: 
+		+ GameController fires Grab, simple
+		+ SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
+			+ Uses two consecutive Update() w/no Draw in-between as stop
+			+ how to loop though?

@@ -150,7 +150,7 @@ private:
     //
 
     static constexpr size_t MaxPlayingSounds{ 100 };
-    static constexpr std::chrono::milliseconds MinDeltaTimeSound{ 50 };
+    static constexpr std::chrono::milliseconds MinDeltaTimeSound{ 100 };
 
     unordered_tuple_map<
         std::tuple<SoundType, Material::SoundProperties::SoundElementType, SizeType, bool>,
