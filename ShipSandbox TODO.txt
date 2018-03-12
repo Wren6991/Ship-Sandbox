@@ -40,6 +40,11 @@ Prev perf (before sounds & strain)
 
 - Fix: When land is above water, water is upside down
 
+- Optimization: to improve locality: points in contiguous buffer
+	- No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
+	- Points never deleted, just marked
+		- So have to check point.IsDeleted() each time the Point buffer is iterated
+
 - Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
@@ -122,6 +127,7 @@ Prev perf (before sounds & strain)
 			+ Clouds stencil: 
 				+ Draw waterbuffer without texture, but reverse stencil op
 
+		- Change land texture?
 
 		- Ship, using second image
 			- Load ship == Dialog with two textboxes and "browse" next to them
@@ -211,11 +217,13 @@ Prev perf (before sounds & strain)
 
 
 - Sound:
+	- See if sounds should be spaced more apart
+	- See underwater cable sounds - sound like metal?
 	= Draw event: 
 		+ GameController fires Grab, simple
 		= SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
 			+ Uses two consecutive Update() w/no Draw in-between as stop
-			- how to loop though?
+			= how to loop though?
 
 - Lights
 	- Try additive water @ diffusion (with cap @ Point::CalculateColour)

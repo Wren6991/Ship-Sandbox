@@ -21,7 +21,6 @@ SoundController::SoundController(
     , mCrashSoundBuffers()
     , mDrawSoundBuffer()
     , mDrawSound()
-    , mIsDrawing(false)
     , mCurrentlyPlayingSounds()
     , mSinkingMusic()
 {    
@@ -157,17 +156,6 @@ void SoundController::SetVolume(float volume)
 
 void SoundController::HighFrequencyUpdate()
 {
-    //
-    // Check if we need to stop the drawing sound
-    //
-
-    if (!mIsDrawing && !!mDrawSound && sf::Sound::Status::Playing == mDrawSound->getStatus())
-    {
-        mDrawSound->stop();
-    }
-
-    // Set flag to detect next time
-    mIsDrawing = false;
 }
 
 void SoundController::LowFrequencyUpdate()
@@ -204,9 +192,11 @@ void SoundController::OnDraw()
         {
             mDrawSound->play();
         }
+        else if (mDrawSound->getPlayingOffset() > sf::seconds(0.7f))
+        {
+            mDrawSound->setPlayingOffset(sf::seconds(0.1));
+        }
     }
-
-    mIsDrawing = true;
 }
 
 void SoundController::OnStress(

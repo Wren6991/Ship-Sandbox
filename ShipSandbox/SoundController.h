@@ -158,7 +158,6 @@ private:
 
     std::unique_ptr<sf::SoundBuffer> mDrawSoundBuffer;
     std::unique_ptr<sf::Sound> mDrawSound;
-    bool mIsDrawing;
 
     struct PlayingSound
     {
