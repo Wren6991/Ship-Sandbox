@@ -110,6 +110,8 @@ private:
 	// Menu
 	void OnZoomInMenuItemSelected(wxCommandEvent& event);
 	void OnZoomOutMenuItemSelected(wxCommandEvent& event);
+    void OnAmbientLightUpMenuItemSelected(wxCommandEvent& event);
+    void OnAmbientLightDownMenuItemSelected(wxCommandEvent& event);
 	void OnPauseMenuItemSelected(wxCommandEvent& event);
     void OnResetViewMenuItemSelected(wxCommandEvent& event);    
 	void OnLoadShipMenuItemSelected(wxCommandEvent& event);

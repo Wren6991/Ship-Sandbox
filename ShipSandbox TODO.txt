@@ -38,7 +38,7 @@ Prev perf (before sounds & strain)
 	- RenderContext::RenderCloudsEnd: 1.18%
 =================================================
 
-= Fix: When land is above water, water is upside down
++ Fix: When land is above water, water is upside down
 
 - Optimization: to improve locality: points in contiguous buffer
 	- No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
@@ -179,13 +179,8 @@ Prev perf (before sounds & strain)
 	- Water drag (already there?)
 
 - Controls:
-	- SettingsDialog: save settings
+	- SettingsDialog: save settings, and defaults
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
-	- Settings:
-		- Strength Adjustment must be settable exponentially (slider=>exp)
-			- Formula done by physics when calculating strengthfactor off strengthadjustment
-			- Formula: TODO, but lowest must be lower than now
-	- Page up and page down in menu
 
 - Code:
 	- Get rid of Game.cpp and move functionality to GameController
@@ -288,9 +283,6 @@ Prev perf (before sounds & strain)
 
 - Smoke
 	- Smoke-material points, emitting particles with a lifetime and a transparency connected to age
-
-- Put credits
-	- Splash: https://www.artstation.com/stukata/profile, contact the guy
 
 ==============================================================================
 ==============================================================================
@@ -626,6 +618,10 @@ IF WX:
 		+ Also called by GameController's Screen2World 
 			+ also move GameController's Screen2World implementation to Renderer
 		+ See if needs to be exponentially-slider'ed as well
+	+ Settings:
+		+ Strength Adjustment must be settable exponentially (slider=>exp)
+			+ Formula done by gamecontroller at AdjustStrengthAdjustment(), or by SettingsDialog directly
+	+ Page up and page down in menu
 + Gfx:
 	+ Texture mapping:
 		+ UploadLandAndWaterStart()/./End()
@@ -748,3 +744,5 @@ IF WX:
 		+ SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
 			+ Uses two consecutive Update() w/no Draw in-between as stop
 			+ how to loop though?
++ Put credits
+	+ Splash: https://www.artstation.com/stukata/profile, contact the guy

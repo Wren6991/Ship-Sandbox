@@ -13,10 +13,11 @@
 enum class VersionFormat
 {
 	Short,
+    Medium,
 	Long
 };
 
-std::string GetVersionInfo(VersionFormat versionFormat)
+inline std::string GetVersionInfo(VersionFormat versionFormat)
 {
 	switch (versionFormat)
 	{
@@ -25,9 +26,14 @@ std::string GetVersionInfo(VersionFormat versionFormat)
 			return std::string(VERSION);
 		}
 
+        case VersionFormat::Medium:
+        {
+            return std::string("Ship Sandbox v" VERSION);
+        }
+
 		case VersionFormat::Long:
 		{
-			return std::string("Ship Sandbox Alpha v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nThis version licensed to Mattia");
+			return std::string("Ship Sandbox v" VERSION "\n(c) Luke Wren 2013\n(c) Gabriele Giuseppini 2018\nThis version licensed to Mattia");
 		}
 
 		default:

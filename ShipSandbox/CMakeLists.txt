@@ -4,6 +4,8 @@
 #
 
 set  (SHIP_SANDBOX_SOURCES
+	AboutDialog.cpp
+	AboutDialog.h
 	EventTickerPanel.cpp
 	EventTickerPanel.h
 	LoggingDialog.cpp

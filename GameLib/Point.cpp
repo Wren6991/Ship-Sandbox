@@ -88,6 +88,10 @@ void Point::Update(
     // Save current position, which will be the next LastPosition
     vec2f const newLastPosition = mPosition;
 
+    // Calculate current velocity
+    // TODO: and also use below 
+    // TODO: check perf
+
     //
     // 1 - Apply forces:
     //  Force1: Gravity on (point mass + water mass) (for all points)
@@ -114,8 +118,10 @@ void Point::Update(
     // (Note: to be checked)
     //
 
-	if (mPosition.y < waterHeightAtThisPoint)
-		mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
+    if (mPosition.y < waterHeightAtThisPoint)
+    {
+        mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
+    }
 
     //
 	// 3 - Apply verlet integration

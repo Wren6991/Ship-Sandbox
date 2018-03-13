@@ -73,7 +73,7 @@ SoundController::SoundController(
         // Parse filename
         //        
 
-        std::regex soundTypeRegex(R"(([^_]+)(_.+)?)");
+        std::regex soundTypeRegex(R"(([^_]+)(?:_.+)?)");
         std::smatch soundTypeMatch;
         if (!std::regex_match(filename, soundTypeMatch, soundTypeRegex))
         {
@@ -120,7 +120,8 @@ SoundController::SoundController(
             // Store sound buffer
             //
 
-            mCrashSoundBuffers[std::make_tuple(soundType, soundElementType, sizeType, isUnderwater)].emplace_back(std::move(soundBuffer));
+            mCrashSoundBuffers[std::make_tuple(soundType, soundElementType, sizeType, isUnderwater)]
+                .SoundBuffers.emplace_back(std::move(soundBuffer));
         }
         else if (soundType == SoundType::Draw)
         {
@@ -194,7 +195,7 @@ void SoundController::OnDraw()
         }
         else if (mDrawSound->getPlayingOffset() > sf::seconds(0.7f))
         {
-            mDrawSound->setPlayingOffset(sf::seconds(0.1));
+            mDrawSound->setPlayingOffset(sf::seconds(0.1f));
         }
     }
 }
@@ -301,7 +302,7 @@ void SoundController::PlayCrashSound(
 
 void SoundController::ChooseAndPlaySound(
     SoundType soundType,
-    std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers)
+    SoundInfo & soundInfo)
 {
     auto const now = std::chrono::steady_clock::now();
 
@@ -309,10 +310,31 @@ void SoundController::ChooseAndPlaySound(
     // Choose sound buffer
     //
 
-    assert(!soundBuffers.empty());
+    sf::SoundBuffer * chosenSoundBuffer = nullptr;
 
-    std::uniform_int_distribution<size_t> dis(0, soundBuffers.size() - 1);
-    sf::SoundBuffer * soundBuffer = soundBuffers[dis(mRandomEngine)].get();
+    assert(!soundInfo.SoundBuffers.empty());
+    if (1 == soundInfo.SoundBuffers.size())
+    {
+        // Nothing to choose
+        chosenSoundBuffer = soundInfo.SoundBuffers[0].get();
+    }
+    else
+    {
+        assert(soundInfo.SoundBuffers.size() >= 2);
+
+        std::uniform_int_distribution<size_t> dis(0, soundInfo.SoundBuffers.size() - 2);
+        size_t soundIndex = dis(mRandomEngine);
+        if (soundIndex >= soundInfo.LastPlayedSoundIndex)
+        {
+            ++soundIndex;
+        }
+
+        chosenSoundBuffer = soundInfo.SoundBuffers[soundIndex].get();
+
+        soundInfo.LastPlayedSoundIndex = soundIndex;
+    }
+
+    assert(nullptr != chosenSoundBuffer);
 
     //
     // Make sure there isn't already a sound with this sound buffer that started
@@ -322,7 +344,7 @@ void SoundController::ChooseAndPlaySound(
     for (auto const & currentlyPlayingSound : mCurrentlyPlayingSounds)
     {
         assert(!!currentlyPlayingSound.Sound);
-        if (currentlyPlayingSound.Sound->getBuffer() == soundBuffer
+        if (currentlyPlayingSound.Sound->getBuffer() == chosenSoundBuffer
             && std::chrono::duration_cast<std::chrono::milliseconds>(now - currentlyPlayingSound.StartedTimestamp) < MinDeltaTimeSound)
         {
             return;
@@ -354,7 +376,7 @@ void SoundController::ChooseAndPlaySound(
     //
 
     std::unique_ptr<sf::Sound> sound = std::make_unique<sf::Sound>();
-    sound->setBuffer(*soundBuffer);
+    sound->setBuffer(*chosenSoundBuffer);
 
     sound->play();
 

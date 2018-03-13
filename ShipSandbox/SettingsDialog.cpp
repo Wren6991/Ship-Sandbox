@@ -337,10 +337,7 @@ void SettingsDialog::OnStrengthSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
-		mStrengthSlider,
-		mGameController->GetMinStrengthAdjustment(),
-		mGameController->GetMaxStrengthAdjustment());
+	float realValue = StrengthSliderToRealValue();
 
 	mStrengthTextCtrl->SetValue(std::to_string(realValue));
 
@@ -352,7 +349,7 @@ void SettingsDialog::OnBuoyancySliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
+	float realValue = LinearSliderToRealValue(
 		mBuoyancySlider,
 		mGameController->GetMinBuoyancyAdjustment(),
 		mGameController->GetMaxBuoyancyAdjustment());
@@ -367,7 +364,7 @@ void SettingsDialog::OnWaterPressureSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
+	float realValue = LinearSliderToRealValue(
 		mWaterPressureSlider,
 		mGameController->GetMinWaterPressureAdjustment(),
 		mGameController->GetMaxWaterPressureAdjustment());
@@ -382,7 +379,7 @@ void SettingsDialog::OnWaveHeightSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
+	float realValue = LinearSliderToRealValue(
 		mWaveHeightSlider,
 		mGameController->GetMinWaveHeight(),
 		mGameController->GetMaxWaveHeight());
@@ -397,7 +394,7 @@ void SettingsDialog::OnWaterTransparencySliderScroll(wxScrollEvent & /*event*/)
 {
     assert(!!mGameController);
 
-    float realValue = SliderToRealValue(
+    float realValue = LinearSliderToRealValue(
         mWaterTransparencySlider,
         0.0f,
         1.0f);
@@ -412,7 +409,7 @@ void SettingsDialog::OnLightDiffusionSliderScroll(wxScrollEvent & /*event*/)
 {
     assert(!!mGameController);
 
-    float realValue = SliderToRealValue(
+    float realValue = LinearSliderToRealValue(
         mLightDiffusionSlider,
         0.0f,
         1.0f);
@@ -427,7 +424,7 @@ void SettingsDialog::OnSeaDepthSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
+	float realValue = LinearSliderToRealValue(
 		mSeaDepthSlider,
 		mGameController->GetMinSeaDepth(),
 		mGameController->GetMaxSeaDepth());
@@ -442,7 +439,7 @@ void SettingsDialog::OnDestroyRadiusSliderScroll(wxScrollEvent & /*event*/)
 {
 	assert(!!mGameController);
 
-	float realValue = SliderToRealValue(
+	float realValue = LinearSliderToRealValue(
 		mDestroyRadiusSlider,
 		mGameController->GetMinDestroyRadius(),
 		mGameController->GetMaxDestroyRadius());
@@ -506,49 +503,46 @@ void SettingsDialog::ApplySettings()
 	assert(!!mGameController);
 
 	mGameController->SetStrengthAdjustment(
-		SliderToRealValue(
-			mStrengthSlider,
-			mGameController->GetMinStrengthAdjustment(),
-			mGameController->GetMaxStrengthAdjustment()));
+		StrengthSliderToRealValue());
 
 	mGameController->SetBuoyancyAdjustment(
-		SliderToRealValue(
+        LinearSliderToRealValue(
 			mBuoyancySlider,
 			mGameController->GetMinBuoyancyAdjustment(),
 			mGameController->GetMaxBuoyancyAdjustment()));
 
 	mGameController->SetWaterPressureAdjustment(
-		SliderToRealValue(
+        LinearSliderToRealValue(
 			mWaterPressureSlider,
 			mGameController->GetMinWaterPressureAdjustment(),
 			mGameController->GetMaxWaterPressureAdjustment()));
 
 	mGameController->SetWaveHeight(
-		SliderToRealValue(
+        LinearSliderToRealValue(
 			mWaveHeightSlider,
 			mGameController->GetMinWaveHeight(),
 			mGameController->GetMaxWaveHeight()));
 
     mGameController->SetWaterTransparency(
-        SliderToRealValue(
+        LinearSliderToRealValue(
             mWaterTransparencySlider,
             0.0f,
             1.0f));
 
     mGameController->SetLightDiffusionAdjustment(
-        SliderToRealValue(
+        LinearSliderToRealValue(
             mLightDiffusionSlider,
             0.0f,
             1.0f));
 
 	mGameController->SetSeaDepth(
-		SliderToRealValue(
+        LinearSliderToRealValue(
 			mSeaDepthSlider,
 			mGameController->GetMinSeaDepth(),
 			mGameController->GetMaxSeaDepth()));
 
 	mGameController->SetDestroyRadius(
-		SliderToRealValue(
+        LinearSliderToRealValue(
 			mDestroyRadiusSlider,
 			mGameController->GetMinDestroyRadius(),
 			mGameController->GetMaxDestroyRadius()));
@@ -566,16 +560,13 @@ void SettingsDialog::ReadSettings()
 {
 	assert(!!mGameController);
 
-	RealValueToSlider(
-		mGameController->GetStrengthAdjustment(),
-		mGameController->GetMinStrengthAdjustment(),
-		mGameController->GetMaxStrengthAdjustment(),
-		mStrengthSlider);
+	RealValueToStrengthSlider(
+		mGameController->GetStrengthAdjustment());
 
 	mStrengthTextCtrl->SetValue(std::to_string(mGameController->GetStrengthAdjustment()));
 
 
-	RealValueToSlider(
+	RealValueToLinearSlider(
 		mGameController->GetBuoyancyAdjustment(),
 		mGameController->GetMinBuoyancyAdjustment(),
 		mGameController->GetMaxBuoyancyAdjustment(),
@@ -584,7 +575,7 @@ void SettingsDialog::ReadSettings()
 	mBuoyancyTextCtrl->SetValue(std::to_string(mGameController->GetBuoyancyAdjustment()));
 
 
-	RealValueToSlider(
+	RealValueToLinearSlider(
 		mGameController->GetWaterPressureAdjustment(),
 		mGameController->GetMinWaterPressureAdjustment(),
 		mGameController->GetMaxWaterPressureAdjustment(),
@@ -593,7 +584,7 @@ void SettingsDialog::ReadSettings()
 	mWaterPressureTextCtrl->SetValue(std::to_string(mGameController->GetWaterPressureAdjustment()));
 
 
-	RealValueToSlider(
+	RealValueToLinearSlider(
 		mGameController->GetWaveHeight(),
 		mGameController->GetMinWaveHeight(),
 		mGameController->GetMaxWaveHeight(),
@@ -602,7 +593,7 @@ void SettingsDialog::ReadSettings()
 	mWaveHeightTextCtrl->SetValue(std::to_string(mGameController->GetWaveHeight()));
 
 
-    RealValueToSlider(
+    RealValueToLinearSlider(
         mGameController->GetWaterTransparency(),
         0.0f,
         1.0f,
@@ -611,7 +602,7 @@ void SettingsDialog::ReadSettings()
     mWaterTransparencyTextCtrl->SetValue(std::to_string(mGameController->GetWaterTransparency()));
 
 
-    RealValueToSlider(
+    RealValueToLinearSlider(
         mGameController->GetLightDiffusionAdjustment(),
         0.0f,
         1.0f,
@@ -620,7 +611,7 @@ void SettingsDialog::ReadSettings()
     mLightDiffusionTextCtrl->SetValue(std::to_string(mGameController->GetLightDiffusionAdjustment()));
 
 
-	RealValueToSlider(
+	RealValueToLinearSlider(
 		mGameController->GetSeaDepth(),
 		mGameController->GetMinSeaDepth(),
 		mGameController->GetMaxSeaDepth(),
@@ -629,7 +620,7 @@ void SettingsDialog::ReadSettings()
 	mSeaDepthTextCtrl->SetValue(std::to_string(mGameController->GetSeaDepth()));
 
 
-	RealValueToSlider(
+	RealValueToLinearSlider(
 		mGameController->GetDestroyRadius(),
 		mGameController->GetMinDestroyRadius(),
 		mGameController->GetMaxDestroyRadius(),
@@ -649,7 +640,7 @@ void SettingsDialog::ReadSettings()
     OnDrawPointsOnlyChanged();
 }
 
-float SettingsDialog::SliderToRealValue(
+float SettingsDialog::LinearSliderToRealValue(
 	wxSlider * const slider,
 	float minValue,
 	float maxValue) const
@@ -660,7 +651,7 @@ float SettingsDialog::SliderToRealValue(
 	return realValue;
 }
 
-void SettingsDialog::RealValueToSlider(
+void SettingsDialog::RealValueToLinearSlider(
 	float value,
 	float minValue,
 	float maxValue,
@@ -669,6 +660,23 @@ void SettingsDialog::RealValueToSlider(
     int sliderValue = static_cast<int>(roundf((value - minValue) / (maxValue - minValue) * static_cast<float>(SliderTicks)));
 
 	slider->SetValue(sliderValue);
+}
+
+float SettingsDialog::StrengthSliderToRealValue() const
+{
+    // 0.0001 + ((exp(x/70)-1)/1.75)^2.4
+
+    int sliderValue = mStrengthSlider->GetValue();    
+    float realValue = (exp(static_cast<float>(sliderValue) / 70.0f) - 1.0f) / 1.75f;
+    realValue = 0.0001f + powf(realValue, 2.4f);
+    return realValue;
+}
+
+void SettingsDialog::RealValueToStrengthSlider(float value) const
+{
+    value = powf(value - 0.0001f, 1.0f/2.4f);
+    float sliderValue = 70.0f * log((1.75f * value) + 1.0f);
+    mStrengthSlider->SetValue(static_cast<int>(roundf(sliderValue)));
 }
 
 void SettingsDialog::OnDrawPointsOnlyChanged()

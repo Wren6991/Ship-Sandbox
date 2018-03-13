@@ -123,6 +123,37 @@ private:
 
 private:
 
+    struct SoundInfo
+    {
+        std::vector<std::unique_ptr<sf::SoundBuffer>> SoundBuffers;
+        size_t LastPlayedSoundIndex;
+
+        SoundInfo()
+            : SoundBuffers()
+            , LastPlayedSoundIndex(0u)
+        {
+        }
+    };
+
+    struct PlayingSound
+    {
+        SoundType Type;
+        std::unique_ptr<sf::Sound> Sound;
+        std::chrono::steady_clock::time_point StartedTimestamp;
+
+        PlayingSound(
+            SoundType type,
+            std::unique_ptr<sf::Sound> sound,
+            std::chrono::steady_clock::time_point startedTimestamp)
+            : Type(type)
+            , Sound(std::move(sound))
+            , StartedTimestamp(startedTimestamp)
+        {
+        }
+    };
+
+private:
+
     void PlayCrashSound(
         SoundType soundType,
         Material const * material,
@@ -131,7 +162,7 @@ private:
 
     void ChooseAndPlaySound(
         SoundType soundType,
-        std::vector<std::unique_ptr<sf::SoundBuffer>> const & soundBuffers);
+        SoundInfo & soundInfo);
 
     void ScavengeStoppedSounds();
 
@@ -154,27 +185,10 @@ private:
 
     unordered_tuple_map<
         std::tuple<SoundType, Material::SoundProperties::SoundElementType, SizeType, bool>,
-        std::vector<std::unique_ptr<sf::SoundBuffer>>> mCrashSoundBuffers;
+        SoundInfo> mCrashSoundBuffers;
 
     std::unique_ptr<sf::SoundBuffer> mDrawSoundBuffer;
     std::unique_ptr<sf::Sound> mDrawSound;
-
-    struct PlayingSound
-    {
-        SoundType Type;
-        std::unique_ptr<sf::Sound> Sound;
-        std::chrono::steady_clock::time_point StartedTimestamp;
-
-        PlayingSound(
-            SoundType type,
-            std::unique_ptr<sf::Sound> sound,
-            std::chrono::steady_clock::time_point startedTimestamp)
-            : Type(type)
-            , Sound(std::move(sound))
-            , StartedTimestamp(startedTimestamp)
-        {
-        }
-    };
 
     std::vector<PlayingSound> mCurrentlyPlayingSounds;
 

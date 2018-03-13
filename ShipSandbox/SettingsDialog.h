@@ -83,16 +83,20 @@ private:
 
 	void ReadSettings();
 
-	float SliderToRealValue(
+	float LinearSliderToRealValue(
 		wxSlider * const slider,
 		float minValue,
 		float maxValue) const;
 
-	void RealValueToSlider(
+	void RealValueToLinearSlider(
 		float value,
 		float minValue,
 		float maxValue,
 		wxSlider * slider) const;
+
+    float StrengthSliderToRealValue() const;
+
+    void RealValueToStrengthSlider(float value) const;
 
     void OnDrawPointsOnlyChanged();
 

@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #include "MainFrame.h"
 
+#include "AboutDialog.h"
 #include "SplashScreenDialog.h"
 #include "Version.h"
 
@@ -41,6 +42,8 @@ const long ID_QUIT_MENUITEM = wxNewId();
 
 const long ID_ZOOM_IN_MENUITEM = wxNewId();
 const long ID_ZOOM_OUT_MENUITEM = wxNewId();
+const long ID_AMBIENT_LIGHT_UP_MENUITEM = wxNewId();
+const long ID_AMBIENT_LIGHT_DOWN_MENUITEM = wxNewId();
 const long ID_PAUSE_MENUITEM = wxNewId();
 const long ID_RESET_VIEW_MENUITEM = wxNewId();
 
@@ -177,6 +180,14 @@ MainFrame::MainFrame(wxApp * mainApp)
 	wxMenuItem * zoomOutMenuItem = new wxMenuItem(controlsMenu, ID_ZOOM_OUT_MENUITEM, _("Zoom Out\t-"), wxEmptyString, wxITEM_NORMAL);
 	controlsMenu->Append(zoomOutMenuItem);
 	Connect(ID_ZOOM_OUT_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnZoomOutMenuItemSelected);
+
+    wxMenuItem * amblientLightUpMenuItem = new wxMenuItem(controlsMenu, ID_AMBIENT_LIGHT_UP_MENUITEM, _("Bright Ambient Light\tPgUp"), wxEmptyString, wxITEM_NORMAL);    
+    controlsMenu->Append(amblientLightUpMenuItem);
+    Connect(ID_AMBIENT_LIGHT_UP_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAmbientLightUpMenuItemSelected);
+
+    wxMenuItem * ambientLightDownMenuItem = new wxMenuItem(controlsMenu, ID_AMBIENT_LIGHT_DOWN_MENUITEM, _("Dim Ambient Light\tPgDn"), wxEmptyString, wxITEM_NORMAL);
+    controlsMenu->Append(ambientLightDownMenuItem);
+    Connect(ID_AMBIENT_LIGHT_DOWN_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAmbientLightDownMenuItemSelected);
 
     mPauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tP"), wxEmptyString, wxITEM_CHECK);
 	controlsMenu->Append(mPauseMenuItem);
@@ -461,18 +472,6 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
         // Down
         mGameController->Pan(vec2f(0.0f, 20.0f));
     }
-    else if (event.GetKeyCode() == WXK_PAGEUP)
-    {
-        // Ambient light up
-        float newAmbientLight = std::min(1.0f, mGameController->GetAmbientLightIntensity() * 1.05f);
-        mGameController->SetAmbientLightIntensity(newAmbientLight);
-    }
-    else if (event.GetKeyCode() == WXK_PAGEDOWN)
-    {
-        // Ambient light down
-        float newAmbientLight = mGameController->GetAmbientLightIntensity() * 0.95f;
-        mGameController->SetAmbientLightIntensity(newAmbientLight);
-    }
     else if (event.GetKeyCode() == static_cast<int>(' '))
     {
         //
@@ -709,6 +708,22 @@ void MainFrame::OnZoomOutMenuItemSelected(wxCommandEvent & /*event*/)
 	mGameController->AdjustZoom(0.95f);
 }
 
+void MainFrame::OnAmbientLightUpMenuItemSelected(wxCommandEvent & /*event*/)
+{
+    assert(!!mGameController);
+
+    float newAmbientLight = std::min(1.0f, mGameController->GetAmbientLightIntensity() * 1.05f);
+    mGameController->SetAmbientLightIntensity(newAmbientLight);
+}
+
+void MainFrame::OnAmbientLightDownMenuItemSelected(wxCommandEvent & /*event*/)
+{
+    assert(!!mGameController);
+
+    float newAmbientLight = mGameController->GetAmbientLightIntensity() * 0.95f;
+    mGameController->SetAmbientLightIntensity(newAmbientLight);
+}
+
 void MainFrame::OnSmashMenuItemSelected(wxCommandEvent & /*event*/)
 {
 	mCurrentToolType = ToolType::Smash;
@@ -768,7 +783,8 @@ void MainFrame::OnMuteMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	wxMessageBox(GetVersionInfo(VersionFormat::Long), L"Welcome to...");
+    AboutDialog aboutDialog(this);
+    aboutDialog.ShowModal();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
