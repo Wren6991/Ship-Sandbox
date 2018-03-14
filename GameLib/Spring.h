@@ -63,7 +63,7 @@ public:
             // Notify
             gameEventHandler->OnBreak(
                 mMaterial, 
-                GetParentShip()->GetParentWorld()->IsUnderwater(mPointA, gameParameters),
+                GetParentShip()->GetParentWorld()->IsUnderwater(*mPointA, gameParameters),
                 1);
         }
         else if (tensionStrain > 1.0f + 0.25f * effectiveStrength)
@@ -76,7 +76,7 @@ public:
                 // Notify
                 gameEventHandler->OnStress(
                     mMaterial, 
-                    GetParentShip()->GetParentWorld()->IsUnderwater(mPointA, gameParameters),
+                    GetParentShip()->GetParentWorld()->IsUnderwater(*mPointA, gameParameters),
                     1);
             }
         }
@@ -100,9 +100,9 @@ public:
 
 	inline Material const * GetMaterial() const { return mMaterial; };
 
-	void Update();
+	void Relax();
 
-	void DoDamping(float amount);
+	void Damp(float amount);
 
 private:
 

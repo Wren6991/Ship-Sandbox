@@ -85,27 +85,30 @@ void Spring::DestroyFromPoint(Point const * pointSource)
     ShipElement::Destroy();
 }
 
-void Spring::Update()
+void Spring::Relax()
 {
     assert(!mPointA->IsDeleted());
     assert(!mPointB->IsDeleted());
 
+    //
 	// Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
-	vec2f correction_dir = (mPointB->GetPosition() - mPointA->GetPosition());
-	float currentlength = correction_dir.length();
+    //
+
+	vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
+	float const currentlength = displacement.length();
 
     // ORIGINAL:
 	//correction_dir *= (mRestLength - currentlength) / (mRestLength * (mPointA->GetMass() + mPointB->GetMass()) * 0.85f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
 
     // NEW:
-    correction_dir = correction_dir.normalise();
-    correction_dir *= (mRestLength - currentlength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+    vec2f correction = displacement.normalise();
+    correction *= (mRestLength - currentlength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
 
-	mPointA->SubtractFromPosition(correction_dir * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
-	mPointB->AddToPosition(correction_dir * mPointA->GetMass());    // (and vice versa...)
+	mPointA->SubtractFromPosition(correction * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
+	mPointB->AddToPosition(correction * mPointA->GetMass());    // (and vice versa...)
 }
 
-void Spring::DoDamping(float amount)
+void Spring::Damp(float amount)
 {
     assert(!mPointA->IsDeleted());
     assert(!mPointB->IsDeleted());

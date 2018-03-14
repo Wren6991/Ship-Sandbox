@@ -35,7 +35,7 @@ public:
 		GameParameters const & gameParameters) const;
 
     bool IsUnderwater(
-        Point const * point,
+        Point const & point,
         GameParameters const & gameParameters) const;
 	
     float GetOceanFloorHeight(

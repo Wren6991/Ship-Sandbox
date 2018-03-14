@@ -1047,7 +1047,7 @@ void RenderContext::UploadShipPointStart(size_t points)
 
 void RenderContext::UploadShipPointEnd()
 {
-    assert(mShipPointBufferSize == mShipPointBufferMaxSize);
+    assert(mShipPointBufferSize <= mShipPointBufferMaxSize);
 
     // Upload point buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
@@ -1056,7 +1056,7 @@ void RenderContext::UploadShipPointEnd()
 
 void RenderContext::RenderShipPoints()
 {
-    assert(mShipPointBufferSize == mShipPointBufferMaxSize);
+    assert(mShipPointBufferSize <= mShipPointBufferMaxSize);
 
     // Use program
     glUseProgram(*mShipPointShaderProgram);

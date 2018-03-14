@@ -69,13 +69,13 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	ASSERT_EQ(1u, ship->GetPoints().size());
 
-	Physics::Point const * pt = *(ship->GetPoints().begin());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt->GetPosition());
-	EXPECT_EQ(materials[1].get(), pt->GetMaterial());
-    EXPECT_EQ(0u, pt->GetConnectedSprings().size());
-	EXPECT_EQ(0u, pt->GetConnectedTriangles().size());
-    EXPECT_EQ(nullptr, pt->GetConnectedElectricalElement());
-	EXPECT_TRUE(pt->IsLeaking());
+	Physics::Point const & pt = *(ship->GetPoints().begin());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt.GetPosition());
+	EXPECT_EQ(materials[1].get(), pt.GetMaterial());
+    EXPECT_EQ(0u, pt.GetConnectedSprings().size());
+	EXPECT_EQ(0u, pt.GetConnectedTriangles().size());
+    EXPECT_EQ(nullptr, pt.GetConnectedElectricalElement());
+	EXPECT_TRUE(pt.IsLeaking());
 }
 
 TEST_F(ShipTests, BuildsPoints_TwoPoints)
@@ -109,21 +109,21 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 
     auto pointIt = ship->GetPoints().begin();
 
-	Physics::Point const * pt1 = *pointIt;
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1->GetPosition());
-	EXPECT_EQ(materials[1].get(), pt1->GetMaterial());
-    EXPECT_EQ(1u, pt1->GetConnectedSprings().size());
-	EXPECT_EQ(0u, pt1->GetConnectedTriangles().size());
-	EXPECT_TRUE(pt1->IsLeaking());
+	Physics::Point const & pt1 = *pointIt;
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1.GetPosition());
+	EXPECT_EQ(materials[1].get(), pt1.GetMaterial());
+    EXPECT_EQ(1u, pt1.GetConnectedSprings().size());
+	EXPECT_EQ(0u, pt1.GetConnectedTriangles().size());
+	EXPECT_TRUE(pt1.IsLeaking());
 
     ++pointIt;
 
-	Physics::Point const * pt2 = *pointIt;
-	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2->GetPosition());
-	EXPECT_EQ(materials[0].get(), pt2->GetMaterial());
-    EXPECT_EQ(1u, pt2->GetConnectedSprings().size());
-	EXPECT_EQ(0u, pt2->GetConnectedTriangles().size());
-	EXPECT_FALSE(pt2->IsLeaking());
+	Physics::Point const & pt2 = *pointIt;
+	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2.GetPosition());
+	EXPECT_EQ(materials[0].get(), pt2.GetMaterial());
+    EXPECT_EQ(1u, pt2.GetConnectedSprings().size());
+	EXPECT_EQ(0u, pt2.GetConnectedTriangles().size());
+	EXPECT_FALSE(pt2.IsLeaking());
 }
 
 TEST_F(ShipTests, BuildsPoints_EmptyShip)
@@ -287,12 +287,12 @@ TEST_F(ShipTests, DestroyAt)
 
     Physics::Point const * testPoint = nullptr;
     Physics::Point const * sentinelPoint = nullptr;
-    for (auto pt : ship->GetPoints())
+    for (auto const & pt : ship->GetPoints())
     {
-        if (pt->GetMaterial()->Name == "XXXX")
-            testPoint = pt;
-        if (pt->GetMaterial()->Name == "YYYY")
-            sentinelPoint = pt;
+        if (pt.GetMaterial()->Name == "XXXX")
+            testPoint = &pt;
+        if (pt.GetMaterial()->Name == "YYYY")
+            sentinelPoint = &pt;
     }
 
     ASSERT_NE(testPoint, nullptr);
@@ -314,11 +314,10 @@ TEST_F(ShipTests, DestroyAt)
         0.1f,
         gameParameters);
 
-    ship->GetPoints().shrink_to_fit();
     ship->GetSprings().shrink_to_fit();
     ship->GetTriangles().shrink_to_fit();
 
-	EXPECT_EQ(5u, ship->GetPoints().size());
+	EXPECT_EQ(6u, ship->GetPoints().size());
 	EXPECT_EQ(6u, ship->GetSprings().size());
 	EXPECT_EQ(0u, ship->GetTriangles().size()); 
 

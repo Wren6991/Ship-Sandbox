@@ -34,6 +34,8 @@ std::unique_ptr<Ship> Ship::Create(
 	int structureImageHeight,
 	std::vector<std::unique_ptr<Material const>> const & allMaterials)
 {
+    float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
+
 	// Prepare materials dictionary
 	std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
     for (auto const & material : allMaterials)
@@ -41,98 +43,100 @@ std::unique_ptr<Ship> Ship::Create(
         structuralColourMap[material->StructuralColourRgb] = material.get();
     }
 
+
+    //
+    // 1. Process image points and create matrix of point indices and materials
+    //    
+
+    struct PointInfo
+    {
+        Material const * Mtl;
+        size_t PointIndex;
+
+        PointInfo(
+            Material const * mtl,
+            size_t pointIndex)
+            : Mtl(mtl)
+            , PointIndex(pointIndex)
+        {
+        }
+    };
+
+    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[structureImageWidth]);
+
+    size_t pointCount = 0;
+
+    for (int x = 0; x < structureImageWidth; ++x)
+    {
+        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[structureImageHeight]);
+
+        // From bottom to top
+        for (int y = 0; y < structureImageHeight; ++y)
+        {
+            // R G B
+            std::array<uint8_t, 3u> rgbColour = {
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0],
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1],
+                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2] };
+
+            auto srchIt = structuralColourMap.find(rgbColour);
+            if (srchIt != structuralColourMap.end())
+            {
+                // This will be a point
+                pointInfoMatrix[x][y] = PointInfo(srchIt->second, pointCount);
+
+                ++pointCount;
+            }
+        }
+    }
+
+
 	//
-	// Process image points and create points, springs, and triangles for this ship
+	// 2. Create points
 	//
 
     Ship *ship = new Ship(parentWorld);
 
-    std::vector<ElectricalElement*> shipElectricalElements;
-
-    std::vector<Point*> shipPoints;
-    shipPoints.reserve(structureImageWidth * structureImageHeight / 10);
-    
-    std::vector<Spring*> shipSprings;
-    shipSprings.reserve(structureImageWidth * structureImageHeight / 10);
-
-    std::vector<Triangle*> shipTriangles;
-    shipTriangles.reserve(structureImageWidth * structureImageHeight / 10);
-
-	size_t leakingPointsCount = 0;
-
-	std::unique_ptr<std::unique_ptr<Point *[]>[]> pointMatrix(new std::unique_ptr<Point *[]>[structureImageWidth]);
-
-	float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
+    ElementRepository<Point> allPoints(pointCount);
 
 	for (int x = 0; x < structureImageWidth; ++x)
 	{
-        pointMatrix[x] = std::unique_ptr<Point *[]>(new Point *[structureImageHeight]);
-
-        // From bottom to top
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
-			// R G B
-            std::array<uint8_t, 3u> rgbColour = {
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0],
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1],
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2]};
-
-            auto srchIt = structuralColourMap.find(rgbColour);
-			if (srchIt != structuralColourMap.end())
-			{
-                auto mtl = srchIt->second;
+            if (!!pointInfoMatrix[x][y])
+            {
+                Material const * mtl = pointInfoMatrix[x][y]->Mtl;
 
                 //
                 // Create point
                 //
 
-				Point * point = new Point(
+                allPoints.emplace_back(
 					ship,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
 					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
-
-                pointMatrix[x][y] = point;
-                shipPoints.push_back(point);
-
-                //
-                // Create electrical element
-                //
-
-                if (!!mtl->Electrical)
-                {
-                    switch (mtl->Electrical->ElementType)
-                    {
-                        case Material::ElectricalProperties::ElectricalElementType::Cable:
-                        {
-                            shipElectricalElements.emplace_back(new Cable(ship, point));
-                            break;
-                        }
-
-                        case Material::ElectricalProperties::ElectricalElementType::Generator:
-                        {
-                            shipElectricalElements.emplace_back(new Generator(ship, point));
-                            break;
-                        }
-
-                        case Material::ElectricalProperties::ElectricalElementType::Lamp:
-                        {
-                            shipElectricalElements.emplace_back(new Lamp(ship, point));
-                            break;
-                        }
-                    }
-                }
-			}
-			else
-			{
-                pointMatrix[x][y] = nullptr;
 			}
 		}
 	}
 
-	// Points have been generated, so fill in all the beams between them.
-	// If beam joins two hull nodes, it is a hull beam.
+    //
+    // 3. Create electrical elements, springs, and triangles 
+    //
+    // Points have been generated, so fill in all the beam/springs between them.
+	// If a spring joins two hull nodes, it is a hull spring.
 	// If a non-hull node has empty space on one of its four sides, it is automatically leaking.
+    //
+
+    std::vector<ElectricalElement*> allElectricalElements;
+
+    std::vector<Spring*> allSprings;
+    allSprings.reserve(pointCount * 2);
+
+    std::vector<Triangle*> allTriangles;
+    allTriangles.reserve(pointCount * 2);
+
+    size_t leakingPointsCount = 0;
 
 	static const int Directions[8][2] = {
 		{ 1,  0 },	// E
@@ -149,89 +153,120 @@ std::unique_ptr<Ship> Ship::Create(
 	{
 		for (int y = 0; y < structureImageHeight; ++y)
 		{
-			Point * a = pointMatrix[x][y];
-			if (nullptr == a)
-				continue;
+            if (!!pointInfoMatrix[x][y])
+            {
+                Point * a = &(allPoints[pointInfoMatrix[x][y]->PointIndex]);
 
-			bool aIsHull = a->GetMaterial()->IsHull;
+                bool aIsHull = a->GetMaterial()->IsHull;
 
-			// Check if a is leaking; a is leaking if:
-			// - a is not hull, AND
-			// - there is at least a hole at E, S, W, N
-			if (!aIsHull)
-			{
-				if ((x < structureImageWidth - 1 && !pointMatrix[x + 1][y])
-					|| (y < structureImageHeight - 1 && !pointMatrix[x][y + 1])
-					|| (x > 0 && !pointMatrix[x - 1][y])
-					|| (y > 0 && !pointMatrix[x][y - 1]))
-				{
-					a->SetLeaking();
+                // Check if a is leaking; a is leaking if:
+                // - a is not hull, AND
+                // - there is at least a hole at E, S, W, N
+                if (!aIsHull)
+                {
+                    if ((x < structureImageWidth - 1 && !pointInfoMatrix[x + 1][y])
+                        || (y < structureImageHeight - 1 && !pointInfoMatrix[x][y + 1])
+                        || (x > 0 && !pointInfoMatrix[x - 1][y])
+                        || (y > 0 && !pointInfoMatrix[x][y - 1]))
+                    {
+                        a->SetLeaking();
 
-					++leakingPointsCount;
-				}
-			}
+                        ++leakingPointsCount;
+                    }
+                }
 
-			// First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y),
-			// i.e. E, NE, N, NW - this covers each pair of points in each direction
-			for (int i = 0; i < 4; ++i)
-			{
-				int adjx1 = x + Directions[i][0];
-				int adjy1 = y + Directions[i][1];
-				// Valid coordinates?
-				if (adjx1 >= 0 && adjx1 < structureImageWidth && adjy1 >= 0)
-				{
-					assert(adjy1 < structureImageHeight); // The four directions we're checking do not include S
+                // First four directions out of 8: from 0 deg (+x) through to 135 deg (-x +y),
+                // i.e. E, NE, N, NW - this covers each pair of points in each direction
+                for (int i = 0; i < 4; ++i)
+                {
+                    int adjx1 = x + Directions[i][0];
+                    int adjy1 = y + Directions[i][1];
+                    // Valid coordinates?
+                    if (adjx1 >= 0 && adjx1 < structureImageWidth && adjy1 >= 0)
+                    {
+                        assert(adjy1 < structureImageHeight); // The four directions we're checking do not include S
 
-					Point * b = pointMatrix[adjx1][adjy1]; // adjacent point in direction (i)				
-					if (nullptr != b)
-					{
-						// b is adjacent to a at one of E, NE, N, NW						
+                        if (!!pointInfoMatrix[adjx1][adjy1])
+                        {
+                            Point * b = &(allPoints[pointInfoMatrix[adjx1][adjy1]->PointIndex]);
 
-						//
-						// Create a<->b spring
-						// 
+                            // b is adjacent to a at one of E, NE, N, NW						
 
-						Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
+                            //
+                            // Create a<->b spring
+                            // 
 
-						Spring * spr = new Spring(
-							ship,
-							a,
-							b,
-							mtl);
+                            Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();    // the spring is hull iff both nodes are hull; if not we use the non-hull material.
 
-						shipSprings.push_back(spr);
+                            Spring * spr = new Spring(
+                                ship,
+                                a,
+                                b,
+                                mtl);
 
-						// Check adjacent point in next CW direction (for constructing triangles)
-						int adjx2 = x + Directions[i + 1][0];
-						int adjy2 = y + Directions[i + 1][1];
-						// Valid coordinates?
-						if (adjx2 >= 0 && adjx2 < structureImageWidth && adjy2 >= 0)
-						{
-							assert(adjy2 < structureImageHeight); // The five directions we're checking do not include S
+                            allSprings.push_back(spr);
 
-							Point *c = pointMatrix[adjx2][adjy2];
-							if (nullptr != c)
-							{
-                                Triangle * triangle = new Triangle(
-                                    ship,
-                                    a,
-                                    b,
-                                    c);
+                            // Check adjacent point in next CW direction (for constructing triangles)
+                            int adjx2 = x + Directions[i + 1][0];
+                            int adjy2 = y + Directions[i + 1][1];
+                            // Valid coordinates?
+                            if (adjx2 >= 0 && adjx2 < structureImageWidth && adjy2 >= 0)
+                            {
+                                assert(adjy2 < structureImageHeight); // The five directions we're checking do not include S
 
-                                shipTriangles.push_back(triangle);
-							}
-						}
-					}
-				}
-			}
+                                if (!!pointInfoMatrix[adjx2][adjy2])
+                                {
+                                    Point *c = &(allPoints[pointInfoMatrix[adjx2][adjy2]->PointIndex]);
+
+                                    Triangle * triangle = new Triangle(
+                                        ship,
+                                        a,
+                                        b,
+                                        c);
+
+                                    allTriangles.push_back(triangle);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //
+                // Create electrical element
+                //
+
+                if (!!a->GetMaterial()->Electrical)
+                {
+                    switch (a->GetMaterial()->Electrical->ElementType)
+                    {
+                        case Material::ElectricalProperties::ElectricalElementType::Cable:
+                        {
+                            allElectricalElements.emplace_back(new Cable(ship, a));
+                            break;
+                        }
+
+                        case Material::ElectricalProperties::ElectricalElementType::Generator:
+                        {
+                            allElectricalElements.emplace_back(new Generator(ship, a));
+                            break;
+                        }
+
+                        case Material::ElectricalProperties::ElectricalElementType::Lamp:
+                        {
+                            allElectricalElements.emplace_back(new Lamp(ship, a));
+                            break;
+                        }
+                    }
+                }
+            }
 		}
 	}
 
-	ship->Initialize(
-        std::move(shipElectricalElements),
-        std::move(shipPoints),
-        std::move(shipSprings),
-        std::move(shipTriangles));
+	ship->InitializeRepository(
+        std::move(allPoints),
+        std::move(allElectricalElements),        
+        std::move(allSprings),
+        std::move(allTriangles));
 
 	return std::unique_ptr<Ship>(ship);
 }
@@ -239,7 +274,8 @@ std::unique_ptr<Ship> Ship::Create(
 Ship::Ship(World * parentWorld)
     : mId(parentWorld->GenerateNewShipId())
     , mParentWorld(parentWorld)    
-    , mAllPoints()
+    , mAllPoints(0)
+    , mAllElectricalElements()
     , mAllSprings()
     , mAllTriangles()
     , mScheduler()
@@ -261,25 +297,24 @@ void Ship::DestroyAt(
     GameParameters const & gameParameters)
 {
     // Destroy all points within the radius
-    for (Point * point : mAllPoints)
+    for (Point & point : mAllPoints)
     {
-        if (!point->IsDeleted())
+        if (!point.IsDeleted())
         {
-            if ((point->GetPosition() - targetPos).length() < radius)
+            if ((point.GetPosition() - targetPos).length() < radius)
             {
                 // Notify
                 mParentWorld->GetGameEventHandler()->OnDestroy(
-                    point->GetMaterial(), 
+                    point.GetMaterial(), 
                     mParentWorld->IsUnderwater(point, gameParameters),
                     1u);
 
                 // Destroy point
-                point->Destroy();
+                point.Destroy();
             }
         }
     }
 
-    mAllPoints.shrink_to_fit();
     mAllSprings.shrink_to_fit();
     mAllTriangles.shrink_to_fit();
     mAllElectricalElements.shrink_to_fit();
@@ -290,13 +325,13 @@ void Ship::DrawTo(
     float strength)
 {
     // Attract all points to a single position
-    for (Point * point : mAllPoints)
+    for (Point & point : mAllPoints)
     {
-        if (!point->IsDeleted())
+        if (!point.IsDeleted())
         {
-            vec2f displacement = (targetPos - point->GetPosition());
+            vec2f displacement = (targetPos - point.GetPosition());
             float forceMagnitude = strength / sqrtf(0.1f + displacement.length());
-            point->ApplyForce(displacement.normalise() * forceMagnitude);
+            point.ApplyForce(displacement.normalise() * forceMagnitude);
         }
     }
 }
@@ -308,14 +343,14 @@ Point const * Ship::GetNearestPointAt(
     Point const * bestPoint = nullptr;
     float bestDistance = std::numeric_limits<float>::max();
 
-    for (Point const * point : mAllPoints)
+    for (Point const & point : mAllPoints)
     {
-        if (!point->IsDeleted())
+        if (!point.IsDeleted())
         {
-            float distance = (point->GetPosition() - targetPos).length();
+            float distance = (point.GetPosition() - targetPos).length();
             if (distance < radius && distance < bestDistance)
             {
-                bestPoint = point;
+                bestPoint = &point;
                 bestDistance = distance;
             }
         }
@@ -337,86 +372,87 @@ void Ship::PreparePointsForFinalStep(
     std::queue<Point *> pointsToVisitForConnectedComponents;
     mConnectedComponentSizes.clear();
 
-	for (Point * point : mAllPoints)
+	for (Point & point : mAllPoints)
 	{
-        assert(!point->IsDeleted());
-        
-        //
-        // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
-        //    if the external pressure is larger
-        //
-
-        if (point->IsLeaking())
+        if (!point.IsDeleted())
         {
-            float waterLevel = mParentWorld->GetWaterHeight(
-                point->GetPosition().x, 
-                gameParameters);                
-
-            float const externalWaterPressure = point->GetExternalWaterPressure(
-                waterLevel,
-                gameParameters);
-
-            if (externalWaterPressure > point->GetWater())
-            {
-                float newWater = dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point->GetWater());
-                point->AddWater(newWater);
-                mTotalWater += newWater;
-            }
-        }
-
-        //
-        // 2) Detect connected components
-        //
-
-        // Check if visited
-        if (point->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-        {
-            // This node has not been visited, hence it's the beginning of a new connected component
-            ++currentConnectedComponentId;
-            size_t pointsInCurrentConnectedComponent = 0;
-
             //
-            // Propagate the connected component ID to all points reachable from this point
+            // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
+            //    if the external pressure is larger
             //
 
-            assert(pointsToVisitForConnectedComponents.empty());
-            pointsToVisitForConnectedComponents.push(point);
-            point->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-
-            while (!pointsToVisitForConnectedComponents.empty())
+            if (point.IsLeaking())
             {
-                Point * currentPoint = pointsToVisitForConnectedComponents.front();
-                pointsToVisitForConnectedComponents.pop();
+                float waterLevel = mParentWorld->GetWaterHeight(
+                    point.GetPosition().x,
+                    gameParameters);
 
-                // Assign the connected component ID
-                currentPoint->SetConnectedComponentId(currentConnectedComponentId);
-                ++pointsInCurrentConnectedComponent;
+                float const externalWaterPressure = point.GetExternalWaterPressure(
+                    waterLevel,
+                    gameParameters);
 
-                // Go through this point's adjacents
-                for (Spring * spring : currentPoint->GetConnectedSprings())
+                if (externalWaterPressure > point.GetWater())
                 {
-                    assert(!spring->IsDeleted());
-
-                    Point * const pointA = spring->GetPointA();
-                    assert(!pointA->IsDeleted());
-                    if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                    {
-                        pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                        pointsToVisitForConnectedComponents.push(pointA);
-                    }
-
-                    Point * const pointB = spring->GetPointB();
-                    assert(!pointB->IsDeleted());
-                    if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                    {
-                        pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                        pointsToVisitForConnectedComponents.push(pointB);
-                    }
+                    float newWater = dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point.GetWater());
+                    point.AddWater(newWater);
+                    mTotalWater += newWater;
                 }
             }
 
-            // Store number of connected components
-            mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
+            //
+            // 2) Detect connected components
+            //
+
+            // Check if visited
+            if (point.GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+            {
+                // This node has not been visited, hence it's the beginning of a new connected component
+                ++currentConnectedComponentId;
+                size_t pointsInCurrentConnectedComponent = 0;
+
+                //
+                // Propagate the connected component ID to all points reachable from this point
+                //
+
+                assert(pointsToVisitForConnectedComponents.empty());
+                pointsToVisitForConnectedComponents.push(&point);
+                point.SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+
+                while (!pointsToVisitForConnectedComponents.empty())
+                {
+                    Point * currentPoint = pointsToVisitForConnectedComponents.front();
+                    pointsToVisitForConnectedComponents.pop();
+
+                    // Assign the connected component ID
+                    currentPoint->SetConnectedComponentId(currentConnectedComponentId);
+                    ++pointsInCurrentConnectedComponent;
+
+                    // Go through this point's adjacents
+                    for (Spring * spring : currentPoint->GetConnectedSprings())
+                    {
+                        assert(!spring->IsDeleted());
+
+                        Point * const pointA = spring->GetPointA();
+                        assert(!pointA->IsDeleted());
+                        if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                        {
+                            pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                            pointsToVisitForConnectedComponents.push(pointA);
+                        }
+
+                        Point * const pointB = spring->GetPointB();
+                        assert(!pointB->IsDeleted());
+                        if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                        {
+                            pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                            pointsToVisitForConnectedComponents.push(pointB);
+                        }
+                    }
+                }
+
+                // Store number of connected components
+                mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
+            }
         }
 	}
 
@@ -519,36 +555,37 @@ void Ship::DiffuseLight(
     float const adjustmentCoefficient = powf(1.0f - gameParameters.LightDiffusionAdjustment, 2.0f);
 
     // Visit all points
-    for (Point * point : mAllPoints)
+    for (Point & point : mAllPoints)
     {
-        assert(!point->IsDeleted());
-
-        point->ZeroLight();
-
-        vec2f const & pointPosition = point->GetPosition();
-
-        // Go through all lamps in the same connected component
-        for (ElectricalElement * el : mAllElectricalElements)
+        if (!point.IsDeleted())
         {
-            assert(!el->IsDeleted());
+            point.ZeroLight();
 
-            if (ElectricalElement::Type::Lamp == el->GetType()
-                && el->GetPoint()->GetConnectedComponentId() == point->GetConnectedComponentId())
+            vec2f const & pointPosition = point.GetPosition();
+
+            // Go through all lamps in the same connected component
+            for (ElectricalElement * el : mAllElectricalElements)
             {
-                Point * const lampPoint = el->GetPoint();
+                assert(!el->IsDeleted());
 
-                assert(!lampPoint->IsDeleted());
+                if (ElectricalElement::Type::Lamp == el->GetType()
+                    && el->GetPoint()->GetConnectedComponentId() == point.GetConnectedComponentId())
+                {
+                    Point * const lampPoint = el->GetPoint();
 
-                // TODO: this needs to be replaced with getting the light from the lamp itself
-                float const lampLight = 1.0f;
+                    assert(!lampPoint->IsDeleted());
 
-                float squareDistance = std::max(
-                    1.0f, 
-                    (pointPosition - lampPoint->GetPosition()).squareLength() * adjustmentCoefficient);
+                    // TODO: this needs to be replaced with getting the light from the lamp itself
+                    float const lampLight = 1.0f;
 
-                assert(squareDistance >= 1.0f);
+                    float squareDistance = std::max(
+                        1.0f,
+                        (pointPosition - lampPoint->GetPosition()).squareLength() * adjustmentCoefficient);
 
-                point->AdjustLight(lampLight / squareDistance);
+                    assert(squareDistance >= 1.0f);
+
+                    point.AdjustLight(lampLight / squareDistance);
+                }
             }
         }
     }
@@ -565,12 +602,10 @@ void Ship::Update(
 	// Advance simulation for points (velocity and forces)
     //
 
-    for (Point * point : mAllPoints)
+    for (Point & point : mAllPoints)
     {
-        if (!point->IsDeleted())
-        {
-            point->Update(dt, gameParameters);
-        }
+        // We can safely update all points, even deleted ones
+        point.Update(dt, gameParameters);
     }
 
 
@@ -579,7 +614,7 @@ void Ship::Update(
     //
 
 	// Iterate the spring relaxation
-	DoSprings(dt);
+	DoSpringsRelaxation(dt);
 
 	// Update tension strain for all springs; might cause springs to break
 	for (Spring * spring : mAllSprings)
@@ -595,7 +630,7 @@ void Ship::Update(
     // during or before this update step
     //
 
-    mAllPoints.shrink_to_fit();
+    mAllElectricalElements.shrink_to_fit();
     mAllSprings.shrink_to_fit();
     mAllTriangles.shrink_to_fit();
 
@@ -632,23 +667,22 @@ void Ship::Render(
     renderContext.UploadShipPointStart(mAllPoints.size());
 
     int todoElementIndex = 0; // Temporary - we need to assign an index now as points get deleted over time
-    for (Point const * point : mAllPoints)
+    for (Point const & point : mAllPoints)
     {
-        assert(!point->IsDeleted());
+        if (!point.IsDeleted())
+        {
+            auto pointColour = point.CalculateColour(renderContext.GetAmbientLightIntensity());
 
-        auto pointColour = point->GetColour(
-            point->GetMaterial()->RenderColour,
-            renderContext.GetAmbientLightIntensity());
+            renderContext.UploadShipPoint(
+                point.GetPosition().x,
+                point.GetPosition().y,
+                pointColour.x,
+                pointColour.y,
+                pointColour.z);
 
-        renderContext.UploadShipPoint(
-            point->GetPosition().x,
-            point->GetPosition().y,
-            pointColour.x,
-            pointColour.y,
-            pointColour.z);
-
-        Point * todoPoint = const_cast<Point *>(point);
-        todoPoint->TodoElementIndex = todoElementIndex++;
+            Point * todoPoint = const_cast<Point *>(&point);
+            todoPoint->TodoElementIndex = todoElementIndex++;
+        }
     }
 
     renderContext.UploadShipPointEnd();
@@ -724,7 +758,7 @@ void Ship::Render(
 // Private Helpers
 ///////////////////////////////////////////////////////////////////////////////////
 
-void Ship::DoSprings(float dt)
+void Ship::DoSpringsRelaxation(float dt)
 {
     float const dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
 
@@ -752,7 +786,7 @@ void Ship::DoSprings(float dt)
                 assert(thisChunkSize > 0);
 
                 mScheduler.Schedule(
-                    new SpringCalculateTask(
+                    new SpringRelaxationCalculateTask(
                         this,
                         i,
                         i + thisChunkSize));
@@ -767,20 +801,20 @@ void Ship::DoSprings(float dt)
         {
             if (!spring->IsDeleted())
             {
-                spring->DoDamping(dampingamount);
+                spring->Damp(dampingamount);
             }
         }
 	}
 }
 
-void Ship::SpringCalculateTask::Process()
+void Ship::SpringRelaxationCalculateTask::Process()
 {
     for (size_t i = mStartSpringIndex; i < mEndSpringIndex; ++i)
     {
         Spring * const spring = mParentShip->mAllSprings[i];
         if (!spring->IsDeleted())
         {
-            spring->Update();
+            spring->Relax();
         }
     }
 }
@@ -789,11 +823,11 @@ void Ship::PointIntegrateTask::Process()
 {
 	for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
 	{
-        Point * const point = mParentShip->mAllPoints[i];
-        if (!point->IsDeleted())
+        Point & point = mParentShip->mAllPoints[i];
+        if (!point.IsDeleted())
         {
-            point->AddToPosition(point->GetForce() * mDt);
-            point->ZeroForce();
+            point.AddToPosition(point.GetForce() * mDt);
+            point.ZeroForce();
         }
 	}
 }

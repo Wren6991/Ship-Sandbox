@@ -145,16 +145,14 @@ public:
     inline void SetConnectedComponentDetectionStepSequenceNumber(uint64_t connectedComponentDetectionStepSequenceNumber) { mCurrentConnectedComponentDetectionStepSequenceNumber = connectedComponentDetectionStepSequenceNumber; }
 
 
-    inline vec3f GetColour(
-        vec3f const & baseColour,
-        float ambientLightIntensity) const
+    inline vec3f CalculateColour(float ambientLightIntensity) const
     {
         static constexpr vec3f LightPointColour = vec3f(1.0f, 1.0f, 0.25f);
         static constexpr vec3f WetPointColour = vec3f(0.0f, 0.0f, 0.8f);
 
         float const colorWetness = fminf(mWater, 1.0f) * 0.7f;
 
-        vec3f colour1 = baseColour * (1.0f - colorWetness)
+        vec3f colour1 = mMaterial->RenderColour * (1.0f - colorWetness)
             + WetPointColour * colorWetness;
 
         colour1 *= ambientLightIntensity;

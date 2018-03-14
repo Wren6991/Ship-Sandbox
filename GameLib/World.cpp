@@ -66,10 +66,10 @@ float World::GetWaterHeight(
 }
 
 bool World::IsUnderwater(
-    Point const * point,
+    Point const & point,
     GameParameters const & gameParameters) const
 {
-    return point->GetPosition().y < GetWaterHeight(point->GetPosition().x, gameParameters);
+    return point.GetPosition().y < GetWaterHeight(point.GetPosition().x, gameParameters);
 }
 
 float World::GetOceanFloorHeight(
