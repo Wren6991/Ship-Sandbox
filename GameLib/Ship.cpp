@@ -799,10 +799,7 @@ void Ship::DoSpringsRelaxation(float dt)
 		
         for (Spring * spring : mAllSprings)
         {
-            if (!spring->IsDeleted())
-            {
-                spring->Damp(dampingamount);
-            }
+            spring->Damp(dampingamount);
         }
 	}
 }
@@ -811,11 +808,7 @@ void Ship::SpringRelaxationCalculateTask::Process()
 {
     for (size_t i = mStartSpringIndex; i < mEndSpringIndex; ++i)
     {
-        Spring * const spring = mParentShip->mAllSprings[i];
-        if (!spring->IsDeleted())
-        {
-            spring->Relax();
-        }
+        mParentShip->mAllSprings[i]->Relax();
     }
 }
 
@@ -824,11 +817,9 @@ void Ship::PointIntegrateTask::Process()
 	for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
 	{
         Point & point = mParentShip->mAllPoints[i];
-        if (!point.IsDeleted())
-        {
-            point.AddToPosition(point.GetForce() * mDt);
-            point.ZeroForce();
-        }
+
+        point.AddToPosition(point.GetForce() * mDt);
+        point.ZeroForce();
 	}
 }
 

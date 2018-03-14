@@ -1,4 +1,4 @@
-/***************************************************************************************
+﻿/***************************************************************************************
 * Original Author:		Luke Wren (wren6991@gmail.com)
 * Created:				2013-04-30
 * Modified By:			Gabriele Giuseppini
@@ -100,9 +100,34 @@ public:
 
 	inline Material const * GetMaterial() const { return mMaterial; };
 
-	void Relax();
+    inline void Relax()
+    {
+        //
+        // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
+        //
 
-	void Damp(float amount);
+        vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
+        float const displacementLength = displacement.length();
+        vec2f correction = displacement.normalise(displacementLength);
+        correction *= (mRestLength - displacementLength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+
+        mPointA->SubtractFromPosition(correction * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
+        mPointB->AddToPosition(correction * mPointA->GetMass());    // (and vice versa...)
+    }
+
+
+    inline void Damp(float amount)
+    {
+        // Get damp direction
+        vec2f dampCorrection = (mPointA->GetPosition() - mPointB->GetPosition()).normalise();
+
+        // Relative velocity dot spring direction = projected velocity;
+        // amount = amount of projected velocity that remains after damping
+        dampCorrection *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(dampCorrection) * amount;   
+
+        mPointA->AddToLastPosition(dampCorrection);
+        mPointB->SubtractFromLastPosition(dampCorrection);
+    }
 
 private:
 

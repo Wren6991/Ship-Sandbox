@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 14.70 (Samsung: 13.8)	
+- fps: 14.8 (Samsung: 13.8)	
 - World::Update: 59.85%
 	- DoSprings: 42.48%
 		- Spring::Update: 34.26%
@@ -42,12 +42,15 @@ Prev perf (before sounds & strain)
 
 - Optimization: to improve locality: points in contiguous buffer
 	+ No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
-	= Points never deleted, just marked
+	+ Points never deleted, just marked
 		+ So have to check point.IsDeleted() each time the Point buffer is iterated
-		- Or not?
-	- See to make all these other references to Point: Point &
+		+ No check
+	- Try also with springs
+		+ And not checking isDeleted
+			+ Remove assert's
+	- See to make all these other references to Point: Point &, at:
 		- ElectricalComponent
-	- Try also with springs, and not checking isDeleted
+
 
 - Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely

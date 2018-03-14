@@ -131,6 +131,11 @@ public:
 		return (*this) * fast_inv_sqrt(x * x + y * y);
 	}
 
+    inline vec2f normalise(float length) const
+    {
+        return (*this) / length;
+    }
+
     std::string toString() const;
 
 	inline vec2f(
