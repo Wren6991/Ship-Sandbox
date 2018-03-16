@@ -10,29 +10,6 @@
 #include <cmath>
 #include <string>
 
-namespace /* anonymous */ {
-
-	// Quake <3
-
-	inline float fast_sqrt(float x)
-	{
-		union { float f; unsigned long ul; } y;
-		y.f = x;
-		y.ul = (0xBE6EB50CUL - y.ul) >> 1;
-		y.f = 0.5f * y.f * (3.0f - x * y.f * y.f);
-		return x * y.f;
-	}
-
-	inline float fast_inv_sqrt(float x)
-	{
-		union { float f; unsigned long ul; } y;
-		y.f = x;
-		y.ul = (0xBE6EB50CUL - y.ul) >> 1;
-		y.f = 0.5f * y.f * (3.0f - x * y.f * y.f);
-		return y.f;
-	}
-}
-
 struct vec2f
 {
 public:
@@ -118,7 +95,7 @@ public:
 
 	inline float length() const
 	{
-		return sqrtf(x * x + y * y);
+        return sqrtf(x * x + y * y);
 	}
 
     inline float squareLength() const
@@ -128,7 +105,7 @@ public:
 
 	inline vec2f normalise() const
 	{
-		return (*this) * fast_inv_sqrt(x * x + y * y);
+        return (*this) / sqrtf(x * x + y * y);
 	}
 
     inline vec2f normalise(float length) const
@@ -247,7 +224,7 @@ public:
 
 	vec3f normalise() const
 	{
-		return (*this) * fast_inv_sqrt(x * x + y * y + z * z);
+		return (*this) / sqrtf(x * x + y * y + z * z);
 	}
 
     std::string toString() const;

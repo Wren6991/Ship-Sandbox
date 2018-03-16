@@ -417,10 +417,6 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     Connect(ID_LOW_FREQUENCY_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnLowFrequencyTimerTrigger);
     mLowFrequencyTimer->Start(1000, false);
 
-    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-    mFrameCountStatsOriginTimestamp = now;
-    mFrameCountStatsLastTimestamp = now;
-
     //
     // Show ourselves now
     //
@@ -502,6 +498,19 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
     assert(!!mGameController);
+
+    // Initialize stats, if needed
+    if (mFrameCountStatsOriginTimestamp == std::chrono::steady_clock::time_point::min())
+    { 
+        assert(mFrameCountStatsLastTimestamp == std::chrono::steady_clock::time_point::min());
+
+        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+        mFrameCountStatsOriginTimestamp = now;
+        mFrameCountStatsLastTimestamp = now;
+        mTotalFrameCount = 0u;
+        mLastFrameCount = 0u;
+    }
+
     
     // Make the timer for the next step start now
     mGameTimer->Start(0, true);

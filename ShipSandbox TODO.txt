@@ -45,9 +45,14 @@ Prev perf (before sounds & strain)
 	+ Points never deleted, just marked
 		+ So have to check point.IsDeleted() each time the Point buffer is iterated
 		+ No check
-	- Try also with springs
+	- Try contiguous buffer also with springs
 		+ And not checking isDeleted
 			+ Remove assert's
+	+ Try fast_qrt for vec2f::length()
+	= Test fast_XYZ at vector
+		+ fast_inv_sqrt: 15.2/15.3/15.3
+		+ 1/sqrt: 15.3/15.3/15.3
+		= Nuke'em if ok
 	- See to make all these other references to Point: Point &, at:
 		- ElectricalComponent
 
