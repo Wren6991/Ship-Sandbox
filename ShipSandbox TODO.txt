@@ -1,6 +1,25 @@
 =================================================
 Current perf
 =================================================
+- fps: 15.8 (Samsung: 13.8)	
+- World::Update: 55.93%
+	- DoSprings: 38.92%
+		- Ship::DoRelazationCalculation: 34.77%
+	- BalancePressure: 5.71%
+	- GravitateWater: 4.58%
+	- PreparePointsForFinalStep: 3.09%
+	- Point::Update: 1.79%
+	- DiffuseLight: 0.65%
+- Game::Render: 33.43%
+	- Ship::Render: 30.34%
+		- ShipTriangles: 16.02%
+		- Springs: 11.39%%
+	- RenderContext::RenderCloudsEnd: 1.51%
+=================================================
+
+=================================================
+Prev perf (before contiguity)
+=================================================
 - fps: 14.8 (Samsung: 13.8)	
 - World::Update: 59.85%
 	- DoSprings: 42.48%
@@ -18,26 +37,6 @@ Current perf
 	- RenderContext::RenderCloudsEnd: 1.50%
 =================================================
 
-=================================================
-Prev perf (before sounds & strain)
-=================================================
-- fps: 15/16 (Samsung: 12)	
-- World::Update: 59.61%
-	- DoSprings: 42.26%
-		- Spring::Update: 34.26%
-		- Spring::DoDamping: 4.07%
-	- BalancePressure: 5.84%
-	- GravitateWater: 5.05%
-	- DiffuseLight: 0.60%
-	- Point::Update: 1.54%
-	- PreparePointsForFinalStep: 3.01%
-- Game::Render: 30.79%
-	- Ship::Render: 28.09%
-		- ShipTriangles: 14.71%
-		- Springs: 10.29%%
-	- RenderContext::RenderCloudsEnd: 1.18%
-=================================================
-
 + Fix: When land is above water, water is upside down
 
 - Optimization: to improve locality: points in contiguous buffer
@@ -45,23 +44,22 @@ Prev perf (before sounds & strain)
 	+ Points never deleted, just marked
 		+ So have to check point.IsDeleted() each time the Point buffer is iterated
 		+ No check
-	- Point destroy: also clear *own* references
-	- Try contiguous buffer also with springs and triangles
+	+ Point destroy: also clear *own* references
+	= Try contiguous buffer also with springs and triangles
 		+ And not checking isDeleted
 			+ Remove assert's
-		- Multi-step create loop
-		- Spring destroy: also clear *own* references
-		- Triangle destroy: also clear *own* references
+		+ Multi-step create loop
+		+ Spring destroy: also clear *own* references
+		+ Triangle destroy: also clear *own* references
+		+ Do check IsDeleted for Spring and Triangle operations that may affect connected non-deleted points
+		+ New perf: 15.7/15.8
 		- Remove ShipElement if useless now
-	- IsDeleted needs only be checked at SpringRender and TriangleRender
-		- PointRender: tbd
+	+ IsDeleted needs only be checked at SpringRender and TriangleRender
 	+ Try fast_qrt for vec2f::length()
 	+ Test fast_XYZ at vector
 		+ fast_inv_sqrt: 15.2/15.3/15.3
 		+ 1/sqrt: 15.3/15.3/15.3
 		+ Nuke'em if ok
-	- See to make all these other references to Point: Point &, at:
-		- ElectricalComponent
 
 
 - Now that we have connected components, fix covering of ship pieces:

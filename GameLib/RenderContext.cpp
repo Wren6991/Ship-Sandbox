@@ -145,7 +145,7 @@ RenderContext::RenderContext(
     // Generate all texture names
     size_t const numberOfTextures = mCloudTextureDatas.size() + 2U;
     std::vector<GLuint> textureNames(numberOfTextures, 0U);
-    glGenTextures(numberOfTextures, textureNames.data());
+    glGenTextures(static_cast<GLsizei>(numberOfTextures), textureNames.data());
 
 
 
@@ -1093,7 +1093,7 @@ void RenderContext::RenderSpringsStart(size_t springs)
 
 void RenderContext::RenderSpringsEnd()
 {
-    assert(mSpringBufferSize == mSpringBufferMaxSize);
+    assert(mSpringBufferSize <= mSpringBufferMaxSize);
 
     // Use program
     glUseProgram(*mSpringShaderProgram);
@@ -1176,7 +1176,7 @@ void RenderContext::RenderShipTrianglesStart(size_t triangles)
 
 void RenderContext::RenderShipTrianglesEnd()
 {
-    assert(mShipTriangleBufferSize == mShipTriangleBufferMaxSize);
+    assert(mShipTriangleBufferSize <= mShipTriangleBufferMaxSize);
     
     // Use program
     glUseProgram(*mShipTriangleShaderProgram);

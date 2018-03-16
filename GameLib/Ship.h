@@ -77,7 +77,6 @@ public:
 
     void DiffuseLight(
         float dt,
-        uint64_t currentStepSequenceNumber,
         GameParameters const & gameParameters);
 
     void Update(
@@ -107,14 +106,14 @@ private:
 
     void InitializeRepository(
         ElementRepository<Point> && allPoints,
-        std::vector<ElectricalElement *> && allElectricalElements,        
-        std::vector<Spring *> && allSprings,
-        std::vector<Triangle *> && allTriangles)
+        ElementRepository<Spring> && allSprings,
+        ElementRepository<Triangle> && allTriangles,
+        std::vector<ElectricalElement *> && allElectricalElements)
     {
         mAllPoints = std::move(allPoints);
+        mAllSprings = std::move(allSprings);
+        mAllTriangles = std::move(allTriangles);
         mAllElectricalElements.initialize(std::move(allElectricalElements));
-        mAllSprings.initialize(std::move(allSprings));
-        mAllTriangles.initialize(std::move(allTriangles));
     }
 
 	void DoSpringsRelaxation(float dt);
@@ -181,13 +180,13 @@ private:
     unsigned int const mId;
 	World * const mParentWorld;
 
-    // All the ship points - never removed, the vector maintains its size forever
+    // All the ship elements - never removed, the repositories maintain their own size forever
     ElementRepository<Point> mAllPoints;
+    ElementRepository<Spring> mAllSprings;
+    ElementRepository<Triangle> mAllTriangles;
 
     // Parts repository
     PointerContainer<ElectricalElement> mAllElectricalElements;
-	PointerContainer<Spring> mAllSprings;
-    PointerContainer<Triangle> mAllTriangles;
 
 	// The scheduler we use for parallelizing updates
 	Scheduler mScheduler;
@@ -207,24 +206,22 @@ inline void Ship::RegisterDestruction(Point * /* element */)
 }
 
 template<>
-inline void Ship::RegisterDestruction(ElectricalElement * /* element */)
-{
-    // Just tell the pointer container, he'll take care of it later
-    mAllElectricalElements.register_deletion();
-}
-
-template<>
 inline void Ship::RegisterDestruction(Spring * /* element */)
 {
-	// Just tell the pointer container, he'll take care of it later
-	mAllSprings.register_deletion();
+    // Nop
 }
 
 template<>
 inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
+    // Nop
+}
+
+template<>
+inline void Ship::RegisterDestruction(ElectricalElement * /* element */)
+{
     // Just tell the pointer container, he'll take care of it later
-    mAllTriangles.register_deletion();
+    mAllElectricalElements.register_deletion();
 }
 
 }

@@ -159,11 +159,11 @@ public:
     //
 
     template <typename... Args>
-    void emplace_back(Args&&... args)
+    TElement & emplace_back(Args&&... args)
     {
         if (mCurrentSize < mMaxSize)
         {
-            new(&(mBuffer[mCurrentSize++])) TElement(std::forward<Args>(args)...);
+            return *new(&(mBuffer[mCurrentSize++])) TElement(std::forward<Args>(args)...);
         }
         else
         {
