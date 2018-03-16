@@ -208,10 +208,10 @@ private:
 
     bool mIsLeaking;
 
-	// Total quantity of water, 0->+INF (== internal water pressure)
+	// Total quantity of water, 0.0->+INF (== internal water pressure)
 	float mWater;
 
-    // Total illumination, 0->1
+    // Total illumination, 0.0->1.0
     float mLight;
 
     FixedSizeVector<Spring *, 8U> mConnectedSprings;

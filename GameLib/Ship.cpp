@@ -218,6 +218,10 @@ std::unique_ptr<Ship> Ship::Create(
                                 {
                                     Point *c = &(allPoints[pointInfoMatrix[adjx2][adjy2]->PointIndex]);
 
+                                    //
+                                    // Create a-b-c triangle
+                                    //
+
                                     Triangle * triangle = new Triangle(
                                         ship,
                                         a,

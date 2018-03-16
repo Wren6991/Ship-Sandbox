@@ -45,14 +45,21 @@ Prev perf (before sounds & strain)
 	+ Points never deleted, just marked
 		+ So have to check point.IsDeleted() each time the Point buffer is iterated
 		+ No check
-	- Try contiguous buffer also with springs
+	- Point destroy: also clear *own* references
+	- Try contiguous buffer also with springs and triangles
 		+ And not checking isDeleted
 			+ Remove assert's
+		- Multi-step create loop
+		- Spring destroy: also clear *own* references
+		- Triangle destroy: also clear *own* references
+		- Remove ShipElement if useless now
+	- IsDeleted needs only be checked at SpringRender and TriangleRender
+		- PointRender: tbd
 	+ Try fast_qrt for vec2f::length()
-	= Test fast_XYZ at vector
+	+ Test fast_XYZ at vector
 		+ fast_inv_sqrt: 15.2/15.3/15.3
 		+ 1/sqrt: 15.3/15.3/15.3
-		= Nuke'em if ok
+		+ Nuke'em if ok
 	- See to make all these other references to Point: Point &, at:
 		- ElectricalComponent
 

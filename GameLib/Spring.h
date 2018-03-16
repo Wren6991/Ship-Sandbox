@@ -41,9 +41,7 @@ public:
 		float restLength,
 		Material const *material);
 
-	void Destroy();
-
-    void DestroyFromPoint(Point const * pointSource);
+    void Destroy(Point const * pointSource);
 
     /*
      * Calculates the current tension strain and acts depending on it.
@@ -58,7 +56,7 @@ public:
         if (tensionStrain > 1.0f + effectiveStrength)
         {
             // It's broken!
-            this->Destroy();
+            this->Destroy(nullptr);
 
             // Notify
             gameEventHandler->OnBreak(

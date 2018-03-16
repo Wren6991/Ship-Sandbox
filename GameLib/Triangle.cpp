@@ -25,7 +25,7 @@ Triangle::Triangle(
     c->AddConnectedTriangle(this);
 }
 
-void Triangle::DestroyFromPoint(Point const * pointSource)
+void Triangle::Destroy(Point const * pointSource)
 {
     // Remove ourselves from each point
     if (mPointA != pointSource)

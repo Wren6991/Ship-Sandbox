@@ -49,23 +49,41 @@ Point::Point(
 
 void Point::Destroy()
 {
+    //
     // Destroy all springs attached to this point
+    //
+
     for (Spring * spring : mConnectedSprings)
     {
         assert(!spring->IsDeleted());
-        spring->DestroyFromPoint(this);
+        spring->Destroy(this);
     }
 
+    mConnectedSprings.clear();
+
+    //
 	// Destroy connected triangles
+    //
+
     DestroyConnectedTriangles();
 
+    assert(0u == mConnectedTriangles.size());
+
+    //
     // Destroy connected electrical elements
+    //
+
     if (nullptr != mConnectedElectricalElement)
     { 
         mConnectedElectricalElement->Destroy();
+        mConnectedElectricalElement = nullptr;
     }
     
+
+    //
     // Remove ourselves
+    //
+
     ShipElement::Destroy();
 }
 
@@ -167,7 +185,7 @@ void Point::DestroyConnectedTriangles()
     for (Triangle * triangle : mConnectedTriangles)
     {
         assert(!triangle->IsDeleted());
-        triangle->DestroyFromPoint(this);
+        triangle->Destroy(this);
     }
 
     mConnectedTriangles.clear();
