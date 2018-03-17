@@ -185,12 +185,12 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 
 	ASSERT_EQ(1u, ship->GetSprings().size());
 
-	Physics::Spring const * sp1 = *(ship->GetSprings().begin());
-	ASSERT_NE(nullptr, sp1->GetPointA());
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1->GetPointA()->GetPosition());
-	ASSERT_NE(nullptr, sp1->GetPointB());
-	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1->GetPointB()->GetPosition());
-	EXPECT_EQ(materials[0].get(), sp1->GetMaterial());
+	Physics::Spring const & sp1 = *(ship->GetSprings().begin());
+	ASSERT_NE(nullptr, sp1.GetPointA());
+	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1.GetPointA()->GetPosition());
+	ASSERT_NE(nullptr, sp1.GetPointB());
+	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1.GetPointB()->GetPosition());
+	EXPECT_EQ(materials[0].get(), sp1.GetMaterial());
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -225,23 +225,20 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 
 	ASSERT_EQ(1u, ship->GetTriangles().size());
 
-	Physics::Triangle const * tr1 = *(ship->GetTriangles().begin());
+	Physics::Triangle const & tr1 = *(ship->GetTriangles().begin());
 
-	ASSERT_NE(nullptr, tr1->GetPointA());
-	ASSERT_NE(nullptr, tr1->GetPointB());
-	ASSERT_NE(nullptr, tr1->GetPointC());
+	ASSERT_NE(nullptr, tr1.GetPointA());
+	ASSERT_NE(nullptr, tr1.GetPointB());
+	ASSERT_NE(nullptr, tr1.GetPointC());
 
-    ASSERT_EQ(1U, tr1->GetPointA()->GetConnectedTriangles().size());
-    EXPECT_EQ(tr1, tr1->GetPointA()->GetConnectedTriangles()[0]);
-    ASSERT_EQ(1U, tr1->GetPointB()->GetConnectedTriangles().size());
-    EXPECT_EQ(tr1, tr1->GetPointB()->GetConnectedTriangles()[0]);
-    ASSERT_EQ(1U, tr1->GetPointC()->GetConnectedTriangles().size());
-    EXPECT_EQ(tr1, tr1->GetPointC()->GetConnectedTriangles()[0]);
+    ASSERT_EQ(1U, tr1.GetPointA()->GetConnectedTriangles().size());
+    ASSERT_EQ(1U, tr1.GetPointB()->GetConnectedTriangles().size());
+    ASSERT_EQ(1U, tr1.GetPointC()->GetConnectedTriangles().size());
 
 	std::set<Physics::Point const *> distinctPoints;
-	distinctPoints.insert(tr1->GetPointA());
-	distinctPoints.insert(tr1->GetPointB());
-	distinctPoints.insert(tr1->GetPointC());
+	distinctPoints.insert(tr1.GetPointA());
+	distinctPoints.insert(tr1.GetPointB());
+	distinctPoints.insert(tr1.GetPointC());
 
 	ASSERT_EQ(3u, distinctPoints.size());
 }
@@ -314,12 +311,9 @@ TEST_F(ShipTests, DestroyAt)
         0.1f,
         gameParameters);
 
-    ship->GetSprings().shrink_to_fit();
-    ship->GetTriangles().shrink_to_fit();
-
-	EXPECT_EQ(6u, ship->GetPoints().size());
-	EXPECT_EQ(6u, ship->GetSprings().size());
-	EXPECT_EQ(0u, ship->GetTriangles().size()); 
+    EXPECT_EQ(5u, std::count_if(ship->GetPoints().begin(), ship->GetPoints().end(), [](auto const & p) {return !p.IsDeleted(); }));
+	EXPECT_EQ(6u, std::count_if(ship->GetSprings().begin(), ship->GetSprings().end(), [](auto const & s) {return !s.IsDeleted(); }));
+	EXPECT_EQ(0u, std::count_if(ship->GetTriangles().begin(), ship->GetTriangles().end(), [](auto const & t) {return !t.IsDeleted(); }));
 
     EXPECT_EQ(2u, sentinelPoint->GetConnectedSprings().size());
     // These days we nuke all triangles connected to each connected point

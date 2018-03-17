@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cassert>
+#include <iterator>
 
 /*
  * This class is a fixed-size vector holding elements in contiguous memory.
@@ -23,6 +24,14 @@ private:
     template <typename TIteratedElement>
     struct _iterator
     {
+    public:
+
+        typedef TIteratedElement        value_type;
+        typedef std::ptrdiff_t          difference_type;
+        typedef TIteratedElement*       pointer;
+        typedef TIteratedElement&       reference;
+        typedef std::input_iterator_tag iterator_category;
+
     public:
 
         inline bool operator==(_iterator const & other) const noexcept
@@ -62,33 +71,34 @@ private:
     };
 
     /*
-    * An iterable over a range.
-    */
+     * An iterable over a range.
+     */
+    template <typename TIteratedElement>
     struct _range_iterable
     {
     public:
 
         _range_iterable(
-            TElement * begin, 
-            TElement * end)
+            TIteratedElement * begin,
+            TIteratedElement * end)
             : mBegin(begin)
             , mEnd(end)
         {}
 
-        inline _iterator<TElement> begin() noexcept
+        inline _iterator<TIteratedElement> begin() noexcept
         {
-            return _iterator<TElement>(mBegin);
+            return _iterator<TIteratedElement>(mBegin);
         }
 
-        inline _iterator<TElement> end() noexcept
+        inline _iterator<TIteratedElement> end() noexcept
         {
-            return _iterator<TElement>(mEnd);
+            return _iterator<TIteratedElement>(mEnd);
         }
 
     private:
 
-        TElement * const mBegin;
-        TElement * const mEnd;
+        TIteratedElement * const mBegin;
+        TIteratedElement * const mEnd;
     };
 
 public:
@@ -97,7 +107,9 @@ public:
     
     typedef _iterator<TElement const> const_iterator;
 
-    typedef _range_iterable range_iterable;
+    typedef _range_iterable<TElement> range_iterable;
+
+    typedef _range_iterable<TElement const> range_const_iterable;
     
 public:
 
@@ -178,6 +190,17 @@ public:
         assert(iEnd <= mCurrentSize);
 
         return range_iterable(mBuffer + iStart, mBuffer + iEnd);
+    }
+
+    inline range_const_iterable range(
+        size_t iStart,
+        size_t iEnd) const noexcept
+    {
+        assert(iStart <= iEnd);
+        assert(iStart <= mCurrentSize);
+        assert(iEnd <= mCurrentSize);
+
+        return range_const_iterable(mBuffer + iStart, mBuffer + iEnd);
     }
 
     inline TElement & operator[](size_t index) noexcept

@@ -168,6 +168,44 @@ TEST(ElementRepositoryTests, IteratesElements_Index_Const)
     EXPECT_EQ(6.0f, sum);
 }
 
+TEST(ElementRepositoryTests, RangeIterator)
+{
+    ElementRepository<TestStruct> repo(4);
+
+    repo.emplace_back(1.0f, "1.0f");
+    repo.emplace_back(2.0f, "2.0f");
+    repo.emplace_back(3.0f, "3.0f");
+    repo.emplace_back(4.0f, "4.0f");
+
+    float sum = 0.0f;
+    for (auto & i : repo.range(1, 3))
+    {
+        sum += i.a;
+    }
+
+    EXPECT_EQ(5.0f, sum);
+}
+
+TEST(ElementRepositoryTests, RangeIterator_Const)
+{
+    ElementRepository<TestStruct> repo(4);
+
+    repo.emplace_back(1.0f, "1.0f");
+    repo.emplace_back(2.0f, "2.0f");
+    repo.emplace_back(3.0f, "3.0f");
+    repo.emplace_back(4.0f, "4.0f");
+
+    auto const & repoRef = repo;
+
+    float sum = 0.0f;
+    for (auto const & i : repoRef.range(1, 3))
+    {
+        sum += i.a;
+    }
+
+    EXPECT_EQ(5.0f, sum);
+}
+
 TEST(ElementRepositoryTests, ThrowsExceptionOnMaxSize)
 {
     ElementRepository<TestStruct> repo(3);
