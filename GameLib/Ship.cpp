@@ -876,14 +876,12 @@ void Ship::DoSpringsRelaxation(float dt)
 
 void Ship::SpringRelaxationCalculateTask::Process()
 {
-    for (size_t i = mStartSpringIndex; i < mEndSpringIndex; ++i)
+    for (Spring & spring : mParentShip->mAllSprings.range(mStartSpringIndex, mEndSpringIndex))
     {
-        Spring & spring = mParentShip->mAllSprings[i];
-
         // Don't relax destroyed springs, or we run the risk of affecting non-destroyed connected points
         if (!spring.IsDeleted())
         {
-            mParentShip->mAllSprings[i].Relax();
+            spring.Relax();
         }
     }
 }

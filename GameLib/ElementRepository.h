@@ -61,11 +61,43 @@ private:
         TIteratedElement * mCurrent;
     };
 
+    /*
+    * An iterable over a range.
+    */
+    struct _range_iterable
+    {
+    public:
+
+        _range_iterable(
+            TElement * begin, 
+            TElement * end)
+            : mBegin(begin)
+            , mEnd(end)
+        {}
+
+        inline _iterator<TElement> begin() noexcept
+        {
+            return _iterator<TElement>(mBegin);
+        }
+
+        inline _iterator<TElement> end() noexcept
+        {
+            return _iterator<TElement>(mEnd);
+        }
+
+    private:
+
+        TElement * const mBegin;
+        TElement * const mEnd;
+    };
+
 public:
 
     typedef _iterator<TElement> iterator;
     
     typedef _iterator<TElement const> const_iterator;
+
+    typedef _range_iterable range_iterable;
     
 public:
 
@@ -135,6 +167,17 @@ public:
     inline const_iterator end() const noexcept
     {
         return const_iterator(mBuffer + mCurrentSize);
+    }
+
+    inline range_iterable range(
+        size_t iStart,
+        size_t iEnd) noexcept
+    {
+        assert(iStart <= iEnd);
+        assert(iStart <= mCurrentSize);
+        assert(iEnd <= mCurrentSize);
+
+        return range_iterable(mBuffer + iStart, mBuffer + iEnd);
     }
 
     inline TElement & operator[](size_t index) noexcept

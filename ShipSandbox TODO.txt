@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 15.8 (Samsung: 13.8)	
+- fps: 15.9 (Samsung: TBD)
 - World::Update: 55.93%
 	- DoSprings: 38.92%
 		- Ship::DoRelazationCalculation: 34.77%
@@ -53,7 +53,8 @@ Prev perf (before contiguity)
 		+ Triangle destroy: also clear *own* references
 		+ Do check IsDeleted for Spring and Triangle operations that may affect connected non-deleted points
 		+ New perf: 15.7/15.8
-		- Remove ShipElement if useless now
+		= See ElementContainer::range(start, end)
+			- UnitTests, verify last excluded
 	+ IsDeleted needs only be checked at SpringRender and TriangleRender
 	+ Try fast_qrt for vec2f::length()
 	+ Test fast_XYZ at vector
