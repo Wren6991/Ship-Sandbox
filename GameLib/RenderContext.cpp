@@ -1012,7 +1012,7 @@ void RenderContext::RenderShipPoints()
     glUseProgram(0);
 }
 
-void RenderContext::RenderShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes)
+void RenderContext::UploadShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes)
 {
     if (connectedComponentsMaxSizes.size() != mShipBufferMaxSizes.size())
     {
@@ -1051,7 +1051,12 @@ void RenderContext::RenderShipStart(std::vector<std::size_t> const & connectedCo
     mShipBufferSizes.resize(connectedComponentsMaxSizes.size());
 }
 
-void RenderContext::RenderShipEnd()
+void RenderContext::UploadShipEnd()
+{
+    // Nop
+}
+
+void RenderContext::RenderShip()
 {
     // Use program
     glUseProgram(*mShipShaderProgram);
@@ -1088,12 +1093,15 @@ void RenderContext::RenderShipEnd()
         // Triangles
         //
 
-        // Upload elements
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mShipTriangleVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mShipBufferSizes[c].triangleCount * sizeof(ShipTriangleElement), mShipTriangleBuffers[c].get(), GL_DYNAMIC_DRAW);
+        if (!mUseXRayMode)
+        {
+            // Upload elements
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mShipTriangleVBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mShipBufferSizes[c].triangleCount * sizeof(ShipTriangleElement), mShipTriangleBuffers[c].get(), GL_DYNAMIC_DRAW);
 
-        // Draw
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mShipBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
+            // Draw
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mShipBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
+        }
     }
 
     // Stop using program

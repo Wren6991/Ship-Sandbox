@@ -342,9 +342,9 @@ public:
     // Ship springs and triangles
     //
 
-    void RenderShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
+    void UploadShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
 
-    inline void RenderShipSpring(
+    inline void UploadShipSpring(
         int shipPointIndex1,
         int shipPointIndex2,
         size_t connectedComponentId)
@@ -363,7 +363,7 @@ public:
         ++(mShipBufferSizes[connectedComponentIndex].springCount);
     }
 
-    inline void RenderShipTriangle(
+    inline void UploadShipTriangle(
         int shipPointIndex1,
         int shipPointIndex2,
         int shipPointIndex3,
@@ -384,7 +384,9 @@ public:
         ++(mShipBufferSizes[connectedComponentIndex].triangleCount);
     }
 
-    void RenderShipEnd();
+    void UploadShipEnd();
+
+    void RenderShip();
 
 
     //

@@ -38,11 +38,12 @@ Prev perf (before contiguity)
 =================================================
 
 - Render optimization: only upload spring elements, triangle elements when they're dirty (deletion occurred)
-	- Get perf analysis first:
+	+ Get perf analysis first:
 		- Game::Render: 34.90%:     Ship::Render: 31.53% (Incl)	3.05% (Excl)
 			- RenderShipEnd: 28.24%	- Ship::RegisterDeletion: sets mAreSprings/TrianglesDirty=true
-		- cctor: false
-		- set to false after uploaded to RenderContext 
+	+ cctor: true
+	+ set to false after uploaded to RenderContext 
+	+ Move XRay flag consumption to RenderContext 
 
 - Now that we have connected components, fix covering of ship pieces:
 	= Draw batches of triangles and springs by component, so that pieces are "covered" nicely

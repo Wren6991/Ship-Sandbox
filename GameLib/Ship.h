@@ -114,6 +114,8 @@ private:
         mAllSprings = std::move(allSprings);
         mAllTriangles = std::move(allTriangles);
         mAllElectricalElements.initialize(std::move(allElectricalElements));
+
+        mIsShipDirty = true;
     }
 
 	void DoSpringsRelaxation(float dt);
@@ -194,6 +196,10 @@ private:
     // Connected components metadata
     std::vector<std::size_t> mConnectedComponentSizes;
 
+    // Flag remembering whether springs and/or triangles have changed
+    // since the last time we delivered them to the rendering context
+    mutable bool mIsShipDirty;
+
     // Sinking detection
     bool mIsSinking;
     float mTotalWater;
@@ -208,19 +214,21 @@ inline void Ship::RegisterDestruction(Point * /* element */)
 template<>
 inline void Ship::RegisterDestruction(Spring * /* element */)
 {
-    // Nop
+    mIsShipDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
-    // Nop
+    mIsShipDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(ElectricalElement * /* element */)
 {
-    // Just tell the pointer container, he'll take care of it later
+    mIsShipDirty = true;
+
+    // Also tell the pointer container, he'll take care of removing the element later
     mAllElectricalElements.register_deletion();
 }
 

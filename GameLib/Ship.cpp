@@ -343,6 +343,7 @@ Ship::Ship(World * parentWorld)
     , mAllElectricalElements()
     , mScheduler()
     , mConnectedComponentSizes()
+    , mIsShipDirty(true)
     , mIsSinking(false)
     , mTotalWater(0.0)
 {
@@ -744,12 +745,12 @@ void Ship::Render(
     }
     else
     {
-        if (!mConnectedComponentSizes.empty())
+        if (!mConnectedComponentSizes.empty() && mIsShipDirty)
         {
-            renderContext.RenderShipStart(mConnectedComponentSizes);
+            renderContext.UploadShipStart(mConnectedComponentSizes);
 
             //
-            // Render all the springs
+            // Upload all the springs
             //
 
             for (Spring const & spring : mAllSprings)
@@ -758,7 +759,7 @@ void Ship::Render(
                 {
                     assert(spring.GetPointA()->GetConnectedComponentId() == spring.GetPointB()->GetConnectedComponentId());
 
-                    renderContext.RenderShipSpring(
+                    renderContext.UploadShipSpring(
                         spring.GetPointA()->GetElementIndex(),
                         spring.GetPointB()->GetElementIndex(),
                         spring.GetPointA()->GetConnectedComponentId());
@@ -770,26 +771,27 @@ void Ship::Render(
             // Render all triangles
             //
 
-            if (!renderContext.GetUseXRayMode())
+            for (Triangle const & triangle : mAllTriangles)
             {
-                for (Triangle const & triangle : mAllTriangles)
+                if (!triangle.IsDeleted())
                 {
-                    if (!triangle.IsDeleted())
-                    {
-                        assert(triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointB()->GetConnectedComponentId()
-                            && triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointC()->GetConnectedComponentId());
+                    assert(triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointB()->GetConnectedComponentId()
+                        && triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointC()->GetConnectedComponentId());
 
-                        renderContext.RenderShipTriangle(
-                            triangle.GetPointA()->GetElementIndex(),
-                            triangle.GetPointB()->GetElementIndex(),
-                            triangle.GetPointC()->GetElementIndex(),
-                            triangle.GetPointA()->GetConnectedComponentId());
-                    }
+                    renderContext.UploadShipTriangle(
+                        triangle.GetPointA()->GetElementIndex(),
+                        triangle.GetPointB()->GetElementIndex(),
+                        triangle.GetPointC()->GetElementIndex(),
+                        triangle.GetPointA()->GetConnectedComponentId());
                 }
             }
 
-            renderContext.RenderShipEnd();
-        }
+            renderContext.UploadShipEnd();
+
+            mIsShipDirty = false;            
+        }        
+
+        renderContext.RenderShip();
 
         //
         // Render all stressed springs
