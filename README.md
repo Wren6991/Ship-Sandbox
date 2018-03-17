@@ -56,11 +56,12 @@ Here's a list of the major changes I've been doing:
 - Added sounds and cued music
 - Added initial proof of concept of lights
 - Optimized existing code to the point that the fps rate on my laptop reached 16fps (from 8fps)
+- Added connected component detection, used to correctly draw ship break-away parts on top of each other, among other things
 
 ..and here's a rought list of the major changes I want to do:
 - Texture mapping for ships
 - Leverage vectorized instructions for dynamics calculations 
-- MAke lights turn off (after flickering) when generator is wet or when electrical cables break
+- Make lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)
 
 I tried to do my best to craft the CMake files in a platform-independent way, but I'm working on this exclusively in Visual Studio, hence I'm sure some unportable features have slipped in. Feel free to send pull requests for CMake edits for other platforms.
