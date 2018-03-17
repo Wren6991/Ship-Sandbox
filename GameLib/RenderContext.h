@@ -312,7 +312,7 @@ public:
     // Ship Points
     //
 
-    void UploadShipPointStart(size_t points);
+    void UploadShipPointStart(size_t maxPoints);
 
     inline void UploadShipPoint(
         float x,
@@ -342,7 +342,7 @@ public:
     // Springs
     //
 
-    void RenderSpringsStart(size_t springs);
+    void RenderSpringsStart(size_t maxSprings);
 
     inline void RenderSpring(
         int shipPointIndex1,
@@ -382,7 +382,7 @@ public:
     // Ship triangles
     //
 
-    void RenderShipTrianglesStart(size_t triangles);
+    void RenderShipTrianglesStart(size_t maxTriangles);
 
     inline void RenderShipTriangle(
         int shipPointIndex1,

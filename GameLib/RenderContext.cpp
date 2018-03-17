@@ -1032,14 +1032,14 @@ void RenderContext::RenderWater()
     glUseProgram(0);
 }
 
-void RenderContext::UploadShipPointStart(size_t points)
+void RenderContext::UploadShipPointStart(size_t maxPoints)
 {
-    if (points != mShipPointBufferMaxSize)
+    if (maxPoints > mShipPointBufferMaxSize)
     {
         // Realloc
         mShipPointBuffer.reset();
-        mShipPointBuffer.reset(new ShipPointElement[points]);
-        mShipPointBufferMaxSize = points;
+        mShipPointBuffer.reset(new ShipPointElement[maxPoints]);
+        mShipPointBufferMaxSize = maxPoints;
     }
 
     mShipPointBufferSize = 0u;
@@ -1078,14 +1078,14 @@ void RenderContext::RenderShipPoints()
     glUseProgram(0);
 }
 
-void RenderContext::RenderSpringsStart(size_t springs)
+void RenderContext::RenderSpringsStart(size_t maxSprings)
 {
-    if (springs != mSpringBufferMaxSize)
+    if (maxSprings > mSpringBufferMaxSize)
     {
         // Realloc
         mSpringBuffer.reset();
-        mSpringBuffer.reset(new SpringElement[springs]);
-        mSpringBufferMaxSize = springs;
+        mSpringBuffer.reset(new SpringElement[maxSprings]);
+        mSpringBufferMaxSize = maxSprings;
     }
 
     mSpringBufferSize = 0u;
@@ -1121,7 +1121,7 @@ void RenderContext::RenderSpringsEnd()
 
 void RenderContext::RenderStressedSpringsStart(size_t maxSprings)
 {
-    if (maxSprings != mStressedSpringBufferMaxSize)
+    if (maxSprings > mStressedSpringBufferMaxSize)
     {
         // Realloc
         mStressedSpringBuffer.reset();
@@ -1161,14 +1161,14 @@ void RenderContext::RenderStressedSpringsEnd()
     glUseProgram(0);
 }
 
-void RenderContext::RenderShipTrianglesStart(size_t triangles)
+void RenderContext::RenderShipTrianglesStart(size_t maxTriangles)
 {
-    if (triangles != mShipTriangleBufferMaxSize)
+    if (maxTriangles > mShipTriangleBufferMaxSize)
     {
         // Realloc
         mShipTriangleBuffer.reset();
-        mShipTriangleBuffer.reset(new ShipTriangleElement[triangles]);
-        mShipTriangleBufferMaxSize = triangles;
+        mShipTriangleBuffer.reset(new ShipTriangleElement[maxTriangles]);
+        mShipTriangleBufferMaxSize = maxTriangles;
     }
 
     mShipTriangleBufferSize = 0u;

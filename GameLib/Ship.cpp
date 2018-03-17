@@ -169,7 +169,8 @@ std::unique_ptr<Ship> Ship::Create(
 					ship,
 					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
 					mtl,
-					mtl->IsHull ? 0.0f : 1.0f);  // no buoyancy if it's a hull section
+					mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
+                    pointInfoMatrix[x][y]->PointIndex);  
 
                 // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
                 // Check if a is leaking; a is leaking if:
@@ -722,7 +723,6 @@ void Ship::Render(
 
     renderContext.UploadShipPointStart(mAllPoints.size());
 
-    int todoElementIndex = 0; // Temporary - we need to assign an index now as points get deleted over time
     for (Point const & point : mAllPoints)
     {
         if (!point.IsDeleted())
@@ -735,9 +735,6 @@ void Ship::Render(
                 pointColour.x,
                 pointColour.y,
                 pointColour.z);
-
-            Point * todoPoint = const_cast<Point *>(&point);
-            todoPoint->TodoElementIndex = todoElementIndex++;
         }
     }
 
@@ -761,8 +758,8 @@ void Ship::Render(
             if (!spring.IsDeleted())
             {
                 renderContext.RenderSpring(
-                    spring.GetPointA()->TodoElementIndex,
-                    spring.GetPointB()->TodoElementIndex);
+                    spring.GetPointA()->GetElementIndex(),
+                    spring.GetPointB()->GetElementIndex());
             }
         }
 
@@ -782,9 +779,9 @@ void Ship::Render(
                 if (!triangle.IsDeleted())
                 {
                     renderContext.RenderShipTriangle(
-                        triangle.GetPointA()->TodoElementIndex,
-                        triangle.GetPointB()->TodoElementIndex,
-                        triangle.GetPointC()->TodoElementIndex);
+                        triangle.GetPointA()->GetElementIndex(),
+                        triangle.GetPointB()->GetElementIndex(),
+                        triangle.GetPointC()->GetElementIndex());
                 }
             }
 
@@ -807,8 +804,8 @@ void Ship::Render(
                     if (spring.IsStressed())
                     {
                         renderContext.RenderStressedSpring(
-                            spring.GetPointA()->TodoElementIndex,
-                            spring.GetPointB()->TodoElementIndex);
+                            spring.GetPointA()->GetElementIndex(),
+                            spring.GetPointB()->GetElementIndex());
                     }
                 }
             }

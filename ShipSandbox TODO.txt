@@ -11,9 +11,9 @@ Current perf
 	- Point::Update: 1.79%
 	- DiffuseLight: 0.65%
 - Game::Render: 33.43%
-	- Ship::Render: 30.34%
-		- ShipTriangles: 16.02%
-		- Springs: 11.39%%
+	- Ship::Render: 31.09% (Incl)	2.87% (Excl)
+		- ShipTrianglesEnd: 16.02%
+		- SpringsEnd: 11.39%%
 	- RenderContext::RenderCloudsEnd: 1.51%
 =================================================
 
@@ -37,31 +37,11 @@ Prev perf (before contiguity)
 	- RenderContext::RenderCloudsEnd: 1.50%
 =================================================
 
-+ Fix: When land is above water, water is upside down
-
-- Optimization: to improve locality: points in contiguous buffer
-	+ No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
-	+ Points never deleted, just marked
-		+ So have to check point.IsDeleted() each time the Point buffer is iterated
-		+ No check
-	+ Point destroy: also clear *own* references
-	= Try contiguous buffer also with springs and triangles
-		+ And not checking isDeleted
-			+ Remove assert's
-		+ Multi-step create loop
-		+ Spring destroy: also clear *own* references
-		+ Triangle destroy: also clear *own* references
-		+ Do check IsDeleted for Spring and Triangle operations that may affect connected non-deleted points
-		+ New perf: 15.7/15.8
-		= See ElementContainer::range(start, end)
-			- UnitTests, verify last excluded
-	+ IsDeleted needs only be checked at SpringRender and TriangleRender
-	+ Try fast_qrt for vec2f::length()
-	+ Test fast_XYZ at vector
-		+ fast_inv_sqrt: 15.2/15.3/15.3
-		+ 1/sqrt: 15.3/15.3/15.3
-		+ Nuke'em if ok
-
+- Render optimization: only upload spring elements, triangle elements when they're different
+	- Get perf analysis first:
+		- Game::Render: 33.43%:     Ship::Render: 31.09% (Incl)	2.87% (Excl)
+			- ShipTrianglesEnd: 16.02%
+			- SpringsEnd: 11.39%%
 
 - Now that we have connected components, fix covering of ship pieces:
 	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
@@ -764,3 +744,28 @@ IF WX:
 			+ how to loop though?
 + Put credits
 	+ Splash: https://www.artstation.com/stukata/profile, contact the guy
+
++ Fix: When land is above water, water is upside down
+
++ Optimization: to improve locality: points in contiguous buffer
+	+ No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
+	+ Points never deleted, just marked
+		+ So have to check point.IsDeleted() each time the Point buffer is iterated
+		+ No check
+	+ Point destroy: also clear *own* references
+	+ Try contiguous buffer also with springs and triangles
+		+ And not checking isDeleted
+			+ Remove assert's
+		+ Multi-step create loop
+		+ Spring destroy: also clear *own* references
+		+ Triangle destroy: also clear *own* references
+		+ Do check IsDeleted for Spring and Triangle operations that may affect connected non-deleted points
+		+ New perf: 15.7/15.8
+		+ See ElementContainer::range(start, end)
+			+ UnitTests, verify last excluded
+	+ IsDeleted needs only be checked at SpringRender and TriangleRender
+	+ Try fast_qrt for vec2f::length()
+	+ Test fast_XYZ at vector
+		+ fast_inv_sqrt: 15.2/15.3/15.3
+		+ 1/sqrt: 15.3/15.3/15.3
+		+ Nuke'em if ok

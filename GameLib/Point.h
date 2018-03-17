@@ -24,14 +24,12 @@ class Point : public ShipElement<Point>
 {
 public:
 
-    // TODO: temporary, until we destructure the point position and color
-    int TodoElementIndex;
-
 	Point(
 		Ship * parentShip,
 		vec2 const & position,
 		Material const * material,
-		float buoyancy);
+		float buoyancy,
+        int elementIndex);
 
     void Destroy();
 
@@ -86,6 +84,8 @@ public:
             mLight = light;
         }
     }
+
+    inline int GetElementIndex() const { return mElementIndex; }
 
     inline auto const & GetConnectedSprings() const { return mConnectedSprings; }
 
@@ -213,6 +213,9 @@ private:
 
     // Total illumination, 0.0->1.0
     float mLight;
+
+    // The ID of this point, used by graphics elements to refer to vertices
+    int const mElementIndex;
 
     FixedSizeVector<Spring *, 8U> mConnectedSprings;
     FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    

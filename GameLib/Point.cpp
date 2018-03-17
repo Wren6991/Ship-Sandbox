@@ -28,7 +28,8 @@ Point::Point(
 	Ship * parentShip,
 	vec2 const & position,
 	Material const * material,
-	float buoyancy)
+	float buoyancy,
+    int elementIndex)
 	: ShipElement(parentShip)
 	, mPosition(position)
 	, mLastPosition(position)
@@ -38,6 +39,7 @@ Point::Point(
     , mIsLeaking(false)
 	, mWater(0.0f)
     , mLight(0.0f)
+    , mElementIndex(elementIndex)
     , mConnectedSprings()
     , mConnectedTriangles()
     , mConnectedElectricalElement(nullptr)
