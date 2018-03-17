@@ -207,7 +207,9 @@ void World::Render(
 
     // Render the water now, if we want to see the ship through the water
     if (renderContext.GetShowShipThroughWater())
+    {
         renderContext.RenderWater();
+    }
 
     // Render all ships
     for (auto const & ship : mAllShips)
@@ -219,7 +221,9 @@ void World::Render(
 
     // Render the water now, if we want to see the ship *in* the water instead
     if (!renderContext.GetShowShipThroughWater())
+    {
         renderContext.RenderWater();
+    }
 
     renderContext.RenderEnd();
 }

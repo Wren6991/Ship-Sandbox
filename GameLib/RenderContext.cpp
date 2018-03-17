@@ -49,13 +49,15 @@ RenderContext::RenderContext(
     , mShipPointBufferSize(0u)
     , mShipPointBufferMaxSize(0u)   
     , mShipPointVBO(0u)
-    // Springs
-    , mSpringShaderProgram(0u)
-    , mSpringShaderOrthoMatrixParameter(0)
-    , mSpringBuffer()
-    , mSpringBufferSize(0u)
-    , mSpringBufferMaxSize(0u)
-    , mSpringVBO(0u)
+    // Ship 
+    , mShipShaderProgram(0u)
+    , mShipShaderOrthoMatrixParameter(0)
+    , mShipSpringBuffers()
+    , mShipTriangleBuffers()
+    , mShipBufferSizes()
+    , mShipBufferMaxSizes()
+    , mShipSpringVBO(0u)
+    , mShipTriangleVBO(0u)
     // Stressed springs
     , mStressedSpringShaderProgram(0u)
     , mStressedSpringShaderAmbientLightIntensityParameter(0)
@@ -64,13 +66,6 @@ RenderContext::RenderContext(
     , mStressedSpringBufferSize(0u)
     , mStressedSpringBufferMaxSize(0u)
     , mStressedSpringVBO(0u)
-    // Ship triangles
-    , mShipTriangleShaderProgram(0u)
-    , mShipTriangleShaderOrthoMatrixParameter(0)
-    , mShipTriangleBuffer()
-    , mShipTriangleBufferSize(0u)
-    , mShipTriangleBufferMaxSize(0u)
-    , mShipTriangleVBO(0u)
     // Multi-purpose shaders
     , mMatteNdcShaderProgram(0u)
     , mMatteNdcShaderColorParameter(0)
@@ -507,12 +502,12 @@ RenderContext::RenderContext(
 
 
     //
-    // Create spring program
+    // Create ship program
     //
 
-    mSpringShaderProgram = glCreateProgram();
+    mShipShaderProgram = glCreateProgram();
 
-    char const * springShaderSource = R"(
+    char const * shipShaderSource = R"(
 
         // Inputs
         attribute vec2 inputPos;
@@ -532,9 +527,9 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(springShaderSource, GL_VERTEX_SHADER, mSpringShaderProgram);
+    CompileShader(shipShaderSource, GL_VERTEX_SHADER, mShipShaderProgram);
 
-    char const * springFragmentShaderSource = R"(
+    char const * shipFragmentShaderSource = R"(
 
         // Inputs from previous shader
         varying vec3 vertexCol;
@@ -545,24 +540,26 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(springFragmentShaderSource, GL_FRAGMENT_SHADER, mSpringShaderProgram);
+    CompileShader(shipFragmentShaderSource, GL_FRAGMENT_SHADER, mShipShaderProgram);
 
     // Bind attribute locations
-    glBindAttribLocation(*mSpringShaderProgram, 0, "inputPos");
-    glBindAttribLocation(*mSpringShaderProgram, 1, "inputCol");
+    glBindAttribLocation(*mShipShaderProgram, 0, "inputPos");
+    glBindAttribLocation(*mShipShaderProgram, 1, "inputCol");
 
     // Link
-    LinkProgram(mSpringShaderProgram, "Spring");
+    LinkProgram(mShipShaderProgram, "Ship");
 
     // Get uniform locations
-    mSpringShaderOrthoMatrixParameter = GetParameterLocation(mSpringShaderProgram, "paramOrthoMatrix");
+    mShipShaderOrthoMatrixParameter = GetParameterLocation(mShipShaderProgram, "paramOrthoMatrix");
 
     // Create VBOs
-    glGenBuffers(1, &tmpGLuint);
-    mSpringVBO = tmpGLuint;
+    GLuint shipVBOs[2];
+    glGenBuffers(2, shipVBOs);
+    mShipSpringVBO = shipVBOs[0];
+    mShipTriangleVBO = shipVBOs[1];
 
     // Set hardcoded parameters    
-    glUseProgram(*mSpringShaderProgram);
+    glUseProgram(*mShipShaderProgram);
     glUseProgram(0);
 
 
@@ -619,65 +616,6 @@ RenderContext::RenderContext(
     glUseProgram(*mStressedSpringShaderProgram);
     glUseProgram(0);
 
-
-    //
-    // Create ship triangle program
-    //
-
-    mShipTriangleShaderProgram = glCreateProgram();
-
-    char const * shipTriangleShaderSource = R"(
-
-        // Inputs
-        attribute vec2 inputPos;
-        attribute vec3 inputCol;
-
-        // Outputs
-        varying vec3 vertexCol;
-
-        // Params
-        uniform mat4 paramOrthoMatrix;
-
-        void main()
-        {
-            vertexCol = inputCol;
-
-            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
-        }
-    )";
-
-    CompileShader(shipTriangleShaderSource, GL_VERTEX_SHADER, mShipTriangleShaderProgram);
-
-    char const * shipTriangleFragmentShaderSource = R"(
-
-        // Inputs from previous shader
-        varying vec3 vertexCol;
-
-        void main()
-        {
-            gl_FragColor = vec4(vertexCol.xyz, 1.0);
-        } 
-    )";
-
-    CompileShader(shipTriangleFragmentShaderSource, GL_FRAGMENT_SHADER, mShipTriangleShaderProgram);
-
-    // Bind attribute locations
-    glBindAttribLocation(*mShipTriangleShaderProgram, 0, "inputPos");
-    glBindAttribLocation(*mShipTriangleShaderProgram, 1, "inputCol");
-
-    // Link
-    LinkProgram(mShipTriangleShaderProgram, "ShipTriangle");
-
-    // Get uniform locations
-    mShipTriangleShaderOrthoMatrixParameter = GetParameterLocation(mShipTriangleShaderProgram, "paramOrthoMatrix");
-
-    // Create VBO
-    glGenBuffers(1, &tmpGLuint);
-    mShipTriangleVBO = tmpGLuint;
-    
-    // Set hardcoded parameters    
-    glUseProgram(*mShipTriangleShaderProgram);
-    glUseProgram(0);
 
 
     //
@@ -955,8 +893,6 @@ void RenderContext::UploadLandAndWaterEnd()
     // Upload land buffer
     //
 
-    assert(mLandBufferSize == mLandBufferMaxSize);
-
     glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);
     glBufferData(GL_ARRAY_BUFFER, mLandBufferSize * sizeof(LandElement), mLandBuffer.get(), GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
@@ -1032,7 +968,7 @@ void RenderContext::RenderWater()
     glUseProgram(0);
 }
 
-void RenderContext::UploadShipPointStart(size_t maxPoints)
+void RenderContext::UploadShipPointsStart(size_t maxPoints)
 {
     if (maxPoints > mShipPointBufferMaxSize)
     {
@@ -1045,10 +981,8 @@ void RenderContext::UploadShipPointStart(size_t maxPoints)
     mShipPointBufferSize = 0u;
 }
 
-void RenderContext::UploadShipPointEnd()
+void RenderContext::UploadShipPointsEnd()
 {
-    assert(mShipPointBufferSize <= mShipPointBufferMaxSize);
-
     // Upload point buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
     glBufferData(GL_ARRAY_BUFFER, mShipPointBufferSize * sizeof(ShipPointElement), mShipPointBuffer.get(), GL_DYNAMIC_DRAW);
@@ -1078,42 +1012,89 @@ void RenderContext::RenderShipPoints()
     glUseProgram(0);
 }
 
-void RenderContext::RenderSpringsStart(size_t maxSprings)
+void RenderContext::RenderShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes)
 {
-    if (maxSprings > mSpringBufferMaxSize)
+    if (connectedComponentsMaxSizes.size() != mShipBufferMaxSizes.size())
     {
-        // Realloc
-        mSpringBuffer.reset();
-        mSpringBuffer.reset(new SpringElement[maxSprings]);
-        mSpringBufferMaxSize = maxSprings;
+        // A change in the number of connected components
+        mShipSpringBuffers.clear();
+        mShipSpringBuffers.resize(connectedComponentsMaxSizes.size());
+        mShipTriangleBuffers.clear();
+        mShipTriangleBuffers.resize(connectedComponentsMaxSizes.size());
+
+        mShipBufferMaxSizes.clear();
+        mShipBufferMaxSizes.resize(connectedComponentsMaxSizes.size());
     }
 
-    mSpringBufferSize = 0u;
+    for (size_t c = 0; c < connectedComponentsMaxSizes.size(); ++c)
+    {
+        size_t maxConnectedComponentSprings = connectedComponentsMaxSizes[c] * 8;        
+        if (mShipBufferMaxSizes[c].springCount != maxConnectedComponentSprings)
+        {
+            // A change in the max size of this connected component
+            mShipSpringBuffers[c].reset();
+            mShipSpringBuffers[c].reset(new ShipSpringElement[maxConnectedComponentSprings]);
+            mShipBufferMaxSizes[c].springCount = maxConnectedComponentSprings;
+        }
+
+        size_t maxConnectedComponentTriangles = connectedComponentsMaxSizes[c] * 12;
+        if (mShipBufferMaxSizes[c].triangleCount != maxConnectedComponentTriangles)
+        {
+            // A change in the max size of this connected component
+            mShipTriangleBuffers[c].reset();
+            mShipTriangleBuffers[c].reset(new ShipTriangleElement[maxConnectedComponentTriangles]);
+            mShipBufferMaxSizes[c].triangleCount = maxConnectedComponentTriangles;
+        }
+    }
+
+    mShipBufferSizes.clear();
+    mShipBufferSizes.resize(connectedComponentsMaxSizes.size());
 }
 
-void RenderContext::RenderSpringsEnd()
+void RenderContext::RenderShipEnd()
 {
-    assert(mSpringBufferSize <= mSpringBufferMaxSize);
-
     // Use program
-    glUseProgram(*mSpringShaderProgram);
+    glUseProgram(*mShipShaderProgram);
 
     // Set parameters
-    glUniformMatrix4fv(mSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+    glUniformMatrix4fv(mShipShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
     // Bind ship points
     glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
     DescribeShipPointsVBO();
 
-    // Upload springs buffer 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mSpringVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mSpringBufferSize * sizeof(SpringElement), mSpringBuffer.get(), GL_DYNAMIC_DRAW);
-
     // Set line size
     glLineWidth(0.1f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
 
-    // Draw
-    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mSpringBufferSize), GL_UNSIGNED_INT, 0);
+    //
+    // Process all connected components, from first to last, and draw springs and triangles
+    //
+
+    for (size_t c = 0; c < mShipBufferSizes.size(); ++c)
+    {
+        //
+        // Springs
+        //
+
+        // Upload elements
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mShipSpringVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mShipBufferSizes[c].springCount * sizeof(ShipSpringElement), mShipSpringBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mShipBufferSizes[c].springCount), GL_UNSIGNED_INT, 0);
+
+
+        //
+        // Triangles
+        //
+
+        // Upload elements
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mShipTriangleVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mShipBufferSizes[c].triangleCount * sizeof(ShipTriangleElement), mShipTriangleBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mShipBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
+    }
 
     // Stop using program
     glUseProgram(0);
@@ -1125,7 +1106,7 @@ void RenderContext::RenderStressedSpringsStart(size_t maxSprings)
     {
         // Realloc
         mStressedSpringBuffer.reset();
-        mStressedSpringBuffer.reset(new SpringElement[maxSprings]);
+        mStressedSpringBuffer.reset(new ShipSpringElement[maxSprings]);
         mStressedSpringBufferMaxSize = maxSprings;
     }
 
@@ -1134,8 +1115,6 @@ void RenderContext::RenderStressedSpringsStart(size_t maxSprings)
 
 void RenderContext::RenderStressedSpringsEnd()
 {
-    assert(mStressedSpringBufferSize <= mStressedSpringBufferMaxSize);
-
     // Use program
     glUseProgram(*mStressedSpringShaderProgram);
 
@@ -1149,51 +1128,13 @@ void RenderContext::RenderStressedSpringsEnd()
 
     // Upload stressed springs buffer 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(SpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(ShipSpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
 
     // Set line size
     glLineWidth(0.1f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
 
     // Draw
     glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
-
-    // Stop using program
-    glUseProgram(0);
-}
-
-void RenderContext::RenderShipTrianglesStart(size_t maxTriangles)
-{
-    if (maxTriangles > mShipTriangleBufferMaxSize)
-    {
-        // Realloc
-        mShipTriangleBuffer.reset();
-        mShipTriangleBuffer.reset(new ShipTriangleElement[maxTriangles]);
-        mShipTriangleBufferMaxSize = maxTriangles;
-    }
-
-    mShipTriangleBufferSize = 0u;
-}
-
-void RenderContext::RenderShipTrianglesEnd()
-{
-    assert(mShipTriangleBufferSize <= mShipTriangleBufferMaxSize);
-    
-    // Use program
-    glUseProgram(*mShipTriangleShaderProgram);
-
-    // Set parameters
-    glUniformMatrix4fv(mShipTriangleShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
-
-    // Bind ship points
-    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
-    DescribeShipPointsVBO();
-    
-    // Upload ship triangles buffer 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mShipTriangleVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mShipTriangleBufferSize * sizeof(ShipTriangleElement), mShipTriangleBuffer.get(), GL_DYNAMIC_DRAW);
-
-    // Draw
-    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mShipTriangleBufferSize), GL_UNSIGNED_INT, 0);
 
     // Stop using program
     glUseProgram(0);

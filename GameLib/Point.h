@@ -221,7 +221,7 @@ private:
     FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    
     ElectricalElement * mConnectedElectricalElement;
 
-    size_t mConnectedComponentId;
+    size_t mConnectedComponentId; // Starts from 1
     size_t mCurrentConnectedComponentDetectionStepSequenceNumber;
 
 private:

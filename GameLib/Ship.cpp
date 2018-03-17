@@ -721,24 +721,21 @@ void Ship::Render(
     // Upload points
     //
 
-    renderContext.UploadShipPointStart(mAllPoints.size());
+    renderContext.UploadShipPointsStart(mAllPoints.size());
 
     for (Point const & point : mAllPoints)
     {
-        if (!point.IsDeleted())
-        {
-            auto pointColour = point.CalculateColour(renderContext.GetAmbientLightIntensity());
+        auto pointColour = point.CalculateColour(renderContext.GetAmbientLightIntensity());
 
-            renderContext.UploadShipPoint(
-                point.GetPosition().x,
-                point.GetPosition().y,
-                pointColour.x,
-                pointColour.y,
-                pointColour.z);
-        }
+        renderContext.UploadShipPoint(
+            point.GetPosition().x,
+            point.GetPosition().y,
+            pointColour.x,
+            pointColour.y,
+            pointColour.z);
     }
 
-    renderContext.UploadShipPointEnd();
+    renderContext.UploadShipPointsEnd();
 
     if (renderContext.GetDrawPointsOnly())
     {
@@ -747,47 +744,52 @@ void Ship::Render(
     }
     else
     {
-        //
-        // Render all the springs
-        //
-
-        renderContext.RenderSpringsStart(mAllSprings.size());
-
-        for (Spring const & spring : mAllSprings)
+        if (!mConnectedComponentSizes.empty())
         {
-            if (!spring.IsDeleted())
+            renderContext.RenderShipStart(mConnectedComponentSizes);
+
+            //
+            // Render all the springs
+            //
+
+            for (Spring const & spring : mAllSprings)
             {
-                renderContext.RenderSpring(
-                    spring.GetPointA()->GetElementIndex(),
-                    spring.GetPointB()->GetElementIndex());
-            }
-        }
-
-        renderContext.RenderSpringsEnd();
-
-
-        //
-        // Render all triangles
-        //
-
-        if (!renderContext.GetUseXRayMode())
-        {
-            renderContext.RenderShipTrianglesStart(mAllTriangles.size());
-            
-            for (Triangle const & triangle : mAllTriangles)
-            {
-                if (!triangle.IsDeleted())
+                if (!spring.IsDeleted())
                 {
-                    renderContext.RenderShipTriangle(
-                        triangle.GetPointA()->GetElementIndex(),
-                        triangle.GetPointB()->GetElementIndex(),
-                        triangle.GetPointC()->GetElementIndex());
+                    assert(spring.GetPointA()->GetConnectedComponentId() == spring.GetPointB()->GetConnectedComponentId());
+
+                    renderContext.RenderShipSpring(
+                        spring.GetPointA()->GetElementIndex(),
+                        spring.GetPointB()->GetElementIndex(),
+                        spring.GetPointA()->GetConnectedComponentId());
                 }
             }
 
-            renderContext.RenderShipTrianglesEnd();
-        }
 
+            //
+            // Render all triangles
+            //
+
+            if (!renderContext.GetUseXRayMode())
+            {
+                for (Triangle const & triangle : mAllTriangles)
+                {
+                    if (!triangle.IsDeleted())
+                    {
+                        assert(triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointB()->GetConnectedComponentId()
+                            && triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointC()->GetConnectedComponentId());
+
+                        renderContext.RenderShipTriangle(
+                            triangle.GetPointA()->GetElementIndex(),
+                            triangle.GetPointB()->GetElementIndex(),
+                            triangle.GetPointC()->GetElementIndex(),
+                            triangle.GetPointA()->GetConnectedComponentId());
+                    }
+                }
+            }
+
+            renderContext.RenderShipEnd();
+        }
 
         //
         // Render all stressed springs

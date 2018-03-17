@@ -312,7 +312,7 @@ public:
     // Ship Points
     //
 
-    void UploadShipPointStart(size_t maxPoints);
+    void UploadShipPointsStart(size_t maxPoints);
 
     inline void UploadShipPoint(
         float x,
@@ -333,32 +333,63 @@ public:
         ++mShipPointBufferSize;
     }
 
-    void UploadShipPointEnd();
+    void UploadShipPointsEnd();
 
     void RenderShipPoints();
 
 
     //
-    // Springs
+    // Ship springs and triangles
     //
 
-    void RenderSpringsStart(size_t maxSprings);
+    void RenderShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
 
-    inline void RenderSpring(
+    inline void RenderShipSpring(
         int shipPointIndex1,
-        int shipPointIndex2)
+        int shipPointIndex2,
+        size_t connectedComponentId)
     {
-        assert(mSpringBufferSize + 1u <= mSpringBufferMaxSize);
-        SpringElement * springElement = &(mSpringBuffer[mSpringBufferSize]);
+        size_t const connectedComponentIndex = connectedComponentId - 1;
 
-        springElement->shipPointIndex1 = shipPointIndex1;
-        springElement->shipPointIndex2 = shipPointIndex2;
+        assert(connectedComponentIndex < mShipBufferSizes.size());
+        assert(connectedComponentIndex < mShipBufferMaxSizes.size());
+        assert(mShipBufferSizes[connectedComponentIndex].springCount + 1u <= mShipBufferMaxSizes[connectedComponentIndex].springCount);
 
-        ++mSpringBufferSize;
+        ShipSpringElement * const shipSpringElement = &(mShipSpringBuffers[connectedComponentIndex][mShipBufferSizes[connectedComponentIndex].springCount]);
+
+        shipSpringElement->shipPointIndex1 = shipPointIndex1;
+        shipSpringElement->shipPointIndex2 = shipPointIndex2;
+
+        ++(mShipBufferSizes[connectedComponentIndex].springCount);
     }
 
-    void RenderSpringsEnd();
+    inline void RenderShipTriangle(
+        int shipPointIndex1,
+        int shipPointIndex2,
+        int shipPointIndex3,
+        size_t connectedComponentId)
+    {
+        size_t const connectedComponentIndex = connectedComponentId - 1;
 
+        assert(connectedComponentIndex < mShipBufferSizes.size());
+        assert(connectedComponentIndex < mShipBufferMaxSizes.size());
+        assert(mShipBufferSizes[connectedComponentIndex].triangleCount + 1u <= mShipBufferMaxSizes[connectedComponentIndex].triangleCount);
+
+        ShipTriangleElement * const shipTriangleElement = &(mShipTriangleBuffers[connectedComponentIndex][mShipBufferSizes[connectedComponentIndex].triangleCount]);
+
+        shipTriangleElement->shipPointIndex1 = shipPointIndex1;
+        shipTriangleElement->shipPointIndex2 = shipPointIndex2;
+        shipTriangleElement->shipPointIndex3 = shipPointIndex3;
+
+        ++(mShipBufferSizes[connectedComponentIndex].triangleCount);
+    }
+
+    void RenderShipEnd();
+
+
+    //
+    // Stressed springs
+    //
 
     void RenderStressedSpringsStart(size_t maxSprings);
 
@@ -367,7 +398,7 @@ public:
         int shipPointIndex2)
     {
         assert(mStressedSpringBufferSize + 1u <= mStressedSpringBufferMaxSize);
-        SpringElement * springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
+        ShipSpringElement * const springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
 
         springElement->shipPointIndex1 = shipPointIndex1;
         springElement->shipPointIndex2 = shipPointIndex2;
@@ -378,28 +409,6 @@ public:
     void RenderStressedSpringsEnd();
 
 
-    //
-    // Ship triangles
-    //
-
-    void RenderShipTrianglesStart(size_t maxTriangles);
-
-    inline void RenderShipTriangle(
-        int shipPointIndex1,
-        int shipPointIndex2,
-        int shipPointIndex3)
-    {
-        assert(mShipTriangleBufferSize + 1u <= mShipTriangleBufferMaxSize);
-        ShipTriangleElement * shipTriangleElement = &(mShipTriangleBuffer[mShipTriangleBufferSize]);
-
-        shipTriangleElement->shipPointIndex1 = shipPointIndex1;
-        shipTriangleElement->shipPointIndex2 = shipPointIndex2;
-        shipTriangleElement->shipPointIndex3 = shipPointIndex3;
-
-        ++mShipTriangleBufferSize;
-    }
-
-    void RenderShipTrianglesEnd();
 
     void RenderEnd();
 
@@ -640,48 +649,19 @@ private:
 
 
     //
-    // Springs
+    // Ship springs and triangles
     //
 
-    OpenGLShaderProgram mSpringShaderProgram;
-    GLint mSpringShaderOrthoMatrixParameter;
+    OpenGLShaderProgram mShipShaderProgram;
+    GLint mShipShaderOrthoMatrixParameter;
 
 #pragma pack(push)
-    struct SpringElement
+    struct ShipSpringElement
     {
         int shipPointIndex1;
         int shipPointIndex2;
     };
 #pragma pack(pop)
-
-    std::unique_ptr<SpringElement[]> mSpringBuffer;
-    size_t mSpringBufferSize;
-    size_t mSpringBufferMaxSize;
-
-    OpenGLVBO mSpringVBO;
-
-
-    //
-    // Stressed springs
-    //
-
-    OpenGLShaderProgram mStressedSpringShaderProgram;
-    GLint mStressedSpringShaderAmbientLightIntensityParameter;
-    GLint mStressedSpringShaderOrthoMatrixParameter;
-
-    std::unique_ptr<SpringElement[]> mStressedSpringBuffer;
-    size_t mStressedSpringBufferSize;
-    size_t mStressedSpringBufferMaxSize;
-
-    OpenGLVBO mStressedSpringVBO;
-
-
-    //
-    // Ship triangles
-    //
-
-    OpenGLShaderProgram mShipTriangleShaderProgram;
-    GLint mShipTriangleShaderOrthoMatrixParameter;
 
 #pragma pack(push)
     struct ShipTriangleElement
@@ -692,11 +672,39 @@ private:
     };
 #pragma pack(pop)
 
-    std::unique_ptr<ShipTriangleElement[]> mShipTriangleBuffer;
-    size_t mShipTriangleBufferSize;
-    size_t mShipTriangleBufferMaxSize;
+    struct ShipElementCounts
+    {
+        size_t springCount;
+        size_t triangleCount;
 
+        ShipElementCounts()
+            : springCount(0)
+            , triangleCount(0)
+        {}
+    };
+
+    std::vector<std::unique_ptr<ShipSpringElement[]>> mShipSpringBuffers;
+    std::vector<std::unique_ptr<ShipTriangleElement[]>> mShipTriangleBuffers;
+    std::vector<ShipElementCounts> mShipBufferSizes;
+    std::vector<ShipElementCounts> mShipBufferMaxSizes;
+
+    OpenGLVBO mShipSpringVBO;
     OpenGLVBO mShipTriangleVBO;
+
+
+    //
+    // Stressed springs
+    //
+
+    OpenGLShaderProgram mStressedSpringShaderProgram;
+    GLint mStressedSpringShaderAmbientLightIntensityParameter;
+    GLint mStressedSpringShaderOrthoMatrixParameter;
+
+    std::unique_ptr<ShipSpringElement[]> mStressedSpringBuffer;
+    size_t mStressedSpringBufferSize;
+    size_t mStressedSpringBufferMaxSize;
+
+    OpenGLVBO mStressedSpringVBO;
 
 
     //

@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 15.9 (Samsung: TBD)
+- fps: 15.7 (Samsung: TBD)
 - World::Update: 55.93%
 	- DoSprings: 38.92%
 		- Ship::DoRelazationCalculation: 34.77%
@@ -37,23 +37,27 @@ Prev perf (before contiguity)
 	- RenderContext::RenderCloudsEnd: 1.50%
 =================================================
 
-- Render optimization: only upload spring elements, triangle elements when they're different
+- Render optimization: only upload spring elements, triangle elements when they're dirty (deletion occurred)
 	- Get perf analysis first:
-		- Game::Render: 33.43%:     Ship::Render: 31.09% (Incl)	2.87% (Excl)
-			- ShipTrianglesEnd: 16.02%
-			- SpringsEnd: 11.39%%
+		- Game::Render: 34.90%:     Ship::Render: 31.53% (Incl)	3.05% (Excl)
+			- RenderShipEnd: 28.24%	- Ship::RegisterDeletion: sets mAreSprings/TrianglesDirty=true
+		- cctor: false
+		- set to false after uploaded to RenderContext 
 
 - Now that we have connected components, fix covering of ship pieces:
-	- Draw batches of triangles and springs by component, so that pieces are "covered" nicely
+	= Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
-		- At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
+		+ At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
 		  to the correct buffer based off ConnectedComponentID 
-			- ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
+			+ ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
 			  of the primitive
-				- assert other points have same ID
-			- Note: points themselves are not affected by this; they're still uploaded in their entirety 
+				+ assert other points have same ID
+			+ Note: points themselves are not affected by this; they're still uploaded in their entirety 
 			  once per cycle
-		- At RenderXYZEnd(), draw each connected component buffer from last to first
+		+ At RenderXYZEnd(), draw each connected component buffer from last to first
+		+ Do for triangles
+		+ Do for springs
+		+ Each connected component must be drawn together - its springs then its triangles
 		- This then enables full light diffusion in shaders (see below)
 	- Compare perf of batch-by-conn_comp above with simply points having Z dependent on conn comp ID
 		- Requires depth test & 3d buffer for each point
@@ -74,11 +78,10 @@ Prev perf (before contiguity)
 		- Try without buffer population: 			
 			- Point has vec2f * const mPosition and vec2f * const mColour, pointing into two fixed buffers
 				- vectors are packed (static_assert on contiguous 2 or 3)
-				- TBD: not needed, could stay in PointerContainer and get deleted;
-				  was: Point does not live in PointerContainer but in std::uq_ptr<Point>[]
-					- Delete does nothing (Destroy does relationships though), just marks it
-			- Point also has mElementIndex, queried by springs and triangles when rendering themselves
-				- Can make Ship::Render const again, then
+				+ Point does not live in PointerContainer but in std::uq_ptr<Point>[]
+					+ Delete does nothing (Destroy does relationships though), just marks it
+			+ Point also has mElementIndex, queried by springs and triangles when rendering themselves
+				+ Can make Ship::Render const again, then
 			- Pointers to fixed buffers (as arrays of vectors) are owned by Ship and
 			  are given by Ship to RenderContext at each Render via 
 			  RenderContext::UploadVertices(vec2f*, vec3f*, count)
@@ -88,7 +91,7 @@ Prev perf (before contiguity)
 
 				glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
 				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
-			- Point's vector pointers and mElementIndex are populated by Point::Rebase(buf1, buf2, elementIndex),
+			- Point's vector pointers are populated by Point::Rebase(buf1, buf2),
 			  invoked by Ship at construction
 			- Try: could also use buffer with mLight and mWater (uploaded each time to GPU) to be used by F shader 
 			  to blend fragColor with two fixed colors (water blended before ambient light, light after)
