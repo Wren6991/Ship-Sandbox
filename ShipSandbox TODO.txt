@@ -1,20 +1,17 @@
 =================================================
 Current perf
 =================================================
-- fps: 15.7 (Samsung: TBD)
-- World::Update: 55.93%
-	- DoSprings: 38.92%
-		- Ship::DoRelazationCalculation: 34.77%
-	- BalancePressure: 5.71%
-	- GravitateWater: 4.58%
-	- PreparePointsForFinalStep: 3.09%
-	- Point::Update: 1.79%
-	- DiffuseLight: 0.65%
-- Game::Render: 33.43%
-	- Ship::Render: 31.09% (Incl)	2.87% (Excl)
-		- ShipTrianglesEnd: 16.02%
-		- SpringsEnd: 11.39%%
-	- RenderContext::RenderCloudsEnd: 1.51%
+- fps: 16.20 (Samsung: TBD)
+- World::Update: 58.61%
+	- DoSpringsRelaxation: 40.94% (Incl) 3.98% (Excl)
+		- Ship::SpringRelaxationCalculationTask::Process: 36.76%
+	- BalancePressure: 5.51%
+	- GravitateWater: 4.83%
+	- PreparePointsForFinalStep: 3.30%
+	- Point::Update: 2.09%
+	- DiffuseLight: 0.71%
+- Game::Render: 32.64%
+	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
 =================================================
 
 =================================================
@@ -37,16 +34,8 @@ Prev perf (before contiguity)
 	- RenderContext::RenderCloudsEnd: 1.50%
 =================================================
 
-- Render optimization: only upload spring elements, triangle elements when they're dirty (deletion occurred)
-	+ Get perf analysis first:
-		- Game::Render: 34.90%:     Ship::Render: 31.53% (Incl)	3.05% (Excl)
-			- RenderShipEnd: 28.24%	- Ship::RegisterDeletion: sets mAreSprings/TrianglesDirty=true
-	+ cctor: true
-	+ set to false after uploaded to RenderContext 
-	+ Move XRay flag consumption to RenderContext 
-
 - Now that we have connected components, fix covering of ship pieces:
-	= Draw batches of triangles and springs by component, so that pieces are "covered" nicely
+	+ Draw batches of triangles and springs by component, so that pieces are "covered" nicely
 		+ Ship keeps track of # of connected components and of each size
 		+ At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
 		  to the correct buffer based off ConnectedComponentID 
@@ -59,7 +48,6 @@ Prev perf (before contiguity)
 		+ Do for triangles
 		+ Do for springs
 		+ Each connected component must be drawn together - its springs then its triangles
-		- This then enables full light diffusion in shaders (see below)
 	- Compare perf of batch-by-conn_comp above with simply points having Z dependent on conn comp ID
 		- Requires depth test & 3d buffer for each point
 			- UploadPoints assigns Z based off point's connected component ID and # conn components
@@ -116,21 +104,6 @@ Prev perf (before contiguity)
 			- If it works, no more mLight at point and no more diffusion
 
 	- Texture mapping:
-		+ Clouds
-			+ Use N textures, each has own rectangular size
-			+ RenderContext loads all available textures and uses them for the clouds, modulo
-				+ ResourceLoader::LoadTexturesRgba(prefix)
-					+ initProgressSink lambda 
-			+ GameParameters.NumberOfClouds (constants)
-			+ World takes numberOfClouds and allocates clouds buffer with random values
-			+ Then, RenderContext::RenderCloudsStart()/./End()
-				+ Buffer contains virtualX and virtualY, and scale
-				+ RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
-			+ Clouds stencil: 
-				+ Draw waterbuffer without texture, but reverse stencil op
-
-		- Change land texture?
-
 		- Ship, using second image
 			- Load ship == Dialog with two textboxes and "browse" next to them
 			- First, try naively with just point colors;
@@ -643,6 +616,18 @@ IF WX:
 			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
 			+ Make texture stretch wrt vertical height of water strip
 			+ Change map, this one's ugly
+		+ Clouds
+			+ Use N textures, each has own rectangular size
+			+ RenderContext loads all available textures and uses them for the clouds, modulo
+				+ ResourceLoader::LoadTexturesRgba(prefix)
+					+ initProgressSink lambda 
+			+ GameParameters.NumberOfClouds (constants)
+			+ World takes numberOfClouds and allocates clouds buffer with random values
+			+ Then, RenderContext::RenderCloudsStart()/./End()
+				+ Buffer contains virtualX and virtualY, and scale
+				+ RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
+			+ Clouds stencil: 
+				+ Draw waterbuffer without texture, but reverse stencil op
 + Debug light/drag issue
 	+ Could be due to distance too close and shooting light to sky
 + Do connected component detection
@@ -773,3 +758,11 @@ IF WX:
 		+ fast_inv_sqrt: 15.2/15.3/15.3
 		+ 1/sqrt: 15.3/15.3/15.3
 		+ Nuke'em if ok
+
++ Render optimization: only upload spring elements, triangle elements when they're dirty (deletion occurred)
+	+ Get perf analysis first:
+		- Game::Render: 34.90%:     Ship::Render: 31.53% (Incl)	3.05% (Excl)
+			- RenderShipEnd: 28.24%	- Ship::RegisterDeletion: sets mAreSprings/TrianglesDirty=true
+	+ cctor: true
+	+ set to false after uploaded to RenderContext 
+	+ Move XRay flag consumption to RenderContext 
