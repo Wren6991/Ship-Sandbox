@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 16.20 (Samsung: TBD)
+- fps: 16.20 (Samsung: 20.4) (Mattia's: 8.7 (Titanic))
 - World::Update: 58.61%
 	- DoSpringsRelaxation: 40.94% (Incl) 3.98% (Excl)
 		- Ship::SpringRelaxationCalculationTask::Process: 36.76%
@@ -94,14 +94,15 @@ Prev perf (before contiguity)
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
 
-	- Try light diffusion rearc:
-		- No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs and points):
-			- Prerequisite: draw ship triangles by connected component (see above)
+	= Try light diffusion rearc:
+		- No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs 
+		  and points):
+			+ Prerequisite: draw ship triangles by connected component (see above)
+			- Turn off diffusion
 			- For each component: pass array of all lamps in that component; each lamp has {x, y, intensity};
 			- Draw each connected component N times (use additive blending), once for each lamp, 
 			  each time passing the single lamp properties as uniform to shaders, 
 			  which calculate distance and do final light blending
-			- If it works, no more mLight at point and no more diffusion
 
 	- Texture mapping:
 		- Ship, using second image
