@@ -58,6 +58,8 @@ RenderContext::RenderContext(
     , mShipBufferMaxSizes()
     , mShipSpringVBO(0u)
     , mShipTriangleVBO(0u)
+    // Lamps
+    , mShipLampBuffers()
     // Stressed springs
     , mStressedSpringShaderProgram(0u)
     , mStressedSpringShaderAmbientLightIntensityParameter(0)
@@ -451,7 +453,7 @@ RenderContext::RenderContext(
 
     mShipPointShaderProgram = glCreateProgram();
 
-    char const * shipPointShaderSource = R"(
+    char const * shipPointVertexShaderSource = R"(
 
         // Inputs
         attribute vec2 inputPos;
@@ -471,7 +473,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(shipPointShaderSource, GL_VERTEX_SHADER, mShipPointShaderProgram);
+    CompileShader(shipPointVertexShaderSource, GL_VERTEX_SHADER, mShipPointShaderProgram);
 
     char const * shipPointFragmentShaderSource = R"(
 
@@ -507,7 +509,7 @@ RenderContext::RenderContext(
 
     mShipShaderProgram = glCreateProgram();
 
-    char const * shipShaderSource = R"(
+    char const * shipVertexShaderSource = R"(
 
         // Inputs
         attribute vec2 inputPos;
@@ -527,7 +529,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(shipShaderSource, GL_VERTEX_SHADER, mShipShaderProgram);
+    CompileShader(shipVertexShaderSource, GL_VERTEX_SHADER, mShipShaderProgram);
 
     char const * shipFragmentShaderSource = R"(
 
@@ -538,6 +540,7 @@ RenderContext::RenderContext(
         {
             gl_FragColor = vec4(vertexCol.xyz, 1.0);
         } 
+
     )";
 
     CompileShader(shipFragmentShaderSource, GL_FRAGMENT_SHADER, mShipShaderProgram);
@@ -1017,8 +1020,10 @@ void RenderContext::UploadShipStart(std::vector<std::size_t> const & connectedCo
     if (connectedComponentsMaxSizes.size() != mShipBufferMaxSizes.size())
     {
         // A change in the number of connected components
+
         mShipSpringBuffers.clear();
         mShipSpringBuffers.resize(connectedComponentsMaxSizes.size());
+
         mShipTriangleBuffers.clear();
         mShipTriangleBuffers.resize(connectedComponentsMaxSizes.size());
 
@@ -1052,6 +1057,17 @@ void RenderContext::UploadShipStart(std::vector<std::size_t> const & connectedCo
 }
 
 void RenderContext::UploadShipEnd()
+{
+    // Nop
+}
+
+void RenderContext::UploadLampsStart(size_t connectedComponents)
+{
+    mShipLampBuffers.clear();
+    mShipLampBuffers.resize(connectedComponents);
+}
+
+void RenderContext::UploadLampsEnd()
 {
     // Nop
 }

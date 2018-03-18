@@ -292,6 +292,17 @@ MainFrame::MainFrame(wxApp * mainApp)
 
 
     //
+    // Initialize timers
+    //
+
+    mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
+    Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
+
+    mLowFrequencyTimer = std::make_unique<wxTimer>(this, ID_LOW_FREQUENCY_TIMER);
+    Connect(ID_LOW_FREQUENCY_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnLowFrequencyTimerTrigger);
+
+
+    //
     // Post a PostInitialize, so that we can complete initialization with a main loop running
     //
 
@@ -406,16 +417,12 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
 
 
     //
-    // Initialize timers
+    // Start timers
     //
 
-    mGameTimer = std::make_unique<wxTimer>(this, ID_GAME_TIMER);
-    Connect(ID_GAME_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnGameTimerTrigger);
     mGameTimer->Start(0, true);
-
-    mLowFrequencyTimer = std::make_unique<wxTimer>(this, ID_LOW_FREQUENCY_TIMER);
-    Connect(ID_LOW_FREQUENCY_TIMER, wxEVT_TIMER, (wxObjectEventFunction)&MainFrame::OnLowFrequencyTimerTrigger);
     mLowFrequencyTimer->Start(1000, false);
+
 
     //
     // Show ourselves now
@@ -497,8 +504,6 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
 
 void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 {
-    assert(!!mGameController);
-
     // Initialize stats, if needed
     if (mFrameCountStatsOriginTimestamp == std::chrono::steady_clock::time_point::min())
     { 
@@ -510,31 +515,13 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
         mTotalFrameCount = 0u;
         mLastFrameCount = 0u;
     }
-
     
     // Make the timer for the next step start now
     mGameTimer->Start(0, true);
 
-    // Update the tool
-    UpdateTool();
-
-    // Do a simulation step
-    if (!IsPaused())
-    {
-        mGameController->DoStep();
-    }
-
-    // Render
-    RenderGame();
-
-    // Update event ticker
-    assert(!!mEventTickerPanel);
-    mEventTickerPanel->Update();
-
-    // Update sound controller
-    assert(!!mSoundController);
-    mSoundController->HighFrequencyUpdate();
-
+    // Run a game step
+    DoGameStep();
+    
     // Update stats
     ++mTotalFrameCount;
     ++mLastFrameCount;
@@ -1024,6 +1011,31 @@ void MainFrame::UpdateTool()
 bool MainFrame::IsPaused()
 {
     return mPauseMenuItem->IsChecked();
+}
+
+void MainFrame::DoGameStep()
+{
+    assert(!!mGameController);
+
+    // Update the tool
+    UpdateTool();
+
+    // Do a simulation step
+    if (!IsPaused())
+    {
+        mGameController->DoStep();
+    }
+
+    // Render
+    RenderGame();
+
+    // Update event ticker
+    assert(!!mEventTickerPanel);
+    mEventTickerPanel->Update();
+
+    // Update sound controller
+    assert(!!mSoundController);
+    mSoundController->HighFrequencyUpdate();
 }
 
 //   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS

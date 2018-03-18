@@ -132,6 +132,7 @@ private:
     void SetCursorStrength(float strength, float minStrength, float maxStrength);
 	void UpdateTool();
     bool IsPaused();
+    void DoGameStep();
 	void RenderGame();
 
 private:

@@ -34,33 +34,7 @@ Prev perf (before contiguity)
 	- RenderContext::RenderCloudsEnd: 1.50%
 =================================================
 
-- Now that we have connected components, fix covering of ship pieces:
-	+ Draw batches of triangles and springs by component, so that pieces are "covered" nicely
-		+ Ship keeps track of # of connected components and of each size
-		+ At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
-		  to the correct buffer based off ConnectedComponentID 
-			+ ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
-			  of the primitive
-				+ assert other points have same ID
-			+ Note: points themselves are not affected by this; they're still uploaded in their entirety 
-			  once per cycle
-		+ At RenderXYZEnd(), draw each connected component buffer from last to first
-		+ Do for triangles
-		+ Do for springs
-		+ Each connected component must be drawn together - its springs then its triangles
-	- Compare perf of batch-by-conn_comp above with simply points having Z dependent on conn comp ID
-		- Requires depth test & 3d buffer for each point
-			- UploadPoints assigns Z based off point's connected component ID and # conn components
-		- How do we do with full light diffusion in shaders (see below) ?
-			- We do both!
-		- If we go for Z of each point, do SeeShipThroughWater by playing with Z's
-			- And then also clouds, no stencil
-		- Plan:
-			- 1: Enable depth test and fix land, clouds (no stencil), and water (off SeeShipThroughWater)
-				- Use hardcoded Z value in these shaders, except for water which takes uniform (off SeeShipThroughWater)
-				- See perf; if better => keep this anyway
-			- 2: UploadPoints: assign Z based off point's connected component ID and # conn components
-				- Modify shaders to work on 3D
+- Fix initial OnPaint: TODO
 
 - Gfx:
 	- OpenGL optimizations:
@@ -82,27 +56,46 @@ Prev perf (before contiguity)
 				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
 			- Point's vector pointers are populated by Point::Rebase(buf1, buf2),
 			  invoked by Ship at construction
-			- Try: could also use buffer with mLight and mWater (uploaded each time to GPU) to be used by F shader 
+				- Rebase() uses mPointIndex (rename of mElementIndex) to calc pointers
+			- Try: could also use buffer with mLight and mWater (uploaded each time to GPU as well) to be used by V->F shader 
 			  to blend fragColor with two fixed colors (water blended before ambient light, light after)
-				- F shader needs to start doing ambient light now
-				- Need CalculateWaterColorIntensity() (clamps and copies mWater to buffer), 
-				  and a dummy FinalizeLightColorIntensity() (dummy because mLightColorIntensity (rename
-                                  of mLight) is already finalized)
+				- F shader needs to start doing ambient light now, rather than point
+				- Need Point::CalculateWaterColorIntensity() (clamps and copies mWater to buffer), 
+				  and a dummy Point::FinalizeLightColorIntensity() (dummy because mLight is already finalized)
+				  - or do clamp in shader, so use mWater and mLight straight from buffer, no CalculateX() needed
+				- If we put light and water in shader, then we don't need to reupload color buffer each time
+			- Bonus: also test GPU interpolation of mLight and mWater by emitting them at vertex
+		- Plan:
+			- 0: Test with additional mLight and mWater uploaded to RenderContext (same Point struct), and fragment shader doing math
+				- F Shader needs params: ambientLightIntensity; constants: waterColor, lightColor
+				- Check perf:
+					- Before:
+					- After:
+					- Keep in mind that we're adding to the buffer, while later we'll remove the colors
+				- Also test bonus: GPU interpolation of mLight and mWater by emitting them at vertex
+			- 1: if OK: PointCore struct (@GameLib) with {position, light, water}, based into Point
+				- Separate color buffer: 
+					- Color struct (vec3f) has static_assert's for alignments
+					- Created by Ship::Create(), moved into Ship member (ElementRepository<vec3f>)
+					- Uploaded one-shot at first Ship::Render()
+						- via RenderContext::UploadShipPointColors(vec3f *, size_t elementCount):
+							- Uploads to GPU right away, with GL_STATIC_DRAW
+							- Stores size (mShipElementCount) for later assert
+				- Separate PointCore buffer:
+					- PointCore struct has static_assert's for alignments
+					- Created by Ship::Create(), moved into Ship member (ElementRepository)
+						- Points have already been based, at cctor by Ship::Create()
+					- Uploaded at each Ship::Render()
+						- via RenderContext::UploadShipPoints(PointCore *, size_t elementCount):
+							- Asserts size same as color buffer (mShipElementCount)
+							- Then uploads to GPU right away, with GL_DYNAMIC_DRAW
+				
+				
 			 
 	- AmbientLightIntensity:
 		+ Use also in RenderContext::RenderStart() for clear (sky) color
 		+ Phase 1: pgup/down
 		- Phase 2: with clock
-
-	= Try light diffusion rearc:
-		- No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs 
-		  and points):
-			+ Prerequisite: draw ship triangles by connected component (see above)
-			- Turn off diffusion
-			- For each component: pass array of all lamps in that component; each lamp has {x, y, intensity};
-			- Draw each connected component N times (use additive blending), once for each lamp, 
-			  each time passing the single lamp properties as uniform to shaders, 
-			  which calculate distance and do final light blending
 
 	- Texture mapping:
 		- Ship, using second image
@@ -598,7 +591,20 @@ IF WX:
 		+ Strength Adjustment must be settable exponentially (slider=>exp)
 			+ Formula done by gamecontroller at AdjustStrengthAdjustment(), or by SettingsDialog directly
 	+ Page up and page down in menu
+
 + Gfx:
+	+ Try light diffusion rearc:
+		+ No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs 
+		  and points):
+			+ Prerequisite: draw ship triangles by connected component (see above)
+			+ Turn off diffusion
+			+ For each component: pass array of all lamps in that component; each lamp has {x, y, intensity};
+			+ Draw each connected component N times (use additive blending), once for each lamp, 
+			  each time passing the single lamp properties as uniform to shaders, 
+			  which calculate distance and do final light blending
+				+ Check right way of doing blending
+		+ REJECTED: perf was awful; this multiple-pass way of doing it hurts too much
+
 	+ Texture mapping:
 		+ UploadLandAndWaterStart()/./End()
 			+ Just specify land y and water y
@@ -767,3 +773,43 @@ IF WX:
 	+ cctor: true
 	+ set to false after uploaded to RenderContext 
 	+ Move XRay flag consumption to RenderContext 
+
++ Now that we have connected components, fix covering of ship pieces:
+	+ Draw batches of triangles and springs by component, so that pieces are "covered" nicely
+		+ Ship keeps track of # of connected components and of each size
+		+ At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
+		  to the correct buffer based off ConnectedComponentID 
+			+ ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
+			  of the primitive
+				+ assert other points have same ID
+			+ Note: points themselves are not affected by this; they're still uploaded in their entirety 
+			  once per cycle
+		+ At RenderXYZEnd(), draw each connected component buffer from last to first
+		+ Do for triangles
+		+ Do for springs
+		+ Each connected component must be drawn together - its springs then its triangles
+
+
+==============================================
+        // Inputs from previous shader
+        varying vec3 vertexCol;
+        varying float vertexLampDistance;
+
+        // Parameters        
+        uniform float paramLampLightIntensity;
+        uniform float paramLampLightDiffusionAdjustmentCoefficient;        
+        uniform float paramMultiplePassFraction;
+
+        void main()
+        {
+            vec3 lightPointColour = vec3(1.0, 1.0, 0.25);
+
+            float distance = max(1.0, vertexLampDistance * vertexLampDistance * paramLampLightDiffusionAdjustmentCoefficient);
+            float lightness = paramLampLightIntensity / distance;                        
+            vec3 col = (vertexCol * (1.0 - lightness) + lightPointColour * lightness) * paramMultiplePassFraction;
+            //vec3 multColor = lightPointColour * lightness + (vec3(1.0, 1.0, 1.0) * (1.0 - lightness));
+            //vertexCol = inputCol * multColor;
+
+            gl_FragColor = vec4(col.xyz, 1.0);
+        } 
+==============================================

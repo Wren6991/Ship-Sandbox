@@ -386,6 +386,36 @@ public:
 
     void UploadShipEnd();
 
+
+    //
+    // Lamps
+    //
+
+    void UploadLampsStart(size_t connectedComponents);
+
+    void UploadLamp(
+        float x,
+        float y,
+        float lightIntensity,
+        size_t connectedComponentId)
+    {
+        size_t const connectedComponentIndex = connectedComponentId - 1;
+
+        assert(connectedComponentIndex < mShipLampBuffers.size());
+
+        ShipLampElement & shipLampElement = mShipLampBuffers[connectedComponentIndex].emplace_back();
+
+        shipLampElement.x = x;
+        shipLampElement.y = y;
+        shipLampElement.lightIntensity = lightIntensity;
+    }
+
+    void UploadLampsEnd();
+
+    //
+    // Ship
+    //
+
     void RenderShip();
 
 
@@ -692,6 +722,22 @@ private:
 
     OpenGLVBO mShipSpringVBO;
     OpenGLVBO mShipTriangleVBO;
+
+
+    //
+    // Lamps
+    //
+
+#pragma pack(push)
+    struct ShipLampElement
+    {
+        float x;
+        float y;
+        float lightIntensity;
+    };
+#pragma pack(pop)
+
+    std::vector<std::vector<ShipLampElement>> mShipLampBuffers;
 
 
     //

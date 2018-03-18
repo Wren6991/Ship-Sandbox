@@ -710,7 +710,7 @@ void Ship::Update(
 	}
 
     DiffuseLight(
-        dt, 
+        dt,
         gameParameters);
 }
 
@@ -742,10 +742,17 @@ void Ship::Render(
     {
         // Draw just the points
         renderContext.RenderShipPoints();
+
+        return;
     }
-    else
+
+    if (!mConnectedComponentSizes.empty())
     {
-        if (!mConnectedComponentSizes.empty() && mIsShipDirty)
+        //
+        // Upload springs and triangles (iff dirty)
+        //
+
+        if (mIsShipDirty)
         {
             renderContext.UploadShipStart(mConnectedComponentSizes);
 
@@ -788,34 +795,70 @@ void Ship::Render(
 
             renderContext.UploadShipEnd();
 
-            mIsShipDirty = false;            
-        }        
+            mIsShipDirty = false;
+        }
 
-        renderContext.RenderShip();
+        //////
+        ////// Upload all lamps
+        //////
 
-        //
-        // Render all stressed springs
-        //
+        ////renderContext.UploadLampsStart(mConnectedComponentSizes.size());
 
-        if (renderContext.GetShowStress())
+        ////for (ElectricalElement const * el : mAllElectricalElements)
+        ////{
+        ////    assert(!el->IsDeleted());
+
+        ////    if (ElectricalElement::Type::Lamp == el->GetType())
+        ////    {
+        ////        Point const * lampPoint = el->GetPoint();
+
+        ////        assert(!lampPoint->IsDeleted());
+
+        ////        // TODO: this needs to be replaced with getting the light from the lamp itself,
+        ////        // which would have been previously set via UpdateLightIntensity
+        ////        float const lampLight = 1.0f;
+
+        ////        renderContext.UploadLamp(
+        ////            lampPoint->GetPosition().x,
+        ////            lampPoint->GetPosition().y,
+        ////            lampLight,
+        ////            lampPoint->GetConnectedComponentId());
+        ////    }
+        ////}
+
+        ////renderContext.UploadLampsEnd();
+    }        
+
+
+    //
+    // Render ship
+    //
+
+    renderContext.RenderShip();
+
+
+    //
+    // Render all stressed springs
+    //
+
+    if (renderContext.GetShowStress())
+    {
+        renderContext.RenderStressedSpringsStart(mAllSprings.size());
+
+        for (Spring const & spring : mAllSprings)
         {
-            renderContext.RenderStressedSpringsStart(mAllSprings.size());
-
-            for (Spring const & spring : mAllSprings)
+            if (!spring.IsDeleted())
             {
-                if (!spring.IsDeleted())
+                if (spring.IsStressed())
                 {
-                    if (spring.IsStressed())
-                    {
-                        renderContext.RenderStressedSpring(
-                            spring.GetPointA()->GetElementIndex(),
-                            spring.GetPointB()->GetElementIndex());
-                    }
+                    renderContext.RenderStressedSpring(
+                        spring.GetPointA()->GetElementIndex(),
+                        spring.GetPointB()->GetElementIndex());
                 }
             }
-
-            renderContext.RenderStressedSpringsEnd();
         }
+
+        renderContext.RenderStressedSpringsEnd();
     }
 }
 
