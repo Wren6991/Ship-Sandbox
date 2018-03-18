@@ -312,23 +312,25 @@ public:
     // Ship Points
     //
 
+    void UploadShipPointColors(
+        vec3f const * colors, 
+        size_t elementCount);
+
     void UploadShipPointsStart(size_t maxPoints);
 
     inline void UploadShipPoint(
         float x,
         float y,
-        float r,
-        float g,
-        float b)
+        float light,
+        float water)
     {
         assert(mShipPointBufferSize + 1u <= mShipPointBufferMaxSize);
         ShipPointElement * shipPointElement = &(mShipPointBuffer[mShipPointBufferSize]);
 
         shipPointElement->x = x;
         shipPointElement->y = y;
-        shipPointElement->r = r;
-        shipPointElement->g = g;
-        shipPointElement->b = b;
+        shipPointElement->light = light;
+        shipPointElement->water = water;
 
         ++mShipPointBufferSize;
     }
@@ -539,7 +541,7 @@ private:
         OpenGLShaderProgram const & shaderProgram,
         std::string const & parameterName);
 
-    void DescribeShipPointsVBO();
+    void DescribeShipPointVBO();
 
     void CalculateOrthoMatrix();
 
@@ -667,16 +669,17 @@ private:
     {
         float x;
         float y;
-        float r;
-        float g;
-        float b;
+        float light;
+        float water;
     };
 #pragma pack(pop)
 
+    size_t mShipElementCount;
     std::unique_ptr<ShipPointElement[]> mShipPointBuffer;
     size_t mShipPointBufferSize;
     size_t mShipPointBufferMaxSize;
 
+    OpenGLVBO mShipPointColorVBO;
     OpenGLVBO mShipPointVBO;
 
 
@@ -686,6 +689,7 @@ private:
 
     OpenGLShaderProgram mShipShaderProgram;
     GLint mShipShaderOrthoMatrixParameter;
+    GLint mShipShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
     struct ShipSpringElement
@@ -725,7 +729,7 @@ private:
 
 
     //
-    // Lamps
+    // Ship lamps
     //
 
 #pragma pack(push)

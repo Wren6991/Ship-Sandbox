@@ -25,30 +25,30 @@ class Ship
 {
 public:
 
-	static std::unique_ptr<Ship> Create(
-		World * parentWorld,
-		unsigned char const * structureImageData,
-		int structureImageWidth,
-		int structureImageHeight,
-		std::vector<std::unique_ptr<Material const>> const & allMaterials);
+    static std::unique_ptr<Ship> Create(
+        World * parentWorld,
+        unsigned char const * structureImageData,
+        int structureImageWidth,
+        int structureImageHeight,
+        std::vector<std::unique_ptr<Material const>> const & allMaterials);
 
     ~Ship();
 
-	void Destroy();
+    void Destroy();
 
-	World const * GetParentWorld() const { return mParentWorld; }
-	World * GetParentWorld() { return mParentWorld; }
+    World const * GetParentWorld() const { return mParentWorld; }
+    World * GetParentWorld() { return mParentWorld; }
 
     auto const & GetElectricalElements() const { return mAllElectricalElements; }
     auto & GetElectricalElements() { return mAllElectricalElements; }
 
-	auto const & GetPoints() const { return mAllPoints; }
+    auto const & GetPoints() const { return mAllPoints; }
     auto & GetPoints() { return mAllPoints; }
 
-	auto const & GetSprings() const { return mAllSprings; }
+    auto const & GetSprings() const { return mAllSprings; }
     auto & GetSprings() { return mAllSprings; }
 
-	auto const & GetTriangles() const { return mAllTriangles; }
+    auto const & GetTriangles() const { return mAllTriangles; }
     auto & GetTriangles() { return mAllTriangles; }
 
     void DestroyAt(
@@ -64,41 +64,41 @@ public:
         vec2 const & targetPos,
         float radius) const;
 
-	void PreparePointsForFinalStep(
-		float dt,
+    void PreparePointsForFinalStep(
+        float dt,
         uint64_t currentStepSequenceNumber,
-		GameParameters const & gameParameters);
+        GameParameters const & gameParameters);
 
-	void GravitateWater(
-		float dt,
-		GameParameters const & gameParameters);
+    void GravitateWater(
+        float dt,
+        GameParameters const & gameParameters);
 
-	void BalancePressure(float dt);
+    void BalancePressure(float dt);
 
     void DiffuseLight(
         float dt,
         GameParameters const & gameParameters);
 
     void Update(
-		float dt,
+        float dt,
         uint64_t currentStepSequenceNumber,
-		GameParameters const & gameParameters);
+        GameParameters const & gameParameters);
 
-	void Render(
-		GameParameters const & gameParameters,
-		RenderContext & renderContext) const;
+    void Render(
+        GameParameters const & gameParameters,
+        RenderContext & renderContext) const;
 
 public:
 
-	/*
-	 * Invoked when an elements has been destroyed. Notifies the ship that the element
-	 * can be removed (at the most appropriate time) from the ship's main container
-	 * of element pointers, and that the pointer can be deleted.
-	 *
-	 * Implemented differently for the different elements.
-	 */
-	template<typename TElement>
-	void RegisterDestruction(TElement * element);
+    /*
+     * Invoked when an elements has been destroyed. Notifies the ship that the element
+     * can be removed (at the most appropriate time) from the ship's main container
+     * of element pointers, and that the pointer can be deleted.
+     *
+     * Implemented differently for the different elements.
+     */
+    template<typename TElement>
+    void RegisterDestruction(TElement * element);
 
 private:
 
@@ -106,95 +106,103 @@ private:
 
     void InitializeRepository(
         ElementRepository<Point> && allPoints,
+        ElementRepository<vec3f> && allPointColors,
         ElementRepository<Spring> && allSprings,
         ElementRepository<Triangle> && allTriangles,
         std::vector<ElectricalElement *> && allElectricalElements)
     {
         mAllPoints = std::move(allPoints);
+        mAllPointColors = std::move(allPointColors);
         mAllSprings = std::move(allSprings);
         mAllTriangles = std::move(allTriangles);
         mAllElectricalElements.initialize(std::move(allElectricalElements));
 
+        mArePointColorsDirty = true;
         mIsShipDirty = true;
     }
 
-	void DoSpringsRelaxation(float dt);
+    void DoSpringsRelaxation(float dt);
 
-	struct SpringRelaxationCalculateTask : Scheduler::ITask
-	{
-	public:
+    struct SpringRelaxationCalculateTask : Scheduler::ITask
+    {
+    public:
 
         SpringRelaxationCalculateTask(
-			Ship * parentShip,
-			size_t startSpringIndex,
-			size_t endSpringIndex)
-			: mParentShip(parentShip)
-			, mStartSpringIndex(startSpringIndex)
-			, mEndSpringIndex(endSpringIndex)
-		{
-		}
+            Ship * parentShip,
+            size_t startSpringIndex,
+            size_t endSpringIndex)
+            : mParentShip(parentShip)
+            , mStartSpringIndex(startSpringIndex)
+            , mEndSpringIndex(endSpringIndex)
+        {
+        }
 
-		virtual ~SpringRelaxationCalculateTask()
-		{
-		}
+        virtual ~SpringRelaxationCalculateTask()
+        {
+        }
 
-		virtual void Process();
+        virtual void Process();
 
-	private:
+    private:
 
-		Ship * const mParentShip;
-		size_t const mStartSpringIndex;
-		size_t const mEndSpringIndex; // 1 past last
-	};
+        Ship * const mParentShip;
+        size_t const mStartSpringIndex;
+        size_t const mEndSpringIndex; // 1 past last
+    };
 
-	struct PointIntegrateTask : Scheduler::ITask
-	{
-	public:
+    struct PointIntegrateTask : Scheduler::ITask
+    {
+    public:
 
-		PointIntegrateTask(
-			Ship * parentShip,
-			size_t firstPointIndex,
-			size_t lastPointIndex,
-			float dt)
-			: mParentShip(parentShip)
-			, mFirstPointIndex(firstPointIndex)
-			, mLastPointIndex(lastPointIndex)
-			, mDt(dt)
-		{
-		}
+        PointIntegrateTask(
+            Ship * parentShip,
+            size_t firstPointIndex,
+            size_t lastPointIndex,
+            float dt)
+            : mParentShip(parentShip)
+            , mFirstPointIndex(firstPointIndex)
+            , mLastPointIndex(lastPointIndex)
+            , mDt(dt)
+        {
+        }
 
-		virtual ~PointIntegrateTask()
-		{
-		}
+        virtual ~PointIntegrateTask()
+        {
+        }
 
-		virtual void Process();
+        virtual void Process();
 
-	private:
+    private:
 
-		Ship * const mParentShip;
-		size_t const mFirstPointIndex;
-		size_t const mLastPointIndex;
-		float const mDt;
-	};
+        Ship * const mParentShip;
+        size_t const mFirstPointIndex;
+        size_t const mLastPointIndex;
+        float const mDt;
+    };
 
 private:
 
     unsigned int const mId;
-	World * const mParentWorld;
+    World * const mParentWorld;
 
     // All the ship elements - never removed, the repositories maintain their own size forever
     ElementRepository<Point> mAllPoints;
+    ElementRepository<vec3f> mAllPointColors;
     ElementRepository<Spring> mAllSprings;
     ElementRepository<Triangle> mAllTriangles;
 
     // Parts repository
     PointerContainer<ElectricalElement> mAllElectricalElements;
 
-	// The scheduler we use for parallelizing updates
-	Scheduler mScheduler;
+    // The scheduler we use for parallelizing updates
+    Scheduler mScheduler;
 
     // Connected components metadata
     std::vector<std::size_t> mConnectedComponentSizes;
+
+    // Flag remembering whether point colors have changed
+    // since the last time we delivered them to the rendering context
+    mutable bool mArePointColorsDirty;
 
     // Flag remembering whether springs and/or triangles have changed
     // since the last time we delivered them to the rendering context

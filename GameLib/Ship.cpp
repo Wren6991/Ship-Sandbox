@@ -28,16 +28,16 @@ namespace Physics {
 //   SSS    H     H  IIIIIII  P
 
 std::unique_ptr<Ship> Ship::Create(
-	World * parentWorld,
-	unsigned char const * structureImageData,
-	int structureImageWidth,
-	int structureImageHeight,
-	std::vector<std::unique_ptr<Material const>> const & allMaterials)
+    World * parentWorld,
+    unsigned char const * structureImageData,
+    int structureImageWidth,
+    int structureImageHeight,
+    std::vector<std::unique_ptr<Material const>> const & allMaterials)
 {
     float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
 
-	// Prepare materials dictionary
-	std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
+    // Prepare materials dictionary
+    std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
     for (auto const & material : allMaterials)
     {
         structuralColourMap[material->StructuralColourRgb] = material.get();
@@ -91,16 +91,18 @@ std::unique_ptr<Ship> Ship::Create(
     }
 
 
-	//
-	// 2. Create:
+    //
+    // 2. Create:
     //  - Points
+    //  - PointColors
     //  - SpringInfo
     //  - TriangleInfo
-	//
+    //
 
     Ship *ship = new Ship(parentWorld);
 
     ElementRepository<Point> allPoints(pointCount);
+    ElementRepository<vec3f> allPointColors(pointCount);
 
     size_t leakingPointsCount = 0;
 
@@ -153,10 +155,10 @@ std::unique_ptr<Ship> Ship::Create(
         { 1,  1 }	// SE
     };
 
-	for (int x = 0; x < structureImageWidth; ++x)
-	{
-		for (int y = 0; y < structureImageHeight; ++y)
-		{
+    for (int x = 0; x < structureImageWidth; ++x)
+    {
+        for (int y = 0; y < structureImageHeight; ++y)
+        {
             if (!!pointInfoMatrix[x][y])
             {
                 Material const * mtl = pointInfoMatrix[x][y]->Mtl;
@@ -166,11 +168,18 @@ std::unique_ptr<Ship> Ship::Create(
                 //
 
                 Point & point = allPoints.emplace_back(
-					ship,
-					vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
-					mtl,
-					mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
+                    ship,
+                    vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
+                    mtl,
+                    mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
                     pointInfoMatrix[x][y]->PointIndex);  
+
+                //
+                // Create point color
+                //
+
+                allPointColors.emplace_back(mtl->RenderColour);
+
 
                 // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
                 // Check if a is leaking; a is leaking if:
@@ -244,9 +253,9 @@ std::unique_ptr<Ship> Ship::Create(
                         }
                     }
                 }
-			}
-		}
-	}
+            }
+        }
+    }
 
 
     //
@@ -325,24 +334,27 @@ std::unique_ptr<Ship> Ship::Create(
     }
 
 
-	ship->InitializeRepository(
-        std::move(allPoints),        
+    ship->InitializeRepository(
+        std::move(allPoints),   
+        std::move(allPointColors),
         std::move(allSprings),
         std::move(allTriangles),
         std::move(allElectricalElements));
 
-	return std::unique_ptr<Ship>(ship);
+    return std::unique_ptr<Ship>(ship);
 }
 
 Ship::Ship(World * parentWorld)
     : mId(parentWorld->GenerateNewShipId())
     , mParentWorld(parentWorld)    
     , mAllPoints(0)
+    , mAllPointColors(0)
     , mAllSprings(0)
     , mAllTriangles(0)
     , mAllElectricalElements()
     , mScheduler()
     , mConnectedComponentSizes()
+    , mArePointColorsDirty(true)
     , mIsShipDirty(true)
     , mIsSinking(false)
     , mTotalWater(0.0)
@@ -422,20 +434,20 @@ Point const * Ship::GetNearestPointAt(
 }
 
 void Ship::PreparePointsForFinalStep(
-	float dt,
+    float dt,
     uint64_t currentStepSequenceNumber,
-	GameParameters const & gameParameters)
+    GameParameters const & gameParameters)
 {
     //
-	// We use this point loop for everything that needs to be done on all points
+    // We use this point loop for everything that needs to be done on all points
     //
 
     uint64_t currentConnectedComponentId = 0;
     std::queue<Point *> pointsToVisitForConnectedComponents;
     mConnectedComponentSizes.clear();
 
-	for (Point & point : mAllPoints)
-	{
+    for (Point & point : mAllPoints)
+    {
         //
         // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
         //    if the external pressure is larger
@@ -518,7 +530,7 @@ void Ship::PreparePointsForFinalStep(
                 mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
             }
         }
-	}
+    }
 
     //
     // Check whether we've started sinking
@@ -534,8 +546,8 @@ void Ship::PreparePointsForFinalStep(
 }
 
 void Ship::GravitateWater(
-	float dt,
-	GameParameters const & gameParameters)
+    float dt,
+    GameParameters const & gameParameters)
 {
     //
     // Water flows into adjacent nodes in a quantity proportional to the cos of angle the spring makes
@@ -652,14 +664,14 @@ void Ship::DiffuseLight(
 }
 
 void Ship::Update(
-	float dt,
+    float dt,
     uint64_t currentStepSequenceNumber,
-	GameParameters const & gameParameters)
+    GameParameters const & gameParameters)
 {
     IGameEventHandler * const gameEventHandler = mParentWorld->GetGameEventHandler();
 
     //
-	// Advance simulation for points (velocity and forces)
+    // Advance simulation for points (velocity and forces)
     //
 
     for (Point & point : mAllPoints)
@@ -673,18 +685,18 @@ void Ship::Update(
     // Update springs dynamics
     //
 
-	// Iterate the spring relaxation
-	DoSpringsRelaxation(dt);
+    // Iterate the spring relaxation
+    DoSpringsRelaxation(dt);
 
-	// Update tension strain for all springs; might cause springs to break
-	for (Spring & spring : mAllSprings)
-	{
+    // Update tension strain for all springs; might cause springs to break
+    for (Spring & spring : mAllSprings)
+    {
         // Avoid breaking deleted springs
-		if (!spring.IsDeleted())
-		{
+        if (!spring.IsDeleted())
+        {
             spring.UpdateTensionStrain(gameParameters, gameEventHandler);
-		}
-	}
+        }
+    }
 
     //
     // Clear up pointer containers, in case there have been deletions
@@ -695,7 +707,7 @@ void Ship::Update(
 
 
     //
-	// Update all electrical and water stuff
+    // Update all electrical and water stuff
     //
 
     PreparePointsForFinalStep(dt, currentStepSequenceNumber, gameParameters);
@@ -703,11 +715,11 @@ void Ship::Update(
     for (int i = 0; i < 4; i++)
         BalancePressure(dt);
 
-	for (int i = 0; i < 4; i++)
-	{
+    for (int i = 0; i < 4; i++)
+    {
         BalancePressure(dt);
-		GravitateWater(dt, gameParameters);
-	}
+        GravitateWater(dt, gameParameters);
+    }
 
     DiffuseLight(
         dt,
@@ -715,9 +727,19 @@ void Ship::Update(
 }
 
 void Ship::Render(
-	GameParameters const & gameParameters,
-	RenderContext & renderContext) const
+    GameParameters const & gameParameters,
+    RenderContext & renderContext) const
 {
+    //
+    // Upload point colors
+    //
+
+    if (mArePointColorsDirty)
+    {
+        renderContext.UploadShipPointColors(&(mAllPointColors[0]), mAllPointColors.size());
+        mArePointColorsDirty = false;
+    }
+
     //
     // Upload points
     //
@@ -726,14 +748,11 @@ void Ship::Render(
 
     for (Point const & point : mAllPoints)
     {
-        auto pointColour = point.CalculateColour(renderContext.GetAmbientLightIntensity());
-
         renderContext.UploadShipPoint(
             point.GetPosition().x,
             point.GetPosition().y,
-            pointColour.x,
-            pointColour.y,
-            pointColour.z);
+            point.GetLight(),
+            point.GetWater());
     }
 
     renderContext.UploadShipPointsEnd();
@@ -870,21 +889,21 @@ void Ship::DoSpringsRelaxation(float dt)
 {
     float const dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
 
-	// Calculate number of parallel chunks and size of each chunk
-	size_t nParallelChunks = mScheduler.GetNumberOfThreads();
+    // Calculate number of parallel chunks and size of each chunk
+    size_t nParallelChunks = mScheduler.GetNumberOfThreads();
     size_t parallelChunkSize = std::max((mAllSprings.size() / nParallelChunks), (size_t)1);
 
-	assert(parallelChunkSize > 0);
+    assert(parallelChunkSize > 0);
 
     // Run iterations
-	for (int outiter = 0; outiter < 3; outiter++)
-	{
+    for (int outiter = 0; outiter < 3; outiter++)
+    {
         //
         // Relax
         //
 
-		for (int iteration = 0; iteration < 8; iteration++)
-		{
+        for (int iteration = 0; iteration < 8; iteration++)
+        {
             for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)
             {
                 size_t available = mAllSprings.size() - i;
@@ -899,10 +918,10 @@ void Ship::DoSpringsRelaxation(float dt)
 
                 i += thisChunkSize;
             }
-			
+            
             mScheduler.WaitForAllTasks();
-		}
-		
+        }
+        
         //
         // Damp
         //
@@ -915,7 +934,7 @@ void Ship::DoSpringsRelaxation(float dt)
                 spring.Damp(dampingamount);
             }
         }
-	}
+    }
 }
 
 void Ship::SpringRelaxationCalculateTask::Process()
@@ -932,13 +951,13 @@ void Ship::SpringRelaxationCalculateTask::Process()
 
 void Ship::PointIntegrateTask::Process()
 {
-	for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
-	{
+    for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
+    {
         Point & point = mParentShip->mAllPoints[i];
 
         point.AddToPosition(point.GetForce() * mDt);
         point.ZeroForce();
-	}
+    }
 }
 
 }

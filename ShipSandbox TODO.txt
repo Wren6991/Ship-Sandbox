@@ -1,6 +1,22 @@
 =================================================
 Current perf
 =================================================
+- fps: 14.2 (Samsung: 23.2) (Mattia's: 8.7 (Titanic))
+- World::Update: 51.68%
+	- DoSpringsRelaxation: 35.58% (Incl) 3.67% (Excl)
+		- Ship::SpringRelaxationCalculationTask::Process: 31.65%
+	- BalancePressure: 5.28%
+	- GravitateWater: 4.46%
+	- PreparePointsForFinalStep: 2.96%
+	- Point::Update: 1.63%
+	- DiffuseLight: 0.58%
+- Game::Render: 39.85%
+	- Ship::Render: 36.89% (Incl) 0.32% (Excl)
+=================================================
+
+=================================================
+Prev perf (before Color buffer separation and light and water in shaders)
+=================================================
 - fps: 16.20 (Samsung: 20.4) (Mattia's: 8.7 (Titanic))
 - World::Update: 58.61%
 	- DoSpringsRelaxation: 40.94% (Incl) 3.98% (Excl)
@@ -14,31 +30,11 @@ Current perf
 	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
 =================================================
 
-=================================================
-Prev perf (before contiguity)
-=================================================
-- fps: 14.8 (Samsung: 13.8)	
-- World::Update: 59.85%
-	- DoSprings: 42.48%
-		- Spring::Update: 34.26%
-		- Spring::DoDamping: 4.07%
-	- BalancePressure: 5.66%
-	- GravitateWater: 5.14%
-	- PreparePointsForFinalStep: 3.07%
-	- Point::Update: 1.50%
-	- DiffuseLight: 0.62%
-- Game::Render: 31.07%
-	- Ship::Render: 27.92%
-		- ShipTriangles: 14.66%
-		- Springs: 10.42%%
-	- RenderContext::RenderCloudsEnd: 1.50%
-=================================================
-
 - Fix initial OnPaint: TODO
 
 - Gfx:
 	- OpenGL optimizations:
-		- Try without buffer population: 			
+		= Try without buffer population: 			
 			- Point has vec2f * const mPosition and vec2f * const mColour, pointing into two fixed buffers
 				- vectors are packed (static_assert on contiguous 2 or 3)
 				+ Point does not live in PointerContainer but in std::uq_ptr<Point>[]
@@ -51,9 +47,10 @@ Prev perf (before contiguity)
 			- RenderContext usage of two buffers at each DrawElements:
 				glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 				glVertexAttribPointer(vertexPositionAttribute, 3,  GL_FLOAT, false, 0, 0);
-
+				glEnableVertexAttribArray(vertexPositionAttribute);
 				glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
 				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
+				glEnableVertexAttribArray(vertexColorAttribute);
 			- Point's vector pointers are populated by Point::Rebase(buf1, buf2),
 			  invoked by Ship at construction
 				- Rebase() uses mPointIndex (rename of mElementIndex) to calc pointers
@@ -65,22 +62,26 @@ Prev perf (before contiguity)
 				  - or do clamp in shader, so use mWater and mLight straight from buffer, no CalculateX() needed
 				- If we put light and water in shader, then we don't need to reupload color buffer each time
 			- Bonus: also test GPU interpolation of mLight and mWater by emitting them at vertex
-		- Plan:
-			- 0: Test with additional mLight and mWater uploaded to RenderContext (same Point struct), and fragment shader doing math
-				- F Shader needs params: ambientLightIntensity; constants: waterColor, lightColor
-				- Check perf:
-					- Before:
-					- After:
-					- Keep in mind that we're adding to the buffer, while later we'll remove the colors
-				- Also test bonus: GPU interpolation of mLight and mWater by emitting them at vertex
-			- 1: if OK: PointCore struct (@GameLib) with {position, light, water}, based into Point
-				- Separate color buffer: 
-					- Color struct (vec3f) has static_assert's for alignments
-					- Created by Ship::Create(), moved into Ship member (ElementRepository<vec3f>)
-					- Uploaded one-shot at first Ship::Render()
-						- via RenderContext::UploadShipPointColors(vec3f *, size_t elementCount):
-							- Uploads to GPU right away, with GL_STATIC_DRAW
-							- Stores size (mShipElementCount) for later assert
+		= Plan:
+			+ 0: Test with additional mLight and mWater uploaded to RenderContext (same Point struct), and fragment shader doing math
+				+ F Shader needs params: ambientLightIntensity; constants: waterColor, lightColor
+				+ Remove point color calculation
+				+ Check perf:
+					+ Before: 16
+					+ After: 14.1
+					+ Keep in mind that we're adding to the buffer, while later we'll remove the colors
+				+ Also test bonus: GPU interpolation of mLight and mWater by emitting them at vertex				
+			= 1: if OK: PointCore struct (@GameLib) with {position, light, water}, based into Point
+				+ Separate color buffer: 
+					+ Color struct (vec3f) has static_assert's for alignments
+					+ Created by Ship::Create(), moved into Ship member (ElementRepository<vec3f>)
+					+ Uploaded one-shot at first Ship::Render()
+						+ via RenderContext::UploadShipPointColors(vec3f *, size_t elementCount):
+							+ Uploads to GPU right away, with GL_STATIC_DRAW
+							+ Stores size (mShipElementCount) for later assert
+				+ Check perf: 14.2
+				- Commit 
+				- Test with color kung-fu done in vertex and passed to fragment
 				- Separate PointCore buffer:
 					- PointCore struct has static_assert's for alignments
 					- Created by Ship::Create(), moved into Ship member (ElementRepository)
@@ -88,7 +89,10 @@ Prev perf (before contiguity)
 					- Uploaded at each Ship::Render()
 						- via RenderContext::UploadShipPoints(PointCore *, size_t elementCount):
 							- Asserts size same as color buffer (mShipElementCount)
-							- Then uploads to GPU right away, with GL_DYNAMIC_DRAW
+							- Then uploads to GPU right away, with GL_STREAMING_DRAW
+			- Final:
+				- Nuke Point::CalculateColour
+				- Also do light/water color blending at ship *point* fragment shader
 				
 				
 			 

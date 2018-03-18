@@ -45,13 +45,16 @@ RenderContext::RenderContext(
     // Ship points
     , mShipPointShaderProgram(0u)
     , mShipPointShaderOrthoMatrixParameter(0)
+    , mShipElementCount(0u)
     , mShipPointBuffer()
     , mShipPointBufferSize(0u)
     , mShipPointBufferMaxSize(0u)   
+    , mShipPointColorVBO(0u)
     , mShipPointVBO(0u)
     // Ship 
     , mShipShaderProgram(0u)
     , mShipShaderOrthoMatrixParameter(0)
+    , mShipShaderAmbientLightIntensityParameter(0)
     , mShipSpringBuffers()
     , mShipTriangleBuffers()
     , mShipBufferSizes()
@@ -443,8 +446,10 @@ RenderContext::RenderContext(
     // Ship points
     //
 
-    glGenBuffers(1, &tmpGLuint);
-    mShipPointVBO = tmpGLuint;
+    GLuint shipPointVBOs[2];
+    glGenBuffers(2, shipPointVBOs);
+    mShipPointColorVBO = shipPointVBOs[0];
+    mShipPointVBO = shipPointVBOs[1];
 
 
     //
@@ -512,17 +517,23 @@ RenderContext::RenderContext(
     char const * shipVertexShaderSource = R"(
 
         // Inputs
-        attribute vec2 inputPos;
+        attribute vec4 inputPos;        
+        attribute float inputLight;
+        attribute float inputWater;
         attribute vec3 inputCol;
 
-        // Outputs
+        // Outputs        
+        varying float vertexLight;
+        varying float vertexWater;
         varying vec3 vertexCol;
 
         // Params
         uniform mat4 paramOrthoMatrix;
 
         void main()
-        {
+        {            
+            vertexLight = inputLight;
+            vertexWater = inputWater;
             vertexCol = inputCol;
 
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
@@ -533,27 +544,43 @@ RenderContext::RenderContext(
 
     char const * shipFragmentShaderSource = R"(
 
-        // Inputs from previous shader
+        // Inputs from previous shader        
+        varying float vertexLight;
+        varying float vertexWater;
         varying vec3 vertexCol;
+
+        // Params
+        uniform float paramAmbientLightIntensity;
+
+        // Constants
+        vec3 lightColour = vec3(1.0, 1.0, 0.25);
+        vec3 wetColour = vec3(0.0, 0.0, 0.8);
 
         void main()
         {
-            gl_FragColor = vec4(vertexCol.xyz, 1.0);
+            float colorWetness = min(vertexWater, 1.0) * 0.7;
+            vec3 colour1 = vertexCol * (1.0 - colorWetness) + wetColour * colorWetness;
+            colour1 *= paramAmbientLightIntensity;
+            colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
+            
+            gl_FragColor = vec4(colour1.xyz, 1.0);
         } 
-
     )";
 
     CompileShader(shipFragmentShaderSource, GL_FRAGMENT_SHADER, mShipShaderProgram);
 
     // Bind attribute locations
-    glBindAttribLocation(*mShipShaderProgram, 0, "inputPos");
-    glBindAttribLocation(*mShipShaderProgram, 1, "inputCol");
+    glBindAttribLocation(*mShipShaderProgram, 0, "inputPos");    
+    glBindAttribLocation(*mShipShaderProgram, 1, "inputLight");
+    glBindAttribLocation(*mShipShaderProgram, 2, "inputWater");
+    glBindAttribLocation(*mShipShaderProgram, 3, "inputCol");
 
     // Link
     LinkProgram(mShipShaderProgram, "Ship");
 
     // Get uniform locations
     mShipShaderOrthoMatrixParameter = GetParameterLocation(mShipShaderProgram, "paramOrthoMatrix");
+    mShipShaderAmbientLightIntensityParameter = GetParameterLocation(mShipShaderProgram, "paramAmbientLightIntensity");
 
     // Create VBOs
     GLuint shipVBOs[2];
@@ -572,7 +599,7 @@ RenderContext::RenderContext(
 
     mStressedSpringShaderProgram = glCreateProgram();
 
-    char const * stressedSpringShaderSource = R"(
+    char const * stressedSpringVertexShaderSource = R"(
 
         // Inputs
         attribute vec2 inputPos;
@@ -586,7 +613,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(stressedSpringShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
+    CompileShader(stressedSpringVertexShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
 
     char const * stressedSpringFragmentShaderSource = R"(
 
@@ -971,6 +998,18 @@ void RenderContext::RenderWater()
     glUseProgram(0);
 }
 
+void RenderContext::UploadShipPointColors(
+    vec3f const * colors,
+    size_t elementCount)
+{
+    // Upload to GPU right away
+    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointColorVBO);
+    glBufferData(GL_ARRAY_BUFFER, elementCount * sizeof(vec3f), colors, GL_STATIC_DRAW);
+
+    // Store size (for later assert)
+    mShipElementCount = elementCount;
+}
+
 void RenderContext::UploadShipPointsStart(size_t maxPoints)
 {
     if (maxPoints > mShipPointBufferMaxSize)
@@ -988,7 +1027,7 @@ void RenderContext::UploadShipPointsEnd()
 {
     // Upload point buffer 
     glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
-    glBufferData(GL_ARRAY_BUFFER, mShipPointBufferSize * sizeof(ShipPointElement), mShipPointBuffer.get(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mShipPointBufferSize * sizeof(ShipPointElement), mShipPointBuffer.get(), GL_STREAM_DRAW);
 }
 
 void RenderContext::RenderShipPoints()
@@ -1001,9 +1040,8 @@ void RenderContext::RenderShipPoints()
     // Set parameters
     glUniformMatrix4fv(mShipPointShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
-    // Bind ship points
-    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
-    DescribeShipPointsVBO();
+    // Bind and describe ship points
+    DescribeShipPointVBO();
 
     // Set point size
     glPointSize(0.15f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
@@ -1079,10 +1117,10 @@ void RenderContext::RenderShip()
 
     // Set parameters
     glUniformMatrix4fv(mShipShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+    glUniform1f(mShipShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
 
-    // Bind ship points
-    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
-    DescribeShipPointsVBO();
+    // Bind and describe ship points    
+    DescribeShipPointVBO();
 
     // Set line size
     glLineWidth(0.1f * 2.0f * mCanvasHeight / mVisibleWorldHeight);
@@ -1146,9 +1184,8 @@ void RenderContext::RenderStressedSpringsEnd()
     glUniform1f(mStressedSpringShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
     glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
-    // Bind ship points
-    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
-    DescribeShipPointsVBO();
+    // Bind and describe ship points
+    DescribeShipPointVBO();
 
     // Upload stressed springs buffer 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
@@ -1228,14 +1265,26 @@ GLint RenderContext::GetParameterLocation(
     return parameterLocation;
 }
 
-void RenderContext::DescribeShipPointsVBO()
+void RenderContext::DescribeShipPointVBO()
 {
+    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointVBO);
+
     // Position    
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)(0));
     glEnableVertexAttribArray(0);
-    // Color    
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)(2 * sizeof(float)));
+    // Light
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)((2) * sizeof(float)));
     glEnableVertexAttribArray(1);
+    // Water
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ShipPointElement), (void*)((2 + 1) * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, *mShipPointColorVBO);
+
+    // Color    
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vec3f), (void*)(0));
+    glEnableVertexAttribArray(3);
 }
 
 void RenderContext::CalculateOrthoMatrix()

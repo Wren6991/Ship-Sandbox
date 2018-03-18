@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstddef>
 #include <string>
 
 struct vec2f
@@ -124,6 +125,10 @@ public:
 	}
 };
 
+static_assert(offsetof(vec2f, x) == 0);
+static_assert(offsetof(vec2f, y) == sizeof(float));
+static_assert(sizeof(vec2f) == 2 * sizeof(float));
+
 using vec2 = vec2f;
 
 struct vec3f
@@ -239,5 +244,10 @@ public:
 	{
 	}
 };
+
+static_assert(offsetof(vec3f, x) == 0);
+static_assert(offsetof(vec3f, y) == sizeof(float));
+static_assert(offsetof(vec3f, z) == 2 * sizeof(float));
+static_assert(sizeof(vec3f) == 3 * sizeof(float));
 
 using vec3 = vec3f;
