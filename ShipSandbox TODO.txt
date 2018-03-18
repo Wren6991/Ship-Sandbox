@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 14.5 (Samsung: 23.2) (Mattia's: 8.7 (Titanic))
+- fps: 14.2 (Samsung: 23.2) (Mattia's: 8.7 (Titanic))
 - World::Update: 51.68%
 	- DoSpringsRelaxation: 35.58% (Incl) 3.67% (Excl)
 		- Ship::SpringRelaxationCalculationTask::Process: 31.65%
@@ -30,9 +30,9 @@ Prev perf (before Color buffer separation and light and water in shaders)
 	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
 =================================================
 
-- Point::Update: use velocity inside?
-
-- Fix initial OnPaint: TODO
+- Code:
+	- Get rid of Game.cpp and move functionality to GameController
+	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
 	- AmbientLightIntensity:
@@ -50,12 +50,9 @@ Prev perf (before Color buffer separation and light and water in shaders)
 				  with textureCoords being buffer of texture X's and Y's (i.e. real pixel coords) for
 				  each of the points (i.e. aligned with the point buffer which will be continuosly uploaded)
 					- Why does ship need to own or even know its texture?
-				- Still keeps a "blending color" buffer for water and light color blending, which F shader
-				  uses to blend on top of texture
-					- Ship also remembers whether or not it has a texture, and if so it does not
-					  do springs nor triangles (but it does stressed springs) and makes Point::Color 
-					  not use own color and just do blend color instead
-					- Or just use light and water buffer, see above
+				- Ship also remembers whether or not it has a texture, and if so it does not
+				  do springs nor triangles (but it does stressed springs)
+
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
 		- https://www.shadertoy.com/view/4tdXDl
@@ -89,10 +86,6 @@ Prev perf (before Color buffer separation and light and water in shaders)
 
 - Sounds:
 	- Water rushing in
-
-- Code:
-	- Get rid of Game.cpp and move functionality to GameController
-	- Use perf analyzer (mem) to see leaks
 
 - Histograms:
 	- class Histogram
