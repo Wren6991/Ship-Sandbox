@@ -16,6 +16,9 @@ Current perf
 
 =================================================
 Prev perf (before Color buffer separation and light and water in shaders)
+NOTE: fps drop is wholly due to additional vertex shader outputs; it has
+      nothing to do with the additional fragment shader inputs, with the
+      additional vertex attributes, or with the additional fragment shader logic
 =================================================
 - fps: 16.20 (Samsung: 20.4) (Mattia's: 8.7 (Titanic))
 - World::Update: 58.61%
@@ -43,15 +46,17 @@ Prev perf (before Color buffer separation and light and water in shaders)
 	- Texture mapping:
 		- Ship, using second image
 			- Load ship == Dialog with two textboxes and "browse" next to them
+				- Or: ability to load either image files (no textures) or .ship files (made & read via MediaFilArchive API)
 			- First, try naively with just point colors;
 			- If it really doesn't work:
-				- Ship is given optional texture image at construction time; if so, calls
-				  RenderContext::SetShipTexture(iShip, img data, imgW, imgH, textureCoords)
-				  with textureCoords being buffer of texture X's and Y's (i.e. real pixel coords) for
-				  each of the points (i.e. aligned with the point buffer which will be continuosly uploaded)
-					- Why does ship need to own or even know its texture?
-				- Ship also remembers whether or not it has a texture, and if so it does not
-				  do springs nor triangles (but it does stressed springs)
+				- RenderContext is given optional texture image (by GameController) via
+				  RenderContext::SetShipTexture(iShip, img data, imgW, imgH)
+				- Also, later, RenderContext is also given textureCoords,
+				  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
+				  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
+				  - TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
+				    (which uploads it, always) once and for all at the same time as colors (i.e. when dirty)
+				- If a texture is associated with the ship, RenderContext uses a special shader for ShipTriangles
 
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect

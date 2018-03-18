@@ -222,12 +222,14 @@ inline void Ship::RegisterDestruction(Point * /* element */)
 template<>
 inline void Ship::RegisterDestruction(Spring * /* element */)
 {
+    // Remember that we need to re-upload springs & triangles
     mIsShipDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
+    // Remember that we need to re-upload springs & triangles
     mIsShipDirty = true;
 }
 
