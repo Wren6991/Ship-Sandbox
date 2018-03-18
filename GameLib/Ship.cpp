@@ -354,8 +354,8 @@ Ship::Ship(World * parentWorld)
     , mAllElectricalElements()
     , mScheduler()
     , mConnectedComponentSizes()
-    , mArePointColorsDirty(true)
-    , mIsShipDirty(true)
+    , mIsPointCountDirty(true)
+    , mAreSpringsOrTrianglesDirty(true)
     , mIsSinking(false)
     , mTotalWater(0.0)
 {
@@ -560,7 +560,7 @@ void Ship::GravitateWater(
     // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring & spring : mAllSprings)
     {
-        // Don't visit destroyed springs, or we run the risk of affecting non-destroyed connected points
+        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
             if (!spring.GetMaterial()->IsHull)
@@ -594,7 +594,7 @@ void Ship::BalancePressure(float dt)
     // Visit all connected non-hull points - i.e. non-hull springs
     for (Spring & spring : mAllSprings)
     {   
-        // Don't visit destroyed springs, or we run the risk of affecting non-destroyed connected points
+        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
             if (!spring.GetMaterial()->IsHull)
@@ -735,15 +735,17 @@ void Ship::Render(
     GameParameters const & gameParameters,
     RenderContext & renderContext) const
 {
-    //
-    // Upload point colors
-    //
-
-    if (mArePointColorsDirty)
+    if (mIsPointCountDirty)
     {
+        //
+        // Upload point colors
+        //
+
         renderContext.UploadShipPointColors(mAllPointColors.data(), mAllPointColors.size());
-        mArePointColorsDirty = false;
+
+        mIsPointCountDirty = false;
     }
+
 
     //
     // Upload points
@@ -762,6 +764,7 @@ void Ship::Render(
 
     renderContext.UploadShipPointsEnd();
 
+
     if (renderContext.GetDrawPointsOnly())
     {
         // Draw just the points
@@ -770,13 +773,14 @@ void Ship::Render(
         return;
     }
 
+
     if (!mConnectedComponentSizes.empty())
     {
         //
         // Upload springs and triangles (iff dirty)
         //
 
-        if (mIsShipDirty)
+        if (mAreSpringsOrTrianglesDirty)
         {
             renderContext.UploadShipStart(mConnectedComponentSizes);
 
@@ -819,7 +823,7 @@ void Ship::Render(
 
             renderContext.UploadShipEnd();
 
-            mIsShipDirty = false;
+            mAreSpringsOrTrianglesDirty = false;
         }
 
         //////
@@ -933,7 +937,7 @@ void Ship::DoSpringsRelaxation(float dt)
 
         for (Spring & spring : mAllSprings)
         {
-            // Don't damp destroyed springs, or we run the risk of affecting non-destroyed connected points
+            // Don't damp destroyed springs, or we run the risk of being affected by destroyed connected points
             if (!spring.IsDeleted())
             {
                 spring.Damp(dampingamount);
@@ -946,7 +950,7 @@ void Ship::SpringRelaxationCalculateTask::Process()
 {
     for (Spring & spring : mParentShip->mAllSprings.range(mStartSpringIndex, mEndSpringIndex))
     {
-        // Don't relax destroyed springs, or we run the risk of affecting non-destroyed connected points
+        // Don't relax destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
             spring.Relax();

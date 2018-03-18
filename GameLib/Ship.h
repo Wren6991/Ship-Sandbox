@@ -117,8 +117,8 @@ private:
         mAllTriangles = std::move(allTriangles);
         mAllElectricalElements.initialize(std::move(allElectricalElements));
 
-        mArePointColorsDirty = true;
-        mIsShipDirty = true;
+        mIsPointCountDirty = true;
+        mAreSpringsOrTrianglesDirty = true;
     }
 
     void DoSpringsRelaxation(float dt);
@@ -200,13 +200,13 @@ private:
     // Connected components metadata
     std::vector<std::size_t> mConnectedComponentSizes;
 
-    // Flag remembering whether point colors have changed
+    // Flag remembering whether the number of points has changed
     // since the last time we delivered them to the rendering context
-    mutable bool mArePointColorsDirty;
+    mutable bool mIsPointCountDirty;
 
     // Flag remembering whether springs and/or triangles have changed
     // since the last time we delivered them to the rendering context
-    mutable bool mIsShipDirty;
+    mutable bool mAreSpringsOrTrianglesDirty;
 
     // Sinking detection
     bool mIsSinking;
