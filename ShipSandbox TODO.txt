@@ -30,7 +30,6 @@ Prev perf (before Color buffer separation and light and water in shaders)
 	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
 =================================================
 
-- Point::Update(dragCoeff)
 - Point::Update: use velocity inside?
 
 - Fix initial OnPaint: TODO
@@ -66,14 +65,6 @@ Prev perf (before Color buffer separation and light and water in shaders)
 		- see https://github.com/wxWidgets/wxWidgets/blob/master/samples/opengl/pyramid/pyramid.cpp
 
 - Dynamics:
-	- See if during dynamics can assume no deletions (i.e. iff we break springs only at end) and thus optimize
-	  on checking deletions
-	- After OpenGL/Fixed buffers optimization: 
-		- Implement Ship::CalculatePointColors() (called at Render time) which does everything in parallel on 
-		  Colour buffer (before calling RenderContext::UploadVertices(.))
-			- Verify VS emits parallel instructions
-			- Might not be needed if we move blending to shader
-		- See other similar parallelization opportunities on Positions
 	- Water:
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
@@ -89,7 +80,8 @@ Prev perf (before Color buffer separation and light and water in shaders)
 		+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
 	- Is Verlet implemented right?
 	- See if can continue queueing tasks without waiting for all blocks of chunks
-	- Water drag (already there?)
+	- Water drag 
+		- The one already there assumes velocity always normal to surface, but we should consider surface normal instead
 
 - Controls:
 	- SettingsDialog: save settings, and defaults
@@ -114,18 +106,13 @@ Prev perf (before Color buffer separation and light and water in shaders)
 			- if not visible, return;
 			- Draw Statistics
 
-
-
 - Y-center ship after loading
 	+ Log destroyAt world coordinates to see span of Y axis: Y=0 is sea level, - is down, + is up
 	- Use effective y-span (lowest and highest y of real points)
 
 
-
-
 - Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
 	- Also jellyfish fixed in 1.2.6?
-
 
 - Lights
 	- Try additive water @ diffusion (with cap @ Point::CalculateColour)

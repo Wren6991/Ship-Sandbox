@@ -103,15 +103,17 @@ void Point::Update(
     float dragCoefficient,
 	GameParameters const & gameParameters)
 {    
-    float const waterHeightAtThisPoint = GetParentShip()->GetParentWorld()->GetWaterHeight(mPosition.x, gameParameters);
-	float const mass = mMaterial->Mass;
-
     // Save current position, which will be the next LastPosition
     vec2f const newLastPosition = mPosition;
 
+    // Get height of water at this point
+    float const waterHeightAtThisPoint = GetParentShip()->GetParentWorld()->GetWaterHeight(mPosition.x, gameParameters);
+
+    // Get our mass
+	float const mass = mMaterial->Mass;
+
     // Calculate current velocity
-    // TODO: and also use below 
-    // TODO: check perf
+    vec2f velocity = mPosition - mLastPosition;
 
     //
     // 1 - Apply forces:
@@ -119,30 +121,31 @@ void Point::Update(
     //  Force2: Buoyancy of point mass (only for underwater points)
     //
 
-    // TODO: optimize with early if and two formulas
-
     // Clamp water to 1, so high pressure areas are not heavier
     float const effectiveBuoyancy = gameParameters.BuoyancyAdjustment * mBuoyancy;
     float effectiveMassMultiplier = 1.0f + fminf(mWater, 1.0f) * effectiveBuoyancy; 
     if (mPosition.y < waterHeightAtThisPoint)
     {
         // Also consider buoyancy of own mass
-        effectiveMassMultiplier -= effectiveBuoyancy;
+        effectiveMassMultiplier -= effectiveBuoyancy;        
     }
 
-    this->AddForce(gameParameters.Gravity * mass * effectiveMassMultiplier);
-	
+    AddForce(gameParameters.Gravity * mass * effectiveMassMultiplier);
+
 
     //
-	// 2 - Water drag
+    // 2 - Apply water drag:
+    //  Proportional to current velocity
     //
-    // (Note: to be checked)
+    // TBD: should probably consider normal to surface at this point, so that masses
+    // would also have a horizontal movement component when sinking
     //
 
     if (mPosition.y < waterHeightAtThisPoint)
     {
-        mLastPosition += (mPosition - mLastPosition) * dragCoefficient;
+        velocity -= velocity * dragCoefficient;
     }
+
 
     //
 	// 3 - Apply verlet integration
@@ -152,7 +155,7 @@ void Point::Update(
     // (Note: to be checked)
     //
 
-	mPosition += (mPosition - mLastPosition) + mForce * (dt * dt / mass);
+	mPosition += velocity + mForce * (dt * dt / mass);
 
 
     //
@@ -180,7 +183,7 @@ void Point::Update(
     mLastPosition = newLastPosition;
 
     // Reset force
-	mForce = vec2f(0, 0);
+    ZeroForce();
 }
 
 void Point::DestroyConnectedTriangles()
