@@ -405,7 +405,7 @@ void Ship::DrawTo(
         {
             vec2f displacement = (targetPos - point.GetPosition());
             float forceMagnitude = strength / sqrtf(0.1f + displacement.length());
-            point.ApplyForce(displacement.normalise() * forceMagnitude);
+            point.AddForce(displacement.normalise() * forceMagnitude);
         }
     }
 }
@@ -736,7 +736,7 @@ void Ship::Render(
 
     if (mArePointColorsDirty)
     {
-        renderContext.UploadShipPointColors(&(mAllPointColors[0]), mAllPointColors.size());
+        renderContext.UploadShipPointColors(mAllPointColors.data(), mAllPointColors.size());
         mArePointColorsDirty = false;
     }
 

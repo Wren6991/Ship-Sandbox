@@ -50,6 +50,11 @@ public:
 
 	inline vec2 const & GetForce() const { return mForce; }	
 
+    inline void AddForce(vec2 const & force)
+    {
+        mForce += force;
+    }
+
     inline void ZeroForce() { mForce = vec2(0, 0); }
 
 	
@@ -182,11 +187,6 @@ public:
 	{
 		return AABB(mPosition - AABBRadius, mPosition + AABBRadius);
 	}
-
-	inline void ApplyForce(vec2 const & force)
-	{ 
-		mForce += force; 
-	}	
 
 	void Breach();
 

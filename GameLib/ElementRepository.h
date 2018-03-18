@@ -215,6 +215,16 @@ public:
         return mBuffer[index];
     }
 
+    inline TElement * data() noexcept
+    {
+        return mBuffer;
+    }
+
+    inline TElement const * data() const noexcept
+    {
+        return mBuffer;
+    }
+
     inline size_t size() const noexcept
     {
         return mCurrentSize;

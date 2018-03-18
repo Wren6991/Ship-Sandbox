@@ -129,7 +129,7 @@ void Point::Update(
         effectiveMassMultiplier -= effectiveBuoyancy;
     }
 
-    this->ApplyForce(gameParameters.Gravity * mass * effectiveMassMultiplier);
+    this->AddForce(gameParameters.Gravity * mass * effectiveMassMultiplier);
 	
 
     //

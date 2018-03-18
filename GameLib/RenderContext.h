@@ -663,6 +663,7 @@ private:
 
     OpenGLShaderProgram mShipPointShaderProgram;
     GLint mShipPointShaderOrthoMatrixParameter;
+    GLint mShipPointShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
     struct ShipPointElement

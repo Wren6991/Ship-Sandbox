@@ -45,6 +45,7 @@ RenderContext::RenderContext(
     // Ship points
     , mShipPointShaderProgram(0u)
     , mShipPointShaderOrthoMatrixParameter(0)
+    , mShipPointShaderAmbientLightIntensityParameter(0)
     , mShipElementCount(0u)
     , mShipPointBuffer()
     , mShipPointBufferSize(0u)
@@ -461,17 +462,23 @@ RenderContext::RenderContext(
     char const * shipPointVertexShaderSource = R"(
 
         // Inputs
-        attribute vec2 inputPos;
+        attribute vec4 inputPos;        
+        attribute float inputLight;
+        attribute float inputWater;
         attribute vec3 inputCol;
 
-        // Outputs
+        // Outputs        
+        varying float vertexLight;
+        varying float vertexWater;
         varying vec3 vertexCol;
 
         // Params
         uniform mat4 paramOrthoMatrix;
 
         void main()
-        {
+        {            
+            vertexLight = inputLight;
+            vertexWater = inputWater;
             vertexCol = inputCol;
 
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
@@ -482,12 +489,26 @@ RenderContext::RenderContext(
 
     char const * shipPointFragmentShaderSource = R"(
 
-        // Inputs from previous shader
+        // Inputs from previous shader        
+        varying float vertexLight;
+        varying float vertexWater;
         varying vec3 vertexCol;
+
+        // Params
+        uniform float paramAmbientLightIntensity;
+
+        // Constants
+        vec3 lightColour = vec3(1.0, 1.0, 0.25);
+        vec3 wetColour = vec3(0.0, 0.0, 0.8);
 
         void main()
         {
-            gl_FragColor = vec4(vertexCol.xyz, 1.0);
+            float colorWetness = min(vertexWater, 1.0) * 0.7;
+            vec3 colour1 = vertexCol * (1.0 - colorWetness) + wetColour * colorWetness;
+            colour1 *= paramAmbientLightIntensity;
+            colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
+            
+            gl_FragColor = vec4(colour1.xyz, 1.0);
         } 
     )";
 
@@ -495,13 +516,16 @@ RenderContext::RenderContext(
 
     // Bind attribute locations
     glBindAttribLocation(*mShipPointShaderProgram, 0, "inputPos");
-    glBindAttribLocation(*mShipPointShaderProgram, 1, "inputCol");
+    glBindAttribLocation(*mShipPointShaderProgram, 1, "inputLight");
+    glBindAttribLocation(*mShipPointShaderProgram, 2, "inputWater");
+    glBindAttribLocation(*mShipPointShaderProgram, 3, "inputCol");
 
     // Link
     LinkProgram(mShipPointShaderProgram, "Ship Point");
 
     // Get uniform locations
     mShipPointShaderOrthoMatrixParameter = GetParameterLocation(mShipPointShaderProgram, "paramOrthoMatrix");
+    mShipPointShaderAmbientLightIntensityParameter = GetParameterLocation(mShipPointShaderProgram, "paramAmbientLightIntensity");
 
     // Set hardcoded parameters    
     glUseProgram(*mShipPointShaderProgram);
@@ -1039,6 +1063,7 @@ void RenderContext::RenderShipPoints()
 
     // Set parameters
     glUniformMatrix4fv(mShipPointShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
+    glUniform1f(mShipPointShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
 
     // Bind and describe ship points
     DescribeShipPointVBO();
