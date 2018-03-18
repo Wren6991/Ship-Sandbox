@@ -149,25 +149,6 @@ public:
     inline uint64_t GetCurrentConnectedComponentDetectionStepSequenceNumber() const { return mCurrentConnectedComponentDetectionStepSequenceNumber; }
     inline void SetConnectedComponentDetectionStepSequenceNumber(uint64_t connectedComponentDetectionStepSequenceNumber) { mCurrentConnectedComponentDetectionStepSequenceNumber = connectedComponentDetectionStepSequenceNumber; }
 
-
-    inline vec3f CalculateColour(float ambientLightIntensity) const
-    {
-        static constexpr vec3f LightPointColour = vec3f(1.0f, 1.0f, 0.25f);
-        static constexpr vec3f WetPointColour = vec3f(0.0f, 0.0f, 0.8f);
-
-        float const colorWetness = fminf(mWater, 1.0f) * 0.7f;
-
-        vec3f colour1 = mMaterial->RenderColour * (1.0f - colorWetness)
-            + WetPointColour * colorWetness;
-
-        colour1 *= ambientLightIntensity;
-
-        float const colorLightness = mLight;
-
-        return colour1 * (1.0f - colorLightness)
-            + LightPointColour * colorLightness;
-    }
-
     float GetExternalWaterPressure(
         float waterLevel,
         GameParameters const & gameParameters) const
@@ -192,6 +173,7 @@ public:
 
 	void Update(
 		float dt,
+        float dragCoefficient,
 		GameParameters const & gameParameters);
 
 private:

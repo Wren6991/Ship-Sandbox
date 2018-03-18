@@ -100,6 +100,7 @@ void Point::Breach()
 
 void Point::Update(
 	float dt,
+    float dragCoefficient,
 	GameParameters const & gameParameters)
 {    
     float const waterHeightAtThisPoint = GetParentShip()->GetParentWorld()->GetWaterHeight(mPosition.x, gameParameters);
@@ -140,7 +141,7 @@ void Point::Update(
 
     if (mPosition.y < waterHeightAtThisPoint)
     {
-        mLastPosition += (mPosition - mLastPosition) * (1.0f - powf(0.6f, dt));
+        mLastPosition += (mPosition - mLastPosition) * dragCoefficient;
     }
 
     //

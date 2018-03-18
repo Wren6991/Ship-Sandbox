@@ -674,10 +674,15 @@ void Ship::Update(
     // Advance simulation for points (velocity and forces)
     //
 
+    float dragCoefficient = (1.0f - powf(0.6f, dt));
+
     for (Point & point : mAllPoints)
     {
         // We can safely update all points, even deleted ones
-        point.Update(dt, gameParameters);
+        point.Update(
+            dt, 
+            dragCoefficient, 
+            gameParameters);
     }
 
 
