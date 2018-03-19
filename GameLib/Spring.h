@@ -109,8 +109,9 @@ public:
         vec2f correction = displacement.normalise(displacementLength);
         correction *= (mRestLength - displacementLength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
 
-        mPointA->SubtractFromPosition(correction * mPointB->GetMass());    // if mPointB is heavier, mPointA moves more.
-        mPointB->AddToPosition(correction * mPointA->GetMass());    // (and vice versa...)
+        // correction > 0 -> compressed, & correction is oriented towards B
+        mPointA->AddToPosition(-correction * mPointB->GetMass()); // If mPointB is heavier, mPointA moves more...
+        mPointB->AddToPosition(correction * mPointA->GetMass()); // ...and vice versa
     }
 
 
@@ -120,11 +121,15 @@ public:
         vec2f dampCorrection = (mPointA->GetPosition() - mPointB->GetPosition()).normalise();
 
         // Relative velocity dot spring direction = projected velocity;
-        // amount = amount of projected velocity that remains after damping
+        // amount = amount of projected velocity that remains after damping;
+        // result is oriented along the spring
+        //
+        // dampCorrection > 0 -> point A is faster
         dampCorrection *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(dampCorrection) * amount;   
 
-        mPointA->AddToLastPosition(dampCorrection);
-        mPointB->SubtractFromLastPosition(dampCorrection);
+        // Update velocities - slow A by dampCorrection and speed up B by dampCorrection
+        mPointA->AddToLastPosition(dampCorrection); 
+        mPointB->AddToLastPosition(-dampCorrection);
     }
 
 private:

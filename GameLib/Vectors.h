@@ -31,6 +31,13 @@ public:
 			y - rhs.y);
 	}
 
+    inline vec2f operator-() const
+    {
+        return vec2f(
+            -x,
+            -y);
+    }
+
 	inline vec2f operator*(float rhs) const
 	{
 		return vec2f(
@@ -152,6 +159,14 @@ public:
 			y - rhs.y,
 			z - rhs.z);
 	}
+
+    inline vec3f operator-() const
+    {
+        return vec3f(
+            -x,
+            -y,
+            -z);
+    }
 
 	inline vec3f operator*(float rhs) const
 	{

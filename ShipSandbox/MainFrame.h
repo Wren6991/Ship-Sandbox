@@ -13,6 +13,7 @@
 #include "SoundController.h"
 
 #include <GameLib/GameController.h>
+#include <GameLib/IGameEventHandler.h>
 #include <GameLib/ResourceLoader.h>
 
 #include <wx/filedlg.h>
@@ -30,7 +31,7 @@
 /*
  * The main window of the game's GUI.
  */
-class MainFrame : public wxFrame
+class MainFrame : public wxFrame, public IGameEventHandler
 {
 public:
 
@@ -124,12 +125,30 @@ private:
     void OnMuteMenuItemSelected(wxCommandEvent& event);
 	void OnAboutMenuItemSelected(wxCommandEvent& event);
 
+    //
+    // Game event handler
+    //
+
+    virtual void OnGameReset() override
+    {
+        mCurrentShipNames.clear();
+    }
+
+    virtual void OnShipLoaded(
+        unsigned int /*id*/,
+        std::string const & name) override
+    {
+        mCurrentShipNames.push_back(name);
+    }
+
+
 private:
 
     std::vector<std::unique_ptr<wxCursor>> MakeCursors(std::string const & imageFilePath, int hotspotX, int hotspotY);
     std::unique_ptr<wxCursor> MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY);
     void SwitchCursor();
     void SetCursorStrength(float strength, float minStrength, float maxStrength);
+    void SetFrameTitle();
 	void UpdateTool();
     bool IsPaused();
     void DoGameStep();
@@ -201,6 +220,8 @@ private:
     std::shared_ptr<ResourceLoader> mResourceLoader;
 	std::shared_ptr<GameController> mGameController;
     std::unique_ptr<SoundController> mSoundController;
+
+    std::vector<std::string> mCurrentShipNames;
 
 	uint64_t mTotalFrameCount;	
     uint64_t mLastFrameCount;

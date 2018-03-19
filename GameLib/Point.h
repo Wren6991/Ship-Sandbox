@@ -35,12 +35,9 @@ public:
 
 	inline vec2 const & GetPosition() const {  return mPosition;  }	
     inline void AddToPosition(vec2 const & dPosition) { mPosition += dPosition; }    
-    inline void SubtractFromPosition(vec2 const & dPosition) { mPosition -= dPosition; }
 	
 	inline vec2 const & GetLastPosition() const { return mLastPosition; }    
     inline void AddToLastPosition(vec2 const & dPosition) { mLastPosition += dPosition; }
-    inline void SubtractFromLastPosition(vec2 const & dPosition) { mLastPosition -= dPosition; }
-
 
 	inline Material const * GetMaterial() const { return mMaterial; }
 

@@ -21,6 +21,18 @@ public:
     {
     }
 
+    virtual void OnGameReset()
+    {
+        // Default-implemented
+    }
+
+    virtual void OnShipLoaded(
+        unsigned int /*id*/,
+        std::string const & /*name*/)
+    {
+        // Default-implemented
+    }
+
     virtual void OnDestroy(
         Material const * /*material*/,
         bool /*isUnderwater*/,

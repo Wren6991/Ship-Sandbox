@@ -35,9 +35,14 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Code:
 	- Get rid of Game.cpp and move functionality to GameController
+		- Also, don't load default ship autonomously (need to register event handlers before that happens);
+		  rely on MainFrame calling GameController::LoadDefaultShip() after registration
+	+ Change calls to Point::SubtractFromLastPosition() to AddToLastPosition() and use (& implement) unary '-' operator for vectors
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
+	- Optimizations:
+		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
 	- AmbientLightIntensity:
 		+ Use also in RenderContext::RenderStart() for clear (sky) color
 		+ Phase 1: pgup/down
@@ -88,6 +93,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- The one already there assumes velocity always normal to surface, but we should consider surface normal instead
 
 - Controls:
+	+ Ship name in title
+		+ MainFrame implements OnShipLoaded() and OnGameReset(), populates mShipNames vector with ship names, and calls SetTitle()
+		+ SetTitle appends Utils::Join(vec<str>, ' + ') to current title
 	- SettingsDialog: save settings, and defaults
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 

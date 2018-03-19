@@ -13,7 +13,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iterator>
 #include <optional>
+#include <sstream>
 #include <string>
 
 class Utils 
@@ -97,5 +99,22 @@ public:
             [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
 
         return lstr;
+    }
+
+    template <typename TIterable>
+    static std::string Join(TIterable const & elements, std::string const & separator)
+    {
+        std::stringstream ss;
+        bool first = true;
+        for (auto const & str : elements)
+        {
+            if (!first)
+                ss << separator;
+            ss << str;
+
+            first = false;
+        }
+
+        return ss.str();
     }
 };

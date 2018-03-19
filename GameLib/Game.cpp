@@ -34,7 +34,11 @@ std::unique_ptr<Game> Game::Create(
 
 void Game::Reset()
 {
+    // Reset world
 	mWorld.reset(new Physics::World(mGameEventHandler));
+
+    // Notify
+    mGameEventHandler->OnGameReset();
 }
 
 void Game::LoadShip(std::string const & filepath)
@@ -54,6 +58,10 @@ void Game::LoadShip(std::string const & filepath)
         shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
         " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
 
+    // Notify
+    mGameEventHandler->OnShipLoaded(shp->GetId(), shipDefinition.ShipName);
+
+    // Add ship to world
 	mWorld->AddShip(std::move(shp));
 }
 

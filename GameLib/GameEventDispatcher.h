@@ -27,6 +27,26 @@ public:
 
 public:
 
+    virtual void OnGameReset() override
+    {
+        // No need to aggregate this one
+        for (auto sink : mSinks)
+        {
+            sink->OnGameReset();
+        }
+    }
+
+    virtual void OnShipLoaded(
+        unsigned int id,
+        std::string const & name) override
+    {
+        // No need to aggregate this one
+        for (auto sink : mSinks)
+        {
+            sink->OnShipLoaded(id, name);
+        }
+    }
+
     virtual void OnDestroy(
         Material const * material,
         bool isUnderwater,

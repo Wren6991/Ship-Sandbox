@@ -33,6 +33,8 @@ public:
 
     ~Ship();
 
+    unsigned int GetId() const { return mId; }
+
     void Destroy();
 
     World const * GetParentWorld() const { return mParentWorld; }

@@ -13,6 +13,7 @@
 
 #include <GameLib/GameException.h>
 #include <GameLib/Log.h>
+#include <GameLib/Utils.h>
 
 #include <wx/intl.h>
 #include <wx/msgdlg.h>
@@ -71,6 +72,7 @@ MainFrame::MainFrame(wxApp * mainApp)
     , mResourceLoader(new ResourceLoader())
 	, mGameController()
     , mSoundController()
+    , mCurrentShipNames()
     , mTotalFrameCount(0u)
     , mLastFrameCount(0u)
     , mFrameCountStatsOriginTimestamp(std::chrono::steady_clock::time_point::min())
@@ -412,6 +414,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     // Register game event handlers
     //
 
+    mGameController->RegisterGameEventHandler(this);
     mGameController->RegisterGameEventHandler(mEventTickerPanel.get());
     mGameController->RegisterGameEventHandler(mSoundController.get());
 
@@ -530,26 +533,10 @@ void MainFrame::OnGameTimerTrigger(wxTimerEvent & /*event*/)
 void MainFrame::OnLowFrequencyTimerTrigger(wxTimerEvent & /*event*/)
 {
     //
-    // Update fps
+    // Update fps in title
     //
 
-    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-
-    auto totalElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsOriginTimestamp);
-    auto lastElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsLastTimestamp);
-
-    float totalFps = static_cast<float>(mTotalFrameCount) * 1000.0f / static_cast<float>(totalElapsed.count());
-    float lastFps = static_cast<float>(mLastFrameCount) * 1000 / static_cast<float>(lastElapsed.count());
-
-    std::ostringstream ss;
-
-    ss << GetWindowTitle();
-    ss << "  FPS: " << std::fixed << std::setprecision(2) << totalFps << " (" << lastFps << ")";
-
-    SetTitle(ss.str());        
-
-    mLastFrameCount = 0u;
-    mFrameCountStatsLastTimestamp = now;
+    SetFrameTitle();
 
 
     //
@@ -1006,6 +993,33 @@ void MainFrame::UpdateTool()
 		    }
 	    }
     }
+}
+
+void MainFrame::SetFrameTitle()
+{
+    //
+    // Update fps
+    //
+
+    std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+    auto totalElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsOriginTimestamp);
+    auto lastElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - mFrameCountStatsLastTimestamp);
+
+    float totalFps = static_cast<float>(mTotalFrameCount) * 1000.0f / static_cast<float>(totalElapsed.count());
+    float lastFps = static_cast<float>(mLastFrameCount) * 1000 / static_cast<float>(lastElapsed.count());
+
+    std::ostringstream ss;
+
+    ss << GetWindowTitle()
+        << "  FPS: " << std::fixed << std::setprecision(2) << totalFps << " (" << lastFps << ")"
+        << " - "
+        << Utils::Join(mCurrentShipNames, " + ");
+
+    SetTitle(ss.str());
+
+    mLastFrameCount = 0u;
+    mFrameCountStatsLastTimestamp = now;
 }
 
 bool MainFrame::IsPaused()
