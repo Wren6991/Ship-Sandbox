@@ -6,6 +6,7 @@
 #pragma once
 
 #include "GameOpenGL.h"
+#include "ImageData.h"
 #include "ProgressCallback.h"
 #include "ResourceLoader.h"
 #include "Vectors.h"
@@ -216,8 +217,8 @@ public:
 
         // Calculate texture dimensions in NDC, as proportion in 1280 X 1024
         // (totally arbitrary, a texture this size would fill the entire screen)
-        float textureTileNdcW = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)]->Width) / 1280.0f;
-        float textureTileNdcH = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)]->Height) / 1024.0f;
+        float textureTileNdcW = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)].Width) / 1280.0f;
+        float textureTileNdcH = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)].Height) / 1024.0f;
 
         float leftX = mappedX - textureTileNdcW * scale / 2.0f;
         float rightX = mappedX + textureTileNdcW * scale / 2.0f;
@@ -587,7 +588,7 @@ private:
     
     OpenGLVBO mCloudVBO;
 
-    std::vector<std::unique_ptr<ResourceLoader::Texture const>> mCloudTextureDatas;
+    std::vector<ImageData> mCloudTextureDatas;
     std::vector<OpenGLTexture> mCloudTextures;
 
     inline size_t GetCloudTextureIndex(size_t cloudIndex) const
@@ -621,7 +622,7 @@ private:
 
     OpenGLVBO mLandVBO;
     
-    std::unique_ptr<ResourceLoader::Texture const> mLandTextureData;
+    std::optional<ImageData> mLandTextureData;
     OpenGLTexture mLandTexture;
 
 
@@ -653,7 +654,7 @@ private:
 
     OpenGLVBO mWaterVBO;
 
-    std::unique_ptr<ResourceLoader::Texture const> mWaterTextureData;
+    std::optional<ImageData> mWaterTextureData;
     OpenGLTexture mWaterTexture;
 
 

@@ -50,7 +50,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 		}
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
@@ -58,11 +58,15 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char [sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
 		mWorld.get(),
-		imageData,
-		4,
-		5,
+        ShipDefinition(       
+            ImageData(4, 5, std::unique_ptr<unsigned char const []>(imageData)),
+            std::nullopt,
+            "Test"),
 		materials);
 
 	ASSERT_TRUE(!!ship);
@@ -88,7 +92,7 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 		}
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
@@ -96,12 +100,16 @@ TEST_F(ShipTests, BuildsPoints_TwoPoints)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
         mWorld.get(),
-		imageData,
-		4,
-		5,
-		materials);
+        ShipDefinition(
+            ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
+        materials);
 
 	ASSERT_TRUE(!!ship);
 
@@ -135,17 +143,21 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 		}
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x03, 0x02, 0x01,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
         mWorld.get(),
-		imageData,
-		4,
-		3,
+        ShipDefinition(
+            ImageData(4, 3, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
 		materials);
 
 	ASSERT_TRUE(!!ship);
@@ -166,7 +178,7 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
         }
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
@@ -174,12 +186,16 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
         mWorld.get(),
-		imageData,
-		4,
-		5,
-		materials);
+        ShipDefinition(
+            ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
+        materials);
 
 	ASSERT_TRUE(!!ship);
 
@@ -206,7 +222,7 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
         }
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	25, 30, 35,			0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
@@ -214,12 +230,16 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
         mWorld.get(),
-		imageData,
-		4,
-		5,
-		materials);
+        ShipDefinition(
+            ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
+        materials);
 
 	ASSERT_TRUE(!!ship);
 
@@ -261,7 +281,7 @@ TEST_F(ShipTests, DestroyAt)
 		}
 	);
 
-	unsigned char imageData[] = {
+	unsigned char imageDataSrc[] = {
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	66, 66, 66,			40, 45, 50,			0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,	77, 77, 77,			40, 45, 50,			0x00, 0x00, 0x00,
@@ -269,12 +289,16 @@ TEST_F(ShipTests, DestroyAt)
 		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
 	};
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
 	auto ship = Physics::Ship::Create(
         mWorld.get(),
-		imageData,
-		4,
-		5,
-		materials);
+        ShipDefinition(
+            ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
+        materials);
 
 	ASSERT_TRUE(!!ship);
 
@@ -333,7 +357,7 @@ TEST_F(ShipTests, BuildsLamps_OneLamp)
         }
     );
 
-    unsigned char imageData[] = {
+    unsigned char imageDataSrc[] = {
         0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
         0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
         0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
@@ -341,11 +365,15 @@ TEST_F(ShipTests, BuildsLamps_OneLamp)
         0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
     };
 
+    auto imageData = new unsigned char[sizeof(imageDataSrc)];
+    memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
+
     auto ship = Physics::Ship::Create(
         mWorld.get(),
-        imageData,
-        4,
-        5,
+        ShipDefinition(
+            ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
+            std::nullopt,
+            "Test"),
         materials);
 
     ASSERT_TRUE(!!ship);

@@ -8,11 +8,10 @@
 #include <GameLib/IGameEventHandler.h>
 #include <GameLib/ResourceLoader.h>
 #include <GameLib/TupleKeys.h>
+#include <GameLib/Utils.h>
 
 #include <SFML/Audio.hpp>
 
-#include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <memory>
 #include <random>
@@ -72,12 +71,7 @@ private:
 
     static SoundType StrToSoundType(std::string const & str)
     {
-        std::string lstr = str;
-        std::transform(
-            lstr.begin(),
-            lstr.end(),
-            lstr.begin(),
-            [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+        std::string lstr = Utils::ToLower(str);
 
         if (lstr == "break")
             return SoundType::Break;
@@ -104,12 +98,7 @@ private:
 
     static SizeType StrToSizeType(std::string const & str)
     {
-        std::string lstr = str;
-        std::transform(
-            lstr.begin(),
-            lstr.end(),
-            lstr.begin(),
-            [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+        std::string lstr = Utils::ToLower(str);
 
         if (lstr == "small")
             return SizeType::Small;

@@ -11,12 +11,18 @@
 
 #include <picojson/picojson.h>
 
+#include <algorithm>
+#include <cctype>
 #include <optional>
 #include <string>
 
 class Utils 
 {
 public:
+
+    //
+    // JSON
+    //
 
 	static picojson::value ParseJSONFile(std::string const & filename);
 
@@ -76,4 +82,20 @@ public:
 
 		return memberIt->second.get<T>();
 	}
+
+    //
+    // String
+    //
+
+    static std::string ToLower(std::string const & str)
+    {
+        std::string lstr = str;
+        std::transform(
+            lstr.begin(),
+            lstr.end(),
+            lstr.begin(),
+            [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+
+        return lstr;
+    }
 };

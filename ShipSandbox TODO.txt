@@ -44,19 +44,21 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- Phase 2: with clock
 
 	- Texture mapping:
-		- Ship, using second image
-			- Load ship == Dialog with two textboxes and "browse" next to them
-				- Or: ability to load either image files (no textures) or .ship files (made & read via MediaFilArchive API)
+		= Ship, using second image
+			+ Load ship == image or .shp (JSON)
 			- First, try naively with just point colors;
 			- If it really doesn't work:
 				- RenderContext is given optional texture image (by GameController) via
 				  RenderContext::SetShipTexture(iShip, img data, imgW, imgH)
+				  - Uploads immediately
+				  - Texture machinery is created at startup anyway
+				  - Remembers if ship has texture via mShipTexture (uq_ptr<ResourceLoader::Texture>)
 				- Also, later, RenderContext is also given textureCoords,
 				  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
 				  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
 				  - TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
-				    (which uploads it, always) once and for all at the same time as colors (i.e. when dirty)
-				- If a texture is associated with the ship, RenderContext uses a special shader for ShipTriangles
+				    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
+				- If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
 
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
@@ -125,12 +127,13 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			+ ElectricalElement::GetType(){return mType;}: non-virtual, it's optimized by compiler
 	- Current Propagation Algo:
 		+ create new generation seq number; if new is 0 => 1
+		- ElectricalElement has SetVisited(curGen), bool IsVisited(curGen)
 		- All of the following @ new ad-hoc update step
 		- visit whole electrical graph, as:
 			- For each generator point:
-				- if not visited=>flood from here
-					- for each node: set to visisted
-					- Use a single visited set
+				- if not visited=>flood all connected ElectricalElements from here
+					- for each node: set to visited
+					- No need to have a visited set, just call ElElement->IsVisited(curGen)
 			- Then, lamps will be considered lighted if visited at this generation
 		- OLD:
 			- visit all generator points and count the points in their graphs; for each connected component:

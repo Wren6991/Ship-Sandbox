@@ -136,12 +136,12 @@ RenderContext::RenderContext(
     if (progressCallback)
         progressCallback(0.666f, "Loading textures...");
 
-    mLandTextureData = resourceLoader.LoadTextureRgb("sand_1.jpg");
+    mLandTextureData.emplace(resourceLoader.LoadTextureRgb("sand_1.jpg"));
 
     if (progressCallback)
         progressCallback(1.0f, "Loading textures...");
 
-    mWaterTextureData = resourceLoader.LoadTextureRgb("water_1.jpg");
+    mWaterTextureData.emplace(resourceLoader.LoadTextureRgb("water_1.jpg"));
 
     // Generate all texture names
     size_t const numberOfTextures = mCloudTextureDatas.size() + 2U;
@@ -231,7 +231,7 @@ RenderContext::RenderContext(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i]->Width, mCloudTextureDatas[i]->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i]->Data.get());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i].Width, mCloudTextureDatas[i].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i].Data.get());
         if (GL_NO_ERROR != glGetError())
         {
             throw GameException("Error uploading cloud texture onto GPU");

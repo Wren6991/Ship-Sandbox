@@ -8,14 +8,14 @@
 #pragma once
 
 #include "GameException.h"
+#include "Utils.h"
 #include "Vectors.h"
 
-#include <algorithm>
+#include <picojson/picojson.h>
+
 #include <array>
-#include <cctype>
 #include <memory>
 #include <optional>
-#include <picojson/picojson.h>
 #include <string>
 
 struct Material
@@ -47,12 +47,7 @@ struct Material
 
         static ElectricalElementType StrToElectricalElementType(std::string const & str)
         {
-            std::string lstr = str;
-            std::transform(
-                lstr.begin(),
-                lstr.end(),
-                lstr.begin(),
-                [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+            std::string lstr = Utils::ToLower(str);
 
             if (lstr == "lamp")
                 return ElectricalElementType::Lamp;
@@ -97,12 +92,7 @@ struct Material
 
         static SoundElementType StrToSoundElementType(std::string const & str)
         {
-            std::string lstr = str;
-            std::transform(
-                lstr.begin(), 
-                lstr.end(), 
-                lstr.begin(), 
-                [](unsigned char c) { return static_cast<unsigned char>(std::tolower(c)); });
+            std::string lstr = Utils::ToLower(str);
 
             if (lstr == "cable")
                 return SoundElementType::Cable;

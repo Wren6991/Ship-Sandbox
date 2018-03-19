@@ -9,6 +9,7 @@
 
 #include "GameException.h"
 #include "Log.h"
+#include "ShipDefinitionFile.h"
 #include "Utils.h"
 
 #include <IL/il.h>
@@ -26,47 +27,72 @@ namespace std {
 
 ResourceLoader::ResourceLoader()
 {
-
     // Initialize DevIL
     ilInit();
     iluInit();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+// Ships
+////////////////////////////////////////////////////////////////////////////////////////////
+
+ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
+{    
+    if (ShipDefinitionFile::IsShipDefinitionFile(filepath))
+    {
+        // 
+        // Load full definition
+        //
+
+        picojson::value root = Utils::ParseJSONFile(filepath);
+        if (!root.is<picojson::object>())
+        {
+            throw GameException("File \"" + filepath + "\" does not contain a JSON object");
+        }
+
+        ShipDefinitionFile sdf = ShipDefinitionFile::Create(root.get<picojson::object>());
+
+        return ShipDefinition(
+            LoadImage(sdf.StructuralImageFilePath, IL_RGB, IL_ORIGIN_UPPER_LEFT),
+            LoadTextureRgba(sdf.StructuralImageFilePath),
+            std::filesystem::path(filepath).stem().string());
+    }
+    else
+    {
+        //
+        // Assume it's just a structural image
+        //
+        
+        auto imageData = LoadImage(filepath, IL_RGB, IL_ORIGIN_UPPER_LEFT);
+
+        return ShipDefinition(
+            std::move(imageData),
+            std::nullopt,
+            std::filesystem::path(filepath).stem().string());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
 // Textures
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgb(std::string const & name)
+ImageData ResourceLoader::LoadTextureRgb(std::string const & name)
 {
-    std::tuple<int, int, unsigned char *> image = LoadImage(
+    return LoadImage(
         (std::filesystem::path(std::string("Data")) / "Textures" / name).string(),
         IL_RGB,
         IL_ORIGIN_LOWER_LEFT);
-
-    Texture * texture = new Texture();
-    texture->Width = std::get<0>(image);
-    texture->Height = std::get<1>(image);
-    texture->Data = std::unique_ptr<unsigned char const []>(std::get<2>(image));
-
-    return std::unique_ptr<Texture>(texture);
 }
 
-std::unique_ptr<ResourceLoader::Texture const> ResourceLoader::LoadTextureRgba(std::string const & name)
+ImageData ResourceLoader::LoadTextureRgba(std::string const & name)
 {
-    std::tuple<int, int, unsigned char *> image = LoadImage(
+    return LoadImage(
         (std::filesystem::path("Data") / "Textures" / name).string(),
         IL_RGBA,
         IL_ORIGIN_LOWER_LEFT);
-
-    Texture * texture = new Texture();
-    texture->Width = std::get<0>(image);
-    texture->Height = std::get<1>(image);
-    texture->Data = std::unique_ptr<unsigned char const[]>(std::get<2>(image));
-
-    return std::unique_ptr<Texture>(texture);
 }
 
-std::vector<std::unique_ptr<ResourceLoader::Texture const>> ResourceLoader::LoadTexturesRgba(
+std::vector<ImageData> ResourceLoader::LoadTexturesRgba(
     std::string const & prefix,
     ProgressCallback progressCallback)
 {
@@ -81,42 +107,21 @@ std::vector<std::unique_ptr<ResourceLoader::Texture const>> ResourceLoader::Load
         }
     }
 
-    std::vector<std::unique_ptr<ResourceLoader::Texture const>> textures;
+    std::vector<ImageData> textures;
     for (size_t i = 0; i < matchingFilepaths.size(); ++i)
     {
         if (progressCallback)
             progressCallback(static_cast<float>(i + 1) / static_cast<float>(matchingFilepaths.size()), "Loading texture...");
 
-        std::tuple<int, int, unsigned char *> image = LoadImage(
+        auto imageData = LoadImage(
             matchingFilepaths[i],
             IL_RGBA,
             IL_ORIGIN_LOWER_LEFT);
 
-        Texture * texture = new Texture();
-        texture->Width = std::get<0>(image);
-        texture->Height = std::get<1>(image);
-        texture->Data = std::unique_ptr<unsigned char const[]>(std::get<2>(image));
-
-        textures.emplace_back(texture);
+        textures.emplace_back(std::move(imageData));
     }
 
     return textures;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-// Structure images
-////////////////////////////////////////////////////////////////////////////////////////////
-
-std::unique_ptr<ResourceLoader::StructureImage const> ResourceLoader::LoadStructureImage(std::string const & filepath)
-{
-    std::tuple<int, int, unsigned char *> image = LoadImage(filepath, IL_RGB, IL_ORIGIN_UPPER_LEFT);
-
-    StructureImage * structureImage = new StructureImage();
-    structureImage->Width = std::get<0>(image);
-    structureImage->Height = std::get<1>(image);
-    structureImage->Data = std::unique_ptr<unsigned char const[]>(std::get<2>(image));
-
-    return std::unique_ptr<StructureImage>(structureImage);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +191,7 @@ std::string ResourceLoader::GetSoundFilepath(std::string const & filename) const
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
+ImageData ResourceLoader::LoadImage(
     std::string const & filepath,
     int format,
     int origin)
@@ -239,8 +244,8 @@ std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
     int const height = ilGetInteger(IL_IMAGE_HEIGHT);
     int const bpp = ilGetInteger(IL_IMAGE_BYTES_PER_PIXEL);
 
-    unsigned char * data = new unsigned char[width * height * bpp];
-    std::memcpy(data, imageData, width * height * bpp);
+    auto data = std::make_unique<unsigned char []>(width * height * bpp);
+    std::memcpy(data.get(), imageData, width * height * bpp);
 
 
     //
@@ -249,5 +254,8 @@ std::tuple<int, int, unsigned char *> ResourceLoader::LoadImage(
 
     ilDeleteImage(imghandle);
 
-    return std::tuple<int, int, unsigned char *>(width, height, data);
+    return ImageData(
+        width, 
+        height, 
+        std::move(data));
 }

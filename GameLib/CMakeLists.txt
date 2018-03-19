@@ -18,6 +18,7 @@ set  (GAME_SOURCES
 	GameOpenGL.h
 	GameParameters.h
 	IGameEventHandler.h
+	ImageData.h
 	Log.cpp
 	Log.h
 	Material.cpp
@@ -30,6 +31,9 @@ set  (GAME_SOURCES
 	ResourceLoader.h
 	Scheduler.cpp
 	Scheduler.h
+	ShipDefinition.h
+	ShipDefinitionFile.cpp
+	ShipDefinitionFile.h
 	TupleKeys.h
 	Utils.cpp
 	Utils.h	

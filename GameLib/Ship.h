@@ -14,6 +14,7 @@
 #include "PointerContainer.h"
 #include "RenderContext.h"
 #include "Scheduler.h"
+#include "ShipDefinition.h"
 #include "Vectors.h"
 
 #include <set>
@@ -27,9 +28,7 @@ public:
 
     static std::unique_ptr<Ship> Create(
         World * parentWorld,
-        unsigned char const * structureImageData,
-        int structureImageWidth,
-        int structureImageHeight,
+        ShipDefinition const & shipDefinition,
         std::vector<std::unique_ptr<Material const>> const & allMaterials);
 
     ~Ship();
@@ -223,21 +222,19 @@ template<>
 inline void Ship::RegisterDestruction(Spring * /* element */)
 {
     // Remember that we need to re-upload springs & triangles
-    mIsShipDirty = true;
+    mAreSpringsOrTrianglesDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
     // Remember that we need to re-upload springs & triangles
-    mIsShipDirty = true;
+    mAreSpringsOrTrianglesDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(ElectricalElement * /* element */)
 {
-    mIsShipDirty = true;
-
     // Also tell the pointer container, he'll take care of removing the element later
     mAllElectricalElements.register_deletion();
 }

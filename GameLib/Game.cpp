@@ -39,7 +39,7 @@ void Game::Reset()
 
 void Game::LoadShip(std::string const & filepath)
 {
-    auto structureImage = mResourceLoader->LoadStructureImage(filepath);
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
 
 	//
 	// Create ship and add to world
@@ -47,12 +47,10 @@ void Game::LoadShip(std::string const & filepath)
 
 	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
 		mWorld.get(),
-        structureImage->Data.get(),
-        structureImage->Width,
-        structureImage->Height,
+        shipDefinition,
 		mMaterials);
 
-    LogMessage("Loaded ship from ", filepath, " : W=", structureImage->Width, ", H=", structureImage->Height, ", ",
+    LogMessage("Loaded ship from ", filepath, " : W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
         shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
         " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
 

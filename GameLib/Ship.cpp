@@ -29,13 +29,9 @@ namespace Physics {
 
 std::unique_ptr<Ship> Ship::Create(
     World * parentWorld,
-    unsigned char const * structureImageData,
-    int structureImageWidth,
-    int structureImageHeight,
+    ShipDefinition const & shipDefinition,
     std::vector<std::unique_ptr<Material const>> const & allMaterials)
 {
-    float const halfWidth = static_cast<float>(structureImageWidth) / 2.0f;
-
     // Prepare materials dictionary
     std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
     for (auto const & material : allMaterials)
@@ -62,22 +58,25 @@ std::unique_ptr<Ship> Ship::Create(
         }
     };
 
-    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[structureImageWidth]);
+    int const width = shipDefinition.StructuralImage.Width;
+    float const halfWidth = static_cast<float>(width) / 2.0f;
+    int const height = shipDefinition.StructuralImage.Height;
 
+    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[width]);
+    
     size_t pointCount = 0;
-
-    for (int x = 0; x < structureImageWidth; ++x)
+    for (int x = 0; x < width; ++x)
     {
-        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[structureImageHeight]);
+        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[height]);
 
         // From bottom to top
-        for (int y = 0; y < structureImageHeight; ++y)
+        for (int y = 0; y < height; ++y)
         {
             // R G B
             std::array<uint8_t, 3u> rgbColour = {
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 0],
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 1],
-                structureImageData[(x + (structureImageHeight - y - 1) * structureImageWidth) * 3 + 2] };
+                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 0],
+                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 1],
+                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 2] };
 
             auto srchIt = structuralColourMap.find(rgbColour);
             if (srchIt != structuralColourMap.end())
@@ -155,9 +154,9 @@ std::unique_ptr<Ship> Ship::Create(
         { 1,  1 }	// SE
     };
 
-    for (int x = 0; x < structureImageWidth; ++x)
+    for (int x = 0; x < width; ++x)
     {
-        for (int y = 0; y < structureImageHeight; ++y)
+        for (int y = 0; y < height; ++y)
         {
             if (!!pointInfoMatrix[x][y])
             {
@@ -172,7 +171,7 @@ std::unique_ptr<Ship> Ship::Create(
                     vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
                     mtl,
                     mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
-                    pointInfoMatrix[x][y]->PointIndex);  
+                    static_cast<int>(pointInfoMatrix[x][y]->PointIndex));  
 
                 //
                 // Create point color
@@ -187,8 +186,8 @@ std::unique_ptr<Ship> Ship::Create(
                 // - there is at least a hole at E, S, W, N
                 if (!point.GetMaterial()->IsHull)
                 {
-                    if ((x < structureImageWidth - 1 && !pointInfoMatrix[x + 1][y])
-                        || (y < structureImageHeight - 1 && !pointInfoMatrix[x][y + 1])
+                    if ((x < width - 1 && !pointInfoMatrix[x + 1][y])
+                        || (y < height - 1 && !pointInfoMatrix[x][y + 1])
                         || (x > 0 && !pointInfoMatrix[x - 1][y])
                         || (y > 0 && !pointInfoMatrix[x][y - 1]))
                     {
@@ -209,9 +208,9 @@ std::unique_ptr<Ship> Ship::Create(
                 {
                     int adjx1 = x + Directions[i][0];
                     int adjy1 = y + Directions[i][1];                    
-                    if (adjx1 >= 0 && adjx1 < structureImageWidth && adjy1 >= 0) // Valid coordinates?
+                    if (adjx1 >= 0 && adjx1 < width && adjy1 >= 0) // Valid coordinates?
                     {
-                        assert(adjy1 < structureImageHeight); // The four directions we're checking do not include S
+                        assert(adjy1 < height); // The four directions we're checking do not include S
 
                         if (!!pointInfoMatrix[adjx1][adjy1])
                         {
@@ -232,9 +231,9 @@ std::unique_ptr<Ship> Ship::Create(
                             // Check adjacent point in next CW direction
                             int adjx2 = x + Directions[i + 1][0];
                             int adjy2 = y + Directions[i + 1][1];                            
-                            if (adjx2 >= 0 && adjx2 < structureImageWidth && adjy2 >= 0) // Valid coordinates?
+                            if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0) // Valid coordinates?
                             {
-                                assert(adjy2 < structureImageHeight); // The five directions we're checking do not include S
+                                assert(adjy2 < height); // The five directions we're checking do not include S
 
                                 if (!!pointInfoMatrix[adjx2][adjy2])
                                 {
