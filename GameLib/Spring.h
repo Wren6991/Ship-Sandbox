@@ -128,6 +128,7 @@ public:
         dampCorrection *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(dampCorrection) * amount;   
 
         // Update velocities - slow A by dampCorrection and speed up B by dampCorrection
+        // TODO: isn't dampCorrection a force? Hence, should we divide by mass of the points?
         mPointA->AddToLastPosition(dampCorrection); 
         mPointB->AddToLastPosition(-dampCorrection);
     }

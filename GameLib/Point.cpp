@@ -112,7 +112,7 @@ void Point::Update(
     // Get our mass
 	float const mass = mMaterial->Mass;
 
-    // Calculate current velocity
+    // Calculate current velocity (already relative to dt, not to 1.0 sec)
     vec2f velocity = mPosition - mLastPosition;
 
     //
@@ -143,6 +143,7 @@ void Point::Update(
 
     if (mPosition.y < waterHeightAtThisPoint)
     {
+        // TODO: ain't this a force?
         velocity -= velocity * dragCoefficient;
     }
 
@@ -155,7 +156,7 @@ void Point::Update(
     // (Note: to be checked)
     //
 
-	mPosition += velocity + mForce * (dt * dt / mass);
+	mPosition += velocity + (mForce / mass) * (dt * dt );
 
 
     //

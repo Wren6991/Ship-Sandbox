@@ -41,12 +41,17 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
+	- Draw points:
+		- If drawOnlyPoints, ship uses RenderContext::RenderPoint(elementIndex), only for !deleted points
+		- Then, glDrawElements(GL_POINT)
+
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
+
 	- AmbientLightIntensity:
 		+ Use also in RenderContext::RenderStart() for clear (sky) color
 		+ Phase 1: pgup/down
-		- Phase 2: with clock
+		- Phase 2: with clock - TBD
 
 	- Texture mapping:
 		= Ship, using second image
@@ -74,6 +79,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- see https://github.com/wxWidgets/wxWidgets/blob/master/samples/opengl/pyramid/pyramid.cpp
 
 - Dynamics:
+	- Realistification:
+		- Spring::Damp: dampCorrection should be a force, not just a velocity delta
+		- Point::Update: water drag should be a force, not just a velocity delta
 	- Water:
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
@@ -195,6 +203,25 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Smoke
 	- Smoke-material points, emitting particles with a lifetime and a transparency connected to age
+
+- Multiple ships:
+	- Better after collision detection
+	- When ship loaded (added):
+		- World adds it not to mShips, but as opt<Ship> mPendingShip
+			- Not considered in Update(), but considered in Render()
+		- MainFrame begins new PendingShipPlace tool
+			- OnMouseMove: tell GameController (->World) mouse position as GameController::MovePendingShipTo(screen coords)
+				- Ship::MoveTo(world x, y): offsets all Point.position's
+					- Ship::mCurrentCenterPosition (init as {0,0}) tracks current center
+			- OnLDown:
+				- Tell GameController (DropPendingShip(x, y)) which:
+					- Tells World via World::DropPendingShip(x, y):
+						- Final Ship::MoveTo()
+						- Move ship from mPendingShip into mShips
+					- Fires IGameEventHandler::OnPendingShipPlaced(shipId)
+						- EventTicker: say this and other Reset/Load
+						- SoundContrller: play sound
+				- Stop tool
 
 ==============================================================================
 ==============================================================================
