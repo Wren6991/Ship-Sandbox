@@ -1012,9 +1012,13 @@ void MainFrame::SetFrameTitle()
     std::ostringstream ss;
 
     ss << GetWindowTitle()
-        << "  FPS: " << std::fixed << std::setprecision(2) << totalFps << " (" << lastFps << ")"
-        << " - "
-        << Utils::Join(mCurrentShipNames, " + ");
+        << "  FPS: " << std::fixed << std::setprecision(2) << totalFps << " (" << lastFps << ")";
+
+    if (!mCurrentShipNames.empty())
+    {
+        ss << " - "
+            << Utils::Join(mCurrentShipNames, " + ");
+    }
 
     SetTitle(ss.str());
 
