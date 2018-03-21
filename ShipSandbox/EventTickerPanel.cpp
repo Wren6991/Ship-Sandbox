@@ -72,6 +72,22 @@ void EventTickerPanel::Update()
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
+void EventTickerPanel::OnGameReset() 
+{
+    mCurrentTickerText = std::string(TickerTextSize, ' ');
+    mFutureTickerText.clear();
+}
+
+void EventTickerPanel::OnShipLoaded(
+    unsigned int /*id*/,
+    std::string const & name) 
+{
+    std::stringstream ss;
+    ss << "Loaded " << name;
+
+    AppendFutureTickerText(ss.str());
+}
+
 void EventTickerPanel::OnDestroy(
     Material const * material,
     bool isUnderwater,

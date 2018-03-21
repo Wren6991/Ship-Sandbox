@@ -40,6 +40,8 @@ struct GameParameters
 	static constexpr float MinDestroyRadius = 0.1f;
 	static constexpr float MaxDestroyRadius = 10.0f;
 
+    float SpringDampingFactor;
+
     float LightDiffusionAdjustment;
 
     size_t NumberOfClouds;
@@ -56,6 +58,7 @@ struct GameParameters
 		, WaveHeight(2.5f)
 		, SeaDepth(150.0f)
 		, DestroyRadius(0.55f)
+        , SpringDampingFactor(0.8f)
         // TODO: adjust
         , LightDiffusionAdjustment(0.5f)
         , NumberOfClouds(50)

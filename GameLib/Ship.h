@@ -122,7 +122,9 @@ private:
         mAreSpringsOrTrianglesDirty = true;
     }
 
-    void DoSpringsRelaxation(float dt);
+    void DoSpringsRelaxation(
+        float dt,
+        GameParameters const & gameParameters);
 
     struct SpringRelaxationCalculateTask : Scheduler::ITask
     {

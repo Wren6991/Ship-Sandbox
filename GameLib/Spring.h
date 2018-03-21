@@ -101,13 +101,14 @@ public:
     inline void Relax()
     {
         //
-        // Try to space the two points by the equilibrium length (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
+        // Try to space the two points by the equilibrium length 
+        // (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
         //
 
         vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
         float const displacementLength = displacement.length();
         vec2f correction = displacement.normalise(displacementLength);
-        correction *= (mRestLength - displacementLength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 25% overcorrection (stiffer, converges faster)
+        correction *= (mRestLength - displacementLength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 20% overcorrection (stiffer, converges faster)
 
         // correction > 0 -> compressed, & correction is oriented towards B
         mPointA->AddToPosition(-correction * mPointB->GetMass()); // If mPointB is heavier, mPointA moves more...
@@ -115,6 +116,13 @@ public:
     }
 
 
+    /*
+     * Damps the velocities of the two points, as if the points were also connected by a damper
+     * along the same direction as the spring.
+     *
+     * Rather than modeling an actual damping force (whose deceleration would be inversely proportional
+     * to a point's mass), this function simply models a decrease of the velocity.
+     */
     inline void Damp(float amount)
     {
         // Get damp direction

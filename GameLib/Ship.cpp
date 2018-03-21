@@ -690,7 +690,7 @@ void Ship::Update(
     //
 
     // Iterate the spring relaxation
-    DoSpringsRelaxation(dt);
+    DoSpringsRelaxation(dt, gameParameters);
 
     // Update tension strain for all springs; might cause springs to break
     for (Spring & spring : mAllSprings)
@@ -893,9 +893,13 @@ void Ship::Render(
 // Private Helpers
 ///////////////////////////////////////////////////////////////////////////////////
 
-void Ship::DoSpringsRelaxation(float dt)
+void Ship::DoSpringsRelaxation(
+    float dt,
+    GameParameters const & gameParameters)
 {
-    float const dampingamount = (1 - powf(0.0f, static_cast<float>(dt))) * 0.5f;
+    //
+    // Relax
+    //
 
     // Calculate number of parallel chunks and size of each chunk
     size_t nParallelChunks = mScheduler.GetNumberOfThreads();
@@ -904,42 +908,40 @@ void Ship::DoSpringsRelaxation(float dt)
     assert(parallelChunkSize > 0);
 
     // Run iterations
-    for (int outiter = 0; outiter < 3; outiter++)
+    for (int iter = 0; iter < 24; ++iter)
     {
-        //
-        // Relax
-        //
-
-        for (int iteration = 0; iteration < 8; iteration++)
+        for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)
         {
-            for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)
-            {
-                size_t available = mAllSprings.size() - i;
-                size_t thisChunkSize = (available >= parallelChunkSize) ? parallelChunkSize : available;
-                assert(thisChunkSize > 0);
+            size_t available = mAllSprings.size() - i;
+            size_t thisChunkSize = (available >= parallelChunkSize) ? parallelChunkSize : available;
+            assert(thisChunkSize > 0);
 
-                mScheduler.Schedule(
-                    new SpringRelaxationCalculateTask(
-                        this,
-                        i,
-                        i + thisChunkSize));
+            mScheduler.Schedule(
+                new SpringRelaxationCalculateTask(
+                    this,
+                    i,
+                    i + thisChunkSize));
 
-                i += thisChunkSize;
-            }
-            
-            mScheduler.WaitForAllTasks();
+            i += thisChunkSize;
         }
-        
-        //
-        // Damp
-        //
+            
+        mScheduler.WaitForAllTasks();
+    }
 
+
+    //
+    // Damp
+    //
+
+    // Run iterations
+    for (int iter = 0; iter < 3; ++iter)
+    {
         for (Spring & spring : mAllSprings)
         {
             // Don't damp destroyed springs, or we run the risk of being affected by destroyed connected points
             if (!spring.IsDeleted())
             {
-                spring.Damp(dampingamount);
+                spring.Damp(gameParameters.SpringDampingFactor);
             }
         }
     }

@@ -234,7 +234,7 @@ MainFrame::MainFrame(wxApp * mainApp)
 	optionsMenu->Append(openLogWindowMenuItem);
 	Connect(ID_OPEN_LOG_WINDOW_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnOpenLogWindowMenuItemSelected);
 
-    mShowEventTickerMenuItem = new wxMenuItem(optionsMenu, ID_SHOW_EVENT_TICKER_MENUITEM, _("Show Event Ticker"), wxEmptyString, wxITEM_CHECK);
+    mShowEventTickerMenuItem = new wxMenuItem(optionsMenu, ID_SHOW_EVENT_TICKER_MENUITEM, _("Show Event Ticker\tCtrl+T"), wxEmptyString, wxITEM_CHECK);
     optionsMenu->Append(mShowEventTickerMenuItem);
     mShowEventTickerMenuItem->Check(false);
     Connect(ID_SHOW_EVENT_TICKER_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnShowEventTickerMenuItemSelected);

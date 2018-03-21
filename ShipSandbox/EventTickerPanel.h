@@ -24,6 +24,12 @@ public:
 
 public:
 
+    virtual void OnGameReset() override;
+
+    virtual void OnShipLoaded(
+        unsigned int id,
+        std::string const & name) override;
+
     virtual void OnDestroy(
         Material const * material,
         bool isUnderwater,

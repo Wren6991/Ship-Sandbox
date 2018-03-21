@@ -80,17 +80,18 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Dynamics:
 	- Realistification:
-		+ Spring::Damp: dampCorrection should be a force, not just a velocity delta
+		= Spring::Damp: dampCorrection should be a force, not just a velocity delta
 			+ Ship explodes after dividing by mass; might need a larger coefficient
-		- Ship::Damp: damping 3 items at end should have the same effect
-		- Exploding ship:
-			- Check higher damp factor
+			- Use a very large coefficient, and consider it'll be divided by mass
+				- Acceleration inv. proportional to mass - the heavier the point, the less the damping
+		+ Ship::Damp: damping 3 times at end should have the same effect
+		+ Exploding ship:
+			+ Check if higher damp factor helps: was 0.5, now 0.8
 		- Point::Update: water drag should be a force, not just a velocity delta
 		- Spring equilibrium: 
 			- Find right overshooting factor (may be slightly smaller)
 			- Compare behavior with old game
 				- Steel Ball and broken default ship in old game: explodes?
-
 	- Water:
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
