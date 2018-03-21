@@ -80,16 +80,21 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Dynamics:
 	- Realistification:
-		- Spring::Damp: dampCorrection should be a force, not just a velocity delta
+		+ Spring::Damp: dampCorrection should be a force, not just a velocity delta
+			+ Ship explodes after dividing by mass; might need a larger coefficient
+		- Ship::Damp: damping 3 items at end should have the same effect
+		- Exploding ship:
+			- Check higher damp factor
 		- Point::Update: water drag should be a force, not just a velocity delta
+		- Spring equilibrium: 
+			- Find right overshooting factor (may be slightly smaller)
+			- Compare behavior with old game
+				- Steel Ball and broken default ship in old game: explodes?
+
 	- Water:
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
 		- Try directional BalancePressure?
-	- Spring equilibrium: 
-		- Find right overshooting factor (may be slightly smaller)
-		- Compare behavior with old game
-			- Steel Ball in old game: explodes?
 	- DestroyAt:
 		- Test: Spring::Destroy() only destroys triangles that contain A-B
 			- Should definitely make both A and B leak, as they both now have an adjacent hole
@@ -220,7 +225,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 						- Move ship from mPendingShip into mShips
 					- Fires IGameEventHandler::OnPendingShipPlaced(shipId)
 						- EventTicker: say this and other Reset/Load
-						- SoundContrller: play sound
+						- SoundController: play sound
 				- Stop tool
 
 ==============================================================================

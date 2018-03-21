@@ -121,15 +121,14 @@ public:
         vec2f dampCorrection = (mPointA->GetPosition() - mPointB->GetPosition()).normalise();
 
         // Relative velocity dot spring direction = projected velocity;
-        // amount = amount of projected velocity that remains after damping;
+        // amount = amount of projected velocity that damping reduces by;
         // result is oriented along the spring
         //
         // dampCorrection > 0 -> point A is faster
         dampCorrection *= ((mPointA->GetPosition() - mPointA->GetLastPosition()) - (mPointB->GetPosition() - mPointB->GetLastPosition())).dot(dampCorrection) * amount;   
 
-        // Update velocities - slow A by dampCorrection and speed up B by dampCorrection
-        // TODO: isn't dampCorrection a force? Hence, should we divide by mass of the points?
-        mPointA->AddToLastPosition(dampCorrection); 
+        // Update velocities - slow down A by dampCorrection and speed up B by dampCorrection
+        mPointA->AddToLastPosition(dampCorrection);
         mPointB->AddToLastPosition(-dampCorrection);
     }
 
