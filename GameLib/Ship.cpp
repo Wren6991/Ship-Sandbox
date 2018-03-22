@@ -58,25 +58,25 @@ std::unique_ptr<Ship> Ship::Create(
         }
     };
 
-    int const width = shipDefinition.StructuralImage.Width;
-    float const halfWidth = static_cast<float>(width) / 2.0f;
-    int const height = shipDefinition.StructuralImage.Height;
+    int const structureWidth = shipDefinition.StructuralImage.Width;
+    float const halfWidth = static_cast<float>(structureWidth) / 2.0f;
+    int const structureHeight = shipDefinition.StructuralImage.Height;
 
-    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[width]);
+    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[structureWidth]);
     
     size_t pointCount = 0;
-    for (int x = 0; x < width; ++x)
+    for (int x = 0; x < structureWidth; ++x)
     {
-        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[height]);
+        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[structureHeight]);
 
         // From bottom to top
-        for (int y = 0; y < height; ++y)
+        for (int y = 0; y < structureHeight; ++y)
         {
             // R G B
             std::array<uint8_t, 3u> rgbColour = {
-                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 0],
-                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 1],
-                shipDefinition.StructuralImage.Data[(x + (height - y - 1) * width) * 3 + 2] };
+                shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 0],
+                shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 1],
+                shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 2] };
 
             auto srchIt = structuralColourMap.find(rgbColour);
             if (srchIt != structuralColourMap.end())
@@ -94,6 +94,7 @@ std::unique_ptr<Ship> Ship::Create(
     // 2. Create:
     //  - Points
     //  - PointColors
+    //  - PointTextureCoordinates
     //  - SpringInfo
     //  - TriangleInfo
     //
@@ -102,6 +103,7 @@ std::unique_ptr<Ship> Ship::Create(
 
     ElementRepository<Point> allPoints(pointCount);
     ElementRepository<vec3f> allPointColors(pointCount);
+    ElementRepository<vec2f> allPointTextureCoordinates(pointCount);
 
     size_t leakingPointsCount = 0;
 
@@ -154,9 +156,9 @@ std::unique_ptr<Ship> Ship::Create(
         { 1,  1 }	// SE
     };
 
-    for (int x = 0; x < width; ++x)
+    for (int x = 0; x < structureWidth; ++x)
     {
-        for (int y = 0; y < height; ++y)
+        for (int y = 0; y < structureHeight; ++y)
         {
             if (!!pointInfoMatrix[x][y])
             {
@@ -180,14 +182,25 @@ std::unique_ptr<Ship> Ship::Create(
                 allPointColors.emplace_back(mtl->RenderColour);
 
 
+                //
+                // Create point texture coordinates
+                //
+
+                if (!!shipDefinition.TextureImage)
+                {
+                    allPointTextureCoordinates.emplace_back(
+                        static_cast<float>(x) * static_cast<float>(shipDefinition.TextureImage->Width) / static_cast<float>(structureWidth),
+                        static_cast<float>(y) * static_cast<float>(shipDefinition.TextureImage->Height) / static_cast<float>(structureHeight));
+                }
+
                 // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
                 // Check if a is leaking; a is leaking if:
                 // - a is not hull, AND
                 // - there is at least a hole at E, S, W, N
                 if (!point.GetMaterial()->IsHull)
                 {
-                    if ((x < width - 1 && !pointInfoMatrix[x + 1][y])
-                        || (y < height - 1 && !pointInfoMatrix[x][y + 1])
+                    if ((x < structureWidth - 1 && !pointInfoMatrix[x + 1][y])
+                        || (y < structureHeight - 1 && !pointInfoMatrix[x][y + 1])
                         || (x > 0 && !pointInfoMatrix[x - 1][y])
                         || (y > 0 && !pointInfoMatrix[x][y - 1]))
                     {
@@ -208,9 +221,9 @@ std::unique_ptr<Ship> Ship::Create(
                 {
                     int adjx1 = x + Directions[i][0];
                     int adjy1 = y + Directions[i][1];                    
-                    if (adjx1 >= 0 && adjx1 < width && adjy1 >= 0) // Valid coordinates?
+                    if (adjx1 >= 0 && adjx1 < structureWidth && adjy1 >= 0) // Valid coordinates?
                     {
-                        assert(adjy1 < height); // The four directions we're checking do not include S
+                        assert(adjy1 < structureHeight); // The four directions we're checking do not include S
 
                         if (!!pointInfoMatrix[adjx1][adjy1])
                         {
@@ -231,9 +244,9 @@ std::unique_ptr<Ship> Ship::Create(
                             // Check adjacent point in next CW direction
                             int adjx2 = x + Directions[i + 1][0];
                             int adjy2 = y + Directions[i + 1][1];                            
-                            if (adjx2 >= 0 && adjx2 < width && adjy2 >= 0) // Valid coordinates?
+                            if (adjx2 >= 0 && adjx2 < structureWidth && adjy2 >= 0) // Valid coordinates?
                             {
-                                assert(adjy2 < height); // The five directions we're checking do not include S
+                                assert(adjy2 < structureHeight); // The five directions we're checking do not include S
 
                                 if (!!pointInfoMatrix[adjx2][adjy2])
                                 {
@@ -336,6 +349,7 @@ std::unique_ptr<Ship> Ship::Create(
     ship->InitializeRepository(
         std::move(allPoints),   
         std::move(allPointColors),
+        std::move(allPointTextureCoordinates),
         std::move(allSprings),
         std::move(allTriangles),
         std::move(allElectricalElements));
@@ -348,6 +362,7 @@ Ship::Ship(World * parentWorld)
     , mParentWorld(parentWorld)    
     , mAllPoints(0)
     , mAllPointColors(0)
+    , mAllPointTextureCoordinates(0)
     , mAllSprings(0)
     , mAllTriangles(0)
     , mAllElectricalElements()
@@ -737,10 +752,13 @@ void Ship::Render(
     if (mIsPointCountDirty)
     {
         //
-        // Upload point colors
+        // Upload point colors and texture coordinates
         //
 
-        renderContext.UploadShipPointColors(mAllPointColors.data(), mAllPointColors.size());
+        renderContext.UploadShipPointVisualAttributes(
+            mAllPointColors.data(), 
+            mAllPointTextureCoordinates.data(),
+            mAllPointColors.size());
 
         mIsPointCountDirty = false;
     }

@@ -108,12 +108,14 @@ private:
     void InitializeRepository(
         ElementRepository<Point> && allPoints,
         ElementRepository<vec3f> && allPointColors,
+        ElementRepository<vec2f> && allPointTextureCoordinates,
         ElementRepository<Spring> && allSprings,
         ElementRepository<Triangle> && allTriangles,
         std::vector<ElectricalElement *> && allElectricalElements)
     {
         mAllPoints = std::move(allPoints);
         mAllPointColors = std::move(allPointColors);
+        mAllPointTextureCoordinates = std::move(allPointTextureCoordinates);
         mAllSprings = std::move(allSprings);
         mAllTriangles = std::move(allTriangles);
         mAllElectricalElements.initialize(std::move(allElectricalElements));
@@ -191,6 +193,7 @@ private:
     // All the ship elements - never removed, the repositories maintain their own size forever
     ElementRepository<Point> mAllPoints;
     ElementRepository<vec3f> mAllPointColors;
+    ElementRepository<vec2f> mAllPointTextureCoordinates;
     ElementRepository<Spring> mAllSprings;
     ElementRepository<Triangle> mAllTriangles;
 

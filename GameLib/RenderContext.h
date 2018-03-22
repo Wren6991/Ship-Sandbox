@@ -313,8 +313,9 @@ public:
     // Ship Points
     //
 
-    void UploadShipPointColors(
+    void UploadShipPointVisualAttributes(
         vec3f const * colors, 
+        vec2f const * textureCoordinates,
         size_t elementCount);
 
     void UploadShipPointsStart(size_t maxPoints);
@@ -453,6 +454,11 @@ private:
     class OpenGLObject
     {
     public:
+
+        OpenGLObject()
+            : mValue(0)
+        {}
+
         OpenGLObject(T value)
             : mValue(value)
         {}
@@ -479,6 +485,11 @@ private:
             other.mValue = 0;
 
             return *this;
+        }
+
+        bool operator !() const
+        {
+            return mValue == 0;
         }
 
         T operator*() const
@@ -682,6 +693,7 @@ private:
     size_t mShipPointBufferMaxSize;
 
     OpenGLVBO mShipPointColorVBO;
+    OpenGLVBO mShipPointTextureCoordinatesVBO;
     OpenGLVBO mShipPointVBO;
 
 

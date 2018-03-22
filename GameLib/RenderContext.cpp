@@ -13,73 +13,74 @@ RenderContext::RenderContext(
     ResourceLoader & resourceLoader,
     ProgressCallback const & progressCallback)
     : // Clouds
-      mCloudShaderProgram(0u)
+      mCloudShaderProgram()
     , mCloudShaderAmbientLightIntensityParameter(0)
     , mCloudBuffer()
     , mCloudBufferSize(0u)
     , mCloudBufferMaxSize(0u)    
-    , mCloudVBO(0u)
+    , mCloudVBO()
     , mCloudTextureDatas()
     , mCloudTextures()
     // Land
-    , mLandShaderProgram(0u)
+    , mLandShaderProgram()
     , mLandShaderAmbientLightIntensityParameter(0)
     , mLandShaderOrthoMatrixParameter(0)
     , mLandBuffer()
     , mLandBufferSize(0u)
     , mLandBufferMaxSize(0u)
-    , mLandVBO(0u)
-    , mLandTexture(0u)
+    , mLandVBO()
+    , mLandTexture()
     , mLandTextureData()
     // Water
-    , mWaterShaderProgram(0u)
+    , mWaterShaderProgram()
     , mWaterShaderAmbientLightIntensityParameter(0)
     , mWaterShaderWaterTransparencyParameter(0)
     , mWaterShaderOrthoMatrixParameter(0)
     , mWaterBuffer()
     , mWaterBufferSize(0u)
     , mWaterBufferMaxSize(0u)
-    , mWaterVBO(0u)
-    , mWaterTexture(0u)
+    , mWaterVBO()
+    , mWaterTexture()
     , mWaterTextureData()
     // Ship points
-    , mShipPointShaderProgram(0u)
+    , mShipPointShaderProgram()
     , mShipPointShaderOrthoMatrixParameter(0)
     , mShipPointShaderAmbientLightIntensityParameter(0)
     , mShipElementCount(0u)
     , mShipPointBuffer()
     , mShipPointBufferSize(0u)
     , mShipPointBufferMaxSize(0u)   
-    , mShipPointColorVBO(0u)
-    , mShipPointVBO(0u)
+    , mShipPointColorVBO()
+    , mShipPointTextureCoordinatesVBO()
+    , mShipPointVBO()
     // Ship 
-    , mShipShaderProgram(0u)
+    , mShipShaderProgram()
     , mShipShaderOrthoMatrixParameter(0)
     , mShipShaderAmbientLightIntensityParameter(0)
     , mShipSpringBuffers()
     , mShipTriangleBuffers()
     , mShipBufferSizes()
     , mShipBufferMaxSizes()
-    , mShipSpringVBO(0u)
-    , mShipTriangleVBO(0u)
+    , mShipSpringVBO()
+    , mShipTriangleVBO()
     // Lamps
     , mShipLampBuffers()
     // Stressed springs
-    , mStressedSpringShaderProgram(0u)
+    , mStressedSpringShaderProgram()
     , mStressedSpringShaderAmbientLightIntensityParameter(0)
     , mStressedSpringShaderOrthoMatrixParameter(0)
     , mStressedSpringBuffer()
     , mStressedSpringBufferSize(0u)
     , mStressedSpringBufferMaxSize(0u)
-    , mStressedSpringVBO(0u)
+    , mStressedSpringVBO()
     // Multi-purpose shaders
-    , mMatteNdcShaderProgram(0u)
+    , mMatteNdcShaderProgram()
     , mMatteNdcShaderColorParameter(0)
-    , mMatteNdcVBO(0u)
-    , mMatteWorldShaderProgram(0u)
+    , mMatteNdcVBO()
+    , mMatteWorldShaderProgram()
     , mMatteWorldShaderColorParameter(0)
     , mMatteWorldShaderOrthoMatrixParameter(0)
-    , mMatteWorldVBO(0u)
+    , mMatteWorldVBO()
     // Render parameters
     , mZoom(1.0f)
     , mCamX(0.0f)
@@ -1022,13 +1023,23 @@ void RenderContext::RenderWater()
     glUseProgram(0);
 }
 
-void RenderContext::UploadShipPointColors(
+void RenderContext::UploadShipPointVisualAttributes(
     vec3f const * colors,
+    vec2f const * textureCoordinates,
     size_t elementCount)
 {
+    //
     // Upload to GPU right away
+    //
+
     glBindBuffer(GL_ARRAY_BUFFER, *mShipPointColorVBO);
     glBufferData(GL_ARRAY_BUFFER, elementCount * sizeof(vec3f), colors, GL_STATIC_DRAW);
+
+    if (!!mShipPointTextureCoordinatesVBO)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, *mShipPointTextureCoordinatesVBO);
+        glBufferData(GL_ARRAY_BUFFER, elementCount * sizeof(vec2f), textureCoordinates, GL_STATIC_DRAW);
+    }    
 
     // Store size (for later assert)
     mShipElementCount = elementCount;

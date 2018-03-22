@@ -41,6 +41,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
+	- RenderContext:
+		- Get rid of pre-generated texture names and create on-demand
+			- Test!
 	- Draw points:
 		- If drawOnlyPoints, ship uses RenderContext::RenderPoint(elementIndex), only for !deleted points
 		- Then, glDrawElements(GL_POINT)
@@ -56,19 +59,29 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Texture mapping:
 		= Ship, using second image
 			+ Load ship == image or .shp (JSON)
-			- First, try naively with just point colors;
-			- If it really doesn't work:
-				- RenderContext is given optional texture image (by GameController) via
-				  RenderContext::SetShipTexture(iShip, img data, imgW, imgH)
-				  - Uploads immediately
-				  - Texture machinery is created at startup anyway
-				  - Remembers if ship has texture via mShipTexture (uq_ptr<ResourceLoader::Texture>)
-				- Also, later, RenderContext is also given textureCoords,
-				  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
-				  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
-				  - TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
-				    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
-				- If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
+			+ First, try naively with just point colors
+				+ Doesn't work, as structural image has too little resolution
+			- RenderContext is given optional texture image (by GameController) via
+			  RenderContext::SetShipTexture(iShip, img data, imgW, imgH)
+			  - Requires RenderContext::ResetWorld()
+				- Simply clears vector of ShipRenderContext()
+					- ShipRenderContext contains everything ship-related
+				- No need to reset others (land, water, clouds) as their numbers, positions, and data will be given
+				  at the next Render() from scratch
+					- But it could easily by re-creating uq_ptr<XYZRenderContext()>
+				- Call from GameController
+				- Also test with key
+			  - Creates <OpenGLTexture mShipTexture, stored as optional> and uploads immediately
+				- mShipTextureCoordinatesVBO and other texture machinery is created at startup anyway (if any)
+				- No need for std::optional<ImageData> TextureImageData
+					- No need for others as well!
+			  - Remembers if ship has texture via mShipTexture
+			+ Also, later, RenderContext is also given textureCoords,
+			  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
+			  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
+			  + TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
+			    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
+			- If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
 
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
@@ -79,6 +92,27 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- see https://github.com/wxWidgets/wxWidgets/blob/master/samples/opengl/pyramid/pyramid.cpp
 
 - Dynamics:
+	- Test completely force-driven dynamics:
+		- Create branch
+		- Each iteration (test initially with 1 iteration per step; then see with more, but scale dt)
+			- Apply forces: 
+				- For each spring:
+					- Spring force (Stooke's law - need k, try fixed at first)
+					- Damping (try along spring first - like now)
+					- see https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf for equations
+			- For each point:
+				- Gravity (with buoyance)
+				- Drag
+				- Apply verlet integration
+				- Zero force
+				- Do ocean floor crash and bounce
+			- ...do tension strain check...
+			- ...electrical and water...
+		- If it works (!!!):
+			- Set springs' K in material
+			- Damping: experiment with global velocities
+			- Experiment with semi-implicit Euler (https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf)
+	- Do we really need Spring::Damp 3 times? Would once with a higher coeff suffice?
 	- Realistification:
 		= Spring::Damp: dampCorrection should be a force, not just a velocity delta
 			+ Ship explodes after dividing by mass; might need a larger coefficient
