@@ -49,9 +49,10 @@ public:
 
 	void AddShip(std::unique_ptr<Ship> && newShip);
 
-    unsigned int GenerateNewShipId()
+    unsigned int GetNextShipId()
     {
-        return mNextShipId++;
+        // TODO: refactor
+        return static_cast<int>(mAllShips.size());
     }
 
 	void DestroyAt(
@@ -103,9 +104,6 @@ private:
 
     // The game event handler
     std::shared_ptr<IGameEventHandler> mGameEventHandler;
-
-    // The next ship ID we'll generate
-    unsigned int mNextShipId;
 
 private:
 

@@ -635,7 +635,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 			L"Select Ship", 
 			wxEmptyString, 
 			wxEmptyString, 
-			L"JPG and PNG files(*.jpg; *.png) | *.jpg; *.png",
+            L"SHP files (*.shp)|*.shp|JPG and PNG files(*.jpg; *.png) | *.jpg; *.png",
 			wxFD_OPEN | wxFD_FILE_MUST_EXIST, 
 			wxDefaultPosition, 
 			wxDefaultSize, 
@@ -652,7 +652,14 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
         mSoundController->Reset();
 
 		assert(!!mGameController);
-		mGameController->ResetAndLoadShip(filename);
+        try
+        {
+            mGameController->ResetAndLoadShip(filename);
+        }
+        catch (GameException const ex)
+        { 
+            wxMessageBox(ex.what(), wxT("Error"), wxICON_ERROR);
+        }
 	}
 }
 
@@ -662,7 +669,14 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
     mSoundController->Reset();
 
 	assert(!!mGameController);
-	mGameController->ReloadLastShip();
+    try
+    {
+        mGameController->ReloadLastShip();
+    }
+    catch (GameException const ex)
+    {
+        wxMessageBox(ex.what(), wxT("Error"), wxICON_ERROR);
+    }
 }
 
 void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & /*event*/)

@@ -21,7 +21,7 @@ ShipDefinitionFile ShipDefinitionFile::Create(picojson::object const & definitio
     std::string shipName = Utils::GetOptionalJsonMember<std::string>(
         definitionJson,
         "ship_name",
-        "Unnamed");
+        "");
 
     return ShipDefinitionFile(
         structuralImageFilePath,

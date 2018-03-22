@@ -62,25 +62,29 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			+ First, try naively with just point colors
 				+ Doesn't work, as structural image has too little resolution
 			- RenderContext is given optional texture image (by GameController) via
-			  RenderContext::SetShipTexture(iShip, img data, imgW, imgH)
-			  - Requires RenderContext::ResetWorld()
-				- Simply clears vector of ShipRenderContext()
-					- ShipRenderContext contains everything ship-related
-						- Rename springs and triangles to "Elements"
-						- Touch points with outside world:
-							- Parameters (booleans, render factors)
-							- OrthoMatrix
-							= Helpers
-				- No need to reset others (land, water, clouds) as their numbers, positions, and data will be given
+			  RenderContext::AddShip(iShip, opt<ImageData>)
+			  + Requires RenderContext::ResetWorld()
+				+ Simply clears vector of ShipRenderContext()
+					+ ShipRenderContext contains everything ship-related
+						+ Rename springs and triangles to "Elements"
+						+ Touch points with outside world:
+							+ Parameters (booleans, render factors)
+							+ OrthoMatrix
+							+ Helpers
+				+ No need to reset others (land, water, clouds) as their numbers, positions, and data will be given
 				  at the next Render() from scratch
-					- But it could easily by re-creating uq_ptr<XYZRenderContext()>
-				- Call from GameController
-				- Also test with key
-			  - Creates <OpenGLTexture mShipTexture, stored as optional> and uploads immediately
-				- mShipTextureCoordinatesVBO and other texture machinery is created at startup anyway (if any)
-				- No need for std::optional<ImageData> TextureImageData
-					- No need for others as well!
-			  - Remembers if ship has texture via mShipTexture
+					+ But it could easily by re-creating uq_ptr<XYZRenderContext()>
+				+ Call from GameController
+			  + Adds ship with opt<ImageData> in arg
+				+ If specd, cctor creates <OpenGLTexture mElementTexture> and uploads immediately
+				+ mShipTextureCoordinatesVBO and other texture machinery is created at startup anyway (if any)
+				+ No need for std::optional<ImageData> TextureImageData
+			  + Remembers if ship has texture via mElementTexture
+			  + Catch exceptions at all interactions of MainFrame with GameController, and display DialogBox
+			  + ResourceLoader::LoadShipDefinition: need to make paths abs wrt .shp path
+			  - Refactor to World::CreateShip() -> ID -> Ship::Create() (w/templated ...args)
+			  - Land and Water texture names: do own, not from array
+			  - Always unbind texture2d after a render
 			+ Also, later, RenderContext is also given textureCoords,
 			  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
 			  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)

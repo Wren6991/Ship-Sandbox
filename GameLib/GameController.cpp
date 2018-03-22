@@ -32,13 +32,22 @@ std::unique_ptr<GameController> GameController::Create(
         });
 
 	//
-	// Initialize game
+	// Load initial ship
 	//
 
-	// Load initial ship	
     progressCallback(1.0f, "Loading initial ship...");
-    std::string initialShipFilename = "Data/default_ship.png";
-	game->LoadShip(initialShipFilename);
+
+    std::string const initialShipFilename = "Data/default_ship.png";
+    auto shipDefinition = resourceLoader->LoadShipDefinition(initialShipFilename);
+
+	game->AddShip(shipDefinition);
+
+    renderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
+
+
+    //
+    // Create controller
+    //
 
 	return std::unique_ptr<GameController>(
 		new GameController(
@@ -57,19 +66,27 @@ void GameController::RegisterGameEventHandler(IGameEventHandler * gameEventHandl
 
 void GameController::ResetAndLoadShip(std::string const & filepath)
 {
-	assert(!!mGame);
-
+	assert(!!mGame);    
 	mGame->Reset();
-	mGame->LoadShip(filepath);
+
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
+    mGame->AddShip(shipDefinition);
+    
+    assert(!!mRenderContext);
+    mRenderContext->Reset();
+    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
 
 	mLastShipLoaded = filepath;
 }
 
 void GameController::AddShip(std::string const & filepath)
 {
-	assert(!!mGame);
+	assert(!!mGame);    
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
+    mGame->AddShip(shipDefinition);
 
-	mGame->LoadShip(filepath);
+    assert(!!mRenderContext);
+    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
 
 	mLastShipLoaded = filepath;
 }
@@ -81,10 +98,15 @@ void GameController::ReloadLastShip()
 		throw std::runtime_error("No ship has been loaded yet");
 	}
 
-	assert(!!mGame);
-
+	assert(!!mGame);    
 	mGame->Reset();
-	mGame->LoadShip(mLastShipLoaded);
+
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(mLastShipLoaded);
+    mGame->AddShip(shipDefinition);
+
+    assert(!!mRenderContext);
+    mRenderContext->Reset();
+    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
 }
 
 void GameController::DoStep()

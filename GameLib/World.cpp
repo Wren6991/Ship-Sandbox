@@ -49,7 +49,6 @@ World::World(std::shared_ptr<IGameEventHandler> gameEventHandler)
     , mCurrentStepSequenceNumber(0u)
     , mCollisionTree(BVHNode::AllocateTree())
     , mGameEventHandler(std::move(gameEventHandler))
-    , mNextShipId(0u)
 {
     std::seed_seq seed_seq({1, 242, 19730528});
     mRandomEngine = std::ranlux48_base(seed_seq);

@@ -39,7 +39,7 @@ public:
 
     static bool IsShipDefinitionFile(std::string const & filepath)
     {
-        return Utils::ToLower(std::filesystem::path(filepath).extension().string()) == "shp";
+        return Utils::ToLower(std::filesystem::path(filepath).extension().string()) == ".shp";
     }
 
     ShipDefinitionFile(

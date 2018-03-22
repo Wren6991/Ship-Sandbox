@@ -189,8 +189,8 @@ std::unique_ptr<Ship> Ship::Create(
                 if (!!shipDefinition.TextureImage)
                 {
                     allPointTextureCoordinates.emplace_back(
-                        static_cast<float>(x) * static_cast<float>(shipDefinition.TextureImage->Width) / static_cast<float>(structureWidth),
-                        static_cast<float>(y) * static_cast<float>(shipDefinition.TextureImage->Height) / static_cast<float>(structureHeight));
+                        static_cast<float>(x) / static_cast<float>(structureWidth),
+                        static_cast<float>(y) / static_cast<float>(structureHeight));
                 }
 
                 // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
@@ -358,7 +358,7 @@ std::unique_ptr<Ship> Ship::Create(
 }
 
 Ship::Ship(World * parentWorld)
-    : mId(parentWorld->GenerateNewShipId())
+    : mId(parentWorld->GetNextShipId())
     , mParentWorld(parentWorld)    
     , mAllPoints(0)
     , mAllPointColors(0)
@@ -756,6 +756,7 @@ void Ship::Render(
         //
 
         renderContext.UploadShipPointVisualAttributes(
+            mId,
             mAllPointColors.data(), 
             mAllPointTextureCoordinates.data(),
             mAllPointColors.size());
@@ -768,24 +769,27 @@ void Ship::Render(
     // Upload points
     //
 
-    renderContext.UploadShipPointsStart(mAllPoints.size());
+    renderContext.UploadShipPointsStart(
+        mId,
+        mAllPoints.size());
 
     for (Point const & point : mAllPoints)
     {
         renderContext.UploadShipPoint(
+            mId,
             point.GetPosition().x,
             point.GetPosition().y,
             point.GetLight(),
             point.GetWater());
     }
 
-    renderContext.UploadShipPointsEnd();
+    renderContext.UploadShipPointsEnd(mId);
 
 
     if (renderContext.GetDrawPointsOnly())
     {
         // Draw just the points
-        renderContext.RenderShipPoints();
+        renderContext.RenderShipPoints(mId);
 
         return;
     }
@@ -799,7 +803,9 @@ void Ship::Render(
 
         if (mAreSpringsOrTrianglesDirty)
         {
-            renderContext.UploadShipStart(mConnectedComponentSizes);
+            renderContext.UploadShipElementsStart(
+                mId,
+                mConnectedComponentSizes);
 
             //
             // Upload all the springs
@@ -811,7 +817,8 @@ void Ship::Render(
                 {
                     assert(spring.GetPointA()->GetConnectedComponentId() == spring.GetPointB()->GetConnectedComponentId());
 
-                    renderContext.UploadShipSpring(
+                    renderContext.UploadShipElementSpring(
+                        mId,
                         spring.GetPointA()->GetElementIndex(),
                         spring.GetPointB()->GetElementIndex(),
                         spring.GetPointA()->GetConnectedComponentId());
@@ -830,7 +837,8 @@ void Ship::Render(
                     assert(triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointB()->GetConnectedComponentId()
                         && triangle.GetPointA()->GetConnectedComponentId() == triangle.GetPointC()->GetConnectedComponentId());
 
-                    renderContext.UploadShipTriangle(
+                    renderContext.UploadShipElementTriangle(
+                        mId,
                         triangle.GetPointA()->GetElementIndex(),
                         triangle.GetPointB()->GetElementIndex(),
                         triangle.GetPointC()->GetElementIndex(),
@@ -838,7 +846,7 @@ void Ship::Render(
                 }
             }
 
-            renderContext.UploadShipEnd();
+            renderContext.UploadShipElementsEnd(mId);
 
             mAreSpringsOrTrianglesDirty = false;
         }
@@ -847,7 +855,9 @@ void Ship::Render(
         ////// Upload all lamps
         //////
 
-        ////renderContext.UploadLampsStart(mConnectedComponentSizes.size());
+        ////renderContext.UploadLampsStart(
+        ////    mId, 
+        ////    mConnectedComponentSizes.size());
 
         ////for (ElectricalElement const * el : mAllElectricalElements)
         ////{
@@ -864,6 +874,7 @@ void Ship::Render(
         ////        float const lampLight = 1.0f;
 
         ////        renderContext.UploadLamp(
+        ////            mId,
         ////            lampPoint->GetPosition().x,
         ////            lampPoint->GetPosition().y,
         ////            lampLight,
@@ -871,7 +882,8 @@ void Ship::Render(
         ////    }
         ////}
 
-        ////renderContext.UploadLampsEnd();
+        ////renderContext.UploadLampsEnd(
+        ////    mid);
     }        
 
 
@@ -879,7 +891,7 @@ void Ship::Render(
     // Render ship
     //
 
-    renderContext.RenderShip();
+    renderContext.RenderShipElements(mId);
 
 
     //
@@ -888,7 +900,9 @@ void Ship::Render(
 
     if (renderContext.GetShowStress())
     {
-        renderContext.RenderStressedSpringsStart(mAllSprings.size());
+        renderContext.RenderStressedSpringsStart(
+            mId,
+            mAllSprings.size());
 
         for (Spring const & spring : mAllSprings)
         {
@@ -897,13 +911,14 @@ void Ship::Render(
                 if (spring.IsStressed())
                 {
                     renderContext.RenderStressedSpring(
+                        mId,
                         spring.GetPointA()->GetElementIndex(),
                         spring.GetPointB()->GetElementIndex());
                 }
             }
         }
 
-        renderContext.RenderStressedSpringsEnd();
+        renderContext.RenderStressedSpringsEnd(mId);
     }
 }
 

@@ -16,14 +16,6 @@
 #include <IL/ilu.h>
 
 #include <cstring>
-#include <filesystem>
-
-// At the time of writing, VS 2017 shipped with std::filesystem being still experimental
-#ifdef _MSC_VER
-namespace std {
-    namespace filesystem = experimental::filesystem;
-}
-#endif
 
 ResourceLoader::ResourceLoader()
 {
@@ -52,10 +44,31 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
 
         ShipDefinitionFile sdf = ShipDefinitionFile::Create(root.get<picojson::object>());
 
+        //
+        // Make paths absolute
+        //
+
+        std::filesystem::path basePath = std::filesystem::path(filepath).parent_path();
+
+        std::filesystem::path absoluteStructuralImageFilePath = std::filesystem::absolute(
+            sdf.StructuralImageFilePath,
+            basePath);
+
+        std::filesystem::path absoluteTextureImageFilePath = std::filesystem::absolute(
+            sdf.TextureImageFilePath,
+            basePath);
+
+
+        //
+        // Load
+        //
+
         return ShipDefinition(
-            LoadImage(sdf.StructuralImageFilePath, IL_RGB, IL_ORIGIN_UPPER_LEFT),
-            LoadTextureRgba(sdf.StructuralImageFilePath),
-            std::filesystem::path(filepath).stem().string());
+            LoadImage(absoluteStructuralImageFilePath.string(), IL_RGB, IL_ORIGIN_UPPER_LEFT),
+            LoadTextureRgba(absoluteTextureImageFilePath),
+            sdf.ShipName.empty() 
+                ? std ::filesystem::path(filepath).stem().string() 
+                : sdf.ShipName);
     }
     else
     {
@@ -84,10 +97,26 @@ ImageData ResourceLoader::LoadTextureRgb(std::string const & name)
         IL_ORIGIN_LOWER_LEFT);
 }
 
+ImageData ResourceLoader::LoadTextureRgb(std::filesystem::path const & filePath)
+{
+    return LoadImage(
+        filePath.string(),
+        IL_RGB,
+        IL_ORIGIN_LOWER_LEFT);
+}
+
 ImageData ResourceLoader::LoadTextureRgba(std::string const & name)
 {
     return LoadImage(
         (std::filesystem::path("Data") / "Textures" / name).string(),
+        IL_RGBA,
+        IL_ORIGIN_LOWER_LEFT);
+}
+
+ImageData ResourceLoader::LoadTextureRgba(std::filesystem::path const & filePath)
+{
+    return LoadImage(
+        filePath.string(),
         IL_RGBA,
         IL_ORIGIN_LOWER_LEFT);
 }

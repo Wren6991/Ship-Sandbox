@@ -41,10 +41,8 @@ void Game::Reset()
     mGameEventHandler->OnGameReset();
 }
 
-void Game::LoadShip(std::string const & filepath)
+void Game::AddShip(ShipDefinition const & shipDefinition)
 {
-    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
-
 	//
 	// Create ship and add to world
 	//
@@ -54,7 +52,7 @@ void Game::LoadShip(std::string const & filepath)
         shipDefinition,
 		mMaterials);
 
-    LogMessage("Loaded ship from ", filepath, " : W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
+    LogMessage("Loaded ship: W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
         shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
         " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
 

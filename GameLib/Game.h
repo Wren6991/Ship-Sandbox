@@ -12,6 +12,7 @@
 #include "Physics.h"
 #include "RenderContext.h"
 #include "ResourceLoader.h"
+#include "ShipDefinition.h"
 
 #include <memory>
 #include <vector>
@@ -26,7 +27,7 @@ public:
 
 	void Reset();
 
-	void LoadShip(std::string const & filepath);
+	void AddShip(ShipDefinition const & shipDefinition);
 
 	void DestroyAt(
         vec2 worldCoordinates, 

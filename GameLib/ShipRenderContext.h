@@ -19,95 +19,95 @@ class ShipRenderContext
 {
 public:
 
-    ShipRenderContext();
+    ShipRenderContext(std::optional<ImageData> const & texture);
     
     ~ShipRenderContext();
 
 public:
 
     //
-    // Ship Points
+    // Points
     //
 
-    void UploadShipPointVisualAttributes(
+    void UploadPointVisualAttributes(
         vec3f const * colors, 
         vec2f const * textureCoordinates,
-        size_t elementCount);
+        size_t pointCount);
 
-    void UploadShipPointsStart(size_t maxPoints);
+    void UploadPointsStart(size_t maxPoints);
 
-    inline void UploadShipPoint(
+    inline void UploadPoint(
         float x,
         float y,
         float light,
         float water)
     {
-        assert(mShipPointBufferSize + 1u <= mShipPointBufferMaxSize);
-        ShipPointElement * shipPointElement = &(mShipPointBuffer[mShipPointBufferSize]);
+        assert(mPointBufferSize + 1u <= mPointBufferMaxSize);
+        PointElement * pointElement = &(mPointBuffer[mPointBufferSize]);
 
-        shipPointElement->x = x;
-        shipPointElement->y = y;
-        shipPointElement->light = light;
-        shipPointElement->water = water;
+        pointElement->x = x;
+        pointElement->y = y;
+        pointElement->light = light;
+        pointElement->water = water;
 
-        ++mShipPointBufferSize;
+        ++mPointBufferSize;
     }
 
-    void UploadShipPointsEnd();
+    void UploadPointsEnd();
 
-    void RenderShipPoints(
+    void RenderPoints(
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float (&orthoMatrix)[4][4]);
 
 
     //
-    // Ship springs and triangles
+    // Springs and triangles
     //
 
-    void UploadShipStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
+    void UploadElementsStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
 
-    inline void UploadShipSpring(
-        int shipPointIndex1,
-        int shipPointIndex2,
+    inline void UploadElementSpring(
+        int pointIndex1,
+        int pointIndex2,
         size_t connectedComponentId)
     {
         size_t const connectedComponentIndex = connectedComponentId - 1;
 
-        assert(connectedComponentIndex < mShipBufferSizes.size());
-        assert(connectedComponentIndex < mShipBufferMaxSizes.size());
-        assert(mShipBufferSizes[connectedComponentIndex].springCount + 1u <= mShipBufferMaxSizes[connectedComponentIndex].springCount);
+        assert(connectedComponentIndex < mElementBufferSizes.size());
+        assert(connectedComponentIndex < mElementBufferMaxSizes.size());
+        assert(mElementBufferSizes[connectedComponentIndex].springCount + 1u <= mElementBufferMaxSizes[connectedComponentIndex].springCount);
 
-        ShipSpringElement * const shipSpringElement = &(mShipSpringBuffers[connectedComponentIndex][mShipBufferSizes[connectedComponentIndex].springCount]);
+        SpringElement * const springElement = &(mSpringElementBuffers[connectedComponentIndex][mElementBufferSizes[connectedComponentIndex].springCount]);
 
-        shipSpringElement->shipPointIndex1 = shipPointIndex1;
-        shipSpringElement->shipPointIndex2 = shipPointIndex2;
+        springElement->pointIndex1 = pointIndex1;
+        springElement->pointIndex2 = pointIndex2;
 
-        ++(mShipBufferSizes[connectedComponentIndex].springCount);
+        ++(mElementBufferSizes[connectedComponentIndex].springCount);
     }
 
-    inline void UploadShipTriangle(
-        int shipPointIndex1,
-        int shipPointIndex2,
-        int shipPointIndex3,
+    inline void UploadElementTriangle(
+        int pointIndex1,
+        int pointIndex2,
+        int pointIndex3,
         size_t connectedComponentId)
     {
         size_t const connectedComponentIndex = connectedComponentId - 1;
 
-        assert(connectedComponentIndex < mShipBufferSizes.size());
-        assert(connectedComponentIndex < mShipBufferMaxSizes.size());
-        assert(mShipBufferSizes[connectedComponentIndex].triangleCount + 1u <= mShipBufferMaxSizes[connectedComponentIndex].triangleCount);
+        assert(connectedComponentIndex < mElementBufferSizes.size());
+        assert(connectedComponentIndex < mElementBufferMaxSizes.size());
+        assert(mElementBufferSizes[connectedComponentIndex].triangleCount + 1u <= mElementBufferMaxSizes[connectedComponentIndex].triangleCount);
 
-        ShipTriangleElement * const shipTriangleElement = &(mShipTriangleBuffers[connectedComponentIndex][mShipBufferSizes[connectedComponentIndex].triangleCount]);
+        TriangleElement * const triangleElement = &(mTriangleElementBuffers[connectedComponentIndex][mElementBufferSizes[connectedComponentIndex].triangleCount]);
 
-        shipTriangleElement->shipPointIndex1 = shipPointIndex1;
-        shipTriangleElement->shipPointIndex2 = shipPointIndex2;
-        shipTriangleElement->shipPointIndex3 = shipPointIndex3;
+        triangleElement->pointIndex1 = pointIndex1;
+        triangleElement->pointIndex2 = pointIndex2;
+        triangleElement->pointIndex3 = pointIndex3;
 
-        ++(mShipBufferSizes[connectedComponentIndex].triangleCount);
+        ++(mElementBufferSizes[connectedComponentIndex].triangleCount);
     }
 
-    void UploadShipEnd();
+    void UploadElementsEnd();
 
 
     //
@@ -124,23 +124,23 @@ public:
     {
         size_t const connectedComponentIndex = connectedComponentId - 1;
 
-        assert(connectedComponentIndex < mShipLampBuffers.size());
+        assert(connectedComponentIndex < mLampBuffers.size());
 
-        ShipLampElement & shipLampElement = mShipLampBuffers[connectedComponentIndex].emplace_back();
+        LampElement & lampElement = mLampBuffers[connectedComponentIndex].emplace_back();
 
-        shipLampElement.x = x;
-        shipLampElement.y = y;
-        shipLampElement.lightIntensity = lightIntensity;
+        lampElement.x = x;
+        lampElement.y = y;
+        lampElement.lightIntensity = lightIntensity;
     }
 
     void UploadLampsEnd();
 
 
     //
-    // Ship
+    // Elements
     //
 
-    void RenderShip(
+    void RenderElements(
         bool useXRayMode,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
@@ -154,14 +154,14 @@ public:
     void RenderStressedSpringsStart(size_t maxSprings);
 
     inline void RenderStressedSpring(
-        int shipPointIndex1,
-        int shipPointIndex2)
+        int pointIndex1,
+        int pointIndex2)
     {
         assert(mStressedSpringBufferSize + 1u <= mStressedSpringBufferMaxSize);
-        ShipSpringElement * const springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
+        SpringElement * const springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
 
-        springElement->shipPointIndex1 = shipPointIndex1;
-        springElement->shipPointIndex2 = shipPointIndex2;
+        springElement->pointIndex1 = pointIndex1;
+        springElement->pointIndex2 = pointIndex2;
 
         ++mStressedSpringBufferSize;
     }
@@ -173,20 +173,20 @@ public:
 
 private:
 
-    void DescribeShipPointVBO();
+    void BindAndDescribePointVBO();
 
 private:
 
     //
-    // Ship points
+    // Points
     //
 
-    GameOpenGLShaderProgram mShipPointShaderProgram;
-    GLint mShipPointShaderOrthoMatrixParameter;
-    GLint mShipPointShaderAmbientLightIntensityParameter;
+    GameOpenGLShaderProgram mPointShaderProgram;
+    GLint mPointShaderOrthoMatrixParameter;
+    GLint mPointShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
-    struct ShipPointElement
+    struct PointElement
     {
         float x;
         float y;
@@ -195,67 +195,72 @@ private:
     };
 #pragma pack(pop)
 
-    size_t mShipElementCount;
-    std::unique_ptr<ShipPointElement[]> mShipPointBuffer;
-    size_t mShipPointBufferSize;
-    size_t mShipPointBufferMaxSize;
+    size_t mPointCount;
+    std::unique_ptr<PointElement[]> mPointBuffer;
+    size_t mPointBufferSize;
+    size_t mPointBufferMaxSize;
 
-    GameOpenGLVBO mShipPointColorVBO;
-    GameOpenGLVBO mShipPointTextureCoordinatesVBO;
-    GameOpenGLVBO mShipPointVBO;
+    GameOpenGLVBO mPointColorVBO;
+    GameOpenGLVBO mPointElementTextureCoordinatesVBO;
+    GameOpenGLVBO mPointVBO;
 
 
     //
-    // Ship springs and triangles
+    // Springs and triangles
     //
 
-    GameOpenGLShaderProgram mShipShaderProgram;
-    GLint mShipShaderOrthoMatrixParameter;
-    GLint mShipShaderAmbientLightIntensityParameter;
+    GameOpenGLShaderProgram mElementColorShaderProgram;
+    GLint mElementColorShaderOrthoMatrixParameter;
+    GLint mElementColorShaderAmbientLightIntensityParameter;
+
+    GameOpenGLShaderProgram mElementTextureShaderProgram;
+    GLint mElementTextureShaderOrthoMatrixParameter;
+    GLint mElementTextureShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
-    struct ShipSpringElement
+    struct SpringElement
     {
-        int shipPointIndex1;
-        int shipPointIndex2;
+        int pointIndex1;
+        int pointIndex2;
     };
 #pragma pack(pop)
 
 #pragma pack(push)
-    struct ShipTriangleElement
+    struct TriangleElement
     {
-        int shipPointIndex1;
-        int shipPointIndex2;
-        int shipPointIndex3;
+        int pointIndex1;
+        int pointIndex2;
+        int pointIndex3;
     };
 #pragma pack(pop)
 
-    struct ShipElementCounts
+    struct ElementCounts
     {
         size_t springCount;
         size_t triangleCount;
 
-        ShipElementCounts()
+        ElementCounts()
             : springCount(0)
             , triangleCount(0)
         {}
     };
 
-    std::vector<std::unique_ptr<ShipSpringElement[]>> mShipSpringBuffers;
-    std::vector<std::unique_ptr<ShipTriangleElement[]>> mShipTriangleBuffers;
-    std::vector<ShipElementCounts> mShipBufferSizes;
-    std::vector<ShipElementCounts> mShipBufferMaxSizes;
+    std::vector<std::unique_ptr<SpringElement[]>> mSpringElementBuffers;
+    std::vector<std::unique_ptr<TriangleElement[]>> mTriangleElementBuffers;
+    std::vector<ElementCounts> mElementBufferSizes;
+    std::vector<ElementCounts> mElementBufferMaxSizes;
 
-    GameOpenGLVBO mShipSpringVBO;
-    GameOpenGLVBO mShipTriangleVBO;
-
+    GameOpenGLVBO mSpringElementVBO;
+    GameOpenGLVBO mTriangleElementVBO;
+    
+    GameOpenGLTexture mElementTexture;
 
     //
-    // Ship lamps
+    // Lamps
     //
 
 #pragma pack(push)
-    struct ShipLampElement
+    struct LampElement
     {
         float x;
         float y;
@@ -263,7 +268,7 @@ private:
     };
 #pragma pack(pop)
 
-    std::vector<std::vector<ShipLampElement>> mShipLampBuffers;
+    std::vector<std::vector<LampElement>> mLampBuffers;
 
 
     //
@@ -274,7 +279,7 @@ private:
     GLint mStressedSpringShaderAmbientLightIntensityParameter;
     GLint mStressedSpringShaderOrthoMatrixParameter;
 
-    std::unique_ptr<ShipSpringElement[]> mStressedSpringBuffer;
+    std::unique_ptr<SpringElement[]> mStressedSpringBuffer;
     size_t mStressedSpringBufferSize;
     size_t mStressedSpringBufferMaxSize;
 

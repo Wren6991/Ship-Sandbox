@@ -11,9 +11,17 @@
 #include "ShipDefinition.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
+
+// At the time of writing, VS 2017 shipped with std::filesystem being still experimental
+#ifdef _MSC_VER
+namespace std {
+    namespace filesystem = experimental::filesystem;
+}
+#endif
 
 class ResourceLoader
 {
@@ -36,7 +44,11 @@ public:
 
     ImageData LoadTextureRgb(std::string const & name);
 
+    ImageData LoadTextureRgb(std::filesystem::path const & filePath);
+
     ImageData LoadTextureRgba(std::string const & name);
+
+    ImageData LoadTextureRgba(std::filesystem::path const & filePath);
 
     std::vector<ImageData> LoadTexturesRgba(
         std::string const & prefix, 
