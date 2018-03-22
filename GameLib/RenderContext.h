@@ -449,110 +449,7 @@ public:
     void RenderEnd();
 
 private:
-
-    template<typename T, typename TDeleter>
-    class OpenGLObject
-    {
-    public:
-
-        OpenGLObject()
-            : mValue(0)
-        {}
-
-        OpenGLObject(T value)
-            : mValue(value)
-        {}
-
-        ~OpenGLObject()
-        {
-            TDeleter::Delete(mValue);
-        }
-
-        OpenGLObject(OpenGLObject const & other) = delete;
-
-        OpenGLObject(OpenGLObject && other)
-        {
-            mValue = other.mValue;
-            other.mValue = 0;
-        }
-
-        OpenGLObject & operator=(OpenGLObject const & other) = delete;
-
-        OpenGLObject & operator=(OpenGLObject && other)
-        {
-            TDeleter::Delete(mValue);
-            mValue = other.mValue;
-            other.mValue = 0;
-
-            return *this;
-        }
-
-        bool operator !() const
-        {
-            return mValue == 0;
-        }
-
-        T operator*() const
-        {
-            return mValue;
-        }
-
-    private:
-        T mValue;
-    };
-
-    struct OpenGLProgramDeleter
-    {
-        static void Delete(GLuint p)
-        {
-            if (p != 0)
-            {
-                glDeleteProgram(p);
-            }
-        }
-    };
-
-    struct OpenGLVBODeleter
-    {
-        static void Delete(GLuint p)
-        {
-            if (p != 0)
-            {
-                glDeleteBuffers(1, &p);
-            }
-        }
-    };
-
-    struct OpenGLTextureDeleter
-    {
-        static void Delete(GLuint p)
-        {
-            if (p != 0)
-            {
-                glDeleteTextures(1, &p);
-            }
-        }
-    };
-
-    using OpenGLShaderProgram = OpenGLObject<GLuint, OpenGLProgramDeleter>;
-    using OpenGLVBO = OpenGLObject<GLuint, OpenGLVBODeleter>;
-    using OpenGLTexture = OpenGLObject<GLuint, OpenGLTextureDeleter>;
-
-private:
     
-    void CompileShader(
-        char const * shaderSource,
-        GLenum shaderType,
-        OpenGLShaderProgram const & shaderProgram);
-
-    void LinkProgram(
-        OpenGLShaderProgram const & shaderProgram,
-        std::string const & programName);
-
-    GLint GetParameterLocation(
-        OpenGLShaderProgram const & shaderProgram,
-        std::string const & parameterName);
-
     void DescribeShipPointVBO();
 
     void CalculateOrthoMatrix();
@@ -565,7 +462,7 @@ private:
     // Clouds
     //
 
-    OpenGLShaderProgram mCloudShaderProgram;
+    GameOpenGLShaderProgram mCloudShaderProgram;
     GLint mCloudShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
@@ -597,10 +494,10 @@ private:
     size_t mCloudBufferSize;
     size_t mCloudBufferMaxSize;
     
-    OpenGLVBO mCloudVBO;
+    GameOpenGLVBO mCloudVBO;
 
     std::vector<ImageData> mCloudTextureDatas;
-    std::vector<OpenGLTexture> mCloudTextures;
+    std::vector<GameOpenGLTexture> mCloudTextures;
 
     inline size_t GetCloudTextureIndex(size_t cloudIndex) const
     {
@@ -613,7 +510,7 @@ private:
     // Land
     //
 
-    OpenGLShaderProgram mLandShaderProgram;
+    GameOpenGLShaderProgram mLandShaderProgram;
     GLint mLandShaderAmbientLightIntensityParameter;
     GLint mLandShaderOrthoMatrixParameter;
 
@@ -631,17 +528,17 @@ private:
     size_t mLandBufferSize;
     size_t mLandBufferMaxSize;
 
-    OpenGLVBO mLandVBO;
+    GameOpenGLVBO mLandVBO;
     
     std::optional<ImageData> mLandTextureData;
-    OpenGLTexture mLandTexture;
+    GameOpenGLTexture mLandTexture;
 
 
     //
     // Water
     //
 
-    OpenGLShaderProgram mWaterShaderProgram;
+    GameOpenGLShaderProgram mWaterShaderProgram;
     GLint mWaterShaderAmbientLightIntensityParameter;
     GLint mWaterShaderWaterTransparencyParameter;
     GLint mWaterShaderOrthoMatrixParameter;
@@ -663,17 +560,17 @@ private:
     size_t mWaterBufferSize;
     size_t mWaterBufferMaxSize;
 
-    OpenGLVBO mWaterVBO;
+    GameOpenGLVBO mWaterVBO;
 
     std::optional<ImageData> mWaterTextureData;
-    OpenGLTexture mWaterTexture;
+    GameOpenGLTexture mWaterTexture;
 
 
     //
     // Ship points
     //
 
-    OpenGLShaderProgram mShipPointShaderProgram;
+    GameOpenGLShaderProgram mShipPointShaderProgram;
     GLint mShipPointShaderOrthoMatrixParameter;
     GLint mShipPointShaderAmbientLightIntensityParameter;
 
@@ -692,16 +589,16 @@ private:
     size_t mShipPointBufferSize;
     size_t mShipPointBufferMaxSize;
 
-    OpenGLVBO mShipPointColorVBO;
-    OpenGLVBO mShipPointTextureCoordinatesVBO;
-    OpenGLVBO mShipPointVBO;
+    GameOpenGLVBO mShipPointColorVBO;
+    GameOpenGLVBO mShipPointTextureCoordinatesVBO;
+    GameOpenGLVBO mShipPointVBO;
 
 
     //
     // Ship springs and triangles
     //
 
-    OpenGLShaderProgram mShipShaderProgram;
+    GameOpenGLShaderProgram mShipShaderProgram;
     GLint mShipShaderOrthoMatrixParameter;
     GLint mShipShaderAmbientLightIntensityParameter;
 
@@ -738,8 +635,8 @@ private:
     std::vector<ShipElementCounts> mShipBufferSizes;
     std::vector<ShipElementCounts> mShipBufferMaxSizes;
 
-    OpenGLVBO mShipSpringVBO;
-    OpenGLVBO mShipTriangleVBO;
+    GameOpenGLVBO mShipSpringVBO;
+    GameOpenGLVBO mShipTriangleVBO;
 
 
     //
@@ -762,7 +659,7 @@ private:
     // Stressed springs
     //
 
-    OpenGLShaderProgram mStressedSpringShaderProgram;
+    GameOpenGLShaderProgram mStressedSpringShaderProgram;
     GLint mStressedSpringShaderAmbientLightIntensityParameter;
     GLint mStressedSpringShaderOrthoMatrixParameter;
 
@@ -770,21 +667,21 @@ private:
     size_t mStressedSpringBufferSize;
     size_t mStressedSpringBufferMaxSize;
 
-    OpenGLVBO mStressedSpringVBO;
+    GameOpenGLVBO mStressedSpringVBO;
 
 
     //
     // Multi-purpose shaders
     //
 
-    OpenGLShaderProgram mMatteNdcShaderProgram;
+    GameOpenGLShaderProgram mMatteNdcShaderProgram;
     GLint mMatteNdcShaderColorParameter;
-    OpenGLVBO mMatteNdcVBO;
+    GameOpenGLVBO mMatteNdcVBO;
 
-    OpenGLShaderProgram mMatteWorldShaderProgram;    
+    GameOpenGLShaderProgram mMatteWorldShaderProgram;
     GLint mMatteWorldShaderColorParameter;
     GLint mMatteWorldShaderOrthoMatrixParameter;
-    OpenGLVBO mMatteWorldVBO;
+    GameOpenGLVBO mMatteWorldVBO;
 
 private:
 

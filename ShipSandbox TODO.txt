@@ -66,6 +66,11 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			  - Requires RenderContext::ResetWorld()
 				- Simply clears vector of ShipRenderContext()
 					- ShipRenderContext contains everything ship-related
+						- Rename springs and triangles to "Elements"
+						- Touch points with outside world:
+							- Parameters (booleans, render factors)
+							- OrthoMatrix
+							= Helpers
 				- No need to reset others (land, water, clouds) as their numbers, positions, and data will be given
 				  at the next Render() from scratch
 					- But it could easily by re-creating uq_ptr<XYZRenderContext()>

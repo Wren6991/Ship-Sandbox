@@ -100,26 +100,7 @@ RenderContext::RenderContext(
     // Init OpenGL
     //
 
-    InitOpenGL();
-
-
-    //
-    // Check OpenGL version
-    //
-
-    int versionMaj = 0;
-    int versionMin = 0;
-    char const * glVersion = (char*)glGetString(GL_VERSION);
-    if (nullptr == glVersion)
-    {
-        throw GameException("OpenGL completely not supported");
-    }
-
-    sscanf(glVersion, "%d.%d", &versionMaj, &versionMin);
-    if (versionMaj < 2)
-    {
-        throw GameException("This game requires at least OpenGL 2.0 support; the version currently supported by your computer is " + std::string(glVersion));
-    }
+    GameOpenGL::InitOpenGL();
 
 
     //
@@ -175,7 +156,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(cloudVertexShaderSource, GL_VERTEX_SHADER, mCloudShaderProgram);
+    GameOpenGL::CompileShader(cloudVertexShaderSource, GL_VERTEX_SHADER, mCloudShaderProgram);
 
     char const * cloudFragmentShaderSource = R"(
 
@@ -194,17 +175,17 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(cloudFragmentShaderSource, GL_FRAGMENT_SHADER, mCloudShaderProgram);
+    GameOpenGL::CompileShader(cloudFragmentShaderSource, GL_FRAGMENT_SHADER, mCloudShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mCloudShaderProgram, 0, "inputPos");
     glBindAttribLocation(*mCloudShaderProgram, 1, "inputTexturePos");
 
     // Link
-    LinkProgram(mCloudShaderProgram, "Cloud");
+    GameOpenGL::LinkShaderProgram(mCloudShaderProgram, "Cloud");
 
     // Get uniform locations
-    mCloudShaderAmbientLightIntensityParameter = GetParameterLocation(mCloudShaderProgram, "paramAmbientLightIntensity");
+    mCloudShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mCloudShaderProgram, "paramAmbientLightIntensity");
 
     // Create VBO    
     glGenBuffers(1, &tmpGLuint);
@@ -269,7 +250,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(landVertexShaderSource, GL_VERTEX_SHADER, mLandShaderProgram);
+    GameOpenGL::CompileShader(landVertexShaderSource, GL_VERTEX_SHADER, mLandShaderProgram);
 
     char const * landFragmentShaderSource = R"(
 
@@ -289,18 +270,18 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(landFragmentShaderSource, GL_FRAGMENT_SHADER, mLandShaderProgram);
+    GameOpenGL::CompileShader(landFragmentShaderSource, GL_FRAGMENT_SHADER, mLandShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mLandShaderProgram, 0, "inputPos");
 
     // Link
-    LinkProgram(mLandShaderProgram, "Land");
+    GameOpenGL::LinkShaderProgram(mLandShaderProgram, "Land");
 
     // Get uniform locations
-    mLandShaderAmbientLightIntensityParameter = GetParameterLocation(mLandShaderProgram, "paramAmbientLightIntensity");
-    GLint landShaderTextureScalingParameter = GetParameterLocation(mLandShaderProgram, "paramTextureScaling");
-    mLandShaderOrthoMatrixParameter = GetParameterLocation(mLandShaderProgram, "paramOrthoMatrix");
+    mLandShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mLandShaderProgram, "paramAmbientLightIntensity");
+    GLint landShaderTextureScalingParameter = GameOpenGL::GetParameterLocation(mLandShaderProgram, "paramTextureScaling");
+    mLandShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mLandShaderProgram, "paramOrthoMatrix");
 
     // Create VBO    
     glGenBuffers(1, &tmpGLuint);
@@ -368,7 +349,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(waterVertexShaderSource, GL_VERTEX_SHADER, mWaterShaderProgram);
+    GameOpenGL::CompileShader(waterVertexShaderSource, GL_VERTEX_SHADER, mWaterShaderProgram);
 
     char const * waterFragmentShaderSource = R"(
 
@@ -390,20 +371,20 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(waterFragmentShaderSource, GL_FRAGMENT_SHADER, mWaterShaderProgram);
+    GameOpenGL::CompileShader(waterFragmentShaderSource, GL_FRAGMENT_SHADER, mWaterShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mWaterShaderProgram, 0, "inputPos");
     glBindAttribLocation(*mWaterShaderProgram, 1, "inputTextureY");
 
     // Link
-    LinkProgram(mWaterShaderProgram, "Water");
+    GameOpenGL::LinkShaderProgram(mWaterShaderProgram, "Water");
 
     // Get uniform locations    
-    mWaterShaderAmbientLightIntensityParameter = GetParameterLocation(mWaterShaderProgram, "paramAmbientLightIntensity");
-    mWaterShaderWaterTransparencyParameter = GetParameterLocation(mWaterShaderProgram, "paramWaterTransparency");    
-    GLint waterShaderTextureScalingParameter = GetParameterLocation(mWaterShaderProgram, "paramTextureScaling");
-    mWaterShaderOrthoMatrixParameter = GetParameterLocation(mWaterShaderProgram, "paramOrthoMatrix");
+    mWaterShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mWaterShaderProgram, "paramAmbientLightIntensity");
+    mWaterShaderWaterTransparencyParameter = GameOpenGL::GetParameterLocation(mWaterShaderProgram, "paramWaterTransparency");
+    GLint waterShaderTextureScalingParameter = GameOpenGL::GetParameterLocation(mWaterShaderProgram, "paramTextureScaling");
+    mWaterShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mWaterShaderProgram, "paramOrthoMatrix");
 
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
@@ -486,7 +467,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(shipPointVertexShaderSource, GL_VERTEX_SHADER, mShipPointShaderProgram);
+    GameOpenGL::CompileShader(shipPointVertexShaderSource, GL_VERTEX_SHADER, mShipPointShaderProgram);
 
     char const * shipPointFragmentShaderSource = R"(
 
@@ -513,7 +494,7 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(shipPointFragmentShaderSource, GL_FRAGMENT_SHADER, mShipPointShaderProgram);
+    GameOpenGL::CompileShader(shipPointFragmentShaderSource, GL_FRAGMENT_SHADER, mShipPointShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mShipPointShaderProgram, 0, "inputPos");
@@ -522,11 +503,11 @@ RenderContext::RenderContext(
     glBindAttribLocation(*mShipPointShaderProgram, 3, "inputCol");
 
     // Link
-    LinkProgram(mShipPointShaderProgram, "Ship Point");
+    GameOpenGL::LinkShaderProgram(mShipPointShaderProgram, "Ship Point");
 
     // Get uniform locations
-    mShipPointShaderOrthoMatrixParameter = GetParameterLocation(mShipPointShaderProgram, "paramOrthoMatrix");
-    mShipPointShaderAmbientLightIntensityParameter = GetParameterLocation(mShipPointShaderProgram, "paramAmbientLightIntensity");
+    mShipPointShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mShipPointShaderProgram, "paramOrthoMatrix");
+    mShipPointShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mShipPointShaderProgram, "paramAmbientLightIntensity");
 
     // Set hardcoded parameters    
     glUseProgram(*mShipPointShaderProgram);
@@ -565,7 +546,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(shipVertexShaderSource, GL_VERTEX_SHADER, mShipShaderProgram);
+    GameOpenGL::CompileShader(shipVertexShaderSource, GL_VERTEX_SHADER, mShipShaderProgram);
 
     char const * shipFragmentShaderSource = R"(
 
@@ -592,7 +573,7 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(shipFragmentShaderSource, GL_FRAGMENT_SHADER, mShipShaderProgram);
+    GameOpenGL::CompileShader(shipFragmentShaderSource, GL_FRAGMENT_SHADER, mShipShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mShipShaderProgram, 0, "inputPos");    
@@ -601,11 +582,11 @@ RenderContext::RenderContext(
     glBindAttribLocation(*mShipShaderProgram, 3, "inputCol");
 
     // Link
-    LinkProgram(mShipShaderProgram, "Ship");
+    GameOpenGL::LinkShaderProgram(mShipShaderProgram, "Ship");
 
     // Get uniform locations
-    mShipShaderOrthoMatrixParameter = GetParameterLocation(mShipShaderProgram, "paramOrthoMatrix");
-    mShipShaderAmbientLightIntensityParameter = GetParameterLocation(mShipShaderProgram, "paramAmbientLightIntensity");
+    mShipShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mShipShaderProgram, "paramOrthoMatrix");
+    mShipShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mShipShaderProgram, "paramAmbientLightIntensity");
 
     // Create VBOs
     GLuint shipVBOs[2];
@@ -638,7 +619,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(stressedSpringVertexShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
+    GameOpenGL::CompileShader(stressedSpringVertexShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
 
     char const * stressedSpringFragmentShaderSource = R"(
 
@@ -651,17 +632,17 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(stressedSpringFragmentShaderSource, GL_FRAGMENT_SHADER, mStressedSpringShaderProgram);
+    GameOpenGL::CompileShader(stressedSpringFragmentShaderSource, GL_FRAGMENT_SHADER, mStressedSpringShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mStressedSpringShaderProgram, 0, "inputPos");
 
     // Link
-    LinkProgram(mStressedSpringShaderProgram, "Stressed Spring");
+    GameOpenGL::LinkShaderProgram(mStressedSpringShaderProgram, "Stressed Spring");
 
     // Get uniform locations
-    mStressedSpringShaderAmbientLightIntensityParameter = GetParameterLocation(mStressedSpringShaderProgram, "paramAmbientLightIntensity");
-    mStressedSpringShaderOrthoMatrixParameter = GetParameterLocation(mStressedSpringShaderProgram, "paramOrthoMatrix");
+    mStressedSpringShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mStressedSpringShaderProgram, "paramAmbientLightIntensity");
+    mStressedSpringShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mStressedSpringShaderProgram, "paramOrthoMatrix");
 
     // Create VBOs
     glGenBuffers(1, &tmpGLuint);
@@ -690,7 +671,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(matteNdcShaderSource, GL_VERTEX_SHADER, mMatteNdcShaderProgram);
+    GameOpenGL::CompileShader(matteNdcShaderSource, GL_VERTEX_SHADER, mMatteNdcShaderProgram);
 
     char const * matteNdcFragmentShaderSource = R"(
 
@@ -703,16 +684,16 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(matteNdcFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteNdcShaderProgram);
+    GameOpenGL::CompileShader(matteNdcFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteNdcShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mMatteNdcShaderProgram, 0, "inputPos");
 
     // Link
-    LinkProgram(mMatteNdcShaderProgram, "Matte NDC");
+    GameOpenGL::LinkShaderProgram(mMatteNdcShaderProgram, "Matte NDC");
 
     // Get uniform locations
-    mMatteNdcShaderColorParameter = GetParameterLocation(mMatteNdcShaderProgram, "paramCol");
+    mMatteNdcShaderColorParameter = GameOpenGL::GetParameterLocation(mMatteNdcShaderProgram, "paramCol");
 
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
@@ -739,7 +720,7 @@ RenderContext::RenderContext(
         }
     )";
 
-    CompileShader(matteWorldShaderSource, GL_VERTEX_SHADER, mMatteWorldShaderProgram);
+    GameOpenGL::CompileShader(matteWorldShaderSource, GL_VERTEX_SHADER, mMatteWorldShaderProgram);
 
     char const * matteWorldFragmentShaderSource = R"(
 
@@ -752,17 +733,17 @@ RenderContext::RenderContext(
         } 
     )";
 
-    CompileShader(matteWorldFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteWorldShaderProgram);
+    GameOpenGL::CompileShader(matteWorldFragmentShaderSource, GL_FRAGMENT_SHADER, mMatteWorldShaderProgram);
 
     // Bind attribute locations
     glBindAttribLocation(*mMatteWorldShaderProgram, 0, "inputPos");
 
     // Link
-    LinkProgram(mMatteWorldShaderProgram, "Matte World");
+    GameOpenGL::LinkShaderProgram(mMatteWorldShaderProgram, "Matte World");
 
     // Get uniform locations
-    mMatteWorldShaderColorParameter = GetParameterLocation(mMatteWorldShaderProgram, "paramCol");
-    mMatteWorldShaderOrthoMatrixParameter = GetParameterLocation(mMatteWorldShaderProgram, "paramOrthoMatrix");
+    mMatteWorldShaderColorParameter = GameOpenGL::GetParameterLocation(mMatteWorldShaderProgram, "paramCol");
+    mMatteWorldShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mMatteWorldShaderProgram, "paramOrthoMatrix");
 
     // Create VBO
     glGenBuffers(1, &tmpGLuint);
@@ -1243,63 +1224,6 @@ void RenderContext::RenderEnd()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-
-void RenderContext::CompileShader(
-    char const * shaderSource,
-    GLenum shaderType,
-    OpenGLShaderProgram const & shaderProgram)
-{
-    // Compile
-    GLuint shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &shaderSource, NULL);
-    glCompileShader(shader);
-
-    // Check
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        char infoLog[1024];
-        glGetShaderInfoLog(shader, sizeof(infoLog), NULL, infoLog);
-        throw GameException("ERROR Compiling vertex shader: " + std::string(infoLog));
-    }
-
-    // Attach to program
-    glAttachShader(*shaderProgram, shader);
-
-    // Delete shader
-    glDeleteShader(shader);
-}
-
-void RenderContext::LinkProgram(
-    OpenGLShaderProgram const & shaderProgram,
-    std::string const & programName)
-{
-    glLinkProgram(*shaderProgram);
-
-    // Check
-    int success;
-    glGetProgramiv(*shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        char infoLog[1024];
-        glGetShaderInfoLog(*shaderProgram, sizeof(infoLog), NULL, infoLog);
-        throw GameException("ERROR linking " + programName + " shader program: " + std::string(infoLog));
-    }
-}
-
-GLint RenderContext::GetParameterLocation(
-    OpenGLShaderProgram const & shaderProgram,
-    std::string const & parameterName)
-{
-    GLint parameterLocation = glGetUniformLocation(*shaderProgram, parameterName.c_str());
-    if (parameterLocation == -1)
-    { 
-        throw GameException("ERROR retrieving location of parameter \"" + parameterName + "\"");
-    }
-
-    return parameterLocation;
-}
 
 void RenderContext::DescribeShipPointVBO()
 {

@@ -15,6 +15,7 @@ set  (GAME_SOURCES
 	GameEventDispatcher.h
 	GameException.h
 	GameMath.h
+	GameOpenGL.cpp
 	GameOpenGL.h
 	GameParameters.h
 	IGameEventHandler.h
@@ -34,6 +35,8 @@ set  (GAME_SOURCES
 	ShipDefinition.h
 	ShipDefinitionFile.cpp
 	ShipDefinitionFile.h
+	ShipRenderContext.cpp
+	ShipRenderContext.h
 	TupleKeys.h
 	Utils.cpp
 	Utils.h	
