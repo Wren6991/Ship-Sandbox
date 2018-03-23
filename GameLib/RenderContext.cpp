@@ -174,6 +174,7 @@ RenderContext::RenderContext(
         mCloudTextures.emplace_back(textureNames.back());
         textureNames.pop_back();
 
+        // Bind texture
         glBindTexture(GL_TEXTURE_2D, *mCloudTextures.back());
 
         // Set repeat mode
@@ -191,6 +192,7 @@ RenderContext::RenderContext(
             throw GameException("Error uploading cloud texture onto GPU");
         }
 
+        // Unbind texture
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
@@ -274,6 +276,7 @@ RenderContext::RenderContext(
     mLandTexture = textureNames.back();
     textureNames.pop_back(); 
 
+    // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mLandTexture);
 
     // Set repeat mode
@@ -291,6 +294,7 @@ RenderContext::RenderContext(
         throw GameException("Error uploading land texture onto GPU");
     }
 
+    // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 
 
@@ -377,6 +381,7 @@ RenderContext::RenderContext(
     mWaterTexture = textureNames.back();
     textureNames.pop_back();
 
+    // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
 
     // Set repeat mode
@@ -394,6 +399,7 @@ RenderContext::RenderContext(
         throw GameException("Error uploading water texture onto GPU");
     }
 
+    // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 
 
@@ -527,7 +533,7 @@ void RenderContext::Reset()
 void RenderContext::AddShip(
     int shipId,
     std::optional<ImageData> const & texture)
-{
+{    
     // Add the ship
     assert(shipId == mShips.size());
     mShips.emplace_back(new ShipRenderContext(texture));
@@ -646,6 +652,9 @@ void RenderContext::RenderCloudsEnd()
 
         // Draw
         glDrawArrays(GL_TRIANGLE_STRIP, static_cast<GLint>(4 * c), 4);
+
+        // Unbind texture
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     // Disable stenciling - draw always
@@ -729,6 +738,9 @@ void RenderContext::RenderLand()
     // Draw
     glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(2 * mLandBufferSize));
 
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     // Stop using program
     glUseProgram(0);
 }
@@ -762,6 +774,9 @@ void RenderContext::RenderWater()
 
     // Draw
     glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(2 * mWaterBufferSize));
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     // Stop using program
     glUseProgram(0);

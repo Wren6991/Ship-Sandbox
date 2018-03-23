@@ -24,7 +24,7 @@ void GameOpenGL::CompileShader(
     {
         char infoLog[1024];
         glGetShaderInfoLog(shader, sizeof(infoLog), NULL, infoLog);
-        throw GameException("ERROR Compiling vertex shader: " + std::string(infoLog));
+        throw GameException("Error Compiling vertex shader: " + std::string(infoLog));
     }
 
     // Attach to program
@@ -47,7 +47,7 @@ void GameOpenGL::LinkShaderProgram(
     {
         char infoLog[1024];
         glGetShaderInfoLog(*shaderProgram, sizeof(infoLog), NULL, infoLog);
-        throw GameException("ERROR linking " + programName + " shader program: " + std::string(infoLog));
+        throw GameException("Error linking " + programName + " shader program: " + std::string(infoLog));
     }
 }
 

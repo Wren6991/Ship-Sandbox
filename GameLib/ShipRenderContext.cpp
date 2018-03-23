@@ -47,6 +47,10 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     , mStressedSpringVBO()
 {
     GLuint tmpGLuint;
+    GLenum glError;
+
+    // Clear errors
+    glError = glGetError();
 
 
     //
@@ -259,19 +263,24 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
         uniform float paramAmbientLightIntensity;
 
         // Constants
-        vec3 lightColour = vec3(1.0, 1.0, 0.25);
-        vec3 wetColour = vec3(0.0, 0.0, 0.8);
+        vec4 lightColour = vec4(1.0, 1.0, 0.25, 1.0);
+        vec4 wetColour = vec4(0.0, 0.0, 0.8, 1.0);
 
         void main()
         {
             vec4 vertexCol = texture2D(inputTexture, vertexTextureCoords);
 
+            // Apply point water
             float colorWetness = min(vertexWater, 1.0) * 0.7;
-            vec4 colour1 = vertexCol * (1.0 - colorWetness) + wetColour * colorWetness;
-            colour1 *= paramAmbientLightIntensity;
-            colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
+            vec4 fragColour = vertexCol * (1.0 - colorWetness) + wetColour * colorWetness;
+
+            // Apply ambient light
+            fragColour *= paramAmbientLightIntensity;
+
+            // Apply point light
+            fragColour = fragColour * (1.0 - vertexLight) + lightColour * vertexLight;
             
-            gl_FragColor = colour1;
+            gl_FragColor = fragColour;
         } 
     )";
 
@@ -289,7 +298,7 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     // Get uniform locations
     mElementTextureShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mElementTextureShaderProgram, "paramOrthoMatrix");
     mElementTextureShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mElementTextureShaderProgram, "paramAmbientLightIntensity");
-    
+
 
     //
     // Create element VBOs
@@ -310,24 +319,59 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
         glGenTextures(1, &tmpGLuint);
         mElementTexture = tmpGLuint;
 
+        // Bind texture
         glBindTexture(GL_TEXTURE_2D, *mElementTexture);
-
-        // Set repeat mode
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->Width, texture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->Data.get());
-        auto uploadError = glGetError();
-        if (GL_NO_ERROR != uploadError)
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
         {
-            throw GameException("Error uploading ship texture onto GPU: " + std::to_string(uploadError));
+            throw GameException("Error binding ship texture: " + std::to_string(glError));
         }
 
+        //
+        // Configure texture
+        //
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            throw GameException("Error setting wrapping of S coordinate of ship texture: " + std::to_string(glError));
+        }
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            throw GameException("Error setting wrapping of T coordinate of ship texture: " + std::to_string(glError));
+        }
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            throw GameException("Error setting minification filter of ship texture: " + std::to_string(glError));
+        }
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            throw GameException("Error setting magnification filter of ship texture: " + std::to_string(glError));
+        }
+
+
+        //
+        // Upload texture
+        //
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->Width, texture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->Data.get());
+        glError = glGetError();
+        if (GL_NO_ERROR != glError)
+        {
+            throw GameException("Error uploading ship texture onto GPU: " + std::to_string(glError));
+        }
+
+        // Unbind texture
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
@@ -541,7 +585,7 @@ void ShipRenderContext::RenderElements(
         glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
         glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
-        // Bind Texture
+        // Bind texture
         glBindTexture(GL_TEXTURE_2D, *mElementTexture);
     }
 
@@ -582,6 +626,12 @@ void ShipRenderContext::RenderElements(
             // Draw
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
         }
+    }
+
+    if (!!mElementTexture)
+    {
+        // Unbind texture
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     // Stop using program

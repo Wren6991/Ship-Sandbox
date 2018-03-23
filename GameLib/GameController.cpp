@@ -66,23 +66,25 @@ void GameController::RegisterGameEventHandler(IGameEventHandler * gameEventHandl
 
 void GameController::ResetAndLoadShip(std::string const & filepath)
 {
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
+
 	assert(!!mGame);    
 	mGame->Reset();
 
-    auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
-    mGame->AddShip(shipDefinition);
-    
     assert(!!mRenderContext);
     mRenderContext->Reset();
     mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
 
+    mGame->AddShip(shipDefinition);
+    
 	mLastShipLoaded = filepath;
 }
 
 void GameController::AddShip(std::string const & filepath)
 {
-	assert(!!mGame);    
     auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
+
+	assert(!!mGame);        
     mGame->AddShip(shipDefinition);
 
     assert(!!mRenderContext);

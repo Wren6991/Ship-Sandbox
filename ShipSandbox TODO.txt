@@ -84,13 +84,14 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			  + ResourceLoader::LoadShipDefinition: need to make paths abs wrt .shp path
 			  - Refactor to World::CreateShip() -> ID -> Ship::Create() (w/templated ...args)
 			  - Land and Water texture names: do own, not from array
-			  - Always unbind texture2d after a render
+			  + Always unbind texture2d after a render
 			+ Also, later, RenderContext is also given textureCoords,
 			  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
 			  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
 			  + TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
 			    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
-			- If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
+			+ If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
+			- Experiment with different min/mag filters
 
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
@@ -157,6 +158,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 
 - Sounds:
+	- Reset sound controller at ResetAndLoadShip()
 	- Water rushing in
 
 - Histograms:
