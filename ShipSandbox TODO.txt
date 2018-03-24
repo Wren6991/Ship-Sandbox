@@ -82,7 +82,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			  + Remembers if ship has texture via mElementTexture
 			  + Catch exceptions at all interactions of MainFrame with GameController, and display DialogBox
 			  + ResourceLoader::LoadShipDefinition: need to make paths abs wrt .shp path
-			  - Refactor to World::CreateShip() -> ID -> Ship::Create() (w/templated ...args)
+			  - Refactor to World::CreateShip() -> ID -> Ship::Create()
 			  - Land and Water texture names: do own, not from array
 			  + Always unbind texture2d after a render
 			+ Also, later, RenderContext is also given textureCoords,
@@ -92,6 +92,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
 			+ If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
 			- Experiment with different min/mag filters
+			= Krafting:
+				- Y offset for initial drop
+				+ Remove one layer of hull from bottom, but see how much it bends afterwards
 
 	- Magnifying glass
 		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect

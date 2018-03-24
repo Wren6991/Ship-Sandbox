@@ -280,7 +280,7 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
             // Apply point light
             fragColour = fragColour * (1.0 - vertexLight) + lightColour * vertexLight;
             
-            gl_FragColor = fragColour;
+            gl_FragColor = vec4(fragColour.xyz, vertexCol.w);
         } 
     )";
 

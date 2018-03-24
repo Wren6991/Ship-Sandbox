@@ -742,7 +742,7 @@
         "mass": 1000,
         "structural_colour": "#E5FFFF",
 	"render_colour": "#E5FFFF",
-        "isHull": true,
+        "isHull": false,
 	"sound_properties": {
 		"element_type": "Glass"
 	}
