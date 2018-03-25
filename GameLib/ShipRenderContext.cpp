@@ -11,10 +11,7 @@
 
 ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     // Points
-    : mPointShaderProgram()
-    , mPointShaderOrthoMatrixParameter(0)
-    , mPointShaderAmbientLightIntensityParameter(0)
-    , mPointCount(0u)
+    : mPointCount(0u)
     , mPointBuffer()
     , mPointBufferSize(0u)
     , mPointBufferMaxSize(0u)   
@@ -64,84 +61,6 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     mPointColorVBO = pointVBOs[0];
     mPointElementTextureCoordinatesVBO = pointVBOs[1];
     mPointVBO = pointVBOs[2];
-
-
-    // TODOHERE
-    //
-    // Create points program
-    //
-
-    mPointShaderProgram = glCreateProgram();
-
-    char const * pointVertexShaderSource = R"(
-
-        // Inputs
-        attribute vec2 inputPos;        
-        attribute float inputLight;
-        attribute float inputWater;
-        attribute vec3 inputCol;
-
-        // Outputs        
-        varying float vertexLight;
-        varying float vertexWater;
-        varying vec3 vertexCol;
-
-        // Params
-        uniform mat4 paramOrthoMatrix;
-
-        void main()
-        {            
-            vertexLight = inputLight;
-            vertexWater = inputWater;
-            vertexCol = inputCol;
-
-            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
-        }
-    )";
-
-    GameOpenGL::CompileShader(pointVertexShaderSource, GL_VERTEX_SHADER, mPointShaderProgram);
-
-    char const * pointFragmentShaderSource = R"(
-
-        // Inputs from previous shader        
-        varying float vertexLight;
-        varying float vertexWater;
-        varying vec3 vertexCol;
-
-        // Params
-        uniform float paramAmbientLightIntensity;
-
-        // Constants
-        vec3 lightColour = vec3(1.0, 1.0, 0.25);
-        vec3 wetColour = vec3(0.0, 0.0, 0.8);
-
-        void main()
-        {
-            float colorWetness = min(vertexWater, 1.0) * 0.7;
-            vec3 colour1 = vertexCol * (1.0 - colorWetness) + wetColour * colorWetness;
-            colour1 *= paramAmbientLightIntensity;
-            colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
-            
-            gl_FragColor = vec4(colour1.xyz, 1.0);
-        } 
-    )";
-
-    GameOpenGL::CompileShader(pointFragmentShaderSource, GL_FRAGMENT_SHADER, mPointShaderProgram);
-
-    // Bind attribute locations
-    glBindAttribLocation(*mPointShaderProgram, 0, "inputPos");
-    glBindAttribLocation(*mPointShaderProgram, 1, "inputLight");
-    glBindAttribLocation(*mPointShaderProgram, 2, "inputWater");
-    glBindAttribLocation(*mPointShaderProgram, 3, "inputCol");
-
-    // Link
-    GameOpenGL::LinkShaderProgram(mPointShaderProgram, "Ship Point");
-
-    // Get uniform locations
-    mPointShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mPointShaderProgram, "paramOrthoMatrix");
-    mPointShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mPointShaderProgram, "paramAmbientLightIntensity");
-
-
 
 
     //
@@ -581,29 +500,6 @@ void ShipRenderContext::Render(
 
     if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawPoints))
     {
-        // TODOHERE: use normal element programs - this needs to look like springs
-
-        ////assert(mPointBufferSize <= mPointBufferMaxSize);
-
-        ////// Use program
-        ////glUseProgram(*mPointShaderProgram);
-
-        ////// Set parameters
-        ////glUniformMatrix4fv(mPointShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        ////glUniform1f(mPointShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-        ////// Bind and describe points
-        ////BindAndDescribePointVBO();
-
-        ////// Set point size
-        ////glPointSize(0.50f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-        ////// Draw
-        ////glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(mPointBufferSize));
-
-        ////// Stop using program
-        ////glUseProgram(0);
-
         // Use color program
         glUseProgram(*mElementColorShaderProgram);
 
@@ -611,8 +507,10 @@ void ShipRenderContext::Render(
         glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
         glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
-        // Bind and describe points    
-        BindAndDescribePointVBO();
+        // Describe points    
+        DescribePointVBO();
+        // TODO: choose color vs texture, based off TBD
+        DescribePointColorVBO();
 
         // Set point size
         glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
@@ -656,6 +554,10 @@ void ShipRenderContext::Render(
             // Set parameters
             glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
             glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+            // Describe points    
+            DescribePointVBO();
+            DescribePointColorVBO();
         }
         else
         {
@@ -666,12 +568,13 @@ void ShipRenderContext::Render(
             glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
             glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
+            // Describe points    
+            DescribePointVBO();
+            DescribePointTextureVBO();
+
             // Bind texture
             glBindTexture(GL_TEXTURE_2D, *mElementTexture);
         }
-
-        // Bind and describe points    
-        BindAndDescribePointVBO();
 
         // Set line size
         glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
@@ -719,8 +622,9 @@ void ShipRenderContext::Render(
         glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
         glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
-        // Bind and describe points    
-        BindAndDescribePointVBO();
+        // Describe points    
+        DescribePointVBO();
+        DescribePointColorVBO();
 
         // Set line size
         glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
@@ -761,8 +665,9 @@ void ShipRenderContext::Render(
         // Bind texture
         glBindTexture(GL_TEXTURE_2D, *mElementTexture);
 
-        // Bind and describe points    
-        BindAndDescribePointVBO();
+        // Describe points    
+        DescribePointVBO();
+        DescribePointTextureVBO();
 
         // Set line size
         glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
@@ -802,8 +707,8 @@ void ShipRenderContext::Render(
         glUniform1f(mStressedSpringShaderAmbientLightIntensityParameter, ambientLightIntensity);
         glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
 
-        // Bind and describe points
-        BindAndDescribePointVBO();
+        // Describe points    
+        DescribePointVBO();
 
         // Upload stressed springs buffer 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
@@ -822,7 +727,7 @@ void ShipRenderContext::Render(
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-void ShipRenderContext::BindAndDescribePointVBO()
+void ShipRenderContext::DescribePointVBO()
 {
     // Bind VBO
     glBindBuffer(GL_ARRAY_BUFFER, *mPointVBO);
@@ -837,29 +742,33 @@ void ShipRenderContext::BindAndDescribePointVBO()
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ShipRenderContext::Point), (void*)((2 + 1) * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-
-    if (!mElementTexture)
-    {
-        //
-        // Color
-        //
-
-        glBindBuffer(GL_ARRAY_BUFFER, *mPointColorVBO);
-
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vec3f), (void*)(0));
-    }
-    else
-    {
-        //
-        // Texture
-        //
-
-        glBindBuffer(GL_ARRAY_BUFFER, *mPointElementTextureCoordinatesVBO);
-
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(vec2f), (void*)(0));        
-    }
-
-    glEnableVertexAttribArray(3);
-
+    // Unbind VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 }
+
+void ShipRenderContext::DescribePointColorVBO()
+{
+    // Bind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, *mPointColorVBO);
+
+    // Color
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vec3f), (void*)(0));
+    glEnableVertexAttribArray(3);
+
+    // Unbind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+}
+
+void ShipRenderContext::DescribePointTextureVBO()
+{
+    // Bind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, *mPointElementTextureCoordinatesVBO);
+
+    // TextureCoords
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(vec2f), (void*)(0));        
+    glEnableVertexAttribArray(3);
+
+    // Unbind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+}
+

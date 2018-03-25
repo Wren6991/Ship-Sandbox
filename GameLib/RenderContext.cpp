@@ -97,11 +97,6 @@ RenderContext::RenderContext(
 
     mWaterTextureData.emplace(resourceLoader.LoadTextureRgb(std::string("water_1.jpg")));
 
-    // Generate all texture names
-    size_t const numberOfTextures = mCloudTextureDatas.size() + 2U;
-    std::vector<GLuint> textureNames(numberOfTextures, 0U);
-    glGenTextures(static_cast<GLsizei>(numberOfTextures), textureNames.data());
-
 
 
     //
@@ -170,9 +165,9 @@ RenderContext::RenderContext(
     // Create textures
     for (size_t i = 0; i < mCloudTextureDatas.size(); ++i)
     {
-        // Create texture
-        mCloudTextures.emplace_back(textureNames.back());
-        textureNames.pop_back();
+        // Create texture name
+        glGenTextures(1, &tmpGLuint);
+        mCloudTextures.emplace_back(tmpGLuint);
 
         // Bind texture
         glBindTexture(GL_TEXTURE_2D, *mCloudTextures.back());
@@ -272,9 +267,9 @@ RenderContext::RenderContext(
         1.0f / LandTileWorldSize);
     glUseProgram(0);
 
-    // Create texture
-    mLandTexture = textureNames.back();
-    textureNames.pop_back(); 
+    // Create texture name
+    glGenTextures(1, &tmpGLuint);
+    mLandTexture = tmpGLuint;
 
     // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mLandTexture);
@@ -377,9 +372,9 @@ RenderContext::RenderContext(
         1.0f / WaterTileWorldSize);
     glUseProgram(0);
 
-    // Create texture
-    mWaterTexture = textureNames.back();
-    textureNames.pop_back();
+    // Create texture name
+    glGenTextures(1, &tmpGLuint);
+    mWaterTexture = tmpGLuint;
 
     // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
@@ -510,8 +505,6 @@ RenderContext::RenderContext(
             mOrthoMatrix[r][c] = 0.0f;
         }
     }
-
-    assert(textureNames.empty());
 }
 
 RenderContext::~RenderContext()

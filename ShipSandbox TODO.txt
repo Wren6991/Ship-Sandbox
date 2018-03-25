@@ -49,12 +49,15 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- Better grouping, see RadioBox?
 
 	- RenderContext:
-		- Get rid of pre-generated texture names and create on-demand
-			- Test!
+		+ Get rid of pre-generated texture names and create on-demand
+			+ Test!
+		- See if can describe point, color, and texture VBOs at init
+
 	= Draw points:
-		- If drawOnlyPoints, ship uses RenderContext::RenderPoint(elementIndex), only for !deleted points
-		- Then, glDrawElements(GL_POINT)
-		- Nuke PointProgram as it's dupe now
+		+ Ship uses RenderContext::UploadPoint(elementIndex), only for !deleted points
+		+ Then, glDrawElements(GL_POINT)
+		+ Nuke PointProgram as it's dupe now
+		- Decide color vs texture based off TBD
 
 
 

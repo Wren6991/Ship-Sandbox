@@ -195,17 +195,15 @@ public:
 
 private:
 
-    void BindAndDescribePointVBO();
+    void DescribePointVBO();
+    void DescribePointColorVBO();
+    void DescribePointTextureVBO();
 
 private:
 
     //
     // Points
     //
-
-    GameOpenGLShaderProgram mPointShaderProgram;
-    GLint mPointShaderOrthoMatrixParameter;
-    GLint mPointShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
     struct Point
