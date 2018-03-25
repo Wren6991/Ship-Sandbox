@@ -27,8 +27,6 @@ const long ID_DESTROY_RADIUS_SLIDER = wxNewId();
 
 const long ID_QUICK_WATER_FIX_CHECKBOX = wxNewId();
 const long ID_SHOW_STRESS_CHECKBOX = wxNewId();
-const long ID_XRAY_CHECKBOX = wxNewId();
-const long ID_DRAW_POINTS_ONLY_CHECKBOX = wxNewId();
 
 wxBEGIN_EVENT_TABLE(SettingsDialog, wxDialog)
 	EVT_COMMAND_SCROLL(ID_STRENGTH_SLIDER, SettingsDialog::OnStrengthSliderScroll)
@@ -256,17 +254,35 @@ SettingsDialog::SettingsDialog(
 	Connect(ID_QUICK_WATER_FIX_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnQuickWaterFixCheckBoxClick);
 	checkboxesSizer->Add(mQuickWaterFixCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
 
+
+    mDrawPointsRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Only Points"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+    mDrawPointsRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
+        this->OnShipRenderModeChange();
+    });
+    checkboxesSizer->Add(mDrawPointsRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
+
+    mDrawSpringsRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Only Springs"), wxDefaultPosition, wxDefaultSize, 0);
+    mDrawSpringsRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
+        this->OnShipRenderModeChange();
+    });
+    checkboxesSizer->Add(mDrawSpringsRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
+
+    mDrawStructureRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Internal Structure"), wxDefaultPosition, wxDefaultSize, 0);
+    mDrawStructureRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
+        this->OnShipRenderModeChange();
+    });
+    checkboxesSizer->Add(mDrawStructureRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
+
+    mDrawTextureRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Image"), wxDefaultPosition, wxDefaultSize, 0);
+    mDrawTextureRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
+        this->OnShipRenderModeChange();
+    });
+    checkboxesSizer->Add(mDrawTextureRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
+
 	mShowStressCheckBox = new wxCheckBox(this, ID_SHOW_STRESS_CHECKBOX, _("Show Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Show Stress Checkbox"));
 	Connect(ID_SHOW_STRESS_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnShowStressCheckBoxClick);
 	checkboxesSizer->Add(mShowStressCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
 
-	mXRayCheckBox = new wxCheckBox(this, ID_XRAY_CHECKBOX, _("X-Ray Mode"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Use XRay Checkbox"));
-	Connect(ID_XRAY_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnXRayCheckBoxClick);
-	checkboxesSizer->Add(mXRayCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
-
-    mDrawPointsOnlyCheckBox = new wxCheckBox(this, ID_DRAW_POINTS_ONLY_CHECKBOX, _("Draw Only Points"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Draw Only Points Checkbox"));
-    Connect(ID_DRAW_POINTS_ONLY_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnDrawPointsOnlyCheckBoxClick);
-    checkboxesSizer->Add(mDrawPointsOnlyCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
 
 	controlsSizer->Add(checkboxesSizer, 0);
 
@@ -456,24 +472,16 @@ void SettingsDialog::OnQuickWaterFixCheckBoxClick(wxCommandEvent & /*event*/)
 	mApplyButton->Enable(true);
 }
 
+void SettingsDialog::OnShipRenderModeChange()
+{
+    // Remember we're dirty now
+    mApplyButton->Enable(true);
+}
+
 void SettingsDialog::OnShowStressCheckBoxClick(wxCommandEvent & /*event*/)
 {
 	// Remember we're dirty now
 	mApplyButton->Enable(true);
-}
-
-void SettingsDialog::OnXRayCheckBoxClick(wxCommandEvent & /*event*/)
-{
-	// Remember we're dirty now
-	mApplyButton->Enable(true);
-}
-
-void SettingsDialog::OnDrawPointsOnlyCheckBoxClick(wxCommandEvent & /*event*/)
-{
-    OnDrawPointsOnlyChanged();
-
-    // Remember we're dirty now
-    mApplyButton->Enable(true);
 }
 
 void SettingsDialog::OnOkButton(wxCommandEvent & /*event*/)
@@ -549,11 +557,24 @@ void SettingsDialog::ApplySettings()
 
 	mGameController->SetShowShipThroughWater(mQuickWaterFixCheckBox->IsChecked());
 
-	mGameController->SetShowStress(mShowStressCheckBox->IsChecked());
+    if (mDrawPointsRadioButton->GetValue())
+    {
+        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Points);
+    }
+    else if (mDrawSpringsRadioButton->GetValue())
+    {
+        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Springs);
+    }
+    else if (mDrawStructureRadioButton->GetValue())
+    {
+        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Structure);
+    }
+    else if (mDrawTextureRadioButton->GetValue())
+    {
+        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Texture);
+    }
 
-	mGameController->SetUseXRayMode(mXRayCheckBox->IsChecked());
-
-    mGameController->SetDrawPointsOnly(mDrawPointsOnlyCheckBox->IsChecked());
+    mGameController->SetShowShipStress(mShowStressCheckBox->IsChecked());
 }
 
 void SettingsDialog::ReadSettings()
@@ -631,13 +652,13 @@ void SettingsDialog::ReadSettings()
 
 	mQuickWaterFixCheckBox->SetValue(mGameController->GetShowShipThroughWater());
 
-	mShowStressCheckBox->SetValue(mGameController->GetShowStress());
+    auto shipRenderMode = mGameController->GetShipRenderMode();
+    mDrawPointsRadioButton->SetValue(RenderContext::ShipRenderMode::Points == shipRenderMode);
+    mDrawSpringsRadioButton->SetValue(RenderContext::ShipRenderMode::Springs == shipRenderMode);
+    mDrawStructureRadioButton->SetValue(RenderContext::ShipRenderMode::Structure == shipRenderMode);
+    mDrawTextureRadioButton->SetValue(RenderContext::ShipRenderMode::Texture == shipRenderMode);
 
-	mXRayCheckBox->SetValue(mGameController->GetUseXRayMode());
-
-    mDrawPointsOnlyCheckBox->SetValue(mGameController->GetDrawPointsOnly());
-
-    OnDrawPointsOnlyChanged();
+    mShowStressCheckBox->SetValue(mGameController->GetShowShipStress());
 }
 
 float SettingsDialog::LinearSliderToRealValue(
@@ -677,18 +698,4 @@ void SettingsDialog::RealValueToStrengthSlider(float value) const
     value = powf(value - 0.0001f, 1.0f/2.4f);
     float sliderValue = 70.0f * log((1.75f * value) + 1.0f);
     mStrengthSlider->SetValue(static_cast<int>(roundf(sliderValue)));
-}
-
-void SettingsDialog::OnDrawPointsOnlyChanged()
-{
-    if (mDrawPointsOnlyCheckBox->IsChecked())
-    {
-        mShowStressCheckBox->Enable(false);
-        mXRayCheckBox->Enable(false);
-    }
-    else
-    {
-        mShowStressCheckBox->Enable(true);
-        mXRayCheckBox->Enable(true);
-    }
 }

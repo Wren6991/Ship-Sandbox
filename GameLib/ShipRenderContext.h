@@ -15,6 +15,21 @@
 #include <string>
 #include <vector>
 
+enum ShipElementRenderSelection : uint32_t
+{
+    None = 0,
+    DrawPoints = 1,
+    DrawSprings = 2,
+    DrawStructure = 4,
+    DrawTexture = 8,
+    DrawStressedSprings = 16
+};
+
+inline ShipElementRenderSelection operator|(ShipElementRenderSelection a, ShipElementRenderSelection b)
+{
+    return static_cast<ShipElementRenderSelection>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
 class ShipRenderContext
 {
 public:
@@ -43,22 +58,17 @@ public:
         float water)
     {
         assert(mPointBufferSize + 1u <= mPointBufferMaxSize);
-        PointElement * pointElement = &(mPointBuffer[mPointBufferSize]);
+        ShipRenderContext::Point * point = &(mPointBuffer[mPointBufferSize]);
 
-        pointElement->x = x;
-        pointElement->y = y;
-        pointElement->light = light;
-        pointElement->water = water;
+        point->x = x;
+        point->y = y;
+        point->light = light;
+        point->water = water;
 
         ++mPointBufferSize;
     }
 
     void UploadPointsEnd();
-
-    void RenderPoints(
-        float ambientLightIntensity,
-        float canvasToVisibleWorldHeightRatio,
-        float (&orthoMatrix)[4][4]);
 
 
     //
@@ -66,6 +76,23 @@ public:
     //
 
     void UploadElementsStart(std::vector<std::size_t> const & connectedComponentsMaxSizes);
+
+    inline void UploadElementPoint(
+        int pointIndex,
+        size_t connectedComponentId)
+    {
+        size_t const connectedComponentIndex = connectedComponentId - 1;
+
+        assert(connectedComponentIndex < mElementBufferSizes.size());
+        assert(connectedComponentIndex < mElementBufferMaxSizes.size());
+        assert(mElementBufferSizes[connectedComponentIndex].pointCount + 1u <= mElementBufferMaxSizes[connectedComponentIndex].pointCount);
+
+        PointElement * const pointElement = &(mPointElementBuffers[connectedComponentIndex][mElementBufferSizes[connectedComponentIndex].pointCount]);
+
+        pointElement->pointIndex = pointIndex;
+
+        ++(mElementBufferSizes[connectedComponentIndex].pointCount);
+    }
 
     inline void UploadElementSpring(
         int pointIndex1,
@@ -137,23 +164,12 @@ public:
 
 
     //
-    // Elements
-    //
-
-    void RenderElements(
-        bool useXRayMode,
-        float ambientLightIntensity,
-        float canvasToVisibleWorldHeightRatio,
-        float(&orthoMatrix)[4][4]);
-
-
-    //
     // Stressed springs
     //
 
-    void RenderStressedSpringsStart(size_t maxSprings);
+    void UploadStressedSpringsStart(size_t maxSprings);
 
-    inline void RenderStressedSpring(
+    inline void UploadStressedSpring(
         int pointIndex1,
         int pointIndex2)
     {
@@ -166,10 +182,16 @@ public:
         ++mStressedSpringBufferSize;
     }
 
-    void RenderStressedSpringsEnd(
+    void UploadStressedSpringsEnd();
+
+    /////////////////////////////////////////////////////////////
+
+    void Render(
+        ShipElementRenderSelection shipElementRenderSelection,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
+
 
 private:
 
@@ -186,7 +208,7 @@ private:
     GLint mPointShaderAmbientLightIntensityParameter;
 
 #pragma pack(push)
-    struct PointElement
+    struct Point
     {
         float x;
         float y;
@@ -196,7 +218,7 @@ private:
 #pragma pack(pop)
 
     size_t mPointCount;
-    std::unique_ptr<PointElement[]> mPointBuffer;
+    std::unique_ptr<ShipRenderContext::Point[]> mPointBuffer;
     size_t mPointBufferSize;
     size_t mPointBufferMaxSize;
 
@@ -206,7 +228,7 @@ private:
 
 
     //
-    // Springs and triangles
+    // Elements (points, springs, and triangles)
     //
 
     GameOpenGLShaderProgram mElementColorShaderProgram;
@@ -216,6 +238,13 @@ private:
     GameOpenGLShaderProgram mElementTextureShaderProgram;
     GLint mElementTextureShaderOrthoMatrixParameter;
     GLint mElementTextureShaderAmbientLightIntensityParameter;
+
+#pragma pack(push)
+    struct PointElement
+    {
+        int pointIndex;
+    };
+#pragma pack(pop)
 
 #pragma pack(push)
     struct SpringElement
@@ -236,20 +265,24 @@ private:
 
     struct ElementCounts
     {
+        size_t pointCount;
         size_t springCount;
         size_t triangleCount;
 
         ElementCounts()
-            : springCount(0)
+            : pointCount(0)
+            , springCount(0)
             , triangleCount(0)
         {}
     };
 
+    std::vector<std::unique_ptr<PointElement[]>> mPointElementBuffers;
     std::vector<std::unique_ptr<SpringElement[]>> mSpringElementBuffers;
     std::vector<std::unique_ptr<TriangleElement[]>> mTriangleElementBuffers;
     std::vector<ElementCounts> mElementBufferSizes;
     std::vector<ElementCounts> mElementBufferMaxSizes;
 
+    GameOpenGLVBO mPointElementVBO;
     GameOpenGLVBO mSpringElementVBO;
     GameOpenGLVBO mTriangleElementVBO;
     

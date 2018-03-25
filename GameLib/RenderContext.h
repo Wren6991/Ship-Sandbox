@@ -124,26 +124,6 @@ public:
         mWaterTransparency = transparency;
     }
 
-    bool GetShowStress() const
-    {
-        return mShowStress;
-    }
-
-    void SetShowStress(bool showStress)
-    {
-        mShowStress = showStress;
-    }
-
-    bool GetUseXRayMode() const
-    {
-        return mUseXRayMode;
-    }
-
-    void SetUseXRayMode(bool useXRayMode)
-    {
-        mUseXRayMode = useXRayMode;
-    }
-
     bool GetShowShipThroughWater() const
     {
         return mShowShipThroughWater;
@@ -154,15 +134,58 @@ public:
         mShowShipThroughWater = showShipThroughWater;
     }
 
-    bool GetDrawPointsOnly() const
+
+    //
+    // Ship rendering
+    //
+
+    enum class ShipRenderMode
     {
-        return mDrawPointsOnly;
+        Points,
+        Springs,
+        Structure,
+        Texture
+    };
+
+    ShipRenderMode GetShipRenderMode() const
+    {
+        return mShipRenderMode;
     }
 
-    void SetDrawPointsOnly(bool drawPointsOnly)
+    void SetShipRenderMode(ShipRenderMode shipRenderMode) 
     {
-        mDrawPointsOnly = drawPointsOnly;
+        mShipRenderMode = shipRenderMode;
+
+        // Translate to ShipElementRenderSelection
+        mShipElementRenderSelection = ShipRenderModeToShipElementRenderSelection(
+            mShipRenderMode,
+            mShowStressedSprings);
     }
+
+    bool GetShowStressedSprings() const
+    {
+        return mShowStressedSprings;
+    }
+
+    void SetShowStressedSprings(bool showStressedSprings)
+    {
+        mShowStressedSprings = showStressedSprings;
+
+        // Translate to ShipElementRenderSelection
+        mShipElementRenderSelection = ShipRenderModeToShipElementRenderSelection(
+            mShipRenderMode,
+            mShowStressedSprings);
+    }
+
+    bool ArePointsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawPoints);  }
+    bool AreSpringsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawSprings); }
+    bool AreTrianglesDrawn() const { return 0 != (mShipElementRenderSelection & (ShipElementRenderSelection::DrawStructure | ShipElementRenderSelection::DrawTexture)); }
+    bool AreStressedSpringsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawStressedSprings); }
+
+
+    //
+    // Screen <-> World transformations
+    //
 
     inline vec2 ScreenToWorld(vec2 const & screenCoordinates)
     {
@@ -370,19 +393,9 @@ public:
         mShips[shipId]->UploadPointsEnd();
     }
 
-    void RenderShipPoints(int shipId)
-    {
-        assert(shipId < mShips.size());
-
-        mShips[shipId]->RenderPoints(
-            mAmbientLightIntensity,
-            mCanvasHeight / mVisibleWorldHeight,
-            mOrthoMatrix);
-    }
-
 
     //
-    // Ship springs and triangles
+    // Ship elements (points, springs, and triangles)
     //
 
     void UploadShipElementsStart(
@@ -392,6 +405,18 @@ public:
         assert(shipId < mShips.size());
 
         mShips[shipId]->UploadElementsStart(connectedComponentsMaxSizes);
+    }
+
+    inline void UploadShipElementPoint(
+        int shipId,
+        int shipPointIndex,
+        size_t connectedComponentId)
+    {
+        assert(shipId < mShips.size());
+
+        mShips[shipId]->UploadElementPoint(
+            shipPointIndex,
+            connectedComponentId);
     }
 
     inline void UploadShipElementSpring(
@@ -469,33 +494,21 @@ public:
     }
 
 
-    void RenderShipElements(int shipId)
-    {
-        assert(shipId < mShips.size());
-
-        mShips[shipId]->RenderElements(
-            mUseXRayMode,
-            mAmbientLightIntensity,
-            mCanvasHeight / mVisibleWorldHeight,
-            mOrthoMatrix);
-    }
-
-
     //
     // Stressed springs
     //
 
-    void RenderStressedSpringsStart(
+    void UploadStressedSpringsStart(
         int shipId,
         size_t maxSprings)
 
     {
         assert(shipId < mShips.size());
 
-        mShips[shipId]->RenderStressedSpringsStart(maxSprings);
+        mShips[shipId]->UploadStressedSpringsStart(maxSprings);
     }
 
-    inline void RenderStressedSpring(
+    inline void UploadStressedSpring(
         int shipId,
         int shipPointIndex1,
         int shipPointIndex2)
@@ -503,17 +516,24 @@ public:
     {
         assert(shipId < mShips.size());
 
-        mShips[shipId]->RenderStressedSpring(
+        mShips[shipId]->UploadStressedSpring(
             shipPointIndex1,
             shipPointIndex2);
     }
 
-
-    void RenderStressedSpringsEnd(int shipId)
+    void UploadStressedSpringsEnd(int shipId)
     {
         assert(shipId < mShips.size());
 
-        mShips[shipId]->RenderStressedSpringsEnd(
+        mShips[shipId]->UploadStressedSpringsEnd();
+    }
+
+    void RenderShip(int shipId)
+    {
+        assert(shipId < mShips.size());
+
+        mShips[shipId]->Render(
+            mShipElementRenderSelection,
             mAmbientLightIntensity,
             mCanvasHeight / mVisibleWorldHeight,
             mOrthoMatrix);
@@ -533,6 +553,9 @@ private:
 
     void CalculateVisibleWorldCoordinates();
 
+    static ShipElementRenderSelection ShipRenderModeToShipElementRenderSelection(
+        ShipRenderMode shipRenderMode,
+        bool showStressedSprings);
 
 private:
 
@@ -686,8 +709,9 @@ private:
     float mAmbientLightIntensity;
     float mWaterTransparency;
 
-    bool mShowStress;
-    bool mUseXRayMode;
     bool mShowShipThroughWater;
-    bool mDrawPointsOnly;    
+    ShipRenderMode mShipRenderMode;
+    bool mShowStressedSprings;
+
+    ShipElementRenderSelection mShipElementRenderSelection; // Translated off mShipRenderMode
 };

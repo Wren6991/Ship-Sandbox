@@ -41,12 +41,22 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
+	= Radio: draw points, springs, structure, texture
+		+ (Bit) Flag @ GameController->RenderContext->Ship
+			+ Inspected as bit glag by Ship as well @ Render() to avoid useless uploads
+		+ Larger points
+		= SettingsDialog
+			- Better grouping, see RadioBox?
+
 	- RenderContext:
 		- Get rid of pre-generated texture names and create on-demand
 			- Test!
-	- Draw points:
+	= Draw points:
 		- If drawOnlyPoints, ship uses RenderContext::RenderPoint(elementIndex), only for !deleted points
 		- Then, glDrawElements(GL_POINT)
+		- Nuke PointProgram as it's dupe now
+
+
 
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
@@ -55,6 +65,8 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Use also in RenderContext::RenderStart() for clear (sky) color
 		+ Phase 1: pgup/down
 		- Phase 2: with clock - TBD
+
+	- Draw stressed springs with their own hardcoded texture (10x3) of a reddish line with "hot" centre
 
 	- Texture mapping:
 		= Ship, using second image

@@ -68,7 +68,8 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
             LoadTextureRgba(absoluteTextureImageFilePath),
             sdf.ShipName.empty() 
                 ? std ::filesystem::path(filepath).stem().string() 
-                : sdf.ShipName);
+                : sdf.ShipName,
+            sdf.Offset);
     }
     else
     {
@@ -81,7 +82,8 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
         return ShipDefinition(
             std::move(imageData),
             std::nullopt,
-            std::filesystem::path(filepath).stem().string());
+            std::filesystem::path(filepath).stem().string(),
+            vec2f(0.0f, 0.0f));
     }
 }
 

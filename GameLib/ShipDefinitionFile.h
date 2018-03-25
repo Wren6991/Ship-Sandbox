@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Utils.h"
+#include "Vectors.h"
 
 #include <picojson/picojson.h>
 
@@ -35,6 +36,9 @@ public:
     // The name of the ship
     std::string const ShipName;
 
+    // The offset between the images and the world
+    vec2f const Offset;
+
     static ShipDefinitionFile Create(picojson::object const & definitionJson);
 
     static bool IsShipDefinitionFile(std::string const & filepath)
@@ -45,10 +49,12 @@ public:
     ShipDefinitionFile(
         std::string structuralImageFilePath,
         std::string textureImageFilePath,
-        std::string shipName)
-        : StructuralImageFilePath(structuralImageFilePath)
-        , TextureImageFilePath(textureImageFilePath)
-        , ShipName(shipName)
+        std::string shipName,
+        vec2f offset)
+        : StructuralImageFilePath(std::move(structuralImageFilePath))
+        , TextureImageFilePath(std::move(textureImageFilePath))
+        , ShipName(std::move(shipName))
+        , Offset(std::move(offset))
     {
     }
 };

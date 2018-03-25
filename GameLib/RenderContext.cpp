@@ -58,10 +58,10 @@ RenderContext::RenderContext(
     , mCanvasHeight(100)
     , mAmbientLightIntensity(1.0f)
     , mWaterTransparency(0.66f)
-    , mShowStress(false)
-    , mUseXRayMode(false)
     , mShowShipThroughWater(false)
-    , mDrawPointsOnly(false)
+    , mShipRenderMode(ShipRenderMode::Texture)
+    , mShowStressedSprings(false)
+    , mShipElementRenderSelection(ShipRenderModeToShipElementRenderSelection(mShipRenderMode, mShowStressedSprings))
 {
     GLuint tmpGLuint;
 
@@ -807,4 +807,46 @@ void RenderContext::CalculateVisibleWorldCoordinates()
 {
     mVisibleWorldHeight = 2.0f * 70.0f / (mZoom + 0.001f);
     mVisibleWorldWidth = static_cast<float>(mCanvasWidth) / static_cast<float>(mCanvasHeight) * mVisibleWorldHeight;
+}
+
+ShipElementRenderSelection RenderContext::ShipRenderModeToShipElementRenderSelection(
+    ShipRenderMode shipRenderMode,
+    bool showStressedSprings)
+{
+    ShipElementRenderSelection shipElementRenderSelection = ShipElementRenderSelection::None;
+    switch (shipRenderMode)
+    {
+        case ShipRenderMode::Points:
+        {
+            shipElementRenderSelection = ShipElementRenderSelection::DrawPoints;
+            break;
+        }
+
+        case ShipRenderMode::Springs:
+        {
+            shipElementRenderSelection = ShipElementRenderSelection::DrawSprings;
+            break;
+        }
+
+        case ShipRenderMode::Structure:
+        {
+            shipElementRenderSelection = ShipElementRenderSelection::DrawSprings 
+                | ShipElementRenderSelection::DrawStructure;
+
+            break;
+        }
+
+        case ShipRenderMode::Texture:
+        {
+            shipElementRenderSelection = ShipElementRenderSelection::DrawSprings
+                | ShipElementRenderSelection::DrawTexture;
+
+            break;
+        }
+    }
+
+    if (showStressedSprings)
+        shipElementRenderSelection = shipElementRenderSelection | ShipElementRenderSelection::DrawStressedSprings;
+
+    return shipElementRenderSelection;
 }

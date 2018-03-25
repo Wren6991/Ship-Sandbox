@@ -170,7 +170,9 @@ std::unique_ptr<Ship> Ship::Create(
 
                 Point & point = allPoints.emplace_back(
                     ship,
-                    vec2(static_cast<float>(x) - halfWidth, static_cast<float>(y)),
+                    vec2(
+                        static_cast<float>(x) - halfWidth, 
+                        static_cast<float>(y)) + shipDefinition.Offset,
                     mtl,
                     mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
                     static_cast<int>(pointInfoMatrix[x][y]->PointIndex));  
@@ -369,7 +371,7 @@ Ship::Ship(World * parentWorld)
     , mScheduler()
     , mConnectedComponentSizes()
     , mIsPointCountDirty(true)
-    , mAreSpringsOrTrianglesDirty(true)
+    , mAreElementsDirty(true)
     , mIsSinking(false)
     , mTotalWater(0.0)
 {
@@ -786,26 +788,36 @@ void Ship::Render(
     renderContext.UploadShipPointsEnd(mId);
 
 
-    if (renderContext.GetDrawPointsOnly())
-    {
-        // Draw just the points
-        renderContext.RenderShipPoints(mId);
-
-        return;
-    }
-
+    //
+    // Element upload
+    //    
 
     if (!mConnectedComponentSizes.empty())
     {
         //
-        // Upload springs and triangles (iff dirty)
+        // Upload elements (point (elements), springs and triangles), iff dirty
         //
 
-        if (mAreSpringsOrTrianglesDirty)
+        if (mAreElementsDirty)
         {
             renderContext.UploadShipElementsStart(
                 mId,
                 mConnectedComponentSizes);
+
+            //
+            // Upload all the points
+            //
+
+            for (Point const & point : mAllPoints)
+            {
+                if (!point.IsDeleted())
+                {
+                    renderContext.UploadShipElementPoint(
+                        mId,
+                        point.GetElementIndex(),
+                        point.GetConnectedComponentId());
+                }
+            }
 
             //
             // Upload all the springs
@@ -827,7 +839,7 @@ void Ship::Render(
 
 
             //
-            // Render all triangles
+            // Upload all the triangles
             //
 
             for (Triangle const & triangle : mAllTriangles)
@@ -848,7 +860,7 @@ void Ship::Render(
 
             renderContext.UploadShipElementsEnd(mId);
 
-            mAreSpringsOrTrianglesDirty = false;
+            mAreElementsDirty = false;
         }
 
         //////
@@ -887,20 +899,14 @@ void Ship::Render(
     }        
 
 
-    //
-    // Render ship
-    //
-
-    renderContext.RenderShipElements(mId);
-
 
     //
-    // Render all stressed springs
+    // Upload all stressed springs
     //
 
-    if (renderContext.GetShowStress())
+    if (renderContext.AreStressedSpringsDrawn())
     {
-        renderContext.RenderStressedSpringsStart(
+        renderContext.UploadStressedSpringsStart(
             mId,
             mAllSprings.size());
 
@@ -910,7 +916,7 @@ void Ship::Render(
             {
                 if (spring.IsStressed())
                 {
-                    renderContext.RenderStressedSpring(
+                    renderContext.UploadStressedSpring(
                         mId,
                         spring.GetPointA()->GetElementIndex(),
                         spring.GetPointB()->GetElementIndex());
@@ -918,8 +924,15 @@ void Ship::Render(
             }
         }
 
-        renderContext.RenderStressedSpringsEnd(mId);
+        renderContext.UploadStressedSpringsEnd(mId);
     }
+
+
+    //
+    // Render ship
+    //
+
+    renderContext.RenderShip(mId);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

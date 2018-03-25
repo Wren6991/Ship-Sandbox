@@ -121,7 +121,7 @@ private:
         mAllElectricalElements.initialize(std::move(allElectricalElements));
 
         mIsPointCountDirty = true;
-        mAreSpringsOrTrianglesDirty = true;
+        mAreElementsDirty = true;
     }
 
     void DoSpringsRelaxation(
@@ -210,9 +210,9 @@ private:
     // since the last time we delivered them to the rendering context
     mutable bool mIsPointCountDirty;
 
-    // Flag remembering whether springs and/or triangles have changed
+    // Flag remembering whether points (elements) and/or springs and/or triangles have changed
     // since the last time we delivered them to the rendering context
-    mutable bool mAreSpringsOrTrianglesDirty;
+    mutable bool mAreElementsDirty;
 
     // Sinking detection
     bool mIsSinking;
@@ -222,21 +222,22 @@ private:
 template<>
 inline void Ship::RegisterDestruction(Point * /* element */)
 {
-    // Nop
+    // Remember that we need to re-upload ship elements
+    mAreElementsDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(Spring * /* element */)
 {
-    // Remember that we need to re-upload springs & triangles
-    mAreSpringsOrTrianglesDirty = true;
+    // Remember that we need to re-upload ship elements
+    mAreElementsDirty = true;
 }
 
 template<>
 inline void Ship::RegisterDestruction(Triangle * /* element */)
 {
-    // Remember that we need to re-upload springs & triangles
-    mAreSpringsOrTrianglesDirty = true;
+    // Remember that we need to re-upload ship elements
+    mAreElementsDirty = true;
 }
 
 template<>

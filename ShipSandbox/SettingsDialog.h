@@ -12,6 +12,7 @@
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/dialog.h>
+#include <wx/radiobut.h>
 #include <wx/slider.h>
 #include <wx/textctrl.h>
 
@@ -39,10 +40,10 @@ private:
     void OnLightDiffusionSliderScroll(wxScrollEvent & event);
 	void OnSeaDepthSliderScroll(wxScrollEvent & event);
 	void OnDestroyRadiusSliderScroll(wxScrollEvent & event);
+
 	void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
-	void OnShowStressCheckBoxClick(wxCommandEvent & event);
-	void OnXRayCheckBoxClick(wxCommandEvent & event);
-    void OnDrawPointsOnlyCheckBoxClick(wxCommandEvent & event);
+    void OnShipRenderModeChange();
+	void OnShowStressCheckBoxClick(wxCommandEvent & event);	    
 
 	void OnOkButton(wxCommandEvent & event);
 	void OnApplyButton(wxCommandEvent & event);
@@ -69,9 +70,11 @@ private:
 	wxTextCtrl * mDestroyRadiusTextCtrl;
 
 	wxCheckBox * mQuickWaterFixCheckBox;
+    wxRadioButton * mDrawPointsRadioButton;
+    wxRadioButton * mDrawSpringsRadioButton;
+    wxRadioButton * mDrawStructureRadioButton;
+    wxRadioButton * mDrawTextureRadioButton;
 	wxCheckBox* mShowStressCheckBox;
-	wxCheckBox* mXRayCheckBox;
-    wxCheckBox* mDrawPointsOnlyCheckBox;
 
 	wxButton * mOkButton;
 	wxButton * mCancelButton;
@@ -97,8 +100,6 @@ private:
     float StrengthSliderToRealValue() const;
 
     void RealValueToStrengthSlider(float value) const;
-
-    void OnDrawPointsOnlyChanged();
 
 private:
 

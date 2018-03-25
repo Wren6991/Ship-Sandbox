@@ -126,17 +126,14 @@ public:
     float GetLightDiffusionAdjustment() const { return mGameParameters.LightDiffusionAdjustment; }
     void SetLightDiffusionAdjustment(float value) { mGameParameters.LightDiffusionAdjustment = value; }
 
-    bool GetShowStress() const { return mRenderContext->GetShowStress(); }
-    void SetShowStress(bool value) { mRenderContext->SetShowStress(value); }
-
-    bool GetUseXRayMode() const { return mRenderContext->GetUseXRayMode(); }
-    void SetUseXRayMode(bool value) { mRenderContext->SetUseXRayMode(value); }
-
     bool GetShowShipThroughWater() const { return mRenderContext->GetShowShipThroughWater();  }
     void SetShowShipThroughWater(bool value) { mRenderContext->SetShowShipThroughWater(value); }
 
-    bool GetDrawPointsOnly() const { return mRenderContext->GetDrawPointsOnly(); }
-    void SetDrawPointsOnly(bool value) { mRenderContext->SetDrawPointsOnly(value); }
+    RenderContext::ShipRenderMode GetShipRenderMode() const { return mRenderContext->GetShipRenderMode(); }
+    void SetShipRenderMode(RenderContext::ShipRenderMode shipRenderMode) { mRenderContext->SetShipRenderMode(shipRenderMode); }
+
+    bool GetShowShipStress() const { return mRenderContext->GetShowStressedSprings(); }
+    void SetShowShipStress(bool value) { mRenderContext->SetShowStressedSprings(value); }
 
     vec2f ScreenToWorld(vec2f const & screenCoordinates) const
     {
