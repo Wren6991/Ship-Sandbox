@@ -489,77 +489,23 @@ void ShipRenderContext::UploadStressedSpringsEnd()
 }
 
 void ShipRenderContext::Render(
-    ShipElementRenderSelection shipElementRenderSelection,
+    ShipRenderMode renderMode,
+    bool showStressedSprings,
     float ambientLightIntensity,
     float canvasToVisibleWorldHeightRatio,
     float(&orthoMatrix)[4][4])
 {
+    // TODO: to test:
+    // - Bind texture right away here, iff !!mElementTexture
+
     //
     // Draw points
     //
 
-    if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawPoints))
+    if (renderMode == ShipRenderMode::Points)
     {
-        // Use color program
-        glUseProgram(*mElementColorShaderProgram);
-
-        // Set parameters
-        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-        // Describe points    
-        DescribePointVBO();
-        // TODO: choose color vs texture, based off TBD
-        DescribePointColorVBO();
-
-        // Set point size
-        glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-        //
-        // Process all connected components, from first to last, and draw points
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // Upload points
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].pointCount * sizeof(PointElement), mPointElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Stop using program
-        glUseProgram(0);
-    }
-
-
-    //
-    // Draw springs
-    //
-
-    if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawSprings))
-    {
-        // When drawing springs, we use the texture only if it's present and we've been asked
-        // to draw it
-        bool useTextureForSprings =
-            0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawTexture)
-            && !!mElementTexture;
-
-        if (!useTextureForSprings)
-        {
-            // Use color program
-            glUseProgram(*mElementColorShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-            // Describe points    
-            DescribePointVBO();
-            DescribePointColorVBO();
-        }
-        else
+        // If we have a texture -> use it; else, use color
+        if (!!mElementTexture)
         {
             // Use texture program
             glUseProgram(*mElementTextureShaderProgram);
@@ -575,9 +521,93 @@ void ShipRenderContext::Render(
             // Bind texture
             glBindTexture(GL_TEXTURE_2D, *mElementTexture);
         }
+        else
+        {
+            // Use color program
+            glUseProgram(*mElementColorShaderProgram);
+
+            // Set parameters
+            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+            // Describe points    
+            DescribePointVBO();
+            DescribePointColorVBO();
+        }
+
+        // Set point size
+        glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+
+        //
+        // Process all connected components, from first to last, and draw points
+        //
+
+        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+        {
+            // Upload points
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].pointCount * sizeof(PointElement), mPointElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+            // Draw
+            glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
+        }
+
+        // Unbind texture (if any)
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Stop using program
+        glUseProgram(0);
+    }
+
+
+    //
+    // Draw springs
+    //
+    // We draw springs when:
+    // - RenderMode is springs ("X-Ray Mode"), or
+    // - RenderMode is structure or texture (so to draw ropes)
+    //
+    // In any case we use textures iff there are textures
+    //
+
+    if (renderMode == ShipRenderMode::Springs
+        || renderMode == ShipRenderMode::Structure
+        || renderMode == ShipRenderMode::Texture)
+    {
+        if (!!mElementTexture)
+        {
+            // Use texture program
+            glUseProgram(*mElementTextureShaderProgram);
+
+            // Set parameters
+            glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+            glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+            // Describe points    
+            DescribePointVBO();
+            DescribePointTextureVBO();
+
+            // Bind texture
+            glBindTexture(GL_TEXTURE_2D, *mElementTexture);
+        }
+        else
+        {
+            // Use color program
+            glUseProgram(*mElementColorShaderProgram);
+
+            // Set parameters
+            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+            // Describe points    
+            DescribePointVBO();
+            DescribePointColorVBO();
+        }
 
         // Set line size
         glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
 
         //
         // Process all connected components, from first to last, and draw springs 
@@ -593,11 +623,8 @@ void ShipRenderContext::Render(
             glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].springCount), GL_UNSIGNED_INT, 0);
         }
 
-        if (useTextureForSprings)
-        {
-            // Unbind texture
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+        // Unbind texture (if any)
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Stop using program
         glUseProgram(0);
@@ -605,29 +632,42 @@ void ShipRenderContext::Render(
 
 
     //
-    // Draw structure (color triangles)
-    //
-    // We also fallback to drawing the structure if we need to draw the texture
-    // but we haven't got any
+    // Draw triangles
     //
 
-    if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawStructure)
-        || (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawTexture)
-            && !mElementTexture))
+    if (renderMode == ShipRenderMode::Structure
+        || renderMode == ShipRenderMode::Texture)
     {
-        // Use color program
-        glUseProgram(*mElementColorShaderProgram);
+        if (renderMode == ShipRenderMode::Texture && !!mElementTexture)
+        {
+            // Use texture program
+            glUseProgram(*mElementTextureShaderProgram);
 
-        // Set parameters
-        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+            // Set parameters
+            glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+            glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
-        // Describe points    
-        DescribePointVBO();
-        DescribePointColorVBO();
+            // Describe points    
+            DescribePointVBO();
+            DescribePointTextureVBO();
 
-        // Set line size
-        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+            // Bind texture
+            glBindTexture(GL_TEXTURE_2D, *mElementTexture);
+        }
+        else
+        {
+            // Use color program
+            glUseProgram(*mElementColorShaderProgram);
+
+            // Set parameters
+            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+            // Describe points    
+            DescribePointVBO();
+            DescribePointColorVBO();
+        }
+
 
         //
         // Process all connected components, from first to last, and draw triangles
@@ -643,50 +683,7 @@ void ShipRenderContext::Render(
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
         }
 
-        // Stop using program
-        glUseProgram(0);
-    }
-
-
-    //
-    // Draw texture (texture triangles) (if we have a texture)
-    //
-
-    if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawTexture)
-        && !!mElementTexture)
-    {
-        // Use texture program
-        glUseProgram(*mElementTextureShaderProgram);
-
-        // Set parameters
-        glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-        // Bind texture
-        glBindTexture(GL_TEXTURE_2D, *mElementTexture);
-
-        // Describe points    
-        DescribePointVBO();
-        DescribePointTextureVBO();
-
-        // Set line size
-        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-        //
-        // Process all connected components, from first to last, and draw triangles
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // Upload elements
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mTriangleElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].triangleCount * sizeof(TriangleElement), mTriangleElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Unbind texture
+        // Unbind texture (if any)
         glBindTexture(GL_TEXTURE_2D, 0);
 
         // Stop using program
@@ -698,7 +695,7 @@ void ShipRenderContext::Render(
     // Draw stressed springs
     //
 
-    if (0 != (shipElementRenderSelection & ShipElementRenderSelection::DrawStressedSprings))
+    if (showStressedSprings)
     {
         // Use program
         glUseProgram(*mStressedSpringShaderProgram);

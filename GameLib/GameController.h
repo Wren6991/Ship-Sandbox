@@ -129,8 +129,8 @@ public:
     bool GetShowShipThroughWater() const { return mRenderContext->GetShowShipThroughWater();  }
     void SetShowShipThroughWater(bool value) { mRenderContext->SetShowShipThroughWater(value); }
 
-    RenderContext::ShipRenderMode GetShipRenderMode() const { return mRenderContext->GetShipRenderMode(); }
-    void SetShipRenderMode(RenderContext::ShipRenderMode shipRenderMode) { mRenderContext->SetShipRenderMode(shipRenderMode); }
+    ShipRenderMode GetShipRenderMode() const { return mRenderContext->GetShipRenderMode(); }
+    void SetShipRenderMode(ShipRenderMode shipRenderMode) { mRenderContext->SetShipRenderMode(shipRenderMode); }
 
     bool GetShowShipStress() const { return mRenderContext->GetShowStressedSprings(); }
     void SetShowShipStress(bool value) { mRenderContext->SetShowStressedSprings(value); }

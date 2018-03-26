@@ -7,6 +7,7 @@
 
 #include "GameOpenGL.h"
 #include "ImageData.h"
+#include "RenderTypes.h"
 #include "Vectors.h"
 
 #include <cassert>
@@ -14,21 +15,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-
-enum ShipElementRenderSelection : uint32_t
-{
-    None = 0,
-    DrawPoints = 1,
-    DrawSprings = 2,
-    DrawStructure = 4,
-    DrawTexture = 8,
-    DrawStressedSprings = 16
-};
-
-inline ShipElementRenderSelection operator|(ShipElementRenderSelection a, ShipElementRenderSelection b)
-{
-    return static_cast<ShipElementRenderSelection>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
 
 class ShipRenderContext
 {
@@ -187,7 +173,8 @@ public:
     /////////////////////////////////////////////////////////////
 
     void Render(
-        ShipElementRenderSelection shipElementRenderSelection,
+        ShipRenderMode renderMode,
+        bool showStressedSprings,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);

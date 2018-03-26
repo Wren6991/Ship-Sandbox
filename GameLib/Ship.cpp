@@ -904,7 +904,7 @@ void Ship::Render(
     // Upload all stressed springs
     //
 
-    if (renderContext.AreStressedSpringsDrawn())
+    if (renderContext.GetShowStressedSprings())
     {
         renderContext.UploadStressedSpringsStart(
             mId,

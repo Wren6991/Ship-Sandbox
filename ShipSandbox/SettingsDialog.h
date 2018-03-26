@@ -12,7 +12,7 @@
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/dialog.h>
-#include <wx/radiobut.h>
+#include <wx/radiobox.h>
 #include <wx/slider.h>
 #include <wx/textctrl.h>
 
@@ -22,58 +22,55 @@ class SettingsDialog : public wxDialog
 {
 public:
 
-	SettingsDialog(
-		wxWindow * parent,
-		std::shared_ptr<GameController> gameController);
+    SettingsDialog(
+        wxWindow * parent,
+        std::shared_ptr<GameController> gameController);
 
-	virtual ~SettingsDialog();
+    virtual ~SettingsDialog();
 
-	void Open();
+    void Open();
 
 private:
-	
-	void OnStrengthSliderScroll(wxScrollEvent & event);
-	void OnBuoyancySliderScroll(wxScrollEvent & event);
-	void OnWaterPressureSliderScroll(wxScrollEvent & event);
-	void OnWaveHeightSliderScroll(wxScrollEvent & event);
+
+    void OnStrengthSliderScroll(wxScrollEvent & event);
+    void OnBuoyancySliderScroll(wxScrollEvent & event);
+    void OnWaterPressureSliderScroll(wxScrollEvent & event);
+    void OnWaveHeightSliderScroll(wxScrollEvent & event);
     void OnWaterTransparencySliderScroll(wxScrollEvent & event);
     void OnLightDiffusionSliderScroll(wxScrollEvent & event);
-	void OnSeaDepthSliderScroll(wxScrollEvent & event);
-	void OnDestroyRadiusSliderScroll(wxScrollEvent & event);
+    void OnSeaDepthSliderScroll(wxScrollEvent & event);
+    void OnDestroyRadiusSliderScroll(wxScrollEvent & event);
 
-	void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
-    void OnShipRenderModeChange();
-	void OnShowStressCheckBoxClick(wxCommandEvent & event);	    
+    void OnQuickWaterFixCheckBoxClick(wxCommandEvent & event);
+    void OnShipRenderModeRadioBox(wxCommandEvent & event);
+    void OnShowStressCheckBoxClick(wxCommandEvent & event);
 
-	void OnOkButton(wxCommandEvent & event);
-	void OnApplyButton(wxCommandEvent & event);
+    void OnOkButton(wxCommandEvent & event);
+    void OnApplyButton(wxCommandEvent & event);
 
 private:
 
-	// Controls
+    // Controls
 
-	wxSlider * mStrengthSlider;
-	wxTextCtrl * mStrengthTextCtrl;
-	wxSlider * mBuoyancySlider;
-	wxTextCtrl * mBuoyancyTextCtrl;
-	wxSlider * mWaterPressureSlider;
-	wxTextCtrl * mWaterPressureTextCtrl;
-	wxSlider * mWaveHeightSlider;
-	wxTextCtrl * mWaveHeightTextCtrl;
+    wxSlider * mStrengthSlider;
+    wxTextCtrl * mStrengthTextCtrl;
+    wxSlider * mBuoyancySlider;
+    wxTextCtrl * mBuoyancyTextCtrl;
+    wxSlider * mWaterPressureSlider;
+    wxTextCtrl * mWaterPressureTextCtrl;
+    wxSlider * mWaveHeightSlider;
+    wxTextCtrl * mWaveHeightTextCtrl;
     wxSlider * mWaterTransparencySlider;
     wxTextCtrl * mWaterTransparencyTextCtrl;
     wxSlider * mLightDiffusionSlider;
     wxTextCtrl * mLightDiffusionTextCtrl;
-	wxSlider * mSeaDepthSlider;
-	wxTextCtrl * mSeaDepthTextCtrl;
-	wxSlider * mDestroyRadiusSlider;
-	wxTextCtrl * mDestroyRadiusTextCtrl;
+    wxSlider * mSeaDepthSlider;
+    wxTextCtrl * mSeaDepthTextCtrl;
+    wxSlider * mDestroyRadiusSlider;
+    wxTextCtrl * mDestroyRadiusTextCtrl;
 
-	wxCheckBox * mQuickWaterFixCheckBox;
-    wxRadioButton * mDrawPointsRadioButton;
-    wxRadioButton * mDrawSpringsRadioButton;
-    wxRadioButton * mDrawStructureRadioButton;
-    wxRadioButton * mDrawTextureRadioButton;
+    wxCheckBox * mQuickWaterFixCheckBox;
+    wxRadioBox * mShipRenderModeRadioBox;
 	wxCheckBox* mShowStressCheckBox;
 
 	wxButton * mOkButton;

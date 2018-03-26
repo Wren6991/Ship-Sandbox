@@ -8,6 +8,7 @@
 #include "GameOpenGL.h"
 #include "ImageData.h"
 #include "ProgressCallback.h"
+#include "RenderTypes.h"
 #include "ResourceLoader.h"
 #include "ShipRenderContext.h"
 #include "Vectors.h"
@@ -139,14 +140,6 @@ public:
     // Ship rendering
     //
 
-    enum class ShipRenderMode
-    {
-        Points,
-        Springs,
-        Structure,
-        Texture
-    };
-
     ShipRenderMode GetShipRenderMode() const
     {
         return mShipRenderMode;
@@ -155,11 +148,6 @@ public:
     void SetShipRenderMode(ShipRenderMode shipRenderMode) 
     {
         mShipRenderMode = shipRenderMode;
-
-        // Translate to ShipElementRenderSelection
-        mShipElementRenderSelection = ShipRenderModeToShipElementRenderSelection(
-            mShipRenderMode,
-            mShowStressedSprings);
     }
 
     bool GetShowStressedSprings() const
@@ -170,17 +158,7 @@ public:
     void SetShowStressedSprings(bool showStressedSprings)
     {
         mShowStressedSprings = showStressedSprings;
-
-        // Translate to ShipElementRenderSelection
-        mShipElementRenderSelection = ShipRenderModeToShipElementRenderSelection(
-            mShipRenderMode,
-            mShowStressedSprings);
     }
-
-    bool ArePointsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawPoints);  }
-    bool AreSpringsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawSprings); }
-    bool AreTrianglesDrawn() const { return 0 != (mShipElementRenderSelection & (ShipElementRenderSelection::DrawStructure | ShipElementRenderSelection::DrawTexture)); }
-    bool AreStressedSpringsDrawn() const { return 0 != (mShipElementRenderSelection & ShipElementRenderSelection::DrawStressedSprings); }
 
 
     //
@@ -533,7 +511,8 @@ public:
         assert(shipId < mShips.size());
 
         mShips[shipId]->Render(
-            mShipElementRenderSelection,
+            mShipRenderMode,
+            mShowStressedSprings,
             mAmbientLightIntensity,
             mCanvasHeight / mVisibleWorldHeight,
             mOrthoMatrix);
@@ -552,10 +531,6 @@ private:
     void CalculateOrthoMatrix();
 
     void CalculateVisibleWorldCoordinates();
-
-    static ShipElementRenderSelection ShipRenderModeToShipElementRenderSelection(
-        ShipRenderMode shipRenderMode,
-        bool showStressedSprings);
 
 private:
 
@@ -712,6 +687,4 @@ private:
     bool mShowShipThroughWater;
     ShipRenderMode mShipRenderMode;
     bool mShowStressedSprings;
-
-    ShipElementRenderSelection mShipElementRenderSelection; // Translated off mShipRenderMode
 };

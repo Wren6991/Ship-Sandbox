@@ -41,25 +41,25 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
-	= Radio: draw points, springs, structure, texture
+	+ Radio: draw points, springs, structure, texture
 		+ (Bit) Flag @ GameController->RenderContext->Ship
 			+ Inspected as bit glag by Ship as well @ Render() to avoid useless uploads
 		+ Larger points
-		= SettingsDialog
-			- Better grouping, see RadioBox?
+		+ SettingsDialog
+			+ Better grouping, see RadioBox?
+
+	= Fix springs showing up around texture from structure
+		+ Make test .shp with three masses and a rope
 
 	- RenderContext:
 		+ Get rid of pre-generated texture names and create on-demand
 			+ Test!
 		- See if can describe point, color, and texture VBOs at init
 
-	= Draw points:
+	+ Draw points:
 		+ Ship uses RenderContext::UploadPoint(elementIndex), only for !deleted points
 		+ Then, glDrawElements(GL_POINT)
 		+ Nuke PointProgram as it's dupe now
-		- Decide color vs texture based off TBD
-
-
 
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
@@ -98,7 +98,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			  + Catch exceptions at all interactions of MainFrame with GameController, and display DialogBox
 			  + ResourceLoader::LoadShipDefinition: need to make paths abs wrt .shp path
 			  - Refactor to World::CreateShip() -> ID -> Ship::Create()
-			  - Land and Water texture names: do own, not from array
+			  + Land and Water texture names: do own, not from array
 			  + Always unbind texture2d after a render
 			+ Also, later, RenderContext is also given textureCoords,
 			  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
@@ -107,8 +107,8 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
 			+ If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
 			- Experiment with different min/mag filters
-			= Krafting:
-				- Y offset for initial drop
+			+ Krafting:
+				+ Y offset for initial drop
 				+ Remove one layer of hull from bottom, but see how much it bends afterwards
 
 	- Magnifying glass

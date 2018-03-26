@@ -28,6 +28,7 @@ set  (GAME_SOURCES
 	ProgressCallback.h
 	RenderContext.cpp
 	RenderContext.h
+	RenderTypes.h
 	ResourceLoader.cpp
 	ResourceLoader.h
 	Scheduler.cpp

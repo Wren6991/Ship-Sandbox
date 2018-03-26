@@ -254,30 +254,18 @@ SettingsDialog::SettingsDialog(
 	Connect(ID_QUICK_WATER_FIX_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnQuickWaterFixCheckBoxClick);
 	checkboxesSizer->Add(mQuickWaterFixCheckBox, 0, wxALL | wxALIGN_LEFT, 5);
 
+    wxString shipRenderModeChoices[] =
+    {
+        _("Draw Only Points"), 
+        _("Draw Only Springs"),
+        _("Draw Structure"),
+        _("Draw Image")
+    };
 
-    mDrawPointsRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Only Points"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
-    mDrawPointsRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
-        this->OnShipRenderModeChange();
-    });
-    checkboxesSizer->Add(mDrawPointsRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
-
-    mDrawSpringsRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Only Springs"), wxDefaultPosition, wxDefaultSize, 0);
-    mDrawSpringsRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
-        this->OnShipRenderModeChange();
-    });
-    checkboxesSizer->Add(mDrawSpringsRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
-
-    mDrawStructureRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Internal Structure"), wxDefaultPosition, wxDefaultSize, 0);
-    mDrawStructureRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
-        this->OnShipRenderModeChange();
-    });
-    checkboxesSizer->Add(mDrawStructureRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
-
-    mDrawTextureRadioButton = new wxRadioButton(this, wxID_ANY, _("Draw Image"), wxDefaultPosition, wxDefaultSize, 0);
-    mDrawTextureRadioButton->Bind(wxEVT_RADIOBUTTON, [this](wxCommandEvent &) {
-        this->OnShipRenderModeChange();
-    });
-    checkboxesSizer->Add(mDrawTextureRadioButton, 0, wxALL | wxALIGN_LEFT, 5);
+    mShipRenderModeRadioBox = new wxRadioBox(this, wxID_ANY, _("Ship Draw Options"), wxDefaultPosition, wxDefaultSize, 
+        WXSIZEOF(shipRenderModeChoices), shipRenderModeChoices, 1, wxRA_SPECIFY_COLS);
+    Connect(mShipRenderModeRadioBox->GetId(), wxEVT_RADIOBOX, (wxObjectEventFunction)&SettingsDialog::OnShipRenderModeRadioBox);
+    checkboxesSizer->Add(mShipRenderModeRadioBox, 0, wxALL | wxALIGN_LEFT, 5);
 
 	mShowStressCheckBox = new wxCheckBox(this, ID_SHOW_STRESS_CHECKBOX, _("Show Stress"), wxDefaultPosition, wxDefaultSize, 0, wxDefaultValidator, _T("Show Stress Checkbox"));
 	Connect(ID_SHOW_STRESS_CHECKBOX, wxEVT_COMMAND_CHECKBOX_CLICKED, (wxObjectEventFunction)&SettingsDialog::OnShowStressCheckBoxClick);
@@ -472,7 +460,7 @@ void SettingsDialog::OnQuickWaterFixCheckBoxClick(wxCommandEvent & /*event*/)
 	mApplyButton->Enable(true);
 }
 
-void SettingsDialog::OnShipRenderModeChange()
+void SettingsDialog::OnShipRenderModeRadioBox(wxCommandEvent & /*event*/)
 {
     // Remember we're dirty now
     mApplyButton->Enable(true);
@@ -557,21 +545,23 @@ void SettingsDialog::ApplySettings()
 
 	mGameController->SetShowShipThroughWater(mQuickWaterFixCheckBox->IsChecked());
 
-    if (mDrawPointsRadioButton->GetValue())
+    auto selectedShipRenderMode = mShipRenderModeRadioBox->GetSelection();
+    if (0 == selectedShipRenderMode)
     {
-        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Points);
+        mGameController->SetShipRenderMode(ShipRenderMode::Points);
     }
-    else if (mDrawSpringsRadioButton->GetValue())
+    else if (1 == selectedShipRenderMode)
     {
-        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Springs);
+        mGameController->SetShipRenderMode(ShipRenderMode::Springs);
     }
-    else if (mDrawStructureRadioButton->GetValue())
+    else if (2 == selectedShipRenderMode)
     {
-        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Structure);
+        mGameController->SetShipRenderMode(ShipRenderMode::Structure);
     }
-    else if (mDrawTextureRadioButton->GetValue())
+    else
     {
-        mGameController->SetShipRenderMode(RenderContext::ShipRenderMode::Texture);
+        assert(3 == selectedShipRenderMode);
+        mGameController->SetShipRenderMode(ShipRenderMode::Texture);
     }
 
     mGameController->SetShowShipStress(mShowStressCheckBox->IsChecked());
@@ -653,10 +643,32 @@ void SettingsDialog::ReadSettings()
 	mQuickWaterFixCheckBox->SetValue(mGameController->GetShowShipThroughWater());
 
     auto shipRenderMode = mGameController->GetShipRenderMode();
-    mDrawPointsRadioButton->SetValue(RenderContext::ShipRenderMode::Points == shipRenderMode);
-    mDrawSpringsRadioButton->SetValue(RenderContext::ShipRenderMode::Springs == shipRenderMode);
-    mDrawStructureRadioButton->SetValue(RenderContext::ShipRenderMode::Structure == shipRenderMode);
-    mDrawTextureRadioButton->SetValue(RenderContext::ShipRenderMode::Texture == shipRenderMode);
+    switch (shipRenderMode)
+    {
+        case ShipRenderMode::Points:
+        {
+            mShipRenderModeRadioBox->SetSelection(0);
+            break;
+        }
+
+        case ShipRenderMode::Springs:
+        {
+            mShipRenderModeRadioBox->SetSelection(1);
+            break;
+        }
+
+        case ShipRenderMode::Structure:
+        {
+            mShipRenderModeRadioBox->SetSelection(2);
+            break;
+        }
+
+        case ShipRenderMode::Texture:
+        {
+            mShipRenderModeRadioBox->SetSelection(3);
+            break;
+        }
+    }
 
     mShowStressCheckBox->SetValue(mGameController->GetShowShipStress());
 }
