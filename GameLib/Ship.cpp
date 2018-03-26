@@ -28,6 +28,7 @@ namespace Physics {
 //   SSS    H     H  IIIIIII  P
 
 std::unique_ptr<Ship> Ship::Create(
+    int shipId,
     World * parentWorld,
     ShipDefinition const & shipDefinition,
     std::vector<std::unique_ptr<Material const>> const & allMaterials)
@@ -99,7 +100,7 @@ std::unique_ptr<Ship> Ship::Create(
     //  - TriangleInfo
     //
 
-    Ship *ship = new Ship(parentWorld);
+    Ship *ship = new Ship(shipId, parentWorld);
 
     ElementRepository<Point> allPoints(pointCount);
     ElementRepository<vec3f> allPointColors(pointCount);
@@ -347,6 +348,9 @@ std::unique_ptr<Ship> Ship::Create(
         }
     }
 
+    LogMessage("Created ship: W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
+        allPoints.size(), " points, ", allSprings.size(),
+        " springs, ", allTriangles.size(), " triangles, ", allElectricalElements.size(), " electrical elements.");
 
     ship->InitializeRepository(
         std::move(allPoints),   
@@ -359,8 +363,10 @@ std::unique_ptr<Ship> Ship::Create(
     return std::unique_ptr<Ship>(ship);
 }
 
-Ship::Ship(World * parentWorld)
-    : mId(parentWorld->GetNextShipId())
+Ship::Ship(
+    int id,
+    World * parentWorld)
+    : mId(id)
     , mParentWorld(parentWorld)    
     , mAllPoints(0)
     , mAllPointColors(0)

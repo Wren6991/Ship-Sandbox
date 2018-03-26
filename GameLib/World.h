@@ -13,6 +13,7 @@
 #include "Material.h"
 #include "Physics.h"
 #include "RenderContext.h"
+#include "ShipDefinition.h"
 #include "Vectors.h"
 
 #include <cstdint>
@@ -30,6 +31,10 @@ public:
 
 	World(std::shared_ptr<IGameEventHandler> gameEventHandler);
 
+    int AddShip(
+        ShipDefinition const & shipDefinition,
+        std::vector<std::unique_ptr<Material const>> const & materials);
+
 	float GetWaterHeight(		
 		float x,
 		GameParameters const & gameParameters) const;
@@ -45,14 +50,6 @@ public:
     IGameEventHandler * GetGameEventHandler()
     {
         return mGameEventHandler.get();
-    }
-
-	void AddShip(std::unique_ptr<Ship> && newShip);
-
-    unsigned int GetNextShipId()
-    {
-        // TODO: refactor
-        return static_cast<int>(mAllShips.size());
     }
 
 	void DestroyAt(

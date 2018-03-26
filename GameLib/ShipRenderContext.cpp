@@ -38,12 +38,12 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     , mLampBuffers()
     // Stressed springs
     , mStressedSpringShaderProgram()
-    , mStressedSpringShaderAmbientLightIntensityParameter(0)
     , mStressedSpringShaderOrthoMatrixParameter(0)
     , mStressedSpringBuffer()
     , mStressedSpringBufferSize(0u)
     , mStressedSpringBufferMaxSize(0u)
     , mStressedSpringVBO()
+    , mStressedSpringTexture()
 {
     GLuint tmpGLuint;
     GLenum glError;
@@ -310,12 +310,16 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
 
         // Inputs
         attribute vec2 inputPos;
+        
+        // Outputs        
+        varying float vertexTextureCoords;
 
         // Params
         uniform mat4 paramOrthoMatrix;
 
         void main()
         {
+            vertexTextureCoords = inputPos.x; // TODO
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
         }
     )";
@@ -323,13 +327,19 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     GameOpenGL::CompileShader(stressedSpringVertexShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
 
     char const * stressedSpringFragmentShaderSource = R"(
+    
+        // Inputs
+        varying float vertexTextureCoords;
+
+        // Input texture
+        uniform sampler1D inputTexture;
 
         // Params
         uniform float paramAmbientLightIntensity;
 
         void main()
         {
-            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0) * paramAmbientLightIntensity;
+            gl_FragColor = texture1D(inputTexture, vertexTextureCoords);
         } 
     )";
 
@@ -342,7 +352,6 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     GameOpenGL::LinkShaderProgram(mStressedSpringShaderProgram, "Stressed Spring");
 
     // Get uniform locations
-    mStressedSpringShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mStressedSpringShaderProgram, "paramAmbientLightIntensity");
     mStressedSpringShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mStressedSpringShaderProgram, "paramOrthoMatrix");
 
     //
@@ -351,6 +360,41 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
 
     glGenBuffers(1, &tmpGLuint);
     mStressedSpringVBO = tmpGLuint;
+
+
+    //
+    // Create stressed spring texture
+    //
+
+    // Create texture name
+    glGenTextures(1, &tmpGLuint);
+    mStressedSpringTexture = tmpGLuint;
+
+    // Bind texture
+    glBindTexture(GL_TEXTURE_1D, *mStressedSpringTexture);
+
+    // Set repeat mode
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // Make texture data
+    unsigned char buf[] = {
+        239, 16, 39,    128,
+        255, 253, 181,  255,
+        239, 16, 39,    255,
+    };
+
+    // Upload texture data
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    if (GL_NO_ERROR != glGetError())
+    {
+        throw GameException("Error uploading cloud texture onto GPU");
+    }
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 ShipRenderContext::~ShipRenderContext()
@@ -701,11 +745,13 @@ void ShipRenderContext::Render(
         glUseProgram(*mStressedSpringShaderProgram);
 
         // Set parameters
-        glUniform1f(mStressedSpringShaderAmbientLightIntensityParameter, ambientLightIntensity);
         glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
 
         // Describe points    
         DescribePointVBO();
+
+        // Bind texture
+        glBindTexture(GL_TEXTURE_1D, *mStressedSpringTexture);
 
         // Upload stressed springs buffer 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
@@ -716,6 +762,9 @@ void ShipRenderContext::Render(
 
         // Draw
         glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
+
+        // Unbind texture
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Stop using program
         glUseProgram(0);

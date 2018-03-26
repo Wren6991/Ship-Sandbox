@@ -41,26 +41,15 @@ void Game::Reset()
     mGameEventHandler->OnGameReset();
 }
 
-void Game::AddShip(ShipDefinition const & shipDefinition)
+int Game::AddShip(ShipDefinition const & shipDefinition)
 {
-	//
-	// Create ship and add to world
-	//
-
-	std::unique_ptr<Physics::Ship> shp = Physics::Ship::Create(
-		mWorld.get(),
-        shipDefinition,
-		mMaterials);
-
-    LogMessage("Loaded ship: W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
-        shp->GetPoints().size(), " points, ", shp->GetSprings().size(),
-        " springs, ", shp->GetTriangles().size(), " triangles, ", shp->GetElectricalElements().size(), " electrical elements.");
+    // Add ship to world
+    int shipId = mWorld->AddShip(shipDefinition, mMaterials);
 
     // Notify
-    mGameEventHandler->OnShipLoaded(shp->GetId(), shipDefinition.ShipName);
+    mGameEventHandler->OnShipLoaded(shipId, shipDefinition.ShipName);
 
-    // Add ship to world
-	mWorld->AddShip(std::move(shp));
+    return shipId;
 }
 
 void Game::DestroyAt(
@@ -70,8 +59,6 @@ void Game::DestroyAt(
 {
 	assert(!!mWorld);
 	mWorld->DestroyAt(worldCoordinates, radius, gameParameters);
-
-	// TODO: publish game event
 }
 
 void Game::DrawTo(
@@ -80,8 +67,6 @@ void Game::DrawTo(
 {
 	assert(!!mWorld);
 	mWorld->DrawTo(worldCoordinates, strength);
-
-	// TODO: publish game event
 }
 
 Physics::Point const * Game::GetNearestPointAt(

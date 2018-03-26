@@ -294,7 +294,6 @@ private:
     //
 
     GameOpenGLShaderProgram mStressedSpringShaderProgram;
-    GLint mStressedSpringShaderAmbientLightIntensityParameter;
     GLint mStressedSpringShaderOrthoMatrixParameter;
 
     std::unique_ptr<SpringElement[]> mStressedSpringBuffer;
@@ -302,4 +301,6 @@ private:
     size_t mStressedSpringBufferMaxSize;
 
     GameOpenGLVBO mStressedSpringVBO;
+
+    GameOpenGLTexture mStressedSpringTexture;
 };

@@ -40,9 +40,9 @@ std::unique_ptr<GameController> GameController::Create(
     std::string const initialShipFilename = "Data/default_ship.png";
     auto shipDefinition = resourceLoader->LoadShipDefinition(initialShipFilename);
 
-	game->AddShip(shipDefinition);
+	int shipId = game->AddShip(shipDefinition);
 
-    renderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
+    renderContext->AddShip(shipId, shipDefinition.TextureImage); 
 
 
     //
@@ -73,9 +73,10 @@ void GameController::ResetAndLoadShip(std::string const & filepath)
 
     assert(!!mRenderContext);
     mRenderContext->Reset();
-    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
 
-    mGame->AddShip(shipDefinition);
+    int shipId = mGame->AddShip(shipDefinition);
+
+    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
     
 	mLastShipLoaded = filepath;
 }
@@ -85,10 +86,10 @@ void GameController::AddShip(std::string const & filepath)
     auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
 
 	assert(!!mGame);        
-    mGame->AddShip(shipDefinition);
+    int shipId = mGame->AddShip(shipDefinition);
 
     assert(!!mRenderContext);
-    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
+    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
 
 	mLastShipLoaded = filepath;
 }
@@ -100,15 +101,17 @@ void GameController::ReloadLastShip()
 		throw std::runtime_error("No ship has been loaded yet");
 	}
 
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(mLastShipLoaded);
+
 	assert(!!mGame);    
 	mGame->Reset();
 
-    auto shipDefinition = mResourceLoader->LoadShipDefinition(mLastShipLoaded);
-    mGame->AddShip(shipDefinition);
-
     assert(!!mRenderContext);
     mRenderContext->Reset();
-    mRenderContext->AddShip(0, shipDefinition.TextureImage); // TODO: refactor this and get ID
+    
+    int shipId = mGame->AddShip(shipDefinition);
+
+    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
 }
 
 void GameController::DoStep()

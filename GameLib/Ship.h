@@ -27,6 +27,7 @@ class Ship
 public:
 
     static std::unique_ptr<Ship> Create(
+        int shipId,
         World * parentWorld,
         ShipDefinition const & shipDefinition,
         std::vector<std::unique_ptr<Material const>> const & allMaterials);
@@ -103,7 +104,9 @@ public:
 
 private:
 
-    Ship(World * parentWorld);
+    Ship(
+        int id,
+        World * parentWorld);
 
     void InitializeRepository(
         ElementRepository<Point> && allPoints,

@@ -153,6 +153,7 @@ private:
     bool IsPaused();
     void DoGameStep();
 	void RenderGame();
+    void Die(std::string const & message);
 
 private:
 

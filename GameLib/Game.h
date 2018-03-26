@@ -27,7 +27,7 @@ public:
 
 	void Reset();
 
-	void AddShip(ShipDefinition const & shipDefinition);
+	int AddShip(ShipDefinition const & shipDefinition);
 
 	void DestroyAt(
         vec2 worldCoordinates, 

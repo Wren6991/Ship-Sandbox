@@ -54,6 +54,23 @@ World::World(std::shared_ptr<IGameEventHandler> gameEventHandler)
     mRandomEngine = std::ranlux48_base(seed_seq);
 }
 
+int World::AddShip(
+    ShipDefinition const & shipDefinition,
+    std::vector<std::unique_ptr<Material const>> const & materials)
+{
+    int shipId = static_cast<int>(mAllShips.size());
+
+    auto newShip = Ship::Create(
+        shipId,
+        this,
+        shipDefinition,
+        materials);
+
+    mAllShips.push_back(std::move(newShip));
+
+    return shipId;
+}
+
 // Function of time and x (though time is constant during the update step, so no need to parameterise it)
 float World::GetWaterHeight(
     float x,
@@ -84,11 +101,6 @@ float World::GetOceanFloorHeight(
     float const c2 = sinf(x * 0.015f) * 6.f;
     float const c3 = sin(x * 0.0011f) * 45.f;
     return (c1 +  c2 - c3) - gameParameters.SeaDepth;
-}
-
-void World::AddShip(std::unique_ptr<Ship> && newShip)
-{
-    mAllShips.push_back(std::move(newShip));
 }
 
 void World::DestroyAt(

@@ -354,9 +354,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     }
     catch (GameException const & e)
     {
-        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
-
-        this->Close();
+        Die("Error during initialization: " + std::string(e.what()));
 
         return;
     }
@@ -382,9 +380,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     }
     catch (GameException const & e)
     {
-        wxMessageBox("Error during initialization: " + std::string(e.what()), wxT("Error"), wxICON_ERROR);
-
-        this->Close();
+        Die("Error during initialization: " + std::string(e.what()));
 
         return;
     }
@@ -658,7 +654,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
         }
         catch (GameException const ex)
         { 
-            wxMessageBox(ex.what(), wxT("Error"), wxICON_ERROR);
+            Die(ex.what());
         }
 	}
 }
@@ -675,7 +671,7 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
     }
     catch (GameException const ex)
     {
-        wxMessageBox(ex.what(), wxT("Error"), wxICON_ERROR);
+        Die(ex.what());
     }
 }
 
@@ -1070,16 +1066,6 @@ void MainFrame::DoGameStep()
     mSoundController->HighFrequencyUpdate();
 }
 
-//   GGGGG  RRRR        A     PPPP     H     H  IIIIIII    CCC      SSS
-//  GG      R   RR     A A    P   PP   H     H     I      CC CC   SS   SS
-// GG       R    RR   A   A   P    PP  H     H     I     CC    C  S
-// G        R   RR   A     A  P   PP   H     H     I     C        SS
-// G        RRRR     AAAAAAA  PPPP     HHHHHHH     I     C          SSS
-// G  GGGG  R RR     A     A  P        H     H     I     C             SS
-// GG    G  R   R    A     A  P        H     H     I     CC    C        S
-//  GG  GG  R    R   A     A  P        H     H     I      CC CC   SS   SS
-//   GGGG   R     R  A     A  P        H     H  IIIIIII    CCC      SSS
-
 void MainFrame::RenderGame()
 {
     if (!!mGameController)
@@ -1093,5 +1079,37 @@ void MainFrame::RenderGame()
     }
 }
 
+void MainFrame::Die(std::string const & message)
+{
+    //
+    // Stop timers first
+    //
+
+    if (!!mGameTimer)
+    {
+        mGameTimer->Stop();
+        mGameTimer.reset();
+    }
+
+    if (!!mLowFrequencyTimer)
+    {
+        mLowFrequencyTimer->Stop();
+        mLowFrequencyTimer.reset();
+    }
+
+
+    //
+    // Show message
+    //
+
+    wxMessageBox(message, wxT("Maritime Disaster"), wxICON_ERROR);
+
+
+    //
+    // Exit
+    //
+
+    this->Destroy();
+}
 
 
