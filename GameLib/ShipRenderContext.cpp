@@ -587,28 +587,12 @@ void ShipRenderContext::Render(
 
     if (renderMode == ShipRenderMode::Points)
     {
-        // If we have a texture -> use it; else, use color
-        if (!!mElementTexture)
-        {
-            // Use texture program
-            glUseProgram(*mElementTextureShaderProgram);
+        // Use color program
+        glUseProgram(*mElementColorShaderProgram);
 
-            // Set parameters
-            glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
-            
-            // Bind texture
-            glBindTexture(GL_TEXTURE_2D, *mElementTexture);
-        }
-        else
-        {
-            // Use color program
-            glUseProgram(*mElementColorShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-        }
+        // Set parameters
+        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
 
         // Set point size
         glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
@@ -627,9 +611,6 @@ void ShipRenderContext::Render(
             // Draw
             glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
         }
-
-        // Unbind texture (if any)
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         // Stop using program
         glUseProgram(0);
