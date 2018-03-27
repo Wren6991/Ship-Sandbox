@@ -115,7 +115,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 
 - Sounds:
-	- Reset sound controller at ResetAndLoadShip()
+	+ Reset sound controller at ResetAndLoadShip()
 	- Water rushing in
 
 - Histograms:

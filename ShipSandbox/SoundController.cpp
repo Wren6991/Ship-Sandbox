@@ -170,7 +170,27 @@ void SoundController::LowFrequencyUpdate()
 
 void SoundController::Reset()
 {
+    //
+    // Stop music
+    //
+
     mSinkingMusic.stop();
+
+
+    //
+    // Stop and clear all sounds
+    //
+
+    for (auto & playingSound : mCurrentlyPlayingSounds)
+    {
+        assert(!!playingSound.Sound);
+        if (sf::Sound::Status::Playing == playingSound.Sound->getStatus())
+        {
+            playingSound.Sound->stop();
+        }
+    }
+
+    mCurrentlyPlayingSounds.clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
