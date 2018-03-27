@@ -179,13 +179,6 @@ public:
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
 
-
-private:
-
-    void DescribePointVBO();
-    void DescribePointColorVBO();
-    void DescribePointTextureVBO();
-
 private:
 
     //
@@ -207,9 +200,15 @@ private:
     size_t mPointBufferSize;
     size_t mPointBufferMaxSize;
 
+    GameOpenGLVBO mPointVBO;
     GameOpenGLVBO mPointColorVBO;
     GameOpenGLVBO mPointElementTextureCoordinatesVBO;
-    GameOpenGLVBO mPointVBO;
+    
+    static constexpr GLuint InputPosPosition = 0;
+    static constexpr GLuint InputLightPosition = 1;
+    static constexpr GLuint InputWaterPosition = 2;
+    static constexpr GLuint InputColorPosition = 3;
+    static constexpr GLuint InputTextureCoordinatesPosition = 4;
 
 
     //

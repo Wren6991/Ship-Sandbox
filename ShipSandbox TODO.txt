@@ -42,32 +42,8 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
-	+ Draw stressed springs with their own hardcoded texture (1D, 3 pixels: red, red/white, red) of a reddish line with "hot" centre
-		+ https://stackoverflow.com/questions/17866308/texture-a-line-in-opengl
-		+ Make it a 2D with semicircle around T,L corner
-			+ textureCoords are inputPos
-
 	- ShipTexture: Experiment with different min/mag filters
 
-	+ Radio: draw points, springs, structure, texture
-		+ (Bit) Flag @ GameController->RenderContext->Ship
-			+ Inspected as bit glag by Ship as well @ Render() to avoid useless uploads
-		+ Larger points
-		+ SettingsDialog
-			+ Better grouping, see RadioBox?
-
-	+ Fix springs showing up around texture from structure
-		+ Make test .shp with three masses and a rope
-
-	- RenderContext:
-		+ Get rid of pre-generated texture names and create on-demand
-			+ Test!
-		- See if can describe point, color, and texture VBOs at init
-
-	+ Draw points:
-		+ Ship uses RenderContext::UploadPoint(elementIndex), only for !deleted points
-		+ Then, glDrawElements(GL_POINT)
-		+ Nuke PointProgram as it's dupe now
 
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
@@ -135,9 +111,6 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- The one already there assumes velocity always normal to surface, but we should consider surface normal instead
 
 - Controls:
-	+ Ship name in title
-		+ MainFrame implements OnShipLoaded() and OnGameReset(), populates mShipNames vector with ship names, and calls SetTitle()
-		+ SetTitle appends Utils::Join(vec<str>, ' + ') to current title
 	- SettingsDialog: save settings, and defaults
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 
@@ -596,6 +569,15 @@ IF WX:
 		+ Strength Adjustment must be settable exponentially (slider=>exp)
 			+ Formula done by gamecontroller at AdjustStrengthAdjustment(), or by SettingsDialog directly
 	+ Page up and page down in menu
+	+ Ship name in title
+		+ MainFrame implements OnShipLoaded() and OnGameReset(), populates mShipNames vector with ship names, and calls SetTitle()
+		+ SetTitle appends Utils::Join(vec<str>, ' + ') to current title
+	+ Radio: draw points, springs, structure, texture
+		+ (Bit) Flag @ GameController->RenderContext->Ship
+			+ Inspected as bit glag by Ship as well @ Render() to avoid useless uploads
+		+ Larger points
+		+ SettingsDialog
+			+ Better grouping, see RadioBox?
 
 + Gfx:
 	+ Try light diffusion rearc:
@@ -738,6 +720,20 @@ IF WX:
 				+ Nuke Point::CalculateColour
 				+ Also do light/water color blending at ship *point* fragment shader
 		+ Only keep separate color buffer and water/light done in F shader; point disembodiment was not a good idea
+	+ Draw stressed springs with their own hardcoded texture (1D, 3 pixels: red, red/white, red) of a reddish line with "hot" centre
+		+ https://stackoverflow.com/questions/17866308/texture-a-line-in-opengl
+		+ Make it a 2D with semicircle around T,L corner
+			+ textureCoords are inputPos
+	+ Fix springs showing up around texture from structure
+		+ Make test .shp with three masses and a rope
+	+ Draw points:
+		+ Ship uses RenderContext::UploadPoint(elementIndex), only for !deleted points
+		+ Then, glDrawElements(GL_POINT)
+		+ Nuke PointProgram as it's dupe now
+	+ RenderContext:
+		+ Get rid of pre-generated texture names and create on-demand
+			+ Test!
+		+ See if can describe point, color, and texture VBOs at init
 
 + Debug light/drag issue
 	+ Could be due to distance too close and shooting light to sky
