@@ -312,14 +312,14 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
         attribute vec2 inputPos;
         
         // Outputs        
-        varying float vertexTextureCoords;
+        varying vec2 vertexTextureCoords;
 
         // Params
         uniform mat4 paramOrthoMatrix;
 
         void main()
         {
-            vertexTextureCoords = inputPos.x; // TODO
+            vertexTextureCoords = inputPos; 
             gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
         }
     )";
@@ -329,17 +329,17 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     char const * stressedSpringFragmentShaderSource = R"(
     
         // Inputs
-        varying float vertexTextureCoords;
+        varying vec2 vertexTextureCoords;
 
         // Input texture
-        uniform sampler1D inputTexture;
+        uniform sampler2D inputTexture;
 
         // Params
         uniform float paramAmbientLightIntensity;
 
         void main()
         {
-            gl_FragColor = texture1D(inputTexture, vertexTextureCoords);
+            gl_FragColor = texture2D(inputTexture, vertexTextureCoords);
         } 
     )";
 
@@ -371,26 +371,28 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     mStressedSpringTexture = tmpGLuint;
 
     // Bind texture
-    glBindTexture(GL_TEXTURE_1D, *mStressedSpringTexture);
+    glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
 
     // Set repeat mode
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     
     // Set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Make texture data
     unsigned char buf[] = {
-        239, 16, 39,    128,
-        255, 253, 181,  255,
-        239, 16, 39,    255,
+        239, 16, 39, 128,       255, 253, 181,  255,    239, 16, 39, 128,
+        255, 253, 181, 255,     239, 16, 39, 128,       255, 253, 181,  255,
+        239, 16, 39, 128,       255, 253, 181,  255,    239, 16, 39, 128
     };
 
     // Upload texture data
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 3, 3, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
     if (GL_NO_ERROR != glGetError())
     {
-        throw GameException("Error uploading cloud texture onto GPU");
+        throw GameException("Error uploading stressed spring texture onto GPU");
     }
 
     // Unbind texture
@@ -751,7 +753,7 @@ void ShipRenderContext::Render(
         DescribePointVBO();
 
         // Bind texture
-        glBindTexture(GL_TEXTURE_1D, *mStressedSpringTexture);
+        glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
 
         // Upload stressed springs buffer 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);

@@ -42,10 +42,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Gfx:
-	= Draw stressed springs with their own hardcoded texture (1D, 3 pixels: red, red/white, red) of a reddish line with "hot" centre
-		= https://stackoverflow.com/questions/17866308/texture-a-line-in-opengl
-		- Make it a 2D with semicircle around T,L corner
-			= textureCoords are inputPos
+	+ Draw stressed springs with their own hardcoded texture (1D, 3 pixels: red, red/white, red) of a reddish line with "hot" centre
+		+ https://stackoverflow.com/questions/17866308/texture-a-line-in-opengl
+		+ Make it a 2D with semicircle around T,L corner
+			+ textureCoords are inputPos
 
 	- ShipTexture: Experiment with different min/mag filters
 
