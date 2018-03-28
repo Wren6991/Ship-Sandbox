@@ -78,11 +78,11 @@ endif (MSVC)
 
 message (STATUS "Copying data files and runtime files...")
 
-file(COPY "${CMAKE_SOURCE_DIR}/Data"
+file(COPY "${CMAKE_SOURCE_DIR}/data"
 	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
-file(COPY "${CMAKE_SOURCE_DIR}/Data"
+file(COPY "${CMAKE_SOURCE_DIR}/data"
 	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
-file(COPY "${CMAKE_SOURCE_DIR}/Data"
+file(COPY "${CMAKE_SOURCE_DIR}/data"
 	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo")
 
 if (WIN32)

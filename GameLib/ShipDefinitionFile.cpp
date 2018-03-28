@@ -14,7 +14,7 @@ ShipDefinitionFile ShipDefinitionFile::Create(picojson::object const & definitio
         definitionJson, 
         "structure_image");
 
-    std::string textureImageFilePath = Utils::GetMandatoryJsonMember<std::string>(
+    std::optional<std::string> textureImageFilePath = Utils::GetOptionalJsonMember<std::string>(
         definitionJson,
         "texture_image");
 

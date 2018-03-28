@@ -5,15 +5,16 @@
 ***************************************************************************************/
 #pragma once
 
-#include "Game.h"
 #include "GameEventDispatcher.h"
 #include "GameParameters.h"
+#include "Physics.h"
 #include "ProgressCallback.h"
 #include "RenderContext.h"
 #include "ResourceLoader.h"
 #include "Vectors.h"
 
 #include <chrono>
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -31,8 +32,8 @@ public:
 
     void RegisterGameEventHandler(IGameEventHandler * gameEventHandler);
 
-    void ResetAndLoadShip(std::string const & filepath);
-    void AddShip(std::string const & filepath);
+    void ResetAndLoadShip(std::filesystem::path const & filepath);
+    void AddShip(std::filesystem::path const & filepath);
     void ReloadLastShip();
 
     void DoStep();
@@ -143,17 +144,19 @@ public:
 private:
 
     GameController(
-        std::unique_ptr<Game> game,        
-        std::string const & initialShipLoaded,
+        std::unique_ptr<Physics::World> world,        
+        std::vector<std::unique_ptr<Material const>> materials,
         std::unique_ptr<RenderContext> renderContext,
         std::shared_ptr<GameEventDispatcher> gameEventDispatcher,
         std::shared_ptr<ResourceLoader> resourceLoader)
-        : mGameEventDispatcher(std::move(gameEventDispatcher))
-        , mResourceLoader(std::move(resourceLoader))
-        , mGame(std::move(game))
-        , mLastShipLoaded(initialShipLoaded)
+        : mWorld(std::move(world)) 
+        , mMaterials(std::move(materials))
         , mGameParameters()
+        , mLastShipLoadedFilePath()
         , mRenderContext(std::move(renderContext))
+        , mGameEventDispatcher(std::move(gameEventDispatcher))
+        , mResourceLoader(std::move(resourceLoader))        
+         // Smoothing
         , mCurrentZoom(mRenderContext->GetZoom())
         , mTargetZoom(mCurrentZoom)
         , mStartingZoom(mCurrentZoom)
@@ -171,30 +174,37 @@ private:
         float targetValue,
         std::chrono::steady_clock::time_point startingTime);
 
+    void Reset();
+
+    void AddShip(ShipDefinition const & shipDefinition);
+
 private:
-
-    std::shared_ptr<GameEventDispatcher> mGameEventDispatcher;
-    std::shared_ptr<ResourceLoader> mResourceLoader;
-
+    
     //
-    // The game
+    // The world
     //
 
-    std::unique_ptr<Game> mGame;
+    std::unique_ptr<Physics::World> mWorld;
 
-    std::string mLastShipLoaded;
+    std::vector<std::unique_ptr<Material const>> const mMaterials;
+    
 
     //
-    // The game (dynamics) parameters
+    // Our current state
     //
 
     GameParameters mGameParameters;
+    std::filesystem::path mLastShipLoadedFilePath;
+
 
     //
-    // The render context
+    // The doers 
     //
 
     std::unique_ptr<RenderContext> mRenderContext;
+    std::shared_ptr<GameEventDispatcher> mGameEventDispatcher;
+    std::shared_ptr<ResourceLoader> mResourceLoader;
+    
 
     //
     // The current render parameters that we're smoothing to

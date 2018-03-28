@@ -8,8 +8,6 @@ set  (GAME_SOURCES
 	AABB.h
 	ElementRepository.h
 	FixedSizeVector.h
-	Game.cpp
-	Game.h
 	GameController.cpp
 	GameController.h
 	GameEventDispatcher.h

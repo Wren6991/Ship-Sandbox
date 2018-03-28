@@ -385,9 +385,41 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
         return;
     }
 
+
+    //
+    // Register game event handlers
+    //
+
+    mGameController->RegisterGameEventHandler(this);
+    mGameController->RegisterGameEventHandler(mEventTickerPanel.get());
+    mGameController->RegisterGameEventHandler(mSoundController.get());
+
+
+    //
+    // Load initial ship
+    //
+
+    auto defaultShipFilePath = mResourceLoader->GetDefaultShipDefinitionFilePath();
+
+    try
+    {
+        mGameController->AddShip(defaultShipFilePath);
+    }
+    catch (GameException const & e)
+    {
+        Die("Error during initialization: " + std::string(e.what()));
+
+        return;
+    }
+
     splash->UpdateProgress(1.0f, "Ready!");
 
     this->mMainApp->Yield();
+
+
+    //
+    // Close splash screen
+    //
 
 #ifndef _DEBUG
 
@@ -405,14 +437,6 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
 
     splash->Destroy();
 
-
-    //
-    // Register game event handlers
-    //
-
-    mGameController->RegisterGameEventHandler(this);
-    mGameController->RegisterGameEventHandler(mEventTickerPanel.get());
-    mGameController->RegisterGameEventHandler(mSoundController.get());
 
 
     //

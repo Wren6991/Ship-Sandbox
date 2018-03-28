@@ -57,9 +57,11 @@ Here's a list of the major changes I've been doing:
 - Added initial proof of concept of lights
 - Optimized existing code to the point that the fps rate on my laptop reached 16fps (from 8fps)
 - Added connected component detection, used to correctly draw ship break-away parts on top of each other, among other things
+- Added texture mapping for ships, and a new "shp" input file that binds together ship structure and ship image
 
 ..and here's a rought list of the major changes I want to do:
-- Texture mapping for ships
+- Test with rewriting the physics as force-based rather than position-based
+	- Eventually using Runge-Kutta for integration
 - Leverage vectorized instructions for dynamics calculations 
 - Make lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)

@@ -18,10 +18,11 @@ std::unique_ptr<GameController> GameController::Create(
     // Create game dispatcher
     std::shared_ptr<GameEventDispatcher> gameEventDispatcher = std::make_shared<GameEventDispatcher>();
 
-	// Create game
-	std::unique_ptr<Game> game = Game::Create(
-        gameEventDispatcher,
-        resourceLoader);
+	// Create world
+    auto world = std::make_unique<Physics::World>(gameEventDispatcher);
+
+    // Load materials
+    auto materials = resourceLoader->LoadMaterials();
 
     // Create render context
     std::unique_ptr<RenderContext> renderContext = std::make_unique<RenderContext>(
@@ -31,28 +32,14 @@ std::unique_ptr<GameController> GameController::Create(
             progressCallback(0.9f * progress, message);
         });
 
-	//
-	// Load initial ship
-	//
-
-    progressCallback(1.0f, "Loading initial ship...");
-
-    std::string const initialShipFilename = "Data/default_ship.png";
-    auto shipDefinition = resourceLoader->LoadShipDefinition(initialShipFilename);
-
-	int shipId = game->AddShip(shipDefinition);
-
-    renderContext->AddShip(shipId, shipDefinition.TextureImage); 
-
-
     //
     // Create controller
     //
 
 	return std::unique_ptr<GameController>(
 		new GameController(
-			std::move(game),
-			initialShipFilename,
+			std::move(world),
+            std::move(materials),
             std::move(renderContext),
             std::move(gameEventDispatcher),
             std::move(resourceLoader)));
@@ -64,61 +51,45 @@ void GameController::RegisterGameEventHandler(IGameEventHandler * gameEventHandl
     mGameEventDispatcher->RegisterSink(gameEventHandler);
 }
 
-void GameController::ResetAndLoadShip(std::string const & filepath)
+void GameController::ResetAndLoadShip(std::filesystem::path const & filepath)
 {
     auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
 
-	assert(!!mGame);    
-	mGame->Reset();
+    Reset();
 
-    assert(!!mRenderContext);
-    mRenderContext->Reset();
-
-    int shipId = mGame->AddShip(shipDefinition);
-
-    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
+    AddShip(shipDefinition);
     
-	mLastShipLoaded = filepath;
+	mLastShipLoadedFilePath = filepath;
 }
 
-void GameController::AddShip(std::string const & filepath)
+void GameController::AddShip(std::filesystem::path const & filepath)
 {
     auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
 
-	assert(!!mGame);        
-    int shipId = mGame->AddShip(shipDefinition);
+    AddShip(shipDefinition);
 
-    assert(!!mRenderContext);
-    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
-
-	mLastShipLoaded = filepath;
+	mLastShipLoadedFilePath = filepath;
 }
 
 void GameController::ReloadLastShip()
 {
-	if (mLastShipLoaded.empty())
+	if (mLastShipLoadedFilePath.empty())
 	{
 		throw std::runtime_error("No ship has been loaded yet");
 	}
 
-    auto shipDefinition = mResourceLoader->LoadShipDefinition(mLastShipLoaded);
+    auto shipDefinition = mResourceLoader->LoadShipDefinition(mLastShipLoadedFilePath);
 
-	assert(!!mGame);    
-	mGame->Reset();
+    Reset();
 
-    assert(!!mRenderContext);
-    mRenderContext->Reset();
-    
-    int shipId = mGame->AddShip(shipDefinition);
-
-    mRenderContext->AddShip(shipId, shipDefinition.TextureImage); 
+    AddShip(shipDefinition);
 }
 
 void GameController::DoStep()
 {
-	// Update game
-	assert(!!mGame);
-	mGame->Update(
+	// Update world
+	assert(!!mWorld);
+    mWorld->Update(
         StepTimeDuration,
 		mGameParameters);
 
@@ -166,11 +137,11 @@ void GameController::Render()
     }
 
     //
-	// Render game
+	// Render world
     //
 
-	assert(!!mGame);
-	mGame->Render(mGameParameters, *mRenderContext);
+	assert(!!mWorld);
+    mWorld->Render(mGameParameters, *mRenderContext);
 }
 
 /////////////////////////////////////////////////////////////
@@ -186,8 +157,8 @@ void GameController::DestroyAt(
     LogMessage("DestroyAt: ", worldCoordinates.toString(), " * ", radiusMultiplier);
 
 	// Apply action
-	assert(!!mGame);
-	mGame->DestroyAt(
+	assert(!!mWorld);
+    mWorld->DestroyAt(
 		worldCoordinates,
 		mGameParameters.DestroyRadius * radiusMultiplier,
         mGameParameters);
@@ -203,8 +174,8 @@ void GameController::DrawTo(
 	vec2f worldCoordinates = mRenderContext->ScreenToWorld(screenCoordinates);
 
 	// Apply action
-	assert(!!mGame);
-	mGame->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
+	assert(!!mWorld);
+    mWorld->DrawTo(worldCoordinates, 50000.0f * strengthMultiplier);
 
     // Notify
     mGameEventDispatcher->OnDraw();
@@ -217,8 +188,8 @@ Physics::Point const * GameController::GetNearestPointAt(vec2 const & screenCoor
 {
     vec2f worldCoordinates = mRenderContext->ScreenToWorld(screenCoordinates);
 
-    assert(!!mGame);
-    return mGame->GetNearestPointAt(worldCoordinates, 1.0f);
+    assert(!!mWorld);
+    return mWorld->GetNearestPointAt(worldCoordinates, 1.0f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -248,4 +219,30 @@ void GameController::SmoothToTarget(
         // Overshot
         currentValue = targetValue;
     }
+}
+
+void GameController::Reset()
+{
+    // Reset world
+    assert(!!mWorld);
+    mWorld.reset(new Physics::World(mGameEventDispatcher));
+
+    // Reset rendering engine
+    assert(!!mRenderContext);
+    mRenderContext->Reset();
+
+    // Notify
+    mGameEventDispatcher->OnGameReset();
+}
+
+void GameController::AddShip(ShipDefinition const & shipDefinition)
+{
+    // Add ship to world
+    int shipId = mWorld->AddShip(shipDefinition, mMaterials);
+
+    // Add ship to rendering engine
+    mRenderContext->AddShip(shipId, shipDefinition.TextureImage);
+
+    // Notify
+    mGameEventDispatcher->OnShipLoaded(shipId, shipDefinition.ShipName);
 }

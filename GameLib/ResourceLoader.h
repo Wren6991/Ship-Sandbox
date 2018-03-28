@@ -35,7 +35,9 @@ public:
     // Ships
     //
 
-    ShipDefinition LoadShipDefinition(std::string const & filepath);
+    ShipDefinition LoadShipDefinition(std::filesystem::path const & filepath);
+
+    std::filesystem::path GetDefaultShipDefinitionFilePath() const;
 
 
     //
@@ -66,7 +68,7 @@ public:
     // Music
     //
 
-    std::string GetMusicFilepath(std::string const & filename) const;
+    std::filesystem::path GetMusicFilepath(std::string const & filename) const;
 
 
     //
@@ -75,12 +77,12 @@ public:
 
     std::vector<std::string> GetSoundFilenames() const;
 
-    std::string GetSoundFilepath(std::string const & filename) const;
+    std::filesystem::path GetSoundFilepath(std::string const & filename) const;
 
 private:
 
     ImageData LoadImage(
-        std::string const & filepath,
+        std::filesystem::path const & filepath,
         int format,
         int origin);
 };

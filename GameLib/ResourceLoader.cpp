@@ -28,7 +28,7 @@ ResourceLoader::ResourceLoader()
 // Ships
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
+ShipDefinition ResourceLoader::LoadShipDefinition(std::filesystem::path const & filepath)
 {    
     if (ShipDefinitionFile::IsShipDefinitionFile(filepath))
     {
@@ -36,10 +36,10 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
         // Load full definition
         //
 
-        picojson::value root = Utils::ParseJSONFile(filepath);
+        picojson::value root = Utils::ParseJSONFile(filepath.string());
         if (!root.is<picojson::object>())
         {
-            throw GameException("File \"" + filepath + "\" does not contain a JSON object");
+            throw GameException("File \"" + filepath.string() + "\" does not contain a JSON object");
         }
 
         ShipDefinitionFile sdf = ShipDefinitionFile::Create(root.get<picojson::object>());
@@ -48,15 +48,21 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
         // Make paths absolute
         //
 
-        std::filesystem::path basePath = std::filesystem::path(filepath).parent_path();
+        std::filesystem::path basePath = filepath.parent_path();
 
         std::filesystem::path absoluteStructuralImageFilePath = std::filesystem::absolute(
             sdf.StructuralImageFilePath,
             basePath);
 
-        std::filesystem::path absoluteTextureImageFilePath = std::filesystem::absolute(
-            sdf.TextureImageFilePath,
-            basePath);
+        std::optional<ImageData> textureImage;
+        if (!!sdf.TextureImageFilePath)
+        {
+            std::filesystem::path absoluteTextureImageFilePath = std::filesystem::absolute(
+                *sdf.TextureImageFilePath,
+                basePath);
+
+            textureImage.emplace(std::move(LoadTextureRgba(absoluteTextureImageFilePath)));
+        }
 
 
         //
@@ -65,7 +71,7 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
 
         return ShipDefinition(
             LoadImage(absoluteStructuralImageFilePath.string(), IL_RGB, IL_ORIGIN_UPPER_LEFT),
-            LoadTextureRgba(absoluteTextureImageFilePath),
+            std::move(textureImage),
             sdf.ShipName.empty() 
                 ? std ::filesystem::path(filepath).stem().string() 
                 : sdf.ShipName,
@@ -85,6 +91,17 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::string const & filepath)
             std::filesystem::path(filepath).stem().string(),
             vec2f(0.0f, 0.0f));
     }
+}
+
+std::filesystem::path ResourceLoader::GetDefaultShipDefinitionFilePath() const
+{
+    std::filesystem::path defaultShipDefinitionFilePath = std::filesystem::path(std::string("Data")) / "Ships" / "default_ship.shp";
+    if (!std::filesystem::exists(defaultShipDefinitionFilePath))
+    {
+        defaultShipDefinitionFilePath = std::filesystem::path(std::string("Data")) / "Ships" / "default_ship.png";
+    }
+
+    return defaultShipDefinitionFilePath;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,10 +204,10 @@ std::vector<std::unique_ptr<Material const>> ResourceLoader::LoadMaterials()
 // Music
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::string ResourceLoader::GetMusicFilepath(std::string const & filename) const
+std::filesystem::path ResourceLoader::GetMusicFilepath(std::string const & filename) const
 {
     std::filesystem::path localPath = std::filesystem::path("Data") / "Music" / (filename + ".flac");
-    return std::filesystem::absolute(localPath).string();
+    return std::filesystem::absolute(localPath);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -212,10 +229,10 @@ std::vector<std::string> ResourceLoader::GetSoundFilenames() const
     return filenames;
 }
 
-std::string ResourceLoader::GetSoundFilepath(std::string const & filename) const
+std::filesystem::path ResourceLoader::GetSoundFilepath(std::string const & filename) const
 {
     std::filesystem::path localPath = std::filesystem::path("Data") / "Sounds" / (filename + ".flac");
-    return std::filesystem::absolute(localPath).string();
+    return std::filesystem::absolute(localPath);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +240,7 @@ std::string ResourceLoader::GetSoundFilepath(std::string const & filename) const
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 ImageData ResourceLoader::LoadImage(
-    std::string const & filepath,
+    std::filesystem::path const & filepath,
     int format,
     int origin)
 {
@@ -235,12 +252,13 @@ ImageData ResourceLoader::LoadImage(
     ilGenImages(1, &imghandle);
     ilBindImage(imghandle);
 
-    ILconst_string ilFilename(filepath.c_str());
+    std::string filepathStr = filepath.string();
+    ILconst_string ilFilename(filepathStr.c_str());
     if (!ilLoadImage(ilFilename))
     {
         ILint devilError = ilGetError();
         std::string devilErrorMessage(iluErrorString(devilError));
-        throw GameException("Could not load image \"" + filepath + "\": " + devilErrorMessage);
+        throw GameException("Could not load image \"" + filepathStr + "\": " + devilErrorMessage);
     }
 
     //
@@ -255,7 +273,7 @@ ImageData ResourceLoader::LoadImage(
         {
             ILint devilError = ilGetError();
             std::string devilErrorMessage(iluErrorString(devilError));
-            throw GameException("Could not convert image \"" + filepath + "\": " + devilErrorMessage);
+            throw GameException("Could not convert image \"" + filepathStr + "\": " + devilErrorMessage);
         }
     }
 

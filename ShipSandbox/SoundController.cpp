@@ -35,7 +35,7 @@ SoundController::SoundController(
     // Initialize Music
     //
 
-    if (!mSinkingMusic.openFromFile(mResourceLoader->GetMusicFilepath("sinking_ship")))
+    if (!mSinkingMusic.openFromFile(mResourceLoader->GetMusicFilepath("sinking_ship").string()))
     {
         throw GameException("Cannot load \"sinking_ship\" music");
     }
@@ -62,7 +62,7 @@ SoundController::SoundController(
         //
 
         std::unique_ptr<sf::SoundBuffer> soundBuffer = std::make_unique<sf::SoundBuffer>();
-        if (!soundBuffer->loadFromFile(mResourceLoader->GetSoundFilepath(filename)))
+        if (!soundBuffer->loadFromFile(mResourceLoader->GetSoundFilepath(filename).string()))
         {
             throw GameException("Cannot load sound \"" + filename + "\"");
         }
