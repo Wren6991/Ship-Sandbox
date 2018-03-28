@@ -5,6 +5,8 @@
 ***************************************************************************************/
 #pragma once
 
+#include <GameLib/ResourceLoader.h>
+
 #include <wx/dialog.h>
 #include <wx/gauge.h>
 #include <wx/textctrl.h>
@@ -16,7 +18,7 @@ class SplashScreenDialog : public wxDialog
 {
 public:
 
-    SplashScreenDialog();
+    SplashScreenDialog(ResourceLoader const & resourceLoader);
 	
 	virtual ~SplashScreenDialog();
 

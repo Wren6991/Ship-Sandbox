@@ -286,9 +286,9 @@ MainFrame::MainFrame(wxApp * mainApp)
     // Prepare cursors
     //
 
-    mGrabCursors = MakeCursors("Data/Resources/DragCursor.png", 15, 15);
-    mSmashCursors = MakeCursors("Data/Resources/SmashCursor.png", 1, 16);
-    mMoveCursor = MakeCursor("Data/Resources/MoveCursor.png", 15, 15);
+    mGrabCursors = MakeCursors("drag_cursor", 15, 15);
+    mSmashCursors = MakeCursors("smash_cursor", 1, 16);
+    mMoveCursor = MakeCursor("move_cursor", 15, 15);
 
     SwitchCursor();
 
@@ -327,7 +327,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     // Create splash screen
     //
 
-    std::unique_ptr<SplashScreenDialog> splash = std::make_unique<SplashScreenDialog>();
+    std::unique_ptr<SplashScreenDialog> splash = std::make_unique<SplashScreenDialog>(*mResourceLoader);
     mMainApp->Yield();
 
 #ifdef _DEBUG
@@ -655,7 +655,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
 			L"Select Ship", 
 			wxEmptyString, 
 			wxEmptyString, 
-            L"SHP files (*.shp)|*.shp|JPG and PNG files(*.jpg; *.png) | *.jpg; *.png",
+            L"Ship files (*.shp; *.png)|*.shp; *.png",
 			wxFD_OPEN | wxFD_FILE_MUST_EXIST, 
 			wxDefaultPosition, 
 			wxDefaultSize, 
@@ -800,18 +800,19 @@ void MainFrame::OnMuteMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 {
-    AboutDialog aboutDialog(this);
+    AboutDialog aboutDialog(this, *mResourceLoader);
     aboutDialog.ShowModal();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::unique_ptr<wxCursor>> MainFrame::MakeCursors(std::string const & imageFilePath, int hotspotX, int hotspotY)
+std::vector<std::unique_ptr<wxCursor>> MainFrame::MakeCursors(std::string const & cursorName, int hotspotX, int hotspotY)
 {
-    wxBitmap* bmp = new wxBitmap(imageFilePath, wxBITMAP_TYPE_PNG);
+    auto filepath = mResourceLoader->GetCursorFilepath(cursorName);
+    wxBitmap* bmp = new wxBitmap(filepath.string(), wxBITMAP_TYPE_PNG);
     if (nullptr == bmp)
     {
-        throw GameException("Cannot load resource '" + imageFilePath + "'");
+        throw GameException("Cannot load resource '" + filepath.string() + "'");
     }
 
     wxImage img = bmp->ConvertToImage();
@@ -866,12 +867,13 @@ std::vector<std::unique_ptr<wxCursor>> MainFrame::MakeCursors(std::string const 
     return cursors;
 }
 
-std::unique_ptr<wxCursor> MainFrame::MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY)
+std::unique_ptr<wxCursor> MainFrame::MakeCursor(std::string const & cursorName, int hotspotX, int hotspotY)
 {
-    wxBitmap* bmp = new wxBitmap(imageFilePath, wxBITMAP_TYPE_PNG);
+    auto filepath = mResourceLoader->GetCursorFilepath(cursorName);
+    wxBitmap* bmp = new wxBitmap(filepath.string(), wxBITMAP_TYPE_PNG);
     if (nullptr == bmp)
     {
-        throw GameException("Cannot load resource '" + imageFilePath + "'");
+        throw GameException("Cannot load resource '" + filepath.string() + "'");
     }
 
     wxImage img = bmp->ConvertToImage();

@@ -144,8 +144,8 @@ private:
 
 private:
 
-    std::vector<std::unique_ptr<wxCursor>> MakeCursors(std::string const & imageFilePath, int hotspotX, int hotspotY);
-    std::unique_ptr<wxCursor> MakeCursor(std::string const & imageFilePath, int hotspotX, int hotspotY);
+    std::vector<std::unique_ptr<wxCursor>> MakeCursors(std::string const & cursorName, int hotspotX, int hotspotY);
+    std::unique_ptr<wxCursor> MakeCursor(std::string const & cursorName, int hotspotX, int hotspotY);
     void SwitchCursor();
     void SetCursorStrength(float strength, float minStrength, float maxStrength);
     void SetFrameTitle();

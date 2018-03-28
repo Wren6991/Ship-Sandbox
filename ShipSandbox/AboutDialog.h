@@ -5,13 +5,17 @@
 ***************************************************************************************/
 #pragma once
 
+#include <GameLib/ResourceLoader.h>
+
 #include <wx/dialog.h>
 
 class AboutDialog : public wxDialog
 {
 public:
 
-    AboutDialog(wxWindow* parent);
+    AboutDialog(
+        wxWindow* parent,
+        ResourceLoader const & resourceLoader);
 	
 	virtual ~AboutDialog();
 

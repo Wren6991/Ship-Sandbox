@@ -11,7 +11,7 @@
 
 #include <cassert>
 
-SplashScreenDialog::SplashScreenDialog()
+SplashScreenDialog::SplashScreenDialog(ResourceLoader const & resourceLoader)
 {
 	Create(
         nullptr,
@@ -32,7 +32,7 @@ SplashScreenDialog::SplashScreenDialog()
     // Create Image
     //
 
-    wxBitmap* bmp = new wxBitmap("Data/Resources/Splash.png", wxBITMAP_TYPE_PNG);
+    wxBitmap* bmp = new wxBitmap(resourceLoader.GetArtFilepath("splash_screen").string(), wxBITMAP_TYPE_PNG);
 
     wxStaticBitmap * stBmp = new wxStaticBitmap(
         this,

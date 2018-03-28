@@ -16,7 +16,9 @@ wxBEGIN_EVENT_TABLE(AboutDialog, wxDialog)
 	EVT_CLOSE(AboutDialog::OnClose)
 wxEND_EVENT_TABLE()
 
-AboutDialog::AboutDialog(wxWindow * parent)
+AboutDialog::AboutDialog(
+    wxWindow * parent,
+    ResourceLoader const & resourceLoader)
 	: mParent(parent)
 {
 	Create(
@@ -56,7 +58,7 @@ AboutDialog::AboutDialog(wxWindow * parent)
     // Image
     //
 
-    wxBitmap* bmp = new wxBitmap("Data/Resources/Splash.png", wxBITMAP_TYPE_PNG);
+    wxBitmap* bmp = new wxBitmap(resourceLoader.GetArtFilepath("splash_screen").string(), wxBITMAP_TYPE_PNG);
 
     wxStaticBitmap * stBmp = new wxStaticBitmap(this, wxID_ANY, *bmp, wxDefaultPosition, wxSize(400, 150), wxBORDER_SIMPLE);
     stBmp->SetScaleMode(wxStaticBitmap::Scale_AspectFill);

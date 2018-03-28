@@ -68,16 +68,25 @@ public:
     // Music
     //
 
-    std::filesystem::path GetMusicFilepath(std::string const & filename) const;
+    std::filesystem::path GetMusicFilepath(std::string const & musicName) const;
 
 
     //
     // Sounds
     //
 
-    std::vector<std::string> GetSoundFilenames() const;
+    std::vector<std::string> GetSoundNames() const;
 
-    std::filesystem::path GetSoundFilepath(std::string const & filename) const;
+    std::filesystem::path GetSoundFilepath(std::string const & soundName) const;
+
+
+    //
+    // Resources
+    //
+
+    std::filesystem::path GetCursorFilepath(std::string const & cursorName) const;
+
+    std::filesystem::path GetArtFilepath(std::string const & artName) const;
 
 private:
 

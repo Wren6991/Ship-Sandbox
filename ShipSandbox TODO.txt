@@ -35,9 +35,15 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 
 - Code:
-	- All paths lowercase
-		- Code (ResourceLoader)
-		- source (git)
+	+ Resources: lowercase filenames
+		+ git
+		+ code
+	+ /Data
+	+ /Ships
+		+ Uppercase ship filenames
+		+ Code (ResourceLoader)
+		+ source (git)
+		+ CMake
 	+ MainFrame::Die(msg of exc)
 	+ Get rid of Game.cpp and move functionality to GameController
 		+ ResourceLoader::LoadDefaultShip()
@@ -47,8 +53,14 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Use perf analyzer (mem) to see leaks
 
 - Release:
-	- Do lowercase paths first (above)
-	- Decide default ship
+	+ Do structure first (above)
+	- Check if less rope mass makes empress of britain not break
+	+ Add all other ships 
+		+ Remember: uppercase and spaces filenames
+	- Do new .shp's:
+		- Carnival
+		- Titanic
+	- @Release only: make krafting default ship
 	- Screenshot @ github readme
 
 - Gfx:

@@ -95,10 +95,10 @@ ShipDefinition ResourceLoader::LoadShipDefinition(std::filesystem::path const & 
 
 std::filesystem::path ResourceLoader::GetDefaultShipDefinitionFilePath() const
 {
-    std::filesystem::path defaultShipDefinitionFilePath = std::filesystem::path(std::string("Data")) / "Ships" / "default_ship.shp";
+    std::filesystem::path defaultShipDefinitionFilePath = std::filesystem::path("Ships") / "default_ship.shp";
     if (!std::filesystem::exists(defaultShipDefinitionFilePath))
     {
-        defaultShipDefinitionFilePath = std::filesystem::path(std::string("Data")) / "Ships" / "default_ship.png";
+        defaultShipDefinitionFilePath = std::filesystem::path("Ships") / "default_ship.png";
     }
 
     return defaultShipDefinitionFilePath;
@@ -111,7 +111,7 @@ std::filesystem::path ResourceLoader::GetDefaultShipDefinitionFilePath() const
 ImageData ResourceLoader::LoadTextureRgb(std::string const & name)
 {
     return LoadImage(
-        (std::filesystem::path(std::string("Data")) / "Textures" / name).string(),
+        (std::filesystem::path("Data") / "Textures" / name).string(),
         IL_RGB,
         IL_ORIGIN_LOWER_LEFT);
 }
@@ -204,9 +204,9 @@ std::vector<std::unique_ptr<Material const>> ResourceLoader::LoadMaterials()
 // Music
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::filesystem::path ResourceLoader::GetMusicFilepath(std::string const & filename) const
+std::filesystem::path ResourceLoader::GetMusicFilepath(std::string const & musicName) const
 {
-    std::filesystem::path localPath = std::filesystem::path("Data") / "Music" / (filename + ".flac");
+    std::filesystem::path localPath = std::filesystem::path("Data") / "Music" / (musicName + ".flac");
     return std::filesystem::absolute(localPath);
 }
 
@@ -214,7 +214,7 @@ std::filesystem::path ResourceLoader::GetMusicFilepath(std::string const & filen
 // Sounds
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> ResourceLoader::GetSoundFilenames() const
+std::vector<std::string> ResourceLoader::GetSoundNames() const
 {
     std::vector<std::string> filenames;
     for (auto const & entryIt : std::filesystem::directory_iterator(std::filesystem::path("Data") / "Sounds"))
@@ -229,9 +229,25 @@ std::vector<std::string> ResourceLoader::GetSoundFilenames() const
     return filenames;
 }
 
-std::filesystem::path ResourceLoader::GetSoundFilepath(std::string const & filename) const
+std::filesystem::path ResourceLoader::GetSoundFilepath(std::string const & soundName) const
 {
-    std::filesystem::path localPath = std::filesystem::path("Data") / "Sounds" / (filename + ".flac");
+    std::filesystem::path localPath = std::filesystem::path("Data") / "Sounds" / (soundName + ".flac");
+    return std::filesystem::absolute(localPath);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// Resources
+////////////////////////////////////////////////////////////////////////////////////////////
+
+std::filesystem::path ResourceLoader::GetCursorFilepath(std::string const & cursorName) const
+{
+    std::filesystem::path localPath = std::filesystem::path("Data") / "Resources" / (cursorName + ".png");
+    return std::filesystem::absolute(localPath);
+}
+
+std::filesystem::path ResourceLoader::GetArtFilepath(std::string const & artName) const
+{
+    std::filesystem::path localPath = std::filesystem::path("Data") / "Resources" / (artName + ".png");
     return std::filesystem::absolute(localPath);
 }
 

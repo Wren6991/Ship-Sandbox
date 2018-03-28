@@ -48,13 +48,13 @@ SoundController::SoundController(
     // Initialize Sounds
     //
 
-    auto filenames = mResourceLoader->GetSoundFilenames();
-    for (size_t i = 0; i < filenames.size(); ++i)    
+    auto soundNames = mResourceLoader->GetSoundNames();
+    for (size_t i = 0; i < soundNames.size(); ++i)
     {
-        std::string const & filename = filenames[i];
+        std::string const & soundName = soundNames[i];
 
         // Notify progress
-        progressCallback(static_cast<float>(i + 1) / static_cast<float>(filenames.size()), "Loading sounds...");
+        progressCallback(static_cast<float>(i + 1) / static_cast<float>(soundNames.size()), "Loading sounds...");
         
 
         //
@@ -62,9 +62,9 @@ SoundController::SoundController(
         //
 
         std::unique_ptr<sf::SoundBuffer> soundBuffer = std::make_unique<sf::SoundBuffer>();
-        if (!soundBuffer->loadFromFile(mResourceLoader->GetSoundFilepath(filename).string()))
+        if (!soundBuffer->loadFromFile(mResourceLoader->GetSoundFilepath(soundName).string()))
         {
-            throw GameException("Cannot load sound \"" + filename + "\"");
+            throw GameException("Cannot load sound \"" + soundName + "\"");
         }
 
 
@@ -75,9 +75,9 @@ SoundController::SoundController(
 
         std::regex soundTypeRegex(R"(([^_]+)(?:_.+)?)");
         std::smatch soundTypeMatch;
-        if (!std::regex_match(filename, soundTypeMatch, soundTypeRegex))
+        if (!std::regex_match(soundName, soundTypeMatch, soundTypeRegex))
         {
-            throw GameException("Sound filename \"" + filename + "\" is not recognized");
+            throw GameException("Sound filename \"" + soundName + "\" is not recognized");
         }
 
         assert(soundTypeMatch.size() == 1 + 1);
@@ -90,9 +90,9 @@ SoundController::SoundController(
 
             std::regex crashRegex(R"(([^_]+)_([^_]+)_([^_]+)_(?:(underwater)_)?\d+)");
             std::smatch crashMatch;
-            if (!std::regex_match(filename, crashMatch, crashRegex))
+            if (!std::regex_match(soundName, crashMatch, crashRegex))
             {
-                throw GameException("Crash sound filename \"" + filename + "\" is not recognized");
+                throw GameException("Crash sound filename \"" + soundName + "\" is not recognized");
             }
 
             assert(crashMatch.size() == 1 + 4);
@@ -131,7 +131,7 @@ SoundController::SoundController(
         }
         else
         {
-            throw GameException("Sound type of sound filename \"" + filename + "\" is not recognized");
+            throw GameException("Sound type of sound filename \"" + soundName + "\" is not recognized");
         }
     }
 }
