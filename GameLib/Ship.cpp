@@ -559,7 +559,7 @@ void Ship::PreparePointsForFinalStep(
     //
 
     if (!mIsSinking
-        && mTotalWater > static_cast<float>(mAllPoints.size()) / 3.0f)
+        && mTotalWater > static_cast<float>(mAllPoints.size()) / 2.5f)
     {
         // Started sinking
         mParentWorld->GetGameEventHandler()->OnSinkingBegin(mId);

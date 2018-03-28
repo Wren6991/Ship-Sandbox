@@ -33,32 +33,13 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
 =================================================
 
-
-- Code:
-	+ Resources: lowercase filenames
-		+ git
-		+ code
-	+ /Data
-	+ /Ships
-		+ Uppercase ship filenames
-		+ Code (ResourceLoader)
-		+ source (git)
-		+ CMake
-	+ MainFrame::Die(msg of exc)
-	+ Get rid of Game.cpp and move functionality to GameController
-		+ ResourceLoader::LoadDefaultShip()
-		+ Also, don't load default ship autonomously (need to register event handlers before that happens);
-		  rely on MainFrame calling GameController::LoadDefaultShip() after registration
-	+ Change calls to Point::SubtractFromLastPosition() to AddToLastPosition() and use (& implement) unary '-' operator for vectors
-	- Use perf analyzer (mem) to see leaks
-
 - Release:
 	+ Do structure first (above)
-	- Check if less rope mass makes empress of britain not break
+	+ Check if less rope mass makes empress of britain not break
 	+ Add all other ships 
 		+ Remember: uppercase and spaces filenames
-	- Do new .shp's:
-		- Carnival
+	= Do new .shp's:
+		+ Carnival
 		- Titanic
 	- @Release only: make krafting default ship
 	- Screenshot @ github readme
@@ -906,6 +887,23 @@ IF WX:
 		+ Do for triangles
 		+ Do for springs
 		+ Each connected component must be drawn together - its springs then its triangles
+
++ Code:
+	+ Resources: lowercase filenames
+		+ git
+		+ code
+	+ /Data
+	+ /Ships
+		+ Uppercase ship filenames
+		+ Code (ResourceLoader)
+		+ source (git)
+		+ CMake
+	+ MainFrame::Die(msg of exc)
+	+ Get rid of Game.cpp and move functionality to GameController
+		+ ResourceLoader::LoadDefaultShip()
+		+ Also, don't load default ship autonomously (need to register event handlers before that happens);
+		  rely on MainFrame calling GameController::LoadDefaultShip() after registration
+	+ Change calls to Point::SubtractFromLastPosition() to AddToLastPosition() and use (& implement) unary '-' operator for vectors
 
 
 ==============================================

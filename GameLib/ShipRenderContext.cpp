@@ -384,9 +384,9 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
 
     // Make texture data
     unsigned char buf[] = {
-        239, 16, 39, 128,       255, 253, 181,  255,    239, 16, 39, 128,
-        255, 253, 181, 255,     239, 16, 39, 128,       255, 253, 181,  255,
-        239, 16, 39, 128,       255, 253, 181,  255,    239, 16, 39, 128
+        239, 16, 39, 255,       255, 253, 181,  255,    239, 16, 39, 255,
+        255, 253, 181, 255,     239, 16, 39, 255,       255, 253, 181,  255,
+        239, 16, 39, 255,       255, 253, 181,  255,    239, 16, 39, 255
     };
 
     // Upload texture data
@@ -622,6 +622,7 @@ void ShipRenderContext::Render(
     //
     // We draw springs when:
     // - RenderMode is springs ("X-Ray Mode"), in which case we use colors - so to show structural springs -, or
+    // - RenderMode is structure (so to draw ropes), in which case we use colors, or
     // - RenderMode is structure or texture (so to draw ropes), in which case we use texture iff it is present
     //
 
@@ -629,7 +630,7 @@ void ShipRenderContext::Render(
         || renderMode == ShipRenderMode::Structure
         || renderMode == ShipRenderMode::Texture)
     {
-        if (renderMode != ShipRenderMode::Springs && !!mElementTexture)
+        if (renderMode == ShipRenderMode::Texture && !!mElementTexture)
         {
             // Use texture program
             glUseProgram(*mElementTextureShaderProgram);
