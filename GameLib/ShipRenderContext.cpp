@@ -623,7 +623,7 @@ void ShipRenderContext::Render(
     // We draw springs when:
     // - RenderMode is springs ("X-Ray Mode"), in which case we use colors - so to show structural springs -, or
     // - RenderMode is structure (so to draw ropes), in which case we use colors, or
-    // - RenderMode is structure or texture (so to draw ropes), in which case we use texture iff it is present
+    // - RenderMode is texture (so to draw ropes), in which case we use texture iff it is present
     //
 
     if (renderMode == ShipRenderMode::Springs

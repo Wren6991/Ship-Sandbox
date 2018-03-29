@@ -45,6 +45,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Screenshot @ github readme
 
 - Gfx:
+	- Do ropes with two endpoints (000xxx)
+		- Throw exception if doesn't find two endpoints
+		- Algo: at end of structural image scan, after all points and springs and triangles have been created:
+			- TBD
 	- ShipTexture: Experiment with different min/mag filters
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
