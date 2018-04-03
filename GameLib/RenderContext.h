@@ -373,7 +373,7 @@ public:
 
 
     //
-    // Ship elements (points, springs, and triangles)
+    // Ship elements (points, springs, ropes, and triangles)
     //
 
     void UploadShipElementsStart(
@@ -406,6 +406,20 @@ public:
         assert(shipId < mShips.size());
 
         mShips[shipId]->UploadElementSpring(
+            shipPointIndex1,
+            shipPointIndex2,
+            connectedComponentId);
+    }
+
+    inline void UploadShipElementRope(
+        int shipId,
+        int shipPointIndex1,
+        int shipPointIndex2,
+        size_t connectedComponentId)
+    {
+        assert(shipId < mShips.size());
+
+        mShips[shipId]->UploadElementRope(
             shipPointIndex1,
             shipPointIndex2,
             connectedComponentId);

@@ -26,11 +26,13 @@ Spring::Spring(
 	Point * a,
 	Point * b,
 	float restLength,
+    Characteristics characteristics,
 	Material const *material)
 	: ShipElement(parentShip)
 	, mPointA(a)
 	, mPointB(b)
 	, mRestLength(restLength)
+    , mCharacteristics(characteristics)
 	, mMaterial(material)
     , mIsStressed(false)
 {

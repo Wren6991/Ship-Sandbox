@@ -40,35 +40,61 @@ std::unique_ptr<Ship> Ship::Create(
         structuralColourMap[material->StructuralColourRgb] = material.get();
     }
 
+    Material const * const ropeMaterial = structuralColourMap.find({ 0x00, 0x00, 0x00 })->second;
+
 
     //
-    // 1. Process image points and create matrix of point indices and materials
+    // 1. Process image points and create:
+    // - PointInfo's
+    // - Matrix of point indices
+    // - RopeInfo's
     //    
 
     struct PointInfo
     {
+        vec2f Position;
+        vec2f TextureCoordinates;
         Material const * Mtl;
-        size_t PointIndex;
 
         PointInfo(
-            Material const * mtl,
-            size_t pointIndex)
-            : Mtl(mtl)
-            , PointIndex(pointIndex)
+            vec2f position,
+            vec2f textureCoordinates,
+            Material const * mtl)
+            : Position(position)
+            , TextureCoordinates(textureCoordinates)
+            , Mtl(mtl)
         {
         }
     };
+
+    std::vector<PointInfo> pointInfos;
+
 
     int const structureWidth = shipDefinition.StructuralImage.Width;
     float const halfWidth = static_cast<float>(structureWidth) / 2.0f;
     int const structureHeight = shipDefinition.StructuralImage.Height;
 
-    std::unique_ptr<std::unique_ptr<std::optional<PointInfo>[]>[]> pointInfoMatrix(new std::unique_ptr<std::optional<PointInfo>[]>[structureWidth]);
+    std::unique_ptr<std::unique_ptr<std::optional<size_t>[]>[]> pointIndexMatrix(new std::unique_ptr<std::optional<size_t>[]>[structureWidth]);    
     
-    size_t pointCount = 0;
+
+    struct RopeInfo
+    {
+        std::optional<size_t> PointAIndex;
+        std::optional<size_t> PointBIndex;
+
+        RopeInfo()
+            : PointAIndex(std::nullopt)
+            , PointBIndex(std::nullopt)
+        {
+        }
+    };
+
+    std::map<std::array<uint8_t, 3u>, RopeInfo> ropeInfos;
+
+
     for (int x = 0; x < structureWidth; ++x)
     {
-        pointInfoMatrix[x] = std::unique_ptr<std::optional<PointInfo>[]>(new std::optional<PointInfo>[structureHeight]);
+        pointIndexMatrix[x] = std::unique_ptr<std::optional<size_t>[]>(new std::optional<size_t>[structureHeight]);
 
         // From bottom to top
         for (int y = 0; y < structureHeight; ++y)
@@ -80,33 +106,61 @@ std::unique_ptr<Ship> Ship::Create(
                 shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 2] };
 
             auto srchIt = structuralColourMap.find(rgbColour);
+            if (srchIt == structuralColourMap.end())
+            {
+                // Check whether it's a rope endpoint (#000xxx)
+                if (0x00 == rgbColour[0]
+                    && 0 == (rgbColour[1] & 0xF0))
+                {
+                    // Store in RopeInfo
+                    RopeInfo & ropeInfo = ropeInfos[rgbColour];
+                    if (!ropeInfo.PointAIndex)
+                    {
+                        ropeInfo.PointAIndex = pointInfos.size();
+                    }
+                    else if (!ropeInfo.PointBIndex)
+                    {
+                        ropeInfo.PointBIndex = pointInfos.size();
+                    }
+                    else
+                    {
+                        throw GameException(
+                            std::string("More than two rope endpoints found at (")
+                            + std::to_string(x) + "," + std::to_string(y) + ")");
+                    }
+
+                    // Point to rope (#000000)
+                    srchIt = structuralColourMap.find({0x00, 0x00, 0x00});
+                }
+            }
+
             if (srchIt != structuralColourMap.end())
             {
-                // This will be a point
-                pointInfoMatrix[x][y] = PointInfo(srchIt->second, pointCount);
+                //
+                // Make a point
+                //
 
-                ++pointCount;
+                pointIndexMatrix[x][y] = pointInfos.size();
+
+                pointInfos.emplace_back(
+                    vec2f(
+                        static_cast<float>(x) - halfWidth,
+                        static_cast<float>(y))
+                        + shipDefinition.Offset,
+                    vec2f(
+                        static_cast<float>(x) / static_cast<float>(structureWidth),
+                        static_cast<float>(y) / static_cast<float>(structureHeight)),
+                    srchIt->second);
             }
         }
     }
 
 
     //
-    // 2. Create:
-    //  - Points
-    //  - PointColors
-    //  - PointTextureCoordinates
-    //  - SpringInfo
-    //  - TriangleInfo
-    //
-
-    Ship *ship = new Ship(shipId, parentWorld);
-
-    ElementRepository<Point> allPoints(pointCount);
-    ElementRepository<vec3f> allPointColors(pointCount);
-    ElementRepository<vec2f> allPointTextureCoordinates(pointCount);
-
-    size_t leakingPointsCount = 0;
+    // 2. Process RopeInfo's and create:
+    // - Additional PointInfo's
+    // - SpringInfo's (for ropes)
+    //    
 
     struct SpringInfo
     {
@@ -123,6 +177,153 @@ std::unique_ptr<Ship> Ship::Create(
     };
 
     std::vector<SpringInfo> springInfos;
+
+    // Visit all RopeInfo's
+    for (auto const & ropeInfoEntry : ropeInfos)
+    {
+        auto const & ropeInfo = ropeInfoEntry.second;
+
+        // Make sure we've got both endpoints
+        assert(!!ropeInfo.PointAIndex);
+        if (!ropeInfo.PointBIndex)
+        {
+            throw GameException(
+                std::string("Only one rope endpoint found with index <")
+                + std::to_string(static_cast<int>(ropeInfoEntry.first[1]))
+                + "," + std::to_string(static_cast<int>(ropeInfoEntry.first[2])) + ">");
+        }
+
+        // Get endpoint positions
+        vec2f startPos = pointInfos[*ropeInfo.PointAIndex].Position;
+        vec2f endPos = pointInfos[*ropeInfo.PointBIndex].Position;
+
+        //
+        // "Draw" line from start position to end position
+        //
+        // Go along widest of Dx and Dy, in steps of 1.0, until we're very close to end position
+        //
+        
+        // W = wide, N = narrow
+
+        float dx = endPos.x - startPos.x;
+        float dy = endPos.y - startPos.y;
+        bool widestIsX;
+        float slope;
+        float curW, curN;
+        float endW;
+        float stepW;
+        if (fabs(dx) > fabs(dy))
+        {
+            widestIsX = true;
+            slope = dy / dx;
+            curW = startPos.x;
+            curN = startPos.y;
+            endW = endPos.x;
+            stepW = dx / fabs(dx);
+        }
+        else
+        {
+            widestIsX = false;
+            slope = dx / dy;
+            curW = startPos.y;
+            curN = startPos.x;
+            endW = endPos.y;
+            stepW = dy / fabs(dy);
+        }
+
+        size_t curStartPointIndex = *ropeInfo.PointAIndex;
+        while (true)
+        {
+            curW += stepW;
+            curN += slope * stepW;
+
+            if (fabs(endW - curW) <= 0.5f)
+                break;
+
+            // Create position
+            vec2f newPosition;
+            if (widestIsX)
+            { 
+                newPosition = vec2f(curW, curN);
+            }
+            else
+            {
+                newPosition = vec2f(curN, curW);
+            }
+
+            // Add SpringInfo
+            springInfos.emplace_back(curStartPointIndex, pointInfos.size());
+
+            curStartPointIndex = pointInfos.size();
+
+            // Add PointInfo
+            pointInfos.emplace_back(
+                newPosition,
+                pointInfos[*ropeInfo.PointAIndex].TextureCoordinates, // Arbitrary
+                ropeMaterial);
+        }
+
+        // Add last SpringInfo (no PointInfo as the endpoint has already a PointInfo)
+        springInfos.emplace_back(curStartPointIndex, *ropeInfo.PointBIndex);
+    }
+
+    //
+    // 3. Visit all PointInfo's and create:
+    //  - Points
+    //  - PointColors
+    //  - PointTextureCoordinates
+    //
+
+    Ship *ship = new Ship(shipId, parentWorld);
+
+    ElementRepository<Point> allPoints(pointInfos.size());
+    ElementRepository<vec3f> allPointColors(pointInfos.size());
+    ElementRepository<vec2f> allPointTextureCoordinates(pointInfos.size());
+
+    for (size_t p = 0; p < pointInfos.size(); ++p)
+    {
+        PointInfo const & pointInfo = pointInfos[p];
+
+        Material const * mtl = pointInfo.Mtl;
+
+        //
+        // Create point
+        //
+
+        Point & point = allPoints.emplace_back(
+            ship,
+            pointInfo.Position,
+            mtl,
+            mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
+            static_cast<int>(p));
+
+        //
+        // Create point color
+        //
+
+        allPointColors.emplace_back(mtl->RenderColour);
+
+
+        //
+        // Create point texture coordinates
+        //
+
+        if (!!shipDefinition.TextureImage)
+        {
+            allPointTextureCoordinates.emplace_back(pointInfo.TextureCoordinates);
+        }
+    }
+
+
+    //
+    // 4. Visit point matrix and :
+    //  - Set Points as leaking
+    //  - Create SpringInfo (additional to ropes)
+    //  - Create TriangleInfo
+    //
+
+    size_t leakingPointsCount = 0;
+
 
     struct TriangleInfo
     {
@@ -161,40 +362,10 @@ std::unique_ptr<Ship> Ship::Create(
     {
         for (int y = 0; y < structureHeight; ++y)
         {
-            if (!!pointInfoMatrix[x][y])
+            if (!!pointIndexMatrix[x][y])
             {
-                Material const * mtl = pointInfoMatrix[x][y]->Mtl;
-
-                //
-                // Create point
-                //
-
-                Point & point = allPoints.emplace_back(
-                    ship,
-                    vec2(
-                        static_cast<float>(x) - halfWidth, 
-                        static_cast<float>(y)) + shipDefinition.Offset,
-                    mtl,
-                    mtl->IsHull ? 0.0f : 1.0f, // No buoyancy if it's a hull point, as it can't get water
-                    static_cast<int>(pointInfoMatrix[x][y]->PointIndex));  
-
-                //
-                // Create point color
-                //
-
-                allPointColors.emplace_back(mtl->RenderColour);
-
-
-                //
-                // Create point texture coordinates
-                //
-
-                if (!!shipDefinition.TextureImage)
-                {
-                    allPointTextureCoordinates.emplace_back(
-                        static_cast<float>(x) / static_cast<float>(structureWidth),
-                        static_cast<float>(y) / static_cast<float>(structureHeight));
-                }
+                size_t pointIndex = *pointIndexMatrix[x][y];
+                Point & point = allPoints[pointIndex];
 
                 // If a non-hull node has empty space on one of its four sides, it is automatically leaking.
                 // Check if a is leaking; a is leaking if:
@@ -202,10 +373,10 @@ std::unique_ptr<Ship> Ship::Create(
                 // - there is at least a hole at E, S, W, N
                 if (!point.GetMaterial()->IsHull)
                 {
-                    if ((x < structureWidth - 1 && !pointInfoMatrix[x + 1][y])
-                        || (y < structureHeight - 1 && !pointInfoMatrix[x][y + 1])
-                        || (x > 0 && !pointInfoMatrix[x - 1][y])
-                        || (y > 0 && !pointInfoMatrix[x][y - 1]))
+                    if ((x < structureWidth - 1 && !pointIndexMatrix[x + 1][y])
+                        || (y < structureHeight - 1 && !pointIndexMatrix[x][y + 1])
+                        || (x > 0 && !pointIndexMatrix[x - 1][y])
+                        || (y > 0 && !pointIndexMatrix[x][y - 1]))
                     {
                         point.SetLeaking();
 
@@ -228,17 +399,17 @@ std::unique_ptr<Ship> Ship::Create(
                     {
                         assert(adjy1 < structureHeight); // The four directions we're checking do not include S
 
-                        if (!!pointInfoMatrix[adjx1][adjy1])
+                        if (!!pointIndexMatrix[adjx1][adjy1])
                         {
                             // This point is adjacent to the first point at one of E, NE, N, NW
 
                             //
-                            // Create spring
+                            // Create SpringInfo
                             // 
 
                             springInfos.emplace_back(
-                                pointInfoMatrix[x][y]->PointIndex, 
-                                pointInfoMatrix[adjx1][adjy1]->PointIndex);
+                                pointIndex, 
+                                *pointIndexMatrix[adjx1][adjy1]);
 
 
                             //
@@ -251,18 +422,18 @@ std::unique_ptr<Ship> Ship::Create(
                             {
                                 assert(adjy2 < structureHeight); // The five directions we're checking do not include S
 
-                                if (!!pointInfoMatrix[adjx2][adjy2])
+                                if (!!pointIndexMatrix[adjx2][adjy2])
                                 {
                                     // This point is adjacent to the first point at one of SW, E, NE, N
 
                                     //
-                                    // Create triangle
+                                    // Create TriangleInfo
                                     // 
 
                                     triangleInfos.emplace_back(
-                                        pointInfoMatrix[x][y]->PointIndex,
-                                        pointInfoMatrix[adjx1][adjy1]->PointIndex,
-                                        pointInfoMatrix[adjx2][adjy2]->PointIndex);
+                                        pointIndex,
+                                        *pointIndexMatrix[adjx1][adjy1],
+                                        *pointIndexMatrix[adjx2][adjy2]);
                                 }
                             }
                         }
@@ -274,7 +445,7 @@ std::unique_ptr<Ship> Ship::Create(
 
 
     //
-    // 3. Create Springs
+    // 5. Create Springs for all SpringInfo's
     //
 
     ElementRepository<Spring> allSprings(springInfos.size());
@@ -284,19 +455,29 @@ std::unique_ptr<Ship> Ship::Create(
         Point * a = &(allPoints[springInfo.PointAIndex]);
         Point * b = &(allPoints[springInfo.PointBIndex]);
 
+        int characteristics = 0;
+
         // If one of the two nodes is not a hull node, then the spring is not hull
-        Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();
+        Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();        
+        if (mtl->IsHull)
+            characteristics |= static_cast<int>(Spring::Characteristics::Hull);
+
+        // If both nodes are rope, then the spring is rope (non-rope <-> rope springs are thus "connections" 
+        // and no treated as ropes)
+        if (a->GetMaterial() == ropeMaterial && b->GetMaterial() == ropeMaterial)
+            characteristics |= static_cast<int>(Spring::Characteristics::Rope);
 
         allSprings.emplace_back(
             ship,
             a,
             b,
+            static_cast<Spring::Characteristics>(characteristics),
             mtl);
     }
 
 
     //
-    // 4. Create Triangles
+    // 6. Create Triangles for all the TriangleInfo's
     //
 
     ElementRepository<Triangle> allTriangles(triangleInfos.size());
@@ -316,7 +497,7 @@ std::unique_ptr<Ship> Ship::Create(
 
 
     //
-    // 4. Create Electrical Elements
+    // 7. Create Electrical Elements
     //
 
     std::vector<ElectricalElement*> allElectricalElements;
@@ -585,7 +766,7 @@ void Ship::GravitateWater(
         // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
-            if (!spring.GetMaterial()->IsHull)
+            if (!spring.IsHull())
             {
                 Point * const pointA = spring.GetPointA();
 
@@ -619,7 +800,7 @@ void Ship::BalancePressure(float dt)
         // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
-            if (!spring.GetMaterial()->IsHull)
+            if (!spring.IsHull())
             {
                 Point * const pointA = spring.GetPointA();
                 float const aWater = pointA->GetWater();
@@ -795,13 +976,13 @@ void Ship::Render(
 
 
     //
-    // Element upload
+    // Upload elements
     //    
 
     if (!mConnectedComponentSizes.empty())
     {
         //
-        // Upload elements (point (elements), springs and triangles), iff dirty
+        // Upload elements (point (elements), springs, ropes, and triangles), iff dirty
         //
 
         if (mAreElementsDirty)
@@ -826,7 +1007,7 @@ void Ship::Render(
             }
 
             //
-            // Upload all the springs
+            // Upload all the springs (including ropes)
             //
 
             for (Spring const & spring : mAllSprings)
@@ -835,11 +1016,22 @@ void Ship::Render(
                 {
                     assert(spring.GetPointA()->GetConnectedComponentId() == spring.GetPointB()->GetConnectedComponentId());
 
-                    renderContext.UploadShipElementSpring(
-                        mId,
-                        spring.GetPointA()->GetElementIndex(),
-                        spring.GetPointB()->GetElementIndex(),
-                        spring.GetPointA()->GetConnectedComponentId());
+                    if (spring.IsRope())
+                    {
+                        renderContext.UploadShipElementRope(
+                            mId,
+                            spring.GetPointA()->GetElementIndex(),
+                            spring.GetPointB()->GetElementIndex(),
+                            spring.GetPointA()->GetConnectedComponentId());
+                    }
+                    else
+                    {
+                        renderContext.UploadShipElementSpring(
+                            mId,
+                            spring.GetPointA()->GetElementIndex(),
+                            spring.GetPointB()->GetElementIndex(),
+                            spring.GetPointA()->GetConnectedComponentId());
+                    }
                 }
             }
 

@@ -20,16 +20,26 @@ class Spring : public ShipElement<Spring>
 {
 public:
 
+    enum class Characteristics
+    {
+        Hull    = 1,    // Does not take water
+        Rope    = 2     // Ropes are drawn differently
+    };
+
+public:
+
 	Spring(
 		Ship * parentShip,
 		Point * a,
 		Point * b,
+        Characteristics characteristics,
 		Material const * material)
 		: Spring(
 			parentShip,
 			a,
 			b,			
 			(a->GetPosition() - b->GetPosition()).length(),
+            characteristics,
 			material)
 	{
 	}
@@ -39,6 +49,7 @@ public:
 		Point * a,
 		Point * b,
 		float restLength,
+        Characteristics characteristics,
 		Material const *material);
 
     void Destroy(Point const * pointSource);
@@ -95,6 +106,9 @@ public:
 
     inline Point * GetPointB() { return mPointB; }
 	inline Point const * GetPointB() const { return mPointB; }
+
+    inline bool IsHull() const { return 0 != (static_cast<int>(mCharacteristics) & static_cast<int>(Characteristics::Hull)); }
+    inline bool IsRope() const { return 0 != (static_cast<int>(mCharacteristics) & static_cast<int>(Characteristics::Rope)); }
 
 	inline Material const * GetMaterial() const { return mMaterial; };
 
@@ -154,9 +168,10 @@ private:
 	Point * const mPointB;
 	
     float const mRestLength;
+    Characteristics const mCharacteristics;
 	Material const * const mMaterial;
 
-    // State variable to track when we enter and exit the stressed state
+    // State variable that tracks when we enter and exit the stressed state
     bool mIsStressed;
 };
 

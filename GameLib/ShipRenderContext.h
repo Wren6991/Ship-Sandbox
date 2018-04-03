@@ -99,6 +99,25 @@ public:
         ++(mElementBufferSizes[connectedComponentIndex].springCount);
     }
 
+    inline void UploadElementRope(
+        int pointIndex1,
+        int pointIndex2,
+        size_t connectedComponentId)
+    {
+        size_t const connectedComponentIndex = connectedComponentId - 1;
+
+        assert(connectedComponentIndex < mElementBufferSizes.size());
+        assert(connectedComponentIndex < mElementBufferMaxSizes.size());
+        assert(mElementBufferSizes[connectedComponentIndex].ropeCount + 1u <= mElementBufferMaxSizes[connectedComponentIndex].ropeCount);
+
+        RopeElement * const ropeElement = &(mRopeElementBuffers[connectedComponentIndex][mElementBufferSizes[connectedComponentIndex].ropeCount]);
+
+        ropeElement->pointIndex1 = pointIndex1;
+        ropeElement->pointIndex2 = pointIndex2;
+
+        ++(mElementBufferSizes[connectedComponentIndex].ropeCount);
+    }
+
     inline void UploadElementTriangle(
         int pointIndex1,
         int pointIndex2,
@@ -212,12 +231,16 @@ private:
 
 
     //
-    // Elements (points, springs, and triangles)
+    // Elements (points, springs, ropes, and triangles)
     //
 
     GameOpenGLShaderProgram mElementColorShaderProgram;
     GLint mElementColorShaderOrthoMatrixParameter;
     GLint mElementColorShaderAmbientLightIntensityParameter;
+
+    GameOpenGLShaderProgram mElementRopeShaderProgram;
+    GLint mElementRopeShaderOrthoMatrixParameter;
+    GLint mElementRopeShaderAmbientLightIntensityParameter;
 
     GameOpenGLShaderProgram mElementTextureShaderProgram;
     GLint mElementTextureShaderOrthoMatrixParameter;
@@ -239,6 +262,14 @@ private:
 #pragma pack(pop)
 
 #pragma pack(push)
+    struct RopeElement
+    {
+        int pointIndex1;
+        int pointIndex2;
+    };
+#pragma pack(pop)
+
+#pragma pack(push)
     struct TriangleElement
     {
         int pointIndex1;
@@ -251,23 +282,27 @@ private:
     {
         size_t pointCount;
         size_t springCount;
+        size_t ropeCount;
         size_t triangleCount;
 
         ElementCounts()
             : pointCount(0)
             , springCount(0)
+            , ropeCount(0)
             , triangleCount(0)
         {}
     };
 
     std::vector<std::unique_ptr<PointElement[]>> mPointElementBuffers;
     std::vector<std::unique_ptr<SpringElement[]>> mSpringElementBuffers;
+    std::vector<std::unique_ptr<RopeElement[]>> mRopeElementBuffers;
     std::vector<std::unique_ptr<TriangleElement[]>> mTriangleElementBuffers;
     std::vector<ElementCounts> mElementBufferSizes;
     std::vector<ElementCounts> mElementBufferMaxSizes;
 
     GameOpenGLVBO mPointElementVBO;
     GameOpenGLVBO mSpringElementVBO;
+    GameOpenGLVBO mRopeElementVBO;
     GameOpenGLVBO mTriangleElementVBO;
     
     GameOpenGLTexture mElementTexture;

@@ -38,17 +38,68 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ Check if less rope mass makes empress of britain not break
 	+ Add all other ships 
 		+ Remember: uppercase and spaces filenames
-	= Do new .shp's:
+	+ Do new .shp's:
 		+ Carnival
-		- Titanic
+		+ Titanic
 	- @Release only: make krafting default ship
 	- Screenshot @ github readme
 
+- Increase max grab force
+- Space bar for pause
+	- When pause, also pause sounds and music
+- Bump up springs stiffness
+	- Test with Base III
+- Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
+	- World::Initialize():
+		- Calcs connected components for each ship
+		- Builds clouds
+
 - Gfx:
-	- Do ropes with two endpoints (000xxx)
-		- Throw exception if doesn't find two endpoints
-		- Algo: at end of structural image scan, after all points and springs and triangles have been created:
-			- TBD
+	= Do ropes with two endpoints (000xxx)
+		+ Throw exception if doesn't find two endpoints
+		+ Algo: 
+			+ Step 1: build vector<PointInfo> & Matrix<opt<pointIndex>> & vector<RopeInfo>
+			+ Step 2: visit RopeInfos and add to PointInfo's and SpringInfo's
+			+ Step 3: visit PointMatrix & ...
+		+ Starting perf:
+			+ Default ship: 14.1/14.3
+			+ Ropes test: 12.2/12.3
+		+ Need to always use color when rendering springs:
+			+ Spring::Type (Hull, Rope)
+				+ No exposed, just IsHull() & IsRope()
+				+ Make it a bit flag
+			+ Separate RenderContext method for Ropes, stored in separate Element (RopeElement, structurally == SpringElement)
+				+ Upper bound for # of spring ropes given # of points in connected component:
+					+ N
+					+ Upper bound of 'normal' springs doesn't change
+			+ Render: draw ropes after springs and triangles (we want them on top of triangles!), still by connected component
+				+ Use own program
+		+ Ending perf:
+			+ Default ship: 14.2
+			+ Ropes test: 12.3
+		- Add ropes to Titanic
+		- Add paint-friendly algo: rope linearization (on top of endpoints algo)
+			- Visit each graph of ropes and for each "endpoint" found:
+				- Create PointInfo
+				- Create RopeInfo for each pair of *connected* "endpoints"
+				- "endpoint" == node with # incoming edges != 2
+					- error when cycle detected
+				- Visit algo:
+					- TODO: still missing how to create RopeInfo's
+					- Global (cross-graph) visited set (point indices)
+					- Do during first StructuralImageVisit:
+						- If it's a rope point (includes Indexed, see below):
+							- Start graph visit (if this point ! visited already):
+								- Calc #incoming edges (==# rope pixels found across all 8 directions)
+									- if != 2 => this is an "endpoint", and so:
+										- Create PointInfo
+										- Set currendEndpoint TODOHERE: how to remember linearized edges?
+								- Then continue visit pushing all rope pixels found across all 8 directions
+									- Check for each first if visited: if so, cycle => exception
+			- Notes:
+				- Rope (#000000) points do not become PointInfo (only "endpoints" will, at a later time)
+					- Rope Indexed (#000xxx) do - BUT TECHNICALLY DOESN'T NEED TO
+						- Can create PointInfo for both endpoints at RopeInfos processing
 	- ShipTexture: Experiment with different min/mag filters
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
@@ -100,6 +151,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- Compare behavior with old game
 				- Steel Ball and broken default ship in old game: explodes?
 	- Water:
+		- Did original game propagate water also through hull springs? How did hull thin dividers work?
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
 		- Try directional BalancePressure?
@@ -232,7 +284,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 					- Fires IGameEventHandler::OnPendingShipPlaced(shipId)
 						- EventTicker: say this and other Reset/Load
 						- SoundController: play sound
-				- Stop tool
+				- Stop PendingShipPlace tool
+
+- Force-driven Feature Wishlist:
+	- Draw option to draw force vectors for each point
 
 ==============================================================================
 ==============================================================================

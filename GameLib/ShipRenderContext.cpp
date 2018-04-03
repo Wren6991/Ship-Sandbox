@@ -22,16 +22,21 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     , mElementColorShaderProgram()
     , mElementColorShaderOrthoMatrixParameter(0)
     , mElementColorShaderAmbientLightIntensityParameter(0)
+    , mElementRopeShaderProgram()
+    , mElementRopeShaderOrthoMatrixParameter(0)
+    , mElementRopeShaderAmbientLightIntensityParameter(0)
     , mElementTextureShaderProgram()
     , mElementTextureShaderOrthoMatrixParameter(0)
     , mElementTextureShaderAmbientLightIntensityParameter(0)
     , mPointElementBuffers()
     , mSpringElementBuffers()
+    , mRopeElementBuffers()
     , mTriangleElementBuffers()
     , mElementBufferSizes()
     , mElementBufferMaxSizes()
     , mPointElementVBO()
     , mSpringElementVBO()
+    , mRopeElementVBO()
     , mTriangleElementVBO()
     , mElementTexture()
     // Lamps
@@ -138,7 +143,71 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     mElementColorShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mElementColorShaderProgram, "paramOrthoMatrix");
     mElementColorShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mElementColorShaderProgram, "paramAmbientLightIntensity");
 
-    
+
+    //
+    // Create rope elements program
+    //
+
+    mElementRopeShaderProgram = glCreateProgram();
+
+    char const * elementRopeVertexShaderSource = R"(
+
+        // Inputs
+        attribute vec2 inputPos;        
+        attribute float inputLight;
+
+        // Outputs        
+        varying float vertexLight;
+
+        // Params
+        uniform mat4 paramOrthoMatrix;
+
+        void main()
+        {            
+            vertexLight = inputLight;
+
+            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+        }
+    )";
+
+    GameOpenGL::CompileShader(elementRopeVertexShaderSource, GL_VERTEX_SHADER, mElementRopeShaderProgram);
+
+    char const * elementRopeFragmentShaderSource = R"(
+
+        // Inputs from previous shader        
+        varying float vertexLight;
+
+        // Params
+        uniform float paramAmbientLightIntensity;
+
+        // Constants
+        vec3 lightColour = vec3(1.0, 1.0, 0.25);
+        vec3 ropeColour = vec3(0.0, 0.0, 0.0);
+
+        void main()
+        {
+            vec3 colour1 = ropeColour * paramAmbientLightIntensity;
+            colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
+            
+            gl_FragColor = vec4(colour1.xyz, 1.0);
+        } 
+    )";
+
+    GameOpenGL::CompileShader(elementRopeFragmentShaderSource, GL_FRAGMENT_SHADER, mElementRopeShaderProgram);
+
+    // Bind attribute locations
+    glBindAttribLocation(*mElementRopeShaderProgram, InputPosPosition, "inputPos");
+    glBindAttribLocation(*mElementRopeShaderProgram, InputLightPosition, "inputLight");
+
+    // Link
+    GameOpenGL::LinkShaderProgram(mElementRopeShaderProgram, "Ship Rope Elements");
+
+    // Get uniform locations
+    mElementRopeShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mElementRopeShaderProgram, "paramOrthoMatrix");
+    mElementRopeShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mElementRopeShaderProgram, "paramAmbientLightIntensity");
+
+
+
     //
     // Create texture elements program
     //
@@ -228,11 +297,12 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
     // Create element VBOs
     //
 
-    GLuint elementVBOs[3];
-    glGenBuffers(3, elementVBOs);
+    GLuint elementVBOs[4];
+    glGenBuffers(4, elementVBOs);
     mPointElementVBO = elementVBOs[0];
     mSpringElementVBO = elementVBOs[1];
-    mTriangleElementVBO = elementVBOs[2];
+    mRopeElementVBO = elementVBOs[2];
+    mTriangleElementVBO = elementVBOs[3];
 
 
     //
@@ -498,6 +568,9 @@ void ShipRenderContext::UploadElementsStart(std::vector<std::size_t> const & con
         mSpringElementBuffers.clear();
         mSpringElementBuffers.resize(connectedComponentsMaxSizes.size());
 
+        mRopeElementBuffers.clear();
+        mRopeElementBuffers.resize(connectedComponentsMaxSizes.size());
+
         mTriangleElementBuffers.clear();
         mTriangleElementBuffers.resize(connectedComponentsMaxSizes.size());
 
@@ -523,6 +596,15 @@ void ShipRenderContext::UploadElementsStart(std::vector<std::size_t> const & con
             mSpringElementBuffers[c].reset();
             mSpringElementBuffers[c].reset(new SpringElement[maxConnectedComponentSprings]);
             mElementBufferMaxSizes[c].springCount = maxConnectedComponentSprings;
+        }
+
+        size_t maxConnectedComponentRopes = connectedComponentsMaxSizes[c];
+        if (mElementBufferMaxSizes[c].ropeCount != maxConnectedComponentRopes)
+        {
+            // A change in the max size of this connected component
+            mRopeElementBuffers[c].reset();
+            mRopeElementBuffers[c].reset(new RopeElement[maxConnectedComponentRopes]);
+            mElementBufferMaxSizes[c].ropeCount = maxConnectedComponentRopes;
         }
 
         size_t maxConnectedComponentTriangles = connectedComponentsMaxSizes[c] * 12;
@@ -622,8 +704,8 @@ void ShipRenderContext::Render(
     //
     // We draw springs when:
     // - RenderMode is springs ("X-Ray Mode"), in which case we use colors - so to show structural springs -, or
-    // - RenderMode is structure (so to draw ropes), in which case we use colors, or
-    // - RenderMode is texture (so to draw ropes), in which case we use texture iff it is present
+    // - RenderMode is structure (so to draw 1D chains), in which case we use colors, or
+    // - RenderMode is texture (so to draw 1D chains), in which case we use texture iff it is present
     //
 
     if (renderMode == ShipRenderMode::Springs
@@ -728,6 +810,52 @@ void ShipRenderContext::Render(
         // Stop using program
         glUseProgram(0);
     }
+
+
+    //
+    // Draw ropes
+    //
+    // We draw ropes when RenderMode is anything but Points
+    //
+    // We draw ropes after triangles so that they're visible on top of ship
+    //
+
+    if (renderMode == ShipRenderMode::Springs
+        || renderMode == ShipRenderMode::Structure
+        || renderMode == ShipRenderMode::Texture)
+    {
+        // Use rope program
+        glUseProgram(*mElementRopeShaderProgram);
+
+        // Set parameters
+        glUniformMatrix4fv(mElementRopeShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementRopeShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+        // Set line size
+        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+
+        //
+        // Process all connected components, from first to last, and draw ropes
+        //
+
+        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+        {
+            // TODOTEST
+            //if (mElementBufferSizes[c].ropeCount > 0)
+
+            // Upload ropes
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mRopeElementVBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].ropeCount * sizeof(RopeElement), mRopeElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+            // Draw
+            glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].ropeCount), GL_UNSIGNED_INT, 0);
+        }
+
+        // Stop using program
+        glUseProgram(0);
+    }
+
 
 
     //
