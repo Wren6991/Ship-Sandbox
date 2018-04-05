@@ -15,15 +15,15 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <vector>
 
 class MaterialDatabase
 {
 public:
-
+        
     static MaterialDatabase Create(picojson::value const & root)
     {
-        std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material>> materialsMap;
-        Material * ropeMaterial = nullptr;
+        std::vector<std::unique_ptr<Material const>> materials;
 
         if (!root.is<picojson::array>())
         {
@@ -38,8 +38,19 @@ public:
                 throw GameException("Found a non-array in materials database");
             }
 
-            auto material = Material::Create(rootElem.get<picojson::object>());
-            
+            materials.emplace_back(Material::Create(rootElem.get<picojson::object>()));
+        }
+
+        return Create(std::move(materials));
+    }
+
+    static MaterialDatabase Create(std::vector<std::unique_ptr<Material const>> materials)
+    {
+        std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material const>> materialsMap;
+        Material const * ropeMaterial = nullptr;
+
+        for (auto & material : materials)
+        {
             if (material->IsRope)
             {
                 // Make sure we've only got one rope material
@@ -109,13 +120,13 @@ public:
 private:
 
     MaterialDatabase(
-        std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material>> && materialsMap,
+        std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material const>> && materialsMap,
         Material const & ropeMaterial)
         : mMaterialsMap(std::move(materialsMap))
         , mRopeMaterial(ropeMaterial)
     {
     }
 
-    std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material>> mMaterialsMap;
+    std::map<std::array<uint8_t, 3u>, std::unique_ptr<Material const>> mMaterialsMap;
     Material const & mRopeMaterial;
 };

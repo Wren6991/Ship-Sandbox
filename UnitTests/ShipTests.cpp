@@ -24,13 +24,13 @@ class ShipTests : public ::testing::Test
 
 protected:
 
-	static std::vector<std::unique_ptr<Material const>> MakeMaterials(std::vector<Material> && materials)	
+	static MaterialDatabase MakeMaterials(std::vector<Material> && materials)	
 	{
 		std::vector<std::unique_ptr<Material const>> res;
 		for (Material const & m : materials)
 			res.emplace_back(new Material(m));
 
-		return res;
+		return MaterialDatabase::Create(std::move(res));
 	}
 
     std::unique_ptr<Physics::World> mWorld;
@@ -45,28 +45,30 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 {
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 1, 1, 1 }, false, true, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt }
 		}
 	);
 
 	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	25, 30, 35,			0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
 	};
 
     auto imageData = new unsigned char [sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
 	auto ship = Physics::Ship::Create(
+        0,
 		mWorld.get(),
         ShipDefinition(       
             ImageData(4, 5, std::unique_ptr<unsigned char const []>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
 		materials);
 
 	ASSERT_TRUE(!!ship);
@@ -75,7 +77,7 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 
 	Physics::Point const & pt = *(ship->GetPoints().begin());
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt.GetPosition());
-	EXPECT_EQ(materials[1].get(), pt.GetMaterial());
+    EXPECT_EQ(materials.Get({ 25, 30, 35 }), pt.GetMaterial());
     EXPECT_EQ(0u, pt.GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt.GetConnectedTriangles().size());
     EXPECT_EQ(nullptr, pt.GetConnectedElectricalElement());
@@ -85,50 +87,52 @@ TEST_F(ShipTests, BuildsPoints_OnePoint)
 TEST_F(ShipTests, BuildsPoints_TwoPoints)
 {
 
-	auto materials = MakeMaterials(
-		{
-            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, true, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
-		}
-	);
+    auto materials = MakeMaterials(
+        {
+            { "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 40, 45, 50 }, true, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt }
+        }
+    );
 
-	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-	};
+    unsigned char imageDataSrc[] = {
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	25, 30, 35,			0, 0, 0,			0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+    };
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
-	auto ship = Physics::Ship::Create(
+    auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
         materials);
 
-	ASSERT_TRUE(!!ship);
+    ASSERT_TRUE(!!ship);
 
-	ASSERT_EQ(2u, ship->GetPoints().size());
+    ASSERT_EQ(2u, ship->GetPoints().size());
 
     auto pointIt = ship->GetPoints().begin();
 
-	Physics::Point const & pt1 = *pointIt;
-	EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1.GetPosition());
-	EXPECT_EQ(materials[1].get(), pt1.GetMaterial());
+    Physics::Point const & pt1 = *pointIt;
+    EXPECT_EQ(vec2f(-1.0f, 3.0f), pt1.GetPosition());
+    EXPECT_EQ(materials.Get({ 25, 30, 35 }), pt1.GetMaterial());
     EXPECT_EQ(1u, pt1.GetConnectedSprings().size());
-	EXPECT_EQ(0u, pt1.GetConnectedTriangles().size());
-	EXPECT_TRUE(pt1.IsLeaking());
+    EXPECT_EQ(0u, pt1.GetConnectedTriangles().size());
+    EXPECT_TRUE(pt1.IsLeaking());
 
     ++pointIt;
 
-	Physics::Point const & pt2 = *pointIt;
-	EXPECT_EQ(vec2f(0.0f, 3.0f), pt2.GetPosition());
-	EXPECT_EQ(materials[0].get(), pt2.GetMaterial());
+    Physics::Point const & pt2 = *pointIt;
+    EXPECT_EQ(vec2f(0.0f, 3.0f), pt2.GetPosition());
+    EXPECT_EQ(materials.Get({ 0, 0, 0 }), pt2.GetMaterial());
     EXPECT_EQ(1u, pt2.GetConnectedSprings().size());
 	EXPECT_EQ(0u, pt2.GetConnectedTriangles().size());
 	EXPECT_FALSE(pt2.IsLeaking());
@@ -138,26 +142,28 @@ TEST_F(ShipTests, BuildsPoints_EmptyShip)
 {
 	auto materials = MakeMaterials(
 		{
-			{ "Mat1", 1.0f, 1.0f, { 1, 1, 1 }, { 1, 1, 1 }, false, std::nullopt, std::nullopt },
-			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
+			{ "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 1, 1, 1 }, false, true, std::nullopt, std::nullopt },
+			{ "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt }
 		}
 	);
 
 	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x03, 0x02, 0x01,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0x03, 0x02, 0x01,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
 	};
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
 	auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 3, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
 		materials);
 
 	ASSERT_TRUE(!!ship);
@@ -173,28 +179,30 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 {
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 40, 45, 50 }, false, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt }
         }
 	);
 
 	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	25, 30, 35,			0, 0, 0,			0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
 	};
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
 	auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
         materials);
 
 	ASSERT_TRUE(!!ship);
@@ -206,7 +214,7 @@ TEST_F(ShipTests, BuildsSprings_OneSpring)
 	EXPECT_EQ(vec2f(-1.0f, 3.0f), sp1.GetPointA()->GetPosition());
 	ASSERT_NE(nullptr, sp1.GetPointB());
 	EXPECT_EQ(vec2f(0.0f, 3.0f), sp1.GetPointB()->GetPosition());
-	EXPECT_EQ(materials[0].get(), sp1.GetMaterial());
+	EXPECT_EQ(materials.Get({ 0, 0, 0 }), sp1.GetMaterial());
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -217,28 +225,30 @@ TEST_F(ShipTests, BuildsTriangles_OneTriangle)
 {
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 40, 45, 50 }, false, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt }
         }
 	);
 
 	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	25, 30, 35,			0, 0, 0,			0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	25, 30, 35,			0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
 	};
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
 	auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
         materials);
 
 	ASSERT_TRUE(!!ship);
@@ -273,31 +283,33 @@ TEST_F(ShipTests, DestroyAt)
 
 	auto materials = MakeMaterials(
 		{
-            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, std::nullopt, std::nullopt },
+            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, false, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, std::nullopt, std::nullopt },
 
-            { "XXXX", 1.0f, 1.0f, { 77, 77, 77 }, { 77, 77, 77 }, false, std::nullopt, std::nullopt },
-            { "YYYY", 1.0f, 1.0f, { 66, 66, 66 }, { 66, 66, 66 }, false, std::nullopt, std::nullopt }
+            { "XXXX", 1.0f, 1.0f, { 77, 77, 77 }, { 77, 77, 77 }, false, false, std::nullopt, std::nullopt },
+            { "YYYY", 1.0f, 1.0f, { 0, 0, 0 }, { 66, 66, 66 }, false, true, std::nullopt, std::nullopt }
 		}
 	);
 
 	unsigned char imageDataSrc[] = {
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	66, 66, 66,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	77, 77, 77,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0, 0, 0,			40, 45, 50,			0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	77, 77, 77,			40, 45, 50,			0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	25, 30, 35,			40, 45, 50,			0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
 	};
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
 	auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
         materials);
 
 	ASSERT_TRUE(!!ship);
@@ -352,28 +364,30 @@ TEST_F(ShipTests, BuildsLamps_OneLamp)
 {
     auto materials = MakeMaterials(
         {
-            { "Mat1", 1.0f, 1.0f, { 40, 45, 50 }, { 40, 45, 50 }, false, std::nullopt, std::nullopt },
-            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, {{Material::ElectricalProperties::ElectricalElementType::Lamp, 0.0f, 0.0f}}, std::nullopt }
+            { "Mat1", 1.0f, 1.0f, { 0, 0, 0 }, { 40, 45, 50 }, false, true, std::nullopt, std::nullopt },
+            { "Mat2", 1.0f, 1.0f, { 25, 30, 35 }, { 25, 30, 35 }, false, false, {{Material::ElectricalProperties::ElectricalElementType::Lamp, 0.0f, 0.0f}}, std::nullopt }
         }
     );
 
     unsigned char imageDataSrc[] = {
-        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00,	25, 30, 35,			40, 45, 50,			0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,	0x00, 0x00, 0x00,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	25, 30, 35,			0, 0, 0,			0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,	0xFF, 0xFF, 0xFF,
     };
 
     auto imageData = new unsigned char[sizeof(imageDataSrc)];
     memcpy(imageData, imageDataSrc, sizeof(imageDataSrc));
 
     auto ship = Physics::Ship::Create(
+        0,
         mWorld.get(),
         ShipDefinition(
             ImageData(4, 5, std::unique_ptr<unsigned char const[]>(imageData)),
             std::nullopt,
-            "Test"),
+            "Test",
+            vec2f()),
         materials);
 
     ASSERT_TRUE(!!ship);
