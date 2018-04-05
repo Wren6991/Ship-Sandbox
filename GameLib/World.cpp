@@ -56,7 +56,7 @@ World::World(std::shared_ptr<IGameEventHandler> gameEventHandler)
 
 int World::AddShip(
     ShipDefinition const & shipDefinition,
-    std::vector<std::unique_ptr<Material const>> const & materials)
+    MaterialDatabase const & materials)
 {
     int shipId = static_cast<int>(mAllShips.size());
 

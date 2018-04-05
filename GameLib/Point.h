@@ -196,7 +196,7 @@ private:
     // The ID of this point, used by graphics elements to refer to vertices
     int const mElementIndex;
 
-    FixedSizeVector<Spring *, 8U> mConnectedSprings;
+    FixedSizeVector<Spring *, 8U + 1U> mConnectedSprings; // 8 neighbours and 1 rope spring, when this is a rope endpoint
     FixedSizeVector<Triangle *, 12U> mConnectedTriangles;    
     ElectricalElement * mConnectedElectricalElement;
 

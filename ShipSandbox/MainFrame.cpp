@@ -352,7 +352,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
                 this->mMainApp->Yield();
             });
     }
-    catch (GameException const & e)
+    catch (std::exception const & e)
     {
         Die("Error during initialization: " + std::string(e.what()));
 
@@ -378,7 +378,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
                 this->mMainApp->Yield();
             });
     }
-    catch (GameException const & e)
+    catch (std::exception const & e)
     {
         Die("Error during initialization: " + std::string(e.what()));
 
@@ -405,7 +405,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
     {
         mGameController->AddShip(defaultShipFilePath);
     }
-    catch (GameException const & e)
+    catch (std::exception const & e)
     {
         Die("Error during initialization: " + std::string(e.what()));
 
@@ -676,7 +676,7 @@ void MainFrame::OnLoadShipMenuItemSelected(wxCommandEvent & /*event*/)
         {
             mGameController->ResetAndLoadShip(filename);
         }
-        catch (GameException const ex)
+        catch (std::exception const & ex)
         { 
             Die(ex.what());
         }
@@ -693,7 +693,7 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
     {
         mGameController->ReloadLastShip();
     }
-    catch (GameException const ex)
+    catch (std::exception const & ex)
     {
         Die(ex.what());
     }

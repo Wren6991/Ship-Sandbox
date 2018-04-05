@@ -9,7 +9,7 @@
 
 #include "ElementRepository.h"
 #include "GameParameters.h"
-#include "Material.h"
+#include "MaterialDatabase.h"
 #include "Physics.h"
 #include "PointerContainer.h"
 #include "RenderContext.h"
@@ -30,7 +30,7 @@ public:
         int shipId,
         World * parentWorld,
         ShipDefinition const & shipDefinition,
-        std::vector<std::unique_ptr<Material const>> const & allMaterials);
+        MaterialDatabase const & materials);
 
     ~Ship();
 
@@ -213,7 +213,7 @@ private:
     // since the last time we delivered them to the rendering context
     mutable bool mIsPointCountDirty;
 
-    // Flag remembering whether points (elements) and/or springs and/or triangles have changed
+    // Flag remembering whether points (elements) and/or springs (incl. ropes) and/or triangles have changed
     // since the last time we delivered them to the rendering context
     mutable bool mAreElementsDirty;
 

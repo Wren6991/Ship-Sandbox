@@ -22,6 +22,7 @@ set  (GAME_SOURCES
 	Log.h
 	Material.cpp
 	Material.h
+	MaterialDatabase.h
 	PointerContainer.h
 	ProgressCallback.h
 	RenderContext.cpp

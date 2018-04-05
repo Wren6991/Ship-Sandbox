@@ -77,29 +77,29 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Ending perf:
 			+ Default ship: 14.2
 			+ Ropes test: 12.3
-		- Add ropes to Titanic
-		- Add paint-friendly algo: rope linearization (on top of endpoints algo)
-			- Visit each graph of ropes and for each "endpoint" found:
-				- Create PointInfo
-				- Create RopeInfo for each pair of *connected* "endpoints"
-				- "endpoint" == node with # incoming edges != 2
-					- error when cycle detected
-				- Visit algo:
-					- TODO: still missing how to create RopeInfo's
-					- Global (cross-graph) visited set (point indices)
-					- Do during first StructuralImageVisit:
-						- If it's a rope point (includes Indexed, see below):
-							- Start graph visit (if this point ! visited already):
-								- Calc #incoming edges (==# rope pixels found across all 8 directions)
-									- if != 2 => this is an "endpoint", and so:
-										- Create PointInfo
-										- Set currendEndpoint TODOHERE: how to remember linearized edges?
-								- Then continue visit pushing all rope pixels found across all 8 directions
-									- Check for each first if visited: if so, cycle => exception
-			- Notes:
-				- Rope (#000000) points do not become PointInfo (only "endpoints" will, at a later time)
-					- Rope Indexed (#000xxx) do - BUT TECHNICALLY DOESN'T NEED TO
-						- Can create PointInfo for both endpoints at RopeInfos processing
+		+ Don't make triangles of 3 rope points if at least one is connected to ropes only
+			+ Fix Base III?
+		+ Flip order of rendering when structure: triangles first, then ropes
+			+ Need private subparts of Render()
+		+ Ending perf:
+			+ Default ship: 14.5
+			+ Ropes test: 12.3
+		= Add ropes to Titanic
+		- Fix unit tests
+		+ Make max(fixedSizeVector) == 9
+			+ Not for triangles - generated rope points will never participate in triangles
+		+ Material/Rope rearc:
+			+ MaterialDatabase
+				+ Loads itself from json
+					+ From ResourceLoader invoked by GameController at init'n
+				+ Guarantees:
+					+ Exactly one material with isRope=true
+					+ Color is #000000
+					+ No colors clash, and no colors fall within rope range
+				+ Replace in GameController, ResourceLoader
+				+ Remove ropeMaterial kung-fu @ Ship::Create and use material->IsRope
+				+ GameController also gives rope renderColour to RenderContext at cctor
+					+ Which sets shader's hardcoded parameter
 	- ShipTexture: Experiment with different min/mag filters
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)

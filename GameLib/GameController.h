@@ -7,6 +7,7 @@
 
 #include "GameEventDispatcher.h"
 #include "GameParameters.h"
+#include "MaterialDatabase.h"
 #include "Physics.h"
 #include "ProgressCallback.h"
 #include "RenderContext.h"
@@ -144,8 +145,8 @@ public:
 private:
 
     GameController(
-        std::unique_ptr<Physics::World> world,        
-        std::vector<std::unique_ptr<Material const>> materials,
+        std::unique_ptr<Physics::World> world,   
+        MaterialDatabase && materials,
         std::unique_ptr<RenderContext> renderContext,
         std::shared_ptr<GameEventDispatcher> gameEventDispatcher,
         std::shared_ptr<ResourceLoader> resourceLoader)
@@ -185,8 +186,7 @@ private:
     //
 
     std::unique_ptr<Physics::World> mWorld;
-
-    std::vector<std::unique_ptr<Material const>> const mMaterials;
+    MaterialDatabase mMaterials;
     
 
     //

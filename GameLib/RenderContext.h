@@ -13,6 +13,7 @@
 #include "ShipRenderContext.h"
 #include "Vectors.h"
 
+#include <array>
 #include <cassert>
 #include <memory>
 #include <string>
@@ -24,6 +25,7 @@ public:
 
     RenderContext(
         ResourceLoader & resourceLoader,
+        vec3f const & ropeColour,
         ProgressCallback const & progressCallback);
     
     ~RenderContext();
@@ -660,6 +662,7 @@ private:
     //
 
     std::vector<std::unique_ptr<ShipRenderContext>> mShips;
+    vec3f const mRopeColour;
 
 
     //

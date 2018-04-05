@@ -11,6 +11,7 @@
 
 RenderContext::RenderContext(
     ResourceLoader & resourceLoader,
+    vec3f const & ropeColour,
     ProgressCallback const & progressCallback)
     : // Clouds
       mCloudShaderProgram()
@@ -42,6 +43,9 @@ RenderContext::RenderContext(
     , mWaterVBO()
     , mWaterTexture()
     , mWaterTextureData()
+    // Ships
+    , mShips()
+    , mRopeColour(ropeColour)
     // Multi-purpose shaders
     , mMatteNdcShaderProgram()
     , mMatteNdcShaderColorParameter(0)
@@ -525,10 +529,11 @@ void RenderContext::Reset()
 void RenderContext::AddShip(
     int shipId,
     std::optional<ImageData> const & texture)
-{    
-    // Add the ship
+{   
     assert(shipId == mShips.size());
-    mShips.emplace_back(new ShipRenderContext(texture));
+
+    // Add the ship    
+    mShips.emplace_back(new ShipRenderContext(texture, mRopeColour));
 }
 
 //////////////////////////////////////////////////////////////////////////////////

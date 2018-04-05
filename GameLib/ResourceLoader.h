@@ -6,7 +6,7 @@
 #pragma once
 
 #include "ImageData.h"
-#include "Material.h"
+#include "MaterialDatabase.h"
 #include "ProgressCallback.h"
 #include "ShipDefinition.h"
 
@@ -61,7 +61,7 @@ public:
     // Materials
     //
 
-    std::vector<std::unique_ptr<Material const>> LoadMaterials();
+    MaterialDatabase LoadMaterials();
 
 
     //

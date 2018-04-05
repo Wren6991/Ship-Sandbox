@@ -10,7 +10,7 @@
 #include "AABB.h"
 #include "GameParameters.h"
 #include "IGameEventHandler.h"
-#include "Material.h"
+#include "MaterialDatabase.h"
 #include "Physics.h"
 #include "RenderContext.h"
 #include "ShipDefinition.h"
@@ -33,7 +33,7 @@ public:
 
     int AddShip(
         ShipDefinition const & shipDefinition,
-        std::vector<std::unique_ptr<Material const>> const & materials);
+        MaterialDatabase const & materials);
 
 	float GetWaterHeight(		
 		float x,

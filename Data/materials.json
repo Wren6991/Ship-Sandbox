@@ -111,6 +111,7 @@
         "structural_colour": "#000000",
 	"render_colour": "#000000",
         "isHull": true,
+	"isRope": true,
 	"sound_properties": {
 		"element_type": "Cable"
 	}

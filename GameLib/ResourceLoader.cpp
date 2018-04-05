@@ -176,28 +176,10 @@ std::vector<ImageData> ResourceLoader::LoadTexturesRgba(
 // Materials
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::unique_ptr<Material const>> ResourceLoader::LoadMaterials()
+MaterialDatabase ResourceLoader::LoadMaterials()
 {
-    std::vector<std::unique_ptr<Material const>> materials;
-
     picojson::value root = Utils::ParseJSONFile("Data/materials.json");
-    if (!root.is<picojson::array>())
-    {
-        throw GameException("File \"Data/materials.json\" does not contain a JSON array");
-    }
-
-    picojson::array rootArray = root.get<picojson::array>();
-    for (auto const & rootElem : rootArray)
-    {
-        if (!rootElem.is<picojson::object>())
-        {
-            throw GameException("File \"Data/materials.json\" does not contain a JSON array of objects");
-        }
-
-        materials.emplace_back(Material::Create(rootElem.get<picojson::object>()));
-    }
-
-    return materials;
+    return MaterialDatabase::Create(root);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

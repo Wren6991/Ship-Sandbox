@@ -9,7 +9,9 @@
 
 #include <cstring>
 
-ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
+ShipRenderContext::ShipRenderContext(
+    std::optional<ImageData> const & texture,
+    vec3f const & ropeColour)
     // Points
     : mPointCount(0u)
     , mPointBuffer()
@@ -178,15 +180,15 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
         varying float vertexLight;
 
         // Params
+        uniform vec3 paramRopeColour;
         uniform float paramAmbientLightIntensity;
 
         // Constants
         vec3 lightColour = vec3(1.0, 1.0, 0.25);
-        vec3 ropeColour = vec3(0.0, 0.0, 0.0);
 
         void main()
         {
-            vec3 colour1 = ropeColour * paramAmbientLightIntensity;
+            vec3 colour1 = paramRopeColour * paramAmbientLightIntensity;
             colour1 = colour1 * (1.0 - vertexLight) + lightColour * vertexLight;
             
             gl_FragColor = vec4(colour1.xyz, 1.0);
@@ -204,7 +206,17 @@ ShipRenderContext::ShipRenderContext(std::optional<ImageData> const & texture)
 
     // Get uniform locations
     mElementRopeShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mElementRopeShaderProgram, "paramOrthoMatrix");
+    GLint ropeShaderRopeColourParameter = GameOpenGL::GetParameterLocation(mElementRopeShaderProgram, "paramRopeColour");
     mElementRopeShaderAmbientLightIntensityParameter = GameOpenGL::GetParameterLocation(mElementRopeShaderProgram, "paramAmbientLightIntensity");
+
+    // Set hardcoded parameters
+    glUseProgram(*mElementRopeShaderProgram);
+    glUniform3f(
+        ropeShaderRopeColourParameter,
+        ropeColour.x,
+        ropeColour.y,
+        ropeColour.z);
+    glUseProgram(0);
 
 
 
@@ -662,41 +674,18 @@ void ShipRenderContext::Render(
     float canvasToVisibleWorldHeightRatio,
     float(&orthoMatrix)[4][4])
 {
-
     //
     // Draw points
     //
 
     if (renderMode == ShipRenderMode::Points)
     {
-        // Use color program
-        glUseProgram(*mElementColorShaderProgram);
-
-        // Set parameters
-        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-        // Set point size
-        glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-
-        //
-        // Process all connected components, from first to last, and draw points
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // Upload points
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].pointCount * sizeof(PointElement), mPointElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Stop using program
-        glUseProgram(0);
+        RenderPoints(
+            ambientLightIntensity,
+            canvasToVisibleWorldHeightRatio,
+            orthoMatrix);
     }
+
 
 
     //
@@ -712,52 +701,30 @@ void ShipRenderContext::Render(
         || renderMode == ShipRenderMode::Structure
         || renderMode == ShipRenderMode::Texture)
     {
-        if (renderMode == ShipRenderMode::Texture && !!mElementTexture)
-        {
-            // Use texture program
-            glUseProgram(*mElementTextureShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-            // Bind texture
-            glBindTexture(GL_TEXTURE_2D, *mElementTexture);
-        }
-        else
-        {
-            // Use color program
-            glUseProgram(*mElementColorShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-        }
-
-        // Set line size
-        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-
-        //
-        // Process all connected components, from first to last, and draw springs 
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // Upload springs
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mSpringElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].springCount * sizeof(SpringElement), mSpringElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].springCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Unbind texture (if any)
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Stop using program
-        glUseProgram(0);
+        RenderSprings(
+            renderMode == ShipRenderMode::Texture,
+            ambientLightIntensity,
+            canvasToVisibleWorldHeightRatio,
+            orthoMatrix);
     }
+
+
+
+    //
+    // Draw ropes now if RenderMode is:
+    // - Springs
+    // - Texture (so rope endpoints are hidden behind texture, looks better)
+    //
+
+    if (renderMode == ShipRenderMode::Springs
+        || renderMode == ShipRenderMode::Texture)
+    {
+        RenderRopes(
+            ambientLightIntensity,
+            canvasToVisibleWorldHeightRatio,
+            orthoMatrix);
+    }
+
 
 
     //
@@ -767,95 +734,24 @@ void ShipRenderContext::Render(
     if (renderMode == ShipRenderMode::Structure
         || renderMode == ShipRenderMode::Texture)
     {
-        if (renderMode == ShipRenderMode::Texture && !!mElementTexture)
-        {
-            // Use texture program
-            glUseProgram(*mElementTextureShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-            // Bind texture
-            glBindTexture(GL_TEXTURE_2D, *mElementTexture);
-        }
-        else
-        {
-            // Use color program
-            glUseProgram(*mElementColorShaderProgram);
-
-            // Set parameters
-            glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-            glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
-        }
-
-
-        //
-        // Process all connected components, from first to last, and draw triangles
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // Upload elements
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mTriangleElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].triangleCount * sizeof(TriangleElement), mTriangleElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Unbind texture (if any)
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Stop using program
-        glUseProgram(0);
+        RenderTriangles(
+            renderMode == ShipRenderMode::Texture,
+            ambientLightIntensity,
+            orthoMatrix);
     }
 
 
     //
-    // Draw ropes
-    //
-    // We draw ropes when RenderMode is anything but Points
-    //
-    // We draw ropes after triangles so that they're visible on top of ship
+    // Draw ropes now if RenderMode is Structure (so rope endpoints on the structure are visible)
     //
 
-    if (renderMode == ShipRenderMode::Springs
-        || renderMode == ShipRenderMode::Structure
-        || renderMode == ShipRenderMode::Texture)
+    if (renderMode == ShipRenderMode::Structure)
     {
-        // Use rope program
-        glUseProgram(*mElementRopeShaderProgram);
-
-        // Set parameters
-        glUniformMatrix4fv(mElementRopeShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-        glUniform1f(mElementRopeShaderAmbientLightIntensityParameter, ambientLightIntensity);
-
-        // Set line size
-        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-
-        //
-        // Process all connected components, from first to last, and draw ropes
-        //
-
-        for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-        {
-            // TODOTEST
-            //if (mElementBufferSizes[c].ropeCount > 0)
-
-            // Upload ropes
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mRopeElementVBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].ropeCount * sizeof(RopeElement), mRopeElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-            // Draw
-            glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].ropeCount), GL_UNSIGNED_INT, 0);
-        }
-
-        // Stop using program
-        glUseProgram(0);
+        RenderRopes(
+            ambientLightIntensity,
+            canvasToVisibleWorldHeightRatio,
+            orthoMatrix);
     }
-
 
 
     //
@@ -864,30 +760,210 @@ void ShipRenderContext::Render(
 
     if (showStressedSprings)
     {
-        // Use program
-        glUseProgram(*mStressedSpringShaderProgram);
-
-        // Set parameters
-        glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-
-        // Bind texture
-        glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
-
-        // Upload stressed springs buffer 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(SpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
-
-        // Set line size
-        glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-        // Draw
-        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
-
-        // Unbind texture
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Stop using program
-        glUseProgram(0);
+        RenderStressedSprings(
+            canvasToVisibleWorldHeightRatio,
+            orthoMatrix);
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void ShipRenderContext::RenderPoints(
+    float ambientLightIntensity,
+    float canvasToVisibleWorldHeightRatio,
+    float(&orthoMatrix)[4][4])
+{
+    // Use color program
+    glUseProgram(*mElementColorShaderProgram);
+
+    // Set parameters
+    glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+    glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+    // Set point size
+    glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+
+    //
+    // Process all connected components, from first to last, and draw points
+    //
+
+    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+    {
+        // Upload points
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].pointCount * sizeof(PointElement), mPointElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
+    }
+
+    // Stop using program
+    glUseProgram(0);
+}
+
+void ShipRenderContext::RenderSprings(
+    bool withTexture,
+    float ambientLightIntensity,
+    float canvasToVisibleWorldHeightRatio,
+    float(&orthoMatrix)[4][4])
+{
+    if (withTexture && !!mElementTexture)
+    {
+        // Use texture program
+        glUseProgram(*mElementTextureShaderProgram);
+
+        // Set parameters
+        glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+        // Bind texture
+        glBindTexture(GL_TEXTURE_2D, *mElementTexture);
+    }
+    else
+    {
+        // Use color program
+        glUseProgram(*mElementColorShaderProgram);
+
+        // Set parameters
+        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+    }
+
+    // Set line size
+    glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+
+    //
+    // Process all connected components, from first to last, and draw springs 
+    //
+
+    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+    {
+        // Upload springs
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mSpringElementVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].springCount * sizeof(SpringElement), mSpringElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].springCount), GL_UNSIGNED_INT, 0);
+    }
+
+    // Unbind texture (if any)
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Stop using program
+    glUseProgram(0);
+}
+
+void ShipRenderContext::RenderStressedSprings(
+    float canvasToVisibleWorldHeightRatio,
+    float(&orthoMatrix)[4][4])
+{
+    // Use program
+    glUseProgram(*mStressedSpringShaderProgram);
+
+    // Set parameters
+    glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+
+    // Bind texture
+    glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
+
+    // Upload stressed springs buffer 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(SpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
+
+    // Set line size
+    glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+    // Draw
+    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Stop using program
+    glUseProgram(0);
+}
+
+void ShipRenderContext::RenderRopes(
+    float ambientLightIntensity,
+    float canvasToVisibleWorldHeightRatio,
+    float(&orthoMatrix)[4][4])
+{
+    // Use rope program
+    glUseProgram(*mElementRopeShaderProgram);
+
+    // Set parameters
+    glUniformMatrix4fv(mElementRopeShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+    glUniform1f(mElementRopeShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+    // Set line size
+    glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+
+    //
+    // Process all connected components, from first to last, and draw ropes
+    //
+
+    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+    {
+        // Upload ropes
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mRopeElementVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].ropeCount * sizeof(RopeElement), mRopeElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].ropeCount), GL_UNSIGNED_INT, 0);
+    }
+
+    // Stop using program
+    glUseProgram(0);
+}
+
+void ShipRenderContext::RenderTriangles(
+    bool withTexture,
+    float ambientLightIntensity,
+    float(&orthoMatrix)[4][4])
+{
+    if (withTexture && !!mElementTexture)
+    {
+        // Use texture program
+        glUseProgram(*mElementTextureShaderProgram);
+
+        // Set parameters
+        glUniformMatrix4fv(mElementTextureShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementTextureShaderAmbientLightIntensityParameter, ambientLightIntensity);
+
+        // Bind texture
+        glBindTexture(GL_TEXTURE_2D, *mElementTexture);
+    }
+    else
+    {
+        // Use color program
+        glUseProgram(*mElementColorShaderProgram);
+
+        // Set parameters
+        glUniformMatrix4fv(mElementColorShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+        glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
+    }
+
+
+    //
+    // Process all connected components, from first to last, and draw triangles
+    //
+
+    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
+    {
+        // Upload elements
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mTriangleElementVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].triangleCount * sizeof(TriangleElement), mTriangleElementBuffers[c].get(), GL_DYNAMIC_DRAW);
+
+        // Draw
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
+    }
+
+    // Unbind texture (if any)
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Stop using program
+    glUseProgram(0);
+}

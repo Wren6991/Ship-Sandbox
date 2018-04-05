@@ -31,6 +31,7 @@ struct Material
     std::array<uint8_t, 3u> StructuralColourRgb;
     vec3f const RenderColour;    
     bool const IsHull;
+    bool const IsRope;
 
 	//
 	// Electrical properties - optional
@@ -128,6 +129,7 @@ public:
         std::array<uint8_t, 3u> structuralColourRgb,
         std::array<uint8_t, 3u> renderColourRgb,
 		bool isHull,
+        bool isRope,
 		std::optional<ElectricalProperties> electricalProperties,
         std::optional<SoundProperties> soundProperties)
 		: Name(std::move(name))
@@ -137,6 +139,7 @@ public:
         , StructuralColourRgb(structuralColourRgb)
         , RenderColour(RgbToVec(renderColourRgb))
 		, IsHull(isHull)
+        , IsRope(isRope)
 		, Electrical(std::move(electricalProperties))
         , Sound(std::move(soundProperties))
 	{

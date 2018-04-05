@@ -10,6 +10,7 @@
 #include "RenderTypes.h"
 #include "Vectors.h"
 
+#include <array>
 #include <cassert>
 #include <memory>
 #include <optional>
@@ -20,7 +21,9 @@ class ShipRenderContext
 {
 public:
 
-    ShipRenderContext(std::optional<ImageData> const & texture);
+    ShipRenderContext(
+        std::optional<ImageData> const & texture,
+        vec3f const & ropeColour);
     
     ~ShipRenderContext();
 
@@ -196,6 +199,33 @@ public:
         bool showStressedSprings,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
+        float(&orthoMatrix)[4][4]);
+
+private:
+
+    void RenderPoints(
+        float ambientLightIntensity,
+        float canvasToVisibleWorldHeightRatio,
+        float(&orthoMatrix)[4][4]);
+
+    void RenderSprings(
+        bool withTexture,
+        float ambientLightIntensity,
+        float canvasToVisibleWorldHeightRatio,
+        float(&orthoMatrix)[4][4]);
+
+    void RenderStressedSprings(
+        float canvasToVisibleWorldHeightRatio,
+        float(&orthoMatrix)[4][4]);
+
+    void RenderRopes(
+        float ambientLightIntensity,
+        float canvasToVisibleWorldHeightRatio,
+        float(&orthoMatrix)[4][4]);
+
+    void RenderTriangles(
+        bool withTexture,
+        float ambientLightIntensity,
         float(&orthoMatrix)[4][4]);
 
 private:

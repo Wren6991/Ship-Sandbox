@@ -27,22 +27,33 @@ namespace Physics {
 // SS   SS  H     H     I     P
 //   SSS    H     H  IIIIIII  P
 
+
+namespace /* anonymous */ {
+
+    bool IsConnectedToNonRopePoints(Point const * p)
+    {
+        assert(p->GetMaterial()->IsRope);
+
+        for (auto const & spring : p->GetConnectedSprings())
+        {
+            if (!spring->GetPointA()->GetMaterial()->IsRope
+                || !spring->GetPointB()->GetMaterial()->IsRope)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+}
+
 std::unique_ptr<Ship> Ship::Create(
     int shipId,
     World * parentWorld,
     ShipDefinition const & shipDefinition,
-    std::vector<std::unique_ptr<Material const>> const & allMaterials)
+    MaterialDatabase const & materials)
 {
-    // Prepare materials dictionary
-    std::map<std::array<uint8_t, 3u>, Material const *> structuralColourMap;
-    for (auto const & material : allMaterials)
-    {
-        structuralColourMap[material->StructuralColourRgb] = material.get();
-    }
-
-    Material const * const ropeMaterial = structuralColourMap.find({ 0x00, 0x00, 0x00 })->second;
-
-
     //
     // 1. Process image points and create:
     // - PointInfo's
@@ -105,8 +116,8 @@ std::unique_ptr<Ship> Ship::Create(
                 shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 1],
                 shipDefinition.StructuralImage.Data[(x + (structureHeight - y - 1) * structureWidth) * 3 + 2] };
 
-            auto srchIt = structuralColourMap.find(rgbColour);
-            if (srchIt == structuralColourMap.end())
+            Material const * material = materials.Get(rgbColour);
+            if (nullptr == material)
             {
                 // Check whether it's a rope endpoint (#000xxx)
                 if (0x00 == rgbColour[0]
@@ -130,11 +141,11 @@ std::unique_ptr<Ship> Ship::Create(
                     }
 
                     // Point to rope (#000000)
-                    srchIt = structuralColourMap.find({0x00, 0x00, 0x00});
+                    material = &(materials.GetRopeMaterial());
                 }
             }
 
-            if (srchIt != structuralColourMap.end())
+            if (nullptr != material)
             {
                 //
                 // Make a point
@@ -150,7 +161,7 @@ std::unique_ptr<Ship> Ship::Create(
                     vec2f(
                         static_cast<float>(x) / static_cast<float>(structureWidth),
                         static_cast<float>(y) / static_cast<float>(structureHeight)),
-                    srchIt->second);
+                    material);
             }
         }
     }
@@ -259,8 +270,10 @@ std::unique_ptr<Ship> Ship::Create(
             // Add PointInfo
             pointInfos.emplace_back(
                 newPosition,
-                pointInfos[*ropeInfo.PointAIndex].TextureCoordinates, // Arbitrary
-                ropeMaterial);
+                vec2f(
+                    newPosition.x / static_cast<float>(structureWidth),
+                    newPosition.y / static_cast<float>(structureHeight)),
+                &(materials.GetRopeMaterial()));
         }
 
         // Add last SpringInfo (no PointInfo as the endpoint has already a PointInfo)
@@ -290,7 +303,7 @@ std::unique_ptr<Ship> Ship::Create(
         // Create point
         //
 
-        Point & point = allPoints.emplace_back(
+        allPoints.emplace_back(
             ship,
             pointInfo.Position,
             mtl,
@@ -464,7 +477,7 @@ std::unique_ptr<Ship> Ship::Create(
 
         // If both nodes are rope, then the spring is rope (non-rope <-> rope springs are thus "connections" 
         // and no treated as ropes)
-        if (a->GetMaterial() == ropeMaterial && b->GetMaterial() == ropeMaterial)
+        if (a->GetMaterial()->IsRope && b->GetMaterial()->IsRope)
             characteristics |= static_cast<int>(Spring::Characteristics::Rope);
 
         allSprings.emplace_back(
@@ -477,7 +490,9 @@ std::unique_ptr<Ship> Ship::Create(
 
 
     //
-    // 6. Create Triangles for all the TriangleInfo's
+    // 6. Create Triangles for all TriangleInfo's except those whose vertices
+    //    are all rope points, of which at least one is connected exclusively 
+    //    to rope points (these would be knots "sticking out" of the structure)
     //
 
     ElementRepository<Triangle> allTriangles(triangleInfos.size());
@@ -487,6 +502,19 @@ std::unique_ptr<Ship> Ship::Create(
         Point * a = &(allPoints[triangleInfo.PointAIndex]);
         Point * b = &(allPoints[triangleInfo.PointBIndex]);
         Point * c = &(allPoints[triangleInfo.PointCIndex]);
+
+        if (a->GetMaterial()->IsRope
+            && b->GetMaterial()->IsRope
+            && c->GetMaterial()->IsRope)
+        {
+            // Do not add triangle if at least one vertex is connected to rope points only
+            if (!IsConnectedToNonRopePoints(a)
+                || !IsConnectedToNonRopePoints(b)
+                || !IsConnectedToNonRopePoints(c))
+            {
+                continue;
+            }
+        }
 
         allTriangles.emplace_back(
             ship,
