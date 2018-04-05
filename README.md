@@ -62,6 +62,8 @@ Here's a list of the major changes I've been doing:
 ..and here's a rought list of the major changes I want to do:
 - Test with rewriting the physics as force-based rather than position-based
 	- Eventually using Runge-Kutta for integration
+- Add directional water drag forces, to simulate underwater gliding 
+	- Requires maintaining convex hull and ship perimeter normals
 - Leverage vectorized instructions for dynamics calculations 
 - Make lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)

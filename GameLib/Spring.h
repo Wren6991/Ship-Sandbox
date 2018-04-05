@@ -119,10 +119,14 @@ public:
         // (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
         //
 
+        // 0.8 => Space the points by 80% of the equilibrium length, not all the way;
+        // 1.5 => Overshoot by 50%
+        static const float stiffness = 0.8f;
+
         vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
         float const displacementLength = displacement.length();
         vec2f correction = displacement.normalise(displacementLength);
-        correction *= (mRestLength - displacementLength) / ((mPointA->GetMass() + mPointB->GetMass()) * 0.80f); // * 0.8 => 20% overcorrection (stiffer, converges faster)
+        correction *= stiffness * (mRestLength - displacementLength) / (mPointA->GetMass() + mPointB->GetMass());
 
         // correction > 0 -> compressed, & correction is oriented towards B
         mPointA->AddToPosition(-correction * mPointB->GetMass()); // If mPointB is heavier, mPointA moves more...

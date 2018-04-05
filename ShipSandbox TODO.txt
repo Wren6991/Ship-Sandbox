@@ -44,11 +44,13 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- @Release only: make krafting default ship
 	- Screenshot @ github readme
 
+- MainFrame: AboutDialog is member & shown on demand
 - Increase max grab force
 - Space bar for pause
 	- When pause, also pause sounds and music
-- Bump up springs stiffness
-	- Test with Base III
+= Adjust springs stiffness
+	- Try with k calcd with formula based off iterations
+	- Test
 - Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
 	- World::Initialize():
 		- Calcs connected components for each ship
@@ -85,7 +87,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			+ Default ship: 14.5
 			+ Ropes test: 12.3
 		= Add ropes to Titanic
-		- Fix unit tests
+		+ Fix unit tests
 		+ Make max(fixedSizeVector) == 9
 			+ Not for triangles - generated rope points will never participate in triangles
 		+ Material/Rope rearc:
