@@ -52,7 +52,7 @@ struct GameParameters
 		: Gravity(0.0f, -9.8f)
 		, GravityNormal(Gravity.normalise())
 		, GravityMagnitude(Gravity.length())
-		, StrengthAdjustment(0.0058f)
+		, StrengthAdjustment(0.0048f)
 		, BuoyancyAdjustment(4.0f)
 		, WaterPressureAdjustment(0.75f)
 		, WaveHeight(2.5f)

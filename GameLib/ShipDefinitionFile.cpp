@@ -27,8 +27,8 @@ ShipDefinitionFile ShipDefinitionFile::Create(picojson::object const & definitio
     std::optional<picojson::object> offsetObject = Utils::GetOptionalJsonObject(definitionJson, "offset");
     if (!!offsetObject)
     {
-        offset.x = Utils::GetMandatoryJsonMember<double>(*offsetObject, "x");
-        offset.y = Utils::GetMandatoryJsonMember<double>(*offsetObject, "y");
+        offset.x = static_cast<float>(Utils::GetMandatoryJsonMember<double>(*offsetObject, "x"));
+        offset.y = static_cast<float>(Utils::GetMandatoryJsonMember<double>(*offsetObject, "y"));
     }
 
     return ShipDefinitionFile(

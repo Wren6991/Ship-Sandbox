@@ -122,7 +122,7 @@ public:
         // 0.8 => Spring returns in dt to 80% of the equilibrium length, not all the way; the world is soft
         // 1.0 => Spring returns in dt to the equilibrium length; the world is stiff
         // 1.5 => Spring overshoots in dt by 50%; the world is unstable and tends to explode
-        static const float stiffness = 0.8f;
+        static const float stiffness = 0.95f;
 
         vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
         float const displacementLength = displacement.length();

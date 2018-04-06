@@ -64,6 +64,7 @@ Here's a list of the major changes I've been doing:
 	- Eventually using Runge-Kutta for integration
 - Add directional water drag forces, to simulate underwater gliding 
 	- Requires maintaining convex hull and ship perimeter normals
+- Add ability to pin points - freezing them at their current position
 - Leverage vectorized instructions for dynamics calculations 
 - Make lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)
