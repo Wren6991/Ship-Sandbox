@@ -141,6 +141,48 @@ SoundController::~SoundController()
     Reset();
 }
 
+void SoundController::SetPaused(bool isPaused)
+{
+    if (!!mDrawSound)
+    {
+        if (isPaused)
+        {
+            if (sf::Sound::Status::Playing == mDrawSound->getStatus())
+                mDrawSound->pause();
+        }
+        else
+        {
+            if (sf::Sound::Status::Paused == mDrawSound->getStatus())
+                mDrawSound->play();
+        }
+    }
+
+    for (auto const & playingSound : mCurrentlyPlayingSounds)
+    {
+        if (isPaused)
+        {
+            if (sf::Sound::Status::Playing == playingSound.Sound->getStatus())
+                playingSound.Sound->pause();
+        }
+        else
+        {
+            if (sf::Sound::Status::Paused == playingSound.Sound->getStatus())
+                playingSound.Sound->play();
+        }
+    }
+
+    if (isPaused)
+    {
+        if (sf::Sound::Status::Playing == mSinkingMusic.getStatus())
+            mSinkingMusic.pause();
+    }
+    else
+    {
+        if (sf::Sound::Status::Paused == mSinkingMusic.getStatus())
+            mSinkingMusic.play();
+    }
+}
+
 void SoundController::SetMute(bool isMute)
 {
     if (isMute)
@@ -207,7 +249,7 @@ void SoundController::OnDestroy(
 
 void SoundController::OnDraw()
 {
-    if (!!mDrawSound)
+    if (!!mDrawSound && sf::Sound::Status::Paused != mDrawSound->getStatus())
     {
         if (sf::Sound::Status::Playing != mDrawSound->getStatus())
         {
@@ -411,7 +453,7 @@ void SoundController::ScavengeStoppedSounds()
     for (size_t i = 0; i < mCurrentlyPlayingSounds.size(); /*incremented in loop*/)
     {
         assert(!!mCurrentlyPlayingSounds[i].Sound);
-        if (sf::Sound::Status::Playing != mCurrentlyPlayingSounds[i].Sound->getStatus())
+        if (sf::Sound::Status::Stopped == mCurrentlyPlayingSounds[i].Sound->getStatus())
         {
             // Scavenge
             mCurrentlyPlayingSounds.erase(mCurrentlyPlayingSounds.begin() + i);

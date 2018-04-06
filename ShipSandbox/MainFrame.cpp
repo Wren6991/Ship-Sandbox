@@ -7,7 +7,6 @@
 ***************************************************************************************/
 #include "MainFrame.h"
 
-#include "AboutDialog.h"
 #include "SplashScreenDialog.h"
 #include "Version.h"
 
@@ -191,7 +190,7 @@ MainFrame::MainFrame(wxApp * mainApp)
     controlsMenu->Append(ambientLightDownMenuItem);
     Connect(ID_AMBIENT_LIGHT_DOWN_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnAmbientLightDownMenuItemSelected);
 
-    mPauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tP"), wxEmptyString, wxITEM_CHECK);
+    mPauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tSpace"), _("Pause the game"), wxITEM_CHECK);
 	controlsMenu->Append(mPauseMenuItem);
     mPauseMenuItem->Check(false);
 	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
@@ -498,7 +497,7 @@ void MainFrame::OnKeyDown(wxKeyEvent & event)
         // Down
         mGameController->Pan(vec2f(0.0f, 20.0f));
     }
-    else if (event.GetKeyCode() == static_cast<int>(' '))
+    else if (event.GetKeyCode() == static_cast<int>('?'))
     {
         //
         // Get point stats
@@ -701,7 +700,8 @@ void MainFrame::OnReloadLastShipMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnPauseMenuItemSelected(wxCommandEvent & /*event*/)
 {
-	// Nothing to do
+    if (!!mSoundController)
+        mSoundController->SetPaused(IsPaused());
 }
 
 void MainFrame::OnResetViewMenuItemSelected(wxCommandEvent & /*event*/)
@@ -800,8 +800,14 @@ void MainFrame::OnMuteMenuItemSelected(wxCommandEvent & /*event*/)
 
 void MainFrame::OnAboutMenuItemSelected(wxCommandEvent & /*event*/)
 {
-    AboutDialog aboutDialog(this, *mResourceLoader);
-    aboutDialog.ShowModal();
+    if (!mAboutDialog)
+    {
+        mAboutDialog = std::make_unique<AboutDialog>(
+            this,
+            *mResourceLoader);
+    }
+
+    mAboutDialog->ShowModal();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -994,17 +1000,19 @@ void MainFrame::UpdateTool()
 		    {
                 // Calculate strength multiplier
                 // 0-500ms      = 1.0
-                // 5000ms-+INF = 10.0
+                // 5000ms-+INF = 20.0
+
+                static constexpr float MaxMultiplier = 20.0f;
 
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float strengthMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 5000.0f);
+                float strengthMultiplier = 1.0f + (MaxMultiplier - 1.0f) * std::min(1.0f, millisecondsElapsed / 5000.0f);
 
                 // Draw
 			    mGameController->DrawTo(vec2(mMouseInfo.x, mMouseInfo.y), strengthMultiplier);
 
                 // Modulate cursor
-                SetCursorStrength(strengthMultiplier, 1.0f, 10.0f);
+                SetCursorStrength(strengthMultiplier, 1.0f, MaxMultiplier);
 
 			    break;
 		    }
@@ -1015,15 +1023,17 @@ void MainFrame::UpdateTool()
                 // 0-500ms      = 1.0
                 // 5000ms-+INF = 10.0
 
+                static constexpr float MaxMultiplier = 10.0f;
+
                 float millisecondsElapsed = static_cast<float>(
                     std::chrono::duration_cast<std::chrono::milliseconds>(mToolState.CumulatedTime).count());
-                float radiusMultiplier = 1.0f + 9.0f * std::min(1.0f, millisecondsElapsed / 5000.0f);
+                float radiusMultiplier = 1.0f + (MaxMultiplier - 1.0f) * std::min(1.0f, millisecondsElapsed / 5000.0f);
 
                 // Destroy
 			    mGameController->DestroyAt(vec2(mMouseInfo.x, mMouseInfo.y), radiusMultiplier);
 
                 // Modulate cursor
-                SetCursorStrength(radiusMultiplier, 1.0f, 10.0f);
+                SetCursorStrength(radiusMultiplier, 1.0f, MaxMultiplier);
 
 			    break;
 		    }

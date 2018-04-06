@@ -7,6 +7,7 @@
 ***************************************************************************************/
 #pragma once
 
+#include "AboutDialog.h"
 #include "EventTickerPanel.h"
 #include "LoggingDialog.h"
 #include "SettingsDialog.h"
@@ -65,6 +66,7 @@ private:
 	std::unique_ptr<wxFileDialog> mFileOpenDialog;
 	std::unique_ptr<LoggingDialog> mLoggingDialog;
 	std::unique_ptr<SettingsDialog> mSettingsDialog;
+    std::unique_ptr<AboutDialog> mAboutDialog;
 
     //
     // Cursors

@@ -28,6 +28,8 @@ public:
 
 	virtual ~SoundController();
 
+    void SetPaused(bool isPaused);
+
     void SetMute(bool isMute);
 
     void SetVolume(float volume);

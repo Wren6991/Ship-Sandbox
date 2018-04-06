@@ -924,13 +924,13 @@ void Ship::Update(
     // Iterate the spring relaxation
     DoSpringsRelaxation(dt, gameParameters);
 
-    // Update tension strain for all springs; might cause springs to break
+    // Update strain for all springs; might cause springs to break
     for (Spring & spring : mAllSprings)
     {
         // Avoid breaking deleted springs
         if (!spring.IsDeleted())
         {
-            spring.UpdateTensionStrain(gameParameters, gameEventHandler);
+            spring.UpdateStrain(gameParameters, gameEventHandler);
         }
     }
 

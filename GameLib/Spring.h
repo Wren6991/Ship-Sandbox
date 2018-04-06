@@ -55,16 +55,16 @@ public:
     void Destroy(Point const * pointSource);
 
     /*
-     * Calculates the current tension strain and acts depending on it.
+     * Calculates the current strain - due to tension or compression - and acts depending on it.
      */
-    inline void UpdateTensionStrain(        
+    inline void UpdateStrain(        
         GameParameters const & gameParameters,
         IGameEventHandler * gameEventHandler)
     {
         float const effectiveStrength = gameParameters.StrengthAdjustment * mMaterial->Strength;
 
-        float tensionStrain = GetTensionStrain();
-        if (tensionStrain > 1.0f + effectiveStrength)
+        float strain = GetStrain();
+        if (strain > effectiveStrength)
         {
             // It's broken!
             this->Destroy(nullptr);
@@ -75,7 +75,7 @@ public:
                 GetParentShip()->GetParentWorld()->IsUnderwater(*mPointA, gameParameters),
                 1);
         }
-        else if (tensionStrain > 1.0f + 0.25f * effectiveStrength)
+        else if (strain > 0.4f * effectiveStrength)
         {
             // It's stressed!
             if (!mIsStressed)
@@ -119,8 +119,9 @@ public:
         // (need to iterate to actually achieve this for all points, but it's FAAAAST for each step)
         //
 
-        // 0.8 => Space the points by 80% of the equilibrium length, not all the way;
-        // 1.5 => Overshoot by 50%
+        // 0.8 => Spring returns in dt to 80% of the equilibrium length, not all the way; the world is soft
+        // 1.0 => Spring returns in dt to the equilibrium length; the world is stiff
+        // 1.5 => Spring overshoots in dt by 50%; the world is unstable and tends to explode
         static const float stiffness = 0.8f;
 
         vec2f const displacement = (mPointB->GetPosition() - mPointA->GetPosition());
@@ -160,10 +161,13 @@ public:
 
 private:
 
-    // Tension strain: <1=no tension stress, >1=stressed
-    inline float GetTensionStrain() const
+    // Strain: 
+    // 0  = no tension nor compression
+    // >0 = tension or compression, symmetrical
+    inline float GetStrain() const
     {
-        return (mPointA->GetPosition() - mPointB->GetPosition()).length() / this->mRestLength;
+        float dx = (mPointA->GetPosition() - mPointB->GetPosition()).length();
+        return fabs(this->mRestLength - dx) / this->mRestLength;
     }
 
 private:

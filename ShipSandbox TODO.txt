@@ -44,17 +44,24 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- @Release only: make krafting default ship
 	- Screenshot @ github readme
 
-- MainFrame: AboutDialog is member & shown on demand
-- Increase max grab force
-- Space bar for pause
-	- When pause, also pause sounds and music
++ MainFrame: AboutDialog is member & shown on demand
+= Increase max grab force
++ Space bar for pause
+	+ When pause, also pause sounds and music
++ Try half of the relaxation iterations
+	+ Might need to adjust stiffness
 = Adjust springs stiffness
-	- Try with k calcd with formula based off iterations
-	- Test
+	+ Test other values:
+		+ 0.1 => should break faster : YES
+		+ 1.7: explodes
+	+ Test with same strain also for compression	
+		+ And force at 0.0058
+	- Test with slightly higher stiffness - see if less bending but same breaking
 - Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
 	- World::Initialize():
 		- Calcs connected components for each ship
 		- Builds clouds
+		- Invoked by GameController after pair of world::Reset and world::AddShip()
 
 - Gfx:
 	= Do ropes with two endpoints (000xxx)
