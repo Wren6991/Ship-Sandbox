@@ -41,7 +41,8 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ Do new .shp's:
 		+ Carnival
 		+ Titanic
-	- @Release only: make krafting default ship
+	- Do final round with all ships
+	- @Release only: make a .shp the default ship
 	- Screenshot @ github readme
 
 + MainFrame: AboutDialog is member & shown on demand
@@ -63,8 +64,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Calcs connected components for each ship
 		+ Builds clouds
 		+ Invoked by GameController after pair of world::Reset and world::AddShip()
-- Think about hull springs/water propagation
-	- Check with old program if Titanic.png had non-wet hull rudder
+= Test hull springs/water propagation
+	+ Check if also in old program Titanic.png had non-wet hull rudder: YES
+	- Less hull material in Titanic, but maintain strength
+	- Test Titanic afterwards
 
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
@@ -86,6 +89,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Pin points
 		- Point: Pinned Characteristic
 		- Point::Update: do nothing if pinned
+			- Springs: TBD - it's expensive to check for each point
 		- ShipRenderContext: draw pinned points (via new Render::Upload, done by Ship in same loop as UploadShipPoint) 
 		  using color ? and texture (centered) with bull's eye
 			- Draw at very end of Render(), after stressed springs

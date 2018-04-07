@@ -281,6 +281,7 @@ std::unique_ptr<Ship> Ship::Create(
         springInfos.emplace_back(curStartPointIndex, *ropeInfo.PointBIndex);
     }
 
+
     //
     // 3. Visit all PointInfo's and create:
     //  - Points
@@ -469,24 +470,28 @@ std::unique_ptr<Ship> Ship::Create(
         Point * a = &(allPoints[springInfo.PointAIndex]);
         Point * b = &(allPoints[springInfo.PointBIndex]);
 
+        // We choose the spring to be as strong as its strongest point
+        Material const * const strongestMaterial = a->GetMaterial()->Strength > b->GetMaterial()->Strength ? a->GetMaterial() : b->GetMaterial();
+
         int characteristics = 0;
 
-        // If one of the two nodes is not a hull node, then the spring is not hull
-        Material const * const mtl = b->GetMaterial()->IsHull ? a->GetMaterial() : b->GetMaterial();        
-        if (mtl->IsHull)
+        // The spring is hull if at least one node is hull 
+        // (we don't propagate water along a hull spring)
+        if (a->GetMaterial()->IsHull || b->GetMaterial()->IsHull)
             characteristics |= static_cast<int>(Spring::Characteristics::Hull);
 
-        // If both nodes are rope, then the spring is rope (non-rope <-> rope springs are thus "connections" 
-        // and no treated as ropes)
+        // If both nodes are rope, then the spring is rope 
+        // (non-rope <-> rope springs are "connections" and not to be treated as ropes)
         if (a->GetMaterial()->IsRope && b->GetMaterial()->IsRope)
             characteristics |= static_cast<int>(Spring::Characteristics::Rope);
 
+        // Create spring
         allSprings.emplace_back(
             ship,
             a,
             b,
             static_cast<Spring::Characteristics>(characteristics),
-            mtl);
+            strongestMaterial);
     }
 
 
