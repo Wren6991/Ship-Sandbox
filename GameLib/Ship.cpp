@@ -921,6 +921,10 @@ void Ship::DoSpringsRelaxation(
     assert(parallelChunkSize > 0);
 
     // Run iterations
+    //
+    // The higher the number of iterations, the stiffer the world becomes.
+    // Note: the effective stiffness coefficient used for relaxations depends also on the number
+    // of iterations - the more the iterations, the higher the effective coefficient becomes.
     for (int iter = 0; iter < 24; ++iter)
     {
         for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)

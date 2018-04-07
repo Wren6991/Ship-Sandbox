@@ -57,13 +57,14 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ Test with same strain also for compression	
 		+ And force at 0.0058
 	+ Test with slightly higher stiffness - see if less bending but same breaking
-= Should draw each connected component at once?
-= Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
++ Should draw each connected component at once
++ Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
 	+ World::Initialize():
 		+ Calcs connected components for each ship
 		+ Builds clouds
 		+ Invoked by GameController after pair of world::Reset and world::AddShip()
 - Think about hull springs/water propagation
+	- Check with old program if Titanic.png had non-wet hull rudder
 
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
