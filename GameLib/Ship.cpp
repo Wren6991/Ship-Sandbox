@@ -52,7 +52,8 @@ std::unique_ptr<Ship> Ship::Create(
     int shipId,
     World * parentWorld,
     ShipDefinition const & shipDefinition,
-    MaterialDatabase const & materials)
+    MaterialDatabase const & materials,
+    uint64_t currentStepSequenceNumber)
 {
     //
     // 1. Process image points and create:
@@ -561,13 +562,14 @@ std::unique_ptr<Ship> Ship::Create(
         allPoints.size(), " points, ", allSprings.size(),
         " springs, ", allTriangles.size(), " triangles, ", allElectricalElements.size(), " electrical elements.");
 
-    ship->InitializeRepository(
+    ship->Initialize(
         std::move(allPoints),   
         std::move(allPointColors),
         std::move(allPointTextureCoordinates),
         std::move(allSprings),
         std::move(allTriangles),
-        std::move(allElectricalElements));
+        std::move(allElectricalElements),
+        currentStepSequenceNumber);
 
     return std::unique_ptr<Ship>(ship);
 }
@@ -664,237 +666,6 @@ Point const * Ship::GetNearestPointAt(
     return bestPoint;
 }
 
-void Ship::PreparePointsForFinalStep(
-    float dt,
-    uint64_t currentStepSequenceNumber,
-    GameParameters const & gameParameters)
-{
-    //
-    // We use this point loop for everything that needs to be done on all points
-    //
-
-    uint64_t currentConnectedComponentId = 0;
-    std::queue<Point *> pointsToVisitForConnectedComponents;
-    mConnectedComponentSizes.clear();
-
-    for (Point & point : mAllPoints)
-    {
-        //
-        // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
-        //    if the external pressure is larger
-        //
-
-        if (point.IsLeaking())
-        {
-            float waterLevel = mParentWorld->GetWaterHeight(
-                point.GetPosition().x,
-                gameParameters);
-
-            float const externalWaterPressure = point.GetExternalWaterPressure(
-                waterLevel,
-                gameParameters);
-
-            if (externalWaterPressure > point.GetWater())
-            {
-                float newWater = dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point.GetWater());
-                point.AddWater(newWater);
-                mTotalWater += newWater;
-            }
-        }
-
-
-        //
-        // 2) Detect connected components
-        //
-
-        // Don't visit destroyed points, or we run the risk of creating a zillion connected components
-        if (!point.IsDeleted())
-        {
-            // Check if visited
-            if (point.GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-            {
-                // This node has not been visited, hence it's the beginning of a new connected component
-                ++currentConnectedComponentId;
-                size_t pointsInCurrentConnectedComponent = 0;
-
-                //
-                // Propagate the connected component ID to all points reachable from this point
-                //
-
-                assert(pointsToVisitForConnectedComponents.empty());
-                pointsToVisitForConnectedComponents.push(&point);
-                point.SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-
-                while (!pointsToVisitForConnectedComponents.empty())
-                {
-                    Point * currentPoint = pointsToVisitForConnectedComponents.front();
-                    pointsToVisitForConnectedComponents.pop();
-
-                    // Assign the connected component ID
-                    currentPoint->SetConnectedComponentId(currentConnectedComponentId);
-                    ++pointsInCurrentConnectedComponent;
-
-                    // Go through this point's adjacents
-                    for (Spring * spring : currentPoint->GetConnectedSprings())
-                    {
-                        assert(!spring->IsDeleted());
-
-                        Point * const pointA = spring->GetPointA();
-                        assert(!pointA->IsDeleted());
-                        if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                        {
-                            pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                            pointsToVisitForConnectedComponents.push(pointA);
-                        }
-
-                        Point * const pointB = spring->GetPointB();
-                        assert(!pointB->IsDeleted());
-                        if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
-                        {
-                            pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
-                            pointsToVisitForConnectedComponents.push(pointB);
-                        }
-                    }
-                }
-
-                // Store number of connected components
-                mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
-            }
-        }
-    }
-
-    //
-    // Check whether we've started sinking
-    //
-
-    if (!mIsSinking
-        && mTotalWater > static_cast<float>(mAllPoints.size()) / 2.5f)
-    {
-        // Started sinking
-        mParentWorld->GetGameEventHandler()->OnSinkingBegin(mId);
-        mIsSinking = true;
-    }
-}
-
-void Ship::GravitateWater(
-    float dt,
-    GameParameters const & gameParameters)
-{
-    //
-    // Water flows into adjacent nodes in a quantity proportional to the cos of angle the spring makes
-    // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0, parallel-opposite => -1 (goes back))
-    //
-    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
-    // simulation to change over time.
-    //
-
-    // Visit all connected non-hull points - i.e. non-hull springs
-    for (Spring & spring : mAllSprings)
-    {
-        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
-        if (!spring.IsDeleted())
-        {
-            // Do not propagate water from hull point to hull point
-            if (!spring.IsHull())
-            {
-                Point * const pointA = spring.GetPointA();
-                Point * const pointB = spring.GetPointB();
-
-                // cos_theta > 0 => pointA above pointB
-                float cos_theta = (pointB->GetPosition() - pointA->GetPosition()).normalise().dot(gameParameters.GravityNormal);
-
-                // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
-                float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
-                pointA->AddWater(-correction);
-                pointB->AddWater(correction);
-            }
-        }
-    }
-}
-
-void Ship::BalancePressure(float dt)
-{
-    //
-    // If there's too much water in this node, try and push it into the others
-    // (This needs to iterate over multiple frames for pressure waves to spread through water)
-    //
-    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
-    // simulation to change over time.
-    //
-
-    // Visit all connected non-hull points - i.e. non-hull springs
-    for (Spring & spring : mAllSprings)
-    {   
-        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
-        if (!spring.IsDeleted())
-        {
-            // Do not propagate water from hull point to hull point
-            if (!spring.IsHull())
-            {
-                Point * const pointA = spring.GetPointA();
-                float const aWater = pointA->GetWater();
-
-                Point * const pointB = spring.GetPointB();
-                float const bWater = pointB->GetWater();
-
-                if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
-                    continue;
-
-                // Move water from more wet to less wet
-                float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
-                pointA->AddWater(correction);
-                pointB->AddWater(-correction);
-            }
-        }
-    }
-}
-
-void Ship::DiffuseLight(
-    float dt,
-    GameParameters const & gameParameters)
-{
-    //
-    // Diffuse light from each lamp to the closest adjacent (i.e. spring-connected) points,
-    // inversely-proportional to the square of the distance
-    //
-
-    // Greater adjustment => underrated distance => wider diffusion
-    float const adjustmentCoefficient = powf(1.0f - gameParameters.LightDiffusionAdjustment, 2.0f);
-
-    // Visit all points
-    for (Point & point : mAllPoints)
-    {
-        point.ZeroLight();
-
-        vec2f const & pointPosition = point.GetPosition();
-
-        // Go through all lamps in the same connected component
-        for (ElectricalElement * el : mAllElectricalElements)
-        {
-            assert(!el->IsDeleted());
-
-            if (ElectricalElement::Type::Lamp == el->GetType()
-                && el->GetPoint()->GetConnectedComponentId() == point.GetConnectedComponentId())
-            {
-                Point * const lampPoint = el->GetPoint();
-
-                assert(!lampPoint->IsDeleted());
-
-                // TODO: this needs to be replaced with getting the light from the lamp itself
-                float const lampLight = 1.0f;
-
-                float squareDistance = std::max(
-                    1.0f,
-                    (pointPosition - lampPoint->GetPosition()).squareLength() * adjustmentCoefficient);
-
-                assert(squareDistance >= 1.0f);
-
-                point.AdjustLight(lampLight / squareDistance);
-            }
-        }
-    }
-}
-
 void Ship::Update(
     float dt,
     uint64_t currentStepSequenceNumber,
@@ -935,19 +706,20 @@ void Ship::Update(
         }
     }
 
-    //
     // Clear up pointer containers, in case there have been deletions
     // during or before this update step
-    //
-
     mAllElectricalElements.shrink_to_fit();
 
+    // Detect connected components
+    DetectConnectedComponents(currentStepSequenceNumber);
+
+
 
     //
-    // Update all electrical and water stuff
+    // Update water dynamics
     //
 
-    PreparePointsForFinalStep(dt, currentStepSequenceNumber, gameParameters);
+    LeakWater(dt, gameParameters);
 
     for (int i = 0; i < 4; i++)
         BalancePressure(dt);
@@ -957,6 +729,11 @@ void Ship::Update(
         BalancePressure(dt);
         GravitateWater(dt, gameParameters);
     }
+
+
+    //
+    // Update electrical dynamics
+    //
 
     DiffuseLight(
         dt,
@@ -1011,7 +788,7 @@ void Ship::Render(
     if (!mConnectedComponentSizes.empty())
     {
         //
-        // Upload elements (point (elements), springs, ropes, and triangles), iff dirty
+        // Upload elements (point (elements), springs, ropes, triangles), iff dirty
         //
 
         if (mAreElementsDirty)
@@ -1090,69 +867,32 @@ void Ship::Render(
             mAreElementsDirty = false;
         }
 
-        //////
-        ////// Upload all lamps
-        //////
 
-        ////renderContext.UploadLampsStart(
-        ////    mId, 
-        ////    mConnectedComponentSizes.size());
+        //
+        // Upload stressed springs
+        //
 
-        ////for (ElectricalElement const * el : mAllElectricalElements)
-        ////{
-        ////    assert(!el->IsDeleted());
-
-        ////    if (ElectricalElement::Type::Lamp == el->GetType())
-        ////    {
-        ////        Point const * lampPoint = el->GetPoint();
-
-        ////        assert(!lampPoint->IsDeleted());
-
-        ////        // TODO: this needs to be replaced with getting the light from the lamp itself,
-        ////        // which would have been previously set via UpdateLightIntensity
-        ////        float const lampLight = 1.0f;
-
-        ////        renderContext.UploadLamp(
-        ////            mId,
-        ////            lampPoint->GetPosition().x,
-        ////            lampPoint->GetPosition().y,
-        ////            lampLight,
-        ////            lampPoint->GetConnectedComponentId());
-        ////    }
-        ////}
-
-        ////renderContext.UploadLampsEnd(
-        ////    mid);
-    }        
-
-
-
-    //
-    // Upload all stressed springs
-    //
-
-    if (renderContext.GetShowStressedSprings())
-    {
-        renderContext.UploadStressedSpringsStart(
-            mId,
-            mAllSprings.size());
-
-        for (Spring const & spring : mAllSprings)
+        if (renderContext.GetShowStressedSprings())
         {
-            if (!spring.IsDeleted())
+            for (Spring const & spring : mAllSprings)
             {
-                if (spring.IsStressed())
+                if (!spring.IsDeleted())
                 {
-                    renderContext.UploadStressedSpring(
-                        mId,
-                        spring.GetPointA()->GetElementIndex(),
-                        spring.GetPointB()->GetElementIndex());
+                    if (spring.IsStressed())
+                    {
+                        assert(spring.GetPointA()->GetConnectedComponentId() == spring.GetPointB()->GetConnectedComponentId());
+
+                        renderContext.UploadShipElementStressedSpring(
+                            mId,
+                            spring.GetPointA()->GetElementIndex(),
+                            spring.GetPointB()->GetElementIndex(),
+                            spring.GetPointA()->GetConnectedComponentId());
+                    }
                 }
             }
         }
+    }        
 
-        renderContext.UploadStressedSpringsEnd(mId);
-    }
 
 
     //
@@ -1240,6 +980,235 @@ void Ship::PointIntegrateTask::Process()
 
         point.AddToPosition(point.GetForce() * mDt);
         point.ZeroForce();
+    }
+}
+
+void Ship::DetectConnectedComponents(uint64_t currentStepSequenceNumber)
+{
+    mConnectedComponentSizes.clear();
+
+    uint64_t currentConnectedComponentId = 0;
+    std::queue<Point *> pointsToVisitForConnectedComponents;    
+
+    // Visit all points
+    for (Point & point : mAllPoints)
+    {
+        // Don't visit destroyed points, or we run the risk of creating a zillion connected components
+        if (!point.IsDeleted())
+        {
+            // Check if visited
+            if (point.GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+            {
+                // This node has not been visited, hence it's the beginning of a new connected component
+                ++currentConnectedComponentId;
+                size_t pointsInCurrentConnectedComponent = 0;
+
+                //
+                // Propagate the connected component ID to all points reachable from this point
+                //
+
+                assert(pointsToVisitForConnectedComponents.empty());
+                pointsToVisitForConnectedComponents.push(&point);
+                point.SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+
+                while (!pointsToVisitForConnectedComponents.empty())
+                {
+                    Point * currentPoint = pointsToVisitForConnectedComponents.front();
+                    pointsToVisitForConnectedComponents.pop();
+
+                    // Assign the connected component ID
+                    currentPoint->SetConnectedComponentId(currentConnectedComponentId);
+                    ++pointsInCurrentConnectedComponent;
+
+                    // Go through this point's adjacents
+                    for (Spring * spring : currentPoint->GetConnectedSprings())
+                    {
+                        assert(!spring->IsDeleted());
+
+                        Point * const pointA = spring->GetPointA();
+                        assert(!pointA->IsDeleted());
+                        if (pointA->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                        {
+                            pointA->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                            pointsToVisitForConnectedComponents.push(pointA);
+                        }
+
+                        Point * const pointB = spring->GetPointB();
+                        assert(!pointB->IsDeleted());
+                        if (pointB->GetCurrentConnectedComponentDetectionStepSequenceNumber() != currentStepSequenceNumber)
+                        {
+                            pointB->SetConnectedComponentDetectionStepSequenceNumber(currentStepSequenceNumber);
+                            pointsToVisitForConnectedComponents.push(pointB);
+                        }
+                    }
+                }
+
+                // Store number of connected components
+                mConnectedComponentSizes.push_back(pointsInCurrentConnectedComponent);
+            }
+        }
+    }
+}
+
+void Ship::LeakWater(
+    float dt,
+    GameParameters const & gameParameters)
+{
+    for (Point & point : mAllPoints)
+    {
+        //
+        // 1) Leak water: stuff some water into all the leaking nodes that are underwater, 
+        //    if the external pressure is larger
+        //
+
+        if (point.IsLeaking())
+        {
+            float waterLevel = mParentWorld->GetWaterHeight(
+                point.GetPosition().x,
+                gameParameters);
+
+            float const externalWaterPressure = point.GetExternalWaterPressure(
+                waterLevel,
+                gameParameters);
+
+            if (externalWaterPressure > point.GetWater())
+            {
+                float newWater = dt * gameParameters.WaterPressureAdjustment * (externalWaterPressure - point.GetWater());
+                point.AddWater(newWater);
+                mTotalWater += newWater;
+            }
+        }
+    }
+
+    //
+    // Check whether we've started sinking
+    //
+
+    if (!mIsSinking
+        && mTotalWater > static_cast<float>(mAllPoints.size()) / 2.5f)
+    {
+        // Started sinking
+        mParentWorld->GetGameEventHandler()->OnSinkingBegin(mId);
+        mIsSinking = true;
+    }
+}
+
+void Ship::GravitateWater(
+    float dt,
+    GameParameters const & gameParameters)
+{
+    //
+    // Water flows into adjacent nodes in a quantity proportional to the cos of angle the spring makes
+    // against gravity (parallel with gravity => 1 (full flow), perpendicular = 0, parallel-opposite => -1 (goes back))
+    //
+    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
+    // simulation to change over time.
+    //
+
+    // Visit all connected non-hull points - i.e. non-hull springs
+    for (Spring & spring : mAllSprings)
+    {
+        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
+        if (!spring.IsDeleted())
+        {
+            // Do not propagate water from hull point to hull point
+            if (!spring.IsHull())
+            {
+                Point * const pointA = spring.GetPointA();
+                Point * const pointB = spring.GetPointB();
+
+                // cos_theta > 0 => pointA above pointB
+                float cos_theta = (pointB->GetPosition() - pointA->GetPosition()).normalise().dot(gameParameters.GravityNormal);
+
+                // The 0.60 can be tuned, it's just to stop all the water being stuffed into the lowest node...
+                float correction = 0.60f * cos_theta * dt * (cos_theta > 0.0f ? pointA->GetWater() : pointB->GetWater());
+                pointA->AddWater(-correction);
+                pointB->AddWater(correction);
+            }
+        }
+    }
+}
+
+void Ship::BalancePressure(float dt)
+{
+    //
+    // If there's too much water in this node, try and push it into the others
+    // (This needs to iterate over multiple frames for pressure waves to spread through water)
+    //
+    // Note: we don't take any shortcuts when a point has no water, as that would cause the speed of the 
+    // simulation to change over time.
+    //
+
+    // Visit all connected non-hull points - i.e. non-hull springs
+    for (Spring & spring : mAllSprings)
+    {
+        // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
+        if (!spring.IsDeleted())
+        {
+            // Do not propagate water from hull point to hull point
+            if (!spring.IsHull())
+            {
+                Point * const pointA = spring.GetPointA();
+                float const aWater = pointA->GetWater();
+
+                Point * const pointB = spring.GetPointB();
+                float const bWater = pointB->GetWater();
+
+                if (aWater < 1 && bWater < 1)   // if water content below threshold, no need to force water out
+                    continue;
+
+                // Move water from more wet to less wet
+                float correction = (bWater - aWater) * 2.5f * dt; // can tune this number; value of 1 means will equalise in 1 second.
+                pointA->AddWater(correction);
+                pointB->AddWater(-correction);
+            }
+        }
+    }
+}
+
+void Ship::DiffuseLight(
+    float dt,
+    GameParameters const & gameParameters)
+{
+    //
+    // Diffuse light from each lamp to the closest adjacent (i.e. spring-connected) points,
+    // inversely-proportional to the square of the distance
+    //
+
+    // Greater adjustment => underrated distance => wider diffusion
+    float const adjustmentCoefficient = powf(1.0f - gameParameters.LightDiffusionAdjustment, 2.0f);
+
+    // Visit all points
+    for (Point & point : mAllPoints)
+    {
+        point.ZeroLight();
+
+        vec2f const & pointPosition = point.GetPosition();
+
+        // Go through all lamps in the same connected component
+        for (ElectricalElement * el : mAllElectricalElements)
+        {
+            assert(!el->IsDeleted());
+
+            if (ElectricalElement::Type::Lamp == el->GetType()
+                && el->GetPoint()->GetConnectedComponentId() == point.GetConnectedComponentId())
+            {
+                Point * const lampPoint = el->GetPoint();
+
+                assert(!lampPoint->IsDeleted());
+
+                // TODO: this needs to be replaced with getting the light from the lamp itself
+                float const lampLight = 1.0f;
+
+                float squareDistance = std::max(
+                    1.0f,
+                    (pointPosition - lampPoint->GetPosition()).squareLength() * adjustmentCoefficient);
+
+                assert(squareDistance >= 1.0f);
+
+                point.AdjustLight(lampLight / squareDistance);
+            }
+        }
     }
 }
 

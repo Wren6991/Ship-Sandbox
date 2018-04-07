@@ -30,27 +30,24 @@ ShipRenderContext::ShipRenderContext(
     , mElementTextureShaderProgram()
     , mElementTextureShaderOrthoMatrixParameter(0)
     , mElementTextureShaderAmbientLightIntensityParameter(0)
+    , mElementStressedSpringShaderProgram(0)
+    , mElementStressedSpringShaderOrthoMatrixParameter(0)
     , mPointElementBuffers()
     , mSpringElementBuffers()
     , mRopeElementBuffers()
     , mTriangleElementBuffers()
+    , mStressedSpringElementBuffers()
     , mElementBufferSizes()
     , mElementBufferMaxSizes()
     , mPointElementVBO()
     , mSpringElementVBO()
     , mRopeElementVBO()
     , mTriangleElementVBO()
+    , mStressedSpringElementVBO()
     , mElementTexture()
+    , mElementStressedSpringTexture()
     // Lamps
     , mLampBuffers()
-    // Stressed springs
-    , mStressedSpringShaderProgram()
-    , mStressedSpringShaderOrthoMatrixParameter(0)
-    , mStressedSpringBuffer()
-    , mStressedSpringBufferSize(0u)
-    , mStressedSpringBufferMaxSize(0u)
-    , mStressedSpringVBO()
-    , mStressedSpringTexture()
 {
     GLuint tmpGLuint;
     GLenum glError;
@@ -306,19 +303,75 @@ ShipRenderContext::ShipRenderContext(
 
 
     //
+    // Create stressed spring program
+    //
+
+    mElementStressedSpringShaderProgram = glCreateProgram();
+
+    char const * elementStressedSpringVertexShaderSource = R"(
+
+        // Inputs
+        attribute vec2 inputPos;
+        
+        // Outputs        
+        varying vec2 vertexTextureCoords;
+
+        // Params
+        uniform mat4 paramOrthoMatrix;
+
+        void main()
+        {
+            vertexTextureCoords = inputPos; 
+            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
+        }
+    )";
+
+    GameOpenGL::CompileShader(elementStressedSpringVertexShaderSource, GL_VERTEX_SHADER, mElementStressedSpringShaderProgram);
+
+    char const * elementStressedSpringFragmentShaderSource = R"(
+    
+        // Inputs
+        varying vec2 vertexTextureCoords;
+
+        // Input texture
+        uniform sampler2D inputTexture;
+
+        // Params
+        uniform float paramAmbientLightIntensity;
+
+        void main()
+        {
+            gl_FragColor = texture2D(inputTexture, vertexTextureCoords);
+        } 
+    )";
+
+    GameOpenGL::CompileShader(elementStressedSpringFragmentShaderSource, GL_FRAGMENT_SHADER, mElementStressedSpringShaderProgram);
+
+    // Bind attribute locations
+    glBindAttribLocation(*mElementStressedSpringShaderProgram, 0, "inputPos");
+
+    // Link
+    GameOpenGL::LinkShaderProgram(mElementStressedSpringShaderProgram, "Stressed Spring");
+
+    // Get uniform locations
+    mElementStressedSpringShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mElementStressedSpringShaderProgram, "paramOrthoMatrix");
+
+
+    //
     // Create element VBOs
     //
 
-    GLuint elementVBOs[4];
-    glGenBuffers(4, elementVBOs);
+    GLuint elementVBOs[5];
+    glGenBuffers(5, elementVBOs);
     mPointElementVBO = elementVBOs[0];
     mSpringElementVBO = elementVBOs[1];
     mRopeElementVBO = elementVBOs[2];
     mTriangleElementVBO = elementVBOs[3];
+    mStressedSpringElementVBO = elementVBOs[4];
 
 
     //
-    // Create and upload texture, if present
+    // Create and upload ship texture, if present
     //
 
     if (!!texture)
@@ -384,77 +437,15 @@ ShipRenderContext::ShipRenderContext(
 
 
     //
-    // Create stressed spring program
-    //
-
-    mStressedSpringShaderProgram = glCreateProgram();
-
-    char const * stressedSpringVertexShaderSource = R"(
-
-        // Inputs
-        attribute vec2 inputPos;
-        
-        // Outputs        
-        varying vec2 vertexTextureCoords;
-
-        // Params
-        uniform mat4 paramOrthoMatrix;
-
-        void main()
-        {
-            vertexTextureCoords = inputPos; 
-            gl_Position = paramOrthoMatrix * vec4(inputPos.xy, -1.0, 1.0);
-        }
-    )";
-
-    GameOpenGL::CompileShader(stressedSpringVertexShaderSource, GL_VERTEX_SHADER, mStressedSpringShaderProgram);
-
-    char const * stressedSpringFragmentShaderSource = R"(
-    
-        // Inputs
-        varying vec2 vertexTextureCoords;
-
-        // Input texture
-        uniform sampler2D inputTexture;
-
-        // Params
-        uniform float paramAmbientLightIntensity;
-
-        void main()
-        {
-            gl_FragColor = texture2D(inputTexture, vertexTextureCoords);
-        } 
-    )";
-
-    GameOpenGL::CompileShader(stressedSpringFragmentShaderSource, GL_FRAGMENT_SHADER, mStressedSpringShaderProgram);
-
-    // Bind attribute locations
-    glBindAttribLocation(*mStressedSpringShaderProgram, 0, "inputPos");
-
-    // Link
-    GameOpenGL::LinkShaderProgram(mStressedSpringShaderProgram, "Stressed Spring");
-
-    // Get uniform locations
-    mStressedSpringShaderOrthoMatrixParameter = GameOpenGL::GetParameterLocation(mStressedSpringShaderProgram, "paramOrthoMatrix");
-
-    //
-    // Create stressed springs VBOs
-    //
-
-    glGenBuffers(1, &tmpGLuint);
-    mStressedSpringVBO = tmpGLuint;
-
-
-    //
     // Create stressed spring texture
     //
 
     // Create texture name
     glGenTextures(1, &tmpGLuint);
-    mStressedSpringTexture = tmpGLuint;
+    mElementStressedSpringTexture = tmpGLuint;
 
     // Bind texture
-    glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
+    glBindTexture(GL_TEXTURE_2D, *mElementStressedSpringTexture);
 
     // Set repeat mode
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -586,6 +577,9 @@ void ShipRenderContext::UploadElementsStart(std::vector<std::size_t> const & con
         mTriangleElementBuffers.clear();
         mTriangleElementBuffers.resize(connectedComponentsMaxSizes.size());
 
+        mStressedSpringElementBuffers.clear();
+        mStressedSpringElementBuffers.resize(connectedComponentsMaxSizes.size());
+
         mElementBufferMaxSizes.clear();
         mElementBufferMaxSizes.resize(connectedComponentsMaxSizes.size());
     }
@@ -601,7 +595,7 @@ void ShipRenderContext::UploadElementsStart(std::vector<std::size_t> const & con
             mElementBufferMaxSizes[c].pointCount = maxConnectedComponentPoints;
         }
 
-        size_t maxConnectedComponentSprings = connectedComponentsMaxSizes[c] * 8;        
+        size_t maxConnectedComponentSprings = connectedComponentsMaxSizes[c] * 9;        
         if (mElementBufferMaxSizes[c].springCount != maxConnectedComponentSprings)
         {
             // A change in the max size of this connected component
@@ -627,6 +621,15 @@ void ShipRenderContext::UploadElementsStart(std::vector<std::size_t> const & con
             mTriangleElementBuffers[c].reset(new TriangleElement[maxConnectedComponentTriangles]);
             mElementBufferMaxSizes[c].triangleCount = maxConnectedComponentTriangles;
         }
+
+        size_t maxConnectedComponentStressedSprings = connectedComponentsMaxSizes[c] * 9;
+        if (mElementBufferMaxSizes[c].stressedSpringCount != maxConnectedComponentStressedSprings)
+        {
+            // A change in the max size of this connected component
+            mStressedSpringElementBuffers[c].reset();
+            mStressedSpringElementBuffers[c].reset(new StressedSpringElement[maxConnectedComponentStressedSprings]);
+            mElementBufferMaxSizes[c].stressedSpringCount = maxConnectedComponentStressedSprings;
+        }
     }
 
     mElementBufferSizes.clear();
@@ -649,24 +652,6 @@ void ShipRenderContext::UploadLampsEnd()
     // Nop
 }
 
-void ShipRenderContext::UploadStressedSpringsStart(size_t maxSprings)
-{
-    if (maxSprings > mStressedSpringBufferMaxSize)
-    {
-        // Realloc
-        mStressedSpringBuffer.reset();
-        mStressedSpringBuffer.reset(new SpringElement[maxSprings]);
-        mStressedSpringBufferMaxSize = maxSprings;
-    }
-
-    mStressedSpringBufferSize = 0u;
-}
-
-void ShipRenderContext::UploadStressedSpringsEnd()
-{
-    // Nop
-}
-
 void ShipRenderContext::Render(
     ShipRenderMode renderMode,
     bool showStressedSprings,
@@ -675,100 +660,111 @@ void ShipRenderContext::Render(
     float(&orthoMatrix)[4][4])
 {
     //
-    // Draw points
+    // Process all connected components, from first to last, and draw all elements
     //
 
-    if (renderMode == ShipRenderMode::Points)
+    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
     {
-        RenderPoints(
-            ambientLightIntensity,
-            canvasToVisibleWorldHeightRatio,
-            orthoMatrix);
-    }
+        //
+        // Draw points
+        //
+
+        if (renderMode == ShipRenderMode::Points)
+        {
+            RenderPoints(
+                c,
+                ambientLightIntensity,
+                canvasToVisibleWorldHeightRatio,
+                orthoMatrix);
+        }
 
 
+        //
+        // Draw springs
+        //
+        // We draw springs when:
+        // - RenderMode is springs ("X-Ray Mode"), in which case we use colors - so to show structural springs -, or
+        // - RenderMode is structure (so to draw 1D chains), in which case we use colors, or
+        // - RenderMode is texture (so to draw 1D chains), in which case we use texture iff it is present
+        //
 
-    //
-    // Draw springs
-    //
-    // We draw springs when:
-    // - RenderMode is springs ("X-Ray Mode"), in which case we use colors - so to show structural springs -, or
-    // - RenderMode is structure (so to draw 1D chains), in which case we use colors, or
-    // - RenderMode is texture (so to draw 1D chains), in which case we use texture iff it is present
-    //
-
-    if (renderMode == ShipRenderMode::Springs
-        || renderMode == ShipRenderMode::Structure
-        || renderMode == ShipRenderMode::Texture)
-    {
-        RenderSprings(
-            renderMode == ShipRenderMode::Texture,
-            ambientLightIntensity,
-            canvasToVisibleWorldHeightRatio,
-            orthoMatrix);
-    }
-
-
-
-    //
-    // Draw ropes now if RenderMode is:
-    // - Springs
-    // - Texture (so rope endpoints are hidden behind texture, looks better)
-    //
-
-    if (renderMode == ShipRenderMode::Springs
-        || renderMode == ShipRenderMode::Texture)
-    {
-        RenderRopes(
-            ambientLightIntensity,
-            canvasToVisibleWorldHeightRatio,
-            orthoMatrix);
-    }
+        if (renderMode == ShipRenderMode::Springs
+            || renderMode == ShipRenderMode::Structure
+            || renderMode == ShipRenderMode::Texture)
+        {
+            RenderSprings(
+                c,
+                renderMode == ShipRenderMode::Texture,
+                ambientLightIntensity,
+                canvasToVisibleWorldHeightRatio,
+                orthoMatrix);
+        }
 
 
+        //
+        // Draw ropes now if RenderMode is:
+        // - Springs
+        // - Texture (so rope endpoints are hidden behind texture, looks better)
+        //
 
-    //
-    // Draw triangles
-    //
-
-    if (renderMode == ShipRenderMode::Structure
-        || renderMode == ShipRenderMode::Texture)
-    {
-        RenderTriangles(
-            renderMode == ShipRenderMode::Texture,
-            ambientLightIntensity,
-            orthoMatrix);
-    }
-
-
-    //
-    // Draw ropes now if RenderMode is Structure (so rope endpoints on the structure are visible)
-    //
-
-    if (renderMode == ShipRenderMode::Structure)
-    {
-        RenderRopes(
-            ambientLightIntensity,
-            canvasToVisibleWorldHeightRatio,
-            orthoMatrix);
-    }
+        if (renderMode == ShipRenderMode::Springs
+            || renderMode == ShipRenderMode::Texture)
+        {
+            RenderRopes(
+                c,
+                ambientLightIntensity,
+                canvasToVisibleWorldHeightRatio,
+                orthoMatrix);
+        }
 
 
-    //
-    // Draw stressed springs
-    //
+        //
+        // Draw triangles
+        //
 
-    if (showStressedSprings)
-    {
-        RenderStressedSprings(
-            canvasToVisibleWorldHeightRatio,
-            orthoMatrix);
+        if (renderMode == ShipRenderMode::Structure
+            || renderMode == ShipRenderMode::Texture)
+        {
+            RenderTriangles(
+                c,
+                renderMode == ShipRenderMode::Texture,
+                ambientLightIntensity,
+                orthoMatrix);
+        }
+
+
+        //
+        // Draw ropes now if RenderMode is Structure (so rope endpoints on the structure are visible)
+        //
+
+        if (renderMode == ShipRenderMode::Structure)
+        {
+            RenderRopes(
+                c,
+                ambientLightIntensity,
+                canvasToVisibleWorldHeightRatio,
+                orthoMatrix);
+        }
+
+
+        //
+        // Draw stressed springs
+        //
+
+        if (showStressedSprings)
+        {
+            RenderStressedSprings(
+                c,
+                canvasToVisibleWorldHeightRatio,
+                orthoMatrix);
+        }
     }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 void ShipRenderContext::RenderPoints(
+    size_t connectedComponentId,
     float ambientLightIntensity,
     float canvasToVisibleWorldHeightRatio,
     float(&orthoMatrix)[4][4])
@@ -783,26 +779,19 @@ void ShipRenderContext::RenderPoints(
     // Set point size
     glPointSize(0.2f * 2.0f * canvasToVisibleWorldHeightRatio);
 
+    // Upload points
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[connectedComponentId].pointCount * sizeof(PointElement), mPointElementBuffers[connectedComponentId].get(), GL_DYNAMIC_DRAW);
 
-    //
-    // Process all connected components, from first to last, and draw points
-    //
-
-    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-    {
-        // Upload points
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mPointElementVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].pointCount * sizeof(PointElement), mPointElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-        // Draw
-        glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[c].pointCount), GL_UNSIGNED_INT, 0);
-    }
+    // Draw
+    glDrawElements(GL_POINTS, static_cast<GLsizei>(1 * mElementBufferSizes[connectedComponentId].pointCount), GL_UNSIGNED_INT, 0);
 
     // Stop using program
     glUseProgram(0);
 }
 
 void ShipRenderContext::RenderSprings(
+    size_t connectedComponentId,
     bool withTexture,
     float ambientLightIntensity,
     float canvasToVisibleWorldHeightRatio,
@@ -833,20 +822,12 @@ void ShipRenderContext::RenderSprings(
     // Set line size
     glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
 
+    // Upload springs
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mSpringElementVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[connectedComponentId].springCount * sizeof(SpringElement), mSpringElementBuffers[connectedComponentId].get(), GL_DYNAMIC_DRAW);
 
-    //
-    // Process all connected components, from first to last, and draw springs 
-    //
-
-    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-    {
-        // Upload springs
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mSpringElementVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].springCount * sizeof(SpringElement), mSpringElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-        // Draw
-        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].springCount), GL_UNSIGNED_INT, 0);
-    }
+    // Draw
+    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[connectedComponentId].springCount), GL_UNSIGNED_INT, 0);
 
     // Unbind texture (if any)
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -855,37 +836,8 @@ void ShipRenderContext::RenderSprings(
     glUseProgram(0);
 }
 
-void ShipRenderContext::RenderStressedSprings(
-    float canvasToVisibleWorldHeightRatio,
-    float(&orthoMatrix)[4][4])
-{
-    // Use program
-    glUseProgram(*mStressedSpringShaderProgram);
-
-    // Set parameters
-    glUniformMatrix4fv(mStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
-
-    // Bind texture
-    glBindTexture(GL_TEXTURE_2D, *mStressedSpringTexture);
-
-    // Upload stressed springs buffer 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringVBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mStressedSpringBufferSize * sizeof(SpringElement), mStressedSpringBuffer.get(), GL_DYNAMIC_DRAW);
-
-    // Set line size
-    glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
-
-    // Draw
-    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mStressedSpringBufferSize), GL_UNSIGNED_INT, 0);
-
-    // Unbind texture
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Stop using program
-    glUseProgram(0);
-}
-
 void ShipRenderContext::RenderRopes(
+    size_t connectedComponentId,
     float ambientLightIntensity,
     float canvasToVisibleWorldHeightRatio,
     float(&orthoMatrix)[4][4])
@@ -900,26 +852,19 @@ void ShipRenderContext::RenderRopes(
     // Set line size
     glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
 
+    // Upload ropes
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mRopeElementVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[connectedComponentId].ropeCount * sizeof(RopeElement), mRopeElementBuffers[connectedComponentId].get(), GL_DYNAMIC_DRAW);
 
-    //
-    // Process all connected components, from first to last, and draw ropes
-    //
-
-    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-    {
-        // Upload ropes
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mRopeElementVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].ropeCount * sizeof(RopeElement), mRopeElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-        // Draw
-        glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[c].ropeCount), GL_UNSIGNED_INT, 0);
-    }
+    // Draw
+    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[connectedComponentId].ropeCount), GL_UNSIGNED_INT, 0);
 
     // Stop using program
     glUseProgram(0);
 }
 
 void ShipRenderContext::RenderTriangles(
+    size_t connectedComponentId,
     bool withTexture,
     float ambientLightIntensity,
     float(&orthoMatrix)[4][4])
@@ -946,22 +891,45 @@ void ShipRenderContext::RenderTriangles(
         glUniform1f(mElementColorShaderAmbientLightIntensityParameter, ambientLightIntensity);
     }
 
+    // Upload elements
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mTriangleElementVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[connectedComponentId].triangleCount * sizeof(TriangleElement), mTriangleElementBuffers[connectedComponentId].get(), GL_DYNAMIC_DRAW);
 
-    //
-    // Process all connected components, from first to last, and draw triangles
-    //
-
-    for (size_t c = 0; c < mElementBufferSizes.size(); ++c)
-    {
-        // Upload elements
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mTriangleElementVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[c].triangleCount * sizeof(TriangleElement), mTriangleElementBuffers[c].get(), GL_DYNAMIC_DRAW);
-
-        // Draw
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[c].triangleCount), GL_UNSIGNED_INT, 0);
-    }
+    // Draw
+    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(3 * mElementBufferSizes[connectedComponentId].triangleCount), GL_UNSIGNED_INT, 0);
 
     // Unbind texture (if any)
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Stop using program
+    glUseProgram(0);
+}
+
+void ShipRenderContext::RenderStressedSprings(
+    size_t connectedComponentId,
+    float canvasToVisibleWorldHeightRatio,
+    float(&orthoMatrix)[4][4])
+{
+    // Use program
+    glUseProgram(*mElementStressedSpringShaderProgram);
+
+    // Set parameters
+    glUniformMatrix4fv(mElementStressedSpringShaderOrthoMatrixParameter, 1, GL_FALSE, &(orthoMatrix[0][0]));
+
+    // Bind texture
+    glBindTexture(GL_TEXTURE_2D, *mElementStressedSpringTexture);
+
+    // Upload elements
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mStressedSpringElementVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mElementBufferSizes[connectedComponentId].stressedSpringCount * sizeof(StressedSpringElement), mStressedSpringElementBuffers[connectedComponentId].get(), GL_DYNAMIC_DRAW);
+
+    // Set line size
+    glLineWidth(0.1f * 2.0f * canvasToVisibleWorldHeightRatio);
+
+    // Draw
+    glDrawElements(GL_LINES, static_cast<GLsizei>(2 * mElementBufferSizes[connectedComponentId].stressedSpringCount), GL_UNSIGNED_INT, 0);
+
+    // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Stop using program

@@ -142,6 +142,25 @@ public:
         ++(mElementBufferSizes[connectedComponentIndex].triangleCount);
     }
 
+    inline void UploadElementStressedSpring(
+        int pointIndex1,
+        int pointIndex2,
+        size_t connectedComponentId)
+    {
+        size_t const connectedComponentIndex = connectedComponentId - 1;
+
+        assert(connectedComponentIndex < mElementBufferSizes.size());
+        assert(connectedComponentIndex < mElementBufferMaxSizes.size());
+        assert(mElementBufferSizes[connectedComponentIndex].stressedSpringCount + 1u <= mElementBufferMaxSizes[connectedComponentIndex].stressedSpringCount);
+
+        StressedSpringElement * const stressedSpringElement = &(mStressedSpringElementBuffers[connectedComponentIndex][mElementBufferSizes[connectedComponentIndex].stressedSpringCount]);
+
+        stressedSpringElement->pointIndex1 = pointIndex1;
+        stressedSpringElement->pointIndex2 = pointIndex2;
+
+        ++(mElementBufferSizes[connectedComponentIndex].stressedSpringCount);
+    }
+
     void UploadElementsEnd();
 
 
@@ -171,27 +190,6 @@ public:
     void UploadLampsEnd();
 
 
-    //
-    // Stressed springs
-    //
-
-    void UploadStressedSpringsStart(size_t maxSprings);
-
-    inline void UploadStressedSpring(
-        int pointIndex1,
-        int pointIndex2)
-    {
-        assert(mStressedSpringBufferSize + 1u <= mStressedSpringBufferMaxSize);
-        SpringElement * const springElement = &(mStressedSpringBuffer[mStressedSpringBufferSize]);
-
-        springElement->pointIndex1 = pointIndex1;
-        springElement->pointIndex2 = pointIndex2;
-
-        ++mStressedSpringBufferSize;
-    }
-
-    void UploadStressedSpringsEnd();
-
     /////////////////////////////////////////////////////////////
 
     void Render(
@@ -204,28 +202,33 @@ public:
 private:
 
     void RenderPoints(
+        size_t connectedComponentId,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
 
     void RenderSprings(
+        size_t connectedComponentId,
         bool withTexture,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
 
-    void RenderStressedSprings(
-        float canvasToVisibleWorldHeightRatio,
-        float(&orthoMatrix)[4][4]);
-
     void RenderRopes(
+        size_t connectedComponentId,
         float ambientLightIntensity,
         float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
 
     void RenderTriangles(
+        size_t connectedComponentId,
         bool withTexture,
         float ambientLightIntensity,
+        float(&orthoMatrix)[4][4]);
+
+    void RenderStressedSprings(
+        size_t connectedComponentId,
+        float canvasToVisibleWorldHeightRatio,
         float(&orthoMatrix)[4][4]);
 
 private:
@@ -261,7 +264,7 @@ private:
 
 
     //
-    // Elements (points, springs, ropes, and triangles)
+    // Elements (points, springs, ropes, triangles, stressed springs)
     //
 
     GameOpenGLShaderProgram mElementColorShaderProgram;
@@ -275,6 +278,9 @@ private:
     GameOpenGLShaderProgram mElementTextureShaderProgram;
     GLint mElementTextureShaderOrthoMatrixParameter;
     GLint mElementTextureShaderAmbientLightIntensityParameter;
+
+    GameOpenGLShaderProgram mElementStressedSpringShaderProgram;
+    GLint mElementStressedSpringShaderOrthoMatrixParameter;
 
 #pragma pack(push)
     struct PointElement
@@ -308,18 +314,28 @@ private:
     };
 #pragma pack(pop)
 
+#pragma pack(push)
+    struct StressedSpringElement
+    {
+        int pointIndex1;
+        int pointIndex2;
+    };
+#pragma pack(pop)
+
     struct ElementCounts
     {
         size_t pointCount;
         size_t springCount;
         size_t ropeCount;
         size_t triangleCount;
+        size_t stressedSpringCount;
 
         ElementCounts()
             : pointCount(0)
             , springCount(0)
             , ropeCount(0)
             , triangleCount(0)
+            , stressedSpringCount(0)
         {}
     };
 
@@ -327,6 +343,7 @@ private:
     std::vector<std::unique_ptr<SpringElement[]>> mSpringElementBuffers;
     std::vector<std::unique_ptr<RopeElement[]>> mRopeElementBuffers;
     std::vector<std::unique_ptr<TriangleElement[]>> mTriangleElementBuffers;
+    std::vector<std::unique_ptr<StressedSpringElement[]>> mStressedSpringElementBuffers;
     std::vector<ElementCounts> mElementBufferSizes;
     std::vector<ElementCounts> mElementBufferMaxSizes;
 
@@ -334,8 +351,10 @@ private:
     GameOpenGLVBO mSpringElementVBO;
     GameOpenGLVBO mRopeElementVBO;
     GameOpenGLVBO mTriangleElementVBO;
-    
+    GameOpenGLVBO mStressedSpringElementVBO;
+
     GameOpenGLTexture mElementTexture;
+    GameOpenGLTexture mElementStressedSpringTexture;
 
     //
     // Lamps
@@ -351,20 +370,4 @@ private:
 #pragma pack(pop)
 
     std::vector<std::vector<LampElement>> mLampBuffers;
-
-
-    //
-    // Stressed springs
-    //
-
-    GameOpenGLShaderProgram mStressedSpringShaderProgram;
-    GLint mStressedSpringShaderOrthoMatrixParameter;
-
-    std::unique_ptr<SpringElement[]> mStressedSpringBuffer;
-    size_t mStressedSpringBufferSize;
-    size_t mStressedSpringBufferMaxSize;
-
-    GameOpenGLVBO mStressedSpringVBO;
-
-    GameOpenGLTexture mStressedSpringTexture;
 };

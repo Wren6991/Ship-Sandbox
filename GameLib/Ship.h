@@ -27,10 +27,11 @@ class Ship
 public:
 
     static std::unique_ptr<Ship> Create(
-        int shipId,
+        int shipId,        
         World * parentWorld,
         ShipDefinition const & shipDefinition,
-        MaterialDatabase const & materials);
+        MaterialDatabase const & materials,
+        uint64_t currentStepSequenceNumber);
 
     ~Ship();
 
@@ -66,21 +67,6 @@ public:
         vec2 const & targetPos,
         float radius) const;
 
-    void PreparePointsForFinalStep(
-        float dt,
-        uint64_t currentStepSequenceNumber,
-        GameParameters const & gameParameters);
-
-    void GravitateWater(
-        float dt,
-        GameParameters const & gameParameters);
-
-    void BalancePressure(float dt);
-
-    void DiffuseLight(
-        float dt,
-        GameParameters const & gameParameters);
-
     void Update(
         float dt,
         uint64_t currentStepSequenceNumber,
@@ -108,13 +94,14 @@ private:
         int id,
         World * parentWorld);
 
-    void InitializeRepository(
+    void Initialize(
         ElementRepository<Point> && allPoints,
         ElementRepository<vec3f> && allPointColors,
         ElementRepository<vec2f> && allPointTextureCoordinates,
         ElementRepository<Spring> && allSprings,
         ElementRepository<Triangle> && allTriangles,
-        std::vector<ElectricalElement *> && allElectricalElements)
+        std::vector<ElectricalElement *> && allElectricalElements,
+        uint64_t currentStepSequenceNumber)
     {
         mAllPoints = std::move(allPoints);
         mAllPointColors = std::move(allPointColors);
@@ -125,6 +112,8 @@ private:
 
         mIsPointCountDirty = true;
         mAreElementsDirty = true;
+
+        DetectConnectedComponents(currentStepSequenceNumber);
     }
 
     void DoSpringsRelaxation(
@@ -187,6 +176,22 @@ private:
         size_t const mLastPointIndex;
         float const mDt;
     };
+
+    void DetectConnectedComponents(uint64_t currentStepSequenceNumber);
+
+    void LeakWater(
+        float dt,
+        GameParameters const & gameParameters);
+
+    void GravitateWater(
+        float dt,
+        GameParameters const & gameParameters);
+
+    void BalancePressure(float dt);
+
+    void DiffuseLight(
+        float dt,
+        GameParameters const & gameParameters);
 
 private:
 

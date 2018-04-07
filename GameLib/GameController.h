@@ -145,18 +145,19 @@ public:
 private:
 
     GameController(
-        std::unique_ptr<Physics::World> world,   
-        MaterialDatabase && materials,
         std::unique_ptr<RenderContext> renderContext,
         std::shared_ptr<GameEventDispatcher> gameEventDispatcher,
-        std::shared_ptr<ResourceLoader> resourceLoader)
-        : mWorld(std::move(world)) 
-        , mMaterials(std::move(materials))
-        , mGameParameters()
+        std::shared_ptr<ResourceLoader> resourceLoader,
+        MaterialDatabase && materials)
+        : mGameParameters()
         , mLastShipLoadedFilePath()
         , mRenderContext(std::move(renderContext))
         , mGameEventDispatcher(std::move(gameEventDispatcher))
-        , mResourceLoader(std::move(resourceLoader))        
+        , mResourceLoader(std::move(resourceLoader))
+        , mWorld(new Physics::World(
+            mGameEventDispatcher,
+            mGameParameters))
+        , mMaterials(std::move(materials))        
          // Smoothing
         , mCurrentZoom(mRenderContext->GetZoom())
         , mTargetZoom(mCurrentZoom)
@@ -180,14 +181,6 @@ private:
     void AddShip(ShipDefinition const & shipDefinition);
 
 private:
-    
-    //
-    // The world
-    //
-
-    std::unique_ptr<Physics::World> mWorld;
-    MaterialDatabase mMaterials;
-    
 
     //
     // Our current state
@@ -196,7 +189,6 @@ private:
     GameParameters mGameParameters;
     std::filesystem::path mLastShipLoadedFilePath;
 
-
     //
     // The doers 
     //
@@ -204,7 +196,14 @@ private:
     std::unique_ptr<RenderContext> mRenderContext;
     std::shared_ptr<GameEventDispatcher> mGameEventDispatcher;
     std::shared_ptr<ResourceLoader> mResourceLoader;
-    
+
+    //
+    // The world
+    //
+
+    std::unique_ptr<Physics::World> mWorld;
+    MaterialDatabase mMaterials;
+        
 
     //
     // The current render parameters that we're smoothing to

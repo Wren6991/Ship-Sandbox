@@ -508,6 +508,13 @@ RenderContext::RenderContext(
             mOrthoMatrix[r][c] = 0.0f;
         }
     }
+
+
+    //
+    // Flush all pending operations
+    //
+
+    glFlush();
 }
 
 RenderContext::~RenderContext()
@@ -546,8 +553,9 @@ void RenderContext::RenderStart()
     glEnable(GL_POLYGON_SMOOTH);
     glHint(GL_POLYGON_SMOOTH, GL_NICEST);
 
-    // Set nearest interpolation for textures
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // Enable blend for alpha transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Enable stencil test    
     glEnable(GL_STENCIL_TEST);    
@@ -613,6 +621,7 @@ void RenderContext::RenderCloudsEnd()
     
     // Stop using program
     glUseProgram(0);
+
 
 
     //
@@ -698,9 +707,15 @@ void RenderContext::UploadLandAndWaterEnd()
     // Upload land buffer
     //
 
+    // Bind VBO
     glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);
+
+    // Upload land buffer
     glBufferData(GL_ARRAY_BUFFER, mLandBufferSize * sizeof(LandElement), mLandBuffer.get(), GL_DYNAMIC_DRAW);
+
+    // Unbind VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
 
     //
     // Upload water buffer
@@ -708,8 +723,13 @@ void RenderContext::UploadLandAndWaterEnd()
 
     assert(mWaterBufferSize == mWaterBufferMaxSize);
 
+    // Bind VBO
     glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
+
+    // Upload water buffer
     glBufferData(GL_ARRAY_BUFFER, mWaterBufferSize * sizeof(WaterElement), mWaterBuffer.get(), GL_DYNAMIC_DRAW);
+
+    // Unbind VBO
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 }
 
@@ -722,10 +742,10 @@ void RenderContext::RenderLand()
     glUniform1f(mLandShaderAmbientLightIntensityParameter, mAmbientLightIntensity);
     glUniformMatrix4fv(mLandShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
-    // Bind Texture
+    // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mLandTexture);
 
-    // Bind land buffer
+    // Bind land VBO
     glBindBuffer(GL_ARRAY_BUFFER, *mLandVBO);
 
     // Describe InputPos
@@ -752,22 +772,19 @@ void RenderContext::RenderWater()
     glUniform1f(mWaterShaderWaterTransparencyParameter, mWaterTransparency);
     glUniformMatrix4fv(mWaterShaderOrthoMatrixParameter, 1, GL_FALSE, &(mOrthoMatrix[0][0]));
 
-    // Bind Texture
+    // Bind texture
     glBindTexture(GL_TEXTURE_2D, *mWaterTexture);
 
-    // Bind water buffer
+    // Bind water VBO
     glBindBuffer(GL_ARRAY_BUFFER, *mWaterVBO);
 
     // Describe InputPos
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
     // Describe InputTextureY
     glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (2 + 1) * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    // Enable blend (to make water transparent)
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Draw
     glDrawArrays(GL_TRIANGLE_STRIP, 0, static_cast<GLsizei>(2 * mWaterBufferSize));

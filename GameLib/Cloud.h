@@ -16,22 +16,6 @@ class Cloud
 {
 public:
 
-    float OffsetX;
-    float SpeedX1;
-    float AmpX;
-    float SpeedX2;
-
-    float OffsetY;
-    float AmpY;
-    float SpeedY;
-
-    float OffsetScale;
-    float AmpScale;
-    float SpeedScale;
-
-    Cloud()
-    {}
-
     Cloud(
         float offsetX,
         float speedX1,
@@ -43,29 +27,64 @@ public:
         float offsetScale,
         float ampScale,
         float speedScale)
-        : OffsetX(offsetX)
-        , SpeedX1(speedX1)
-        , AmpX(ampX)
-        , SpeedX2(speedX2)
-        , OffsetY(offsetY)
-        , AmpY(ampY)
-        , SpeedY(speedY)
-        , OffsetScale(offsetScale)
-        , AmpScale(ampScale)
-        , SpeedScale(speedScale)
+        : mX(0.0f)
+        , mY(0.0f)
+        , mScale(0.0f)
+        , mOffsetX(offsetX)
+        , mSpeedX1(speedX1)
+        , mAmpX(ampX)
+        , mSpeedX2(speedX2)
+        , mOffsetY(offsetY)
+        , mAmpY(ampY)
+        , mSpeedY(speedY)
+        , mOffsetScale(offsetScale)
+        , mAmpScale(ampScale)
+        , mSpeedScale(speedScale)
     {
     }
 
-    inline vec3f CalculatePosAndScale(float t, float windSpeed) const
+    inline void Update(
+        float t, 
+        float windSpeed)
     {
-        float x = OffsetX + (t * SpeedX1 * windSpeed) + (AmpX  * windSpeed * sinf(SpeedX2 * t));
-        float y = OffsetY + (AmpY * sinf(SpeedY * t));
-        float scale = OffsetScale + (AmpScale * sinf(SpeedScale * t));
+        mX = mOffsetX + (t * mSpeedX1 * windSpeed) + (mAmpX  * windSpeed * sinf(mSpeedX2 * t));
+        mY = mOffsetY + (mAmpY * sinf(mSpeedY * t));
+        mScale = mOffsetScale + (mAmpScale * sinf(mSpeedScale * t));
+    }
 
-        return vec3f(x, y, scale);
+    float GetX() const
+    {
+        return mX;
+    }
+
+    float GetY() const
+    {
+        return mY;
+    }
+
+    float GetScale() const
+    {
+        return mScale;
     }
 
 private:
+
+    float mX;
+    float mY;
+    float mScale;
+
+    float const mOffsetX;
+    float const mSpeedX1;
+    float const mAmpX;
+    float const mSpeedX2;
+
+    float const mOffsetY;
+    float const mAmpY;
+    float const mSpeedY;
+
+    float const mOffsetScale;
+    float const mAmpScale;
+    float const mSpeedScale;
 };
 
 }

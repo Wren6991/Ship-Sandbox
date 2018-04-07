@@ -193,7 +193,7 @@ MainFrame::MainFrame(wxApp * mainApp)
     mPauseMenuItem = new wxMenuItem(controlsMenu, ID_PAUSE_MENUITEM, _("Pause\tSpace"), _("Pause the game"), wxITEM_CHECK);
 	controlsMenu->Append(mPauseMenuItem);
     mPauseMenuItem->Check(false);
-	Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
+    Connect(ID_PAUSE_MENUITEM, wxEVT_COMMAND_MENU_SELECTED, (wxObjectEventFunction)&MainFrame::OnPauseMenuItemSelected);
 
     controlsMenu->Append(new wxMenuItem(controlsMenu, wxID_SEPARATOR));
 
@@ -384,6 +384,7 @@ void MainFrame::OnPostInitializeTrigger(wxTimerEvent & /*event*/)
         return;
     }
 
+    this->mMainApp->Yield();
 
     //
     // Register game event handlers

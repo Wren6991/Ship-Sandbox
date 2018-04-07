@@ -34,7 +34,7 @@ Point::Point(
 	, mPosition(position)
 	, mLastPosition(position)
 	, mMaterial(material)
-	, mForce()
+	, mForce(0.0f, 0.0f)
 	, mBuoyancy(buoyancy)
     , mIsLeaking(false)
 	, mWater(0.0f)

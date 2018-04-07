@@ -43,15 +43,21 @@ namespace Physics {
 //  W W W    O   O   R    R   L        D  DDD
 //   W W      OOO    R     R  LLLLLLL  DDDD
 
-World::World(std::shared_ptr<IGameEventHandler> gameEventHandler)
+World::World(
+    std::shared_ptr<IGameEventHandler> gameEventHandler,
+    GameParameters const & gameParameters)
     : mAllShips()
     , mCurrentTime(0.0f)
-    , mCurrentStepSequenceNumber(0u)
+    , mCurrentStepSequenceNumber(1u)
     , mCollisionTree(BVHNode::AllocateTree())
     , mGameEventHandler(std::move(gameEventHandler))
 {
+    // Initialize random engine
     std::seed_seq seed_seq({1, 242, 19730528});
     mRandomEngine = std::ranlux48_base(seed_seq);
+
+    // Initialize clouds
+    UpdateClouds(gameParameters);
 }
 
 int World::AddShip(
@@ -64,7 +70,8 @@ int World::AddShip(
         shipId,
         this,
         shipDefinition,
-        materials);
+        materials,
+        mCurrentStepSequenceNumber);
 
     mAllShips.push_back(std::move(newShip));
 
@@ -176,29 +183,8 @@ void World::Update(
 
     //buildBVHTree(true, points, collisionTree);
 
-    // Resize clouds vector
-    if (gameParameters.NumberOfClouds < mAllClouds.size())
-    {
-        mAllClouds.resize(gameParameters.NumberOfClouds);
-    }
-    else
-    {
-        std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-        for (size_t c = mAllClouds.size(); c < gameParameters.NumberOfClouds; ++c)
-        {
-            mAllClouds.emplace_back(
-                dis(mRandomEngine) * 100.0f,    // OffsetX
-                dis(mRandomEngine) * 0.01f,      // SpeedX1
-                dis(mRandomEngine) * 0.04f,     // AmpX
-                dis(mRandomEngine) * 0.01f,     // SpeedX2
-                dis(mRandomEngine) * 100.0f,    // OffsetY
-                dis(mRandomEngine) * 0.001f,    // AmpY
-                dis(mRandomEngine) * 0.005f,     // SpeedY
-                0.2f + static_cast<float>(c) / static_cast<float>(c + 3), // OffsetScale - the earlier clouds are smaller
-                dis(mRandomEngine) * 0.05f,     // AmpScale
-                dis(mRandomEngine) * 0.005f);    // SpeedScale
-        }
-    }
+    // Update clouds
+    UpdateClouds(gameParameters);
 }
 
 void World::Render(	
@@ -211,7 +197,7 @@ void World::Render(
     UploadLandAndWater(gameParameters, renderContext);
 
     // Render the clouds
-    RenderClouds(gameParameters, renderContext);
+    RenderClouds(renderContext);
 
     // Render the ocean floor
     renderContext.RenderLand();
@@ -243,20 +229,52 @@ void World::Render(
 // Private Helpers
 ///////////////////////////////////////////////////////////////////////////////////
 
-void World::RenderClouds(
-    GameParameters const & gameParameters,
-    RenderContext & renderContext) const
+void World::UpdateClouds(GameParameters const & gameParameters)
+{
+    // Resize clouds vector
+    if (gameParameters.NumberOfClouds < mAllClouds.size())
+    {
+        mAllClouds.resize(gameParameters.NumberOfClouds);
+    }
+    else
+    {
+        std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+        for (size_t c = mAllClouds.size(); c < gameParameters.NumberOfClouds; ++c)
+        {
+            mAllClouds.emplace_back(
+                new Cloud(
+                    dis(mRandomEngine) * 100.0f,    // OffsetX
+                    dis(mRandomEngine) * 0.01f,      // SpeedX1
+                    dis(mRandomEngine) * 0.04f,     // AmpX
+                    dis(mRandomEngine) * 0.01f,     // SpeedX2
+                    dis(mRandomEngine) * 100.0f,    // OffsetY
+                    dis(mRandomEngine) * 0.001f,    // AmpY
+                    dis(mRandomEngine) * 0.005f,     // SpeedY
+                    0.2f + static_cast<float>(c) / static_cast<float>(c + 3), // OffsetScale - the earlier clouds are smaller
+                    dis(mRandomEngine) * 0.05f,     // AmpScale
+                    dis(mRandomEngine) * 0.005f));    // SpeedScale
+        }
+    }
+
+    // Update clouds
+    for (auto & cloud : mAllClouds)
+    {
+        cloud->Update(
+            mCurrentTime,
+            gameParameters.WindSpeed);
+    }
+}
+
+void World::RenderClouds(RenderContext & renderContext) const
 {
     renderContext.RenderCloudsStart(mAllClouds.size());
 
-    for (Cloud const & cloud : mAllClouds)
+    for (auto const & cloud : mAllClouds)
     {
-        vec3f cloudValues = cloud.CalculatePosAndScale(mCurrentTime, gameParameters.WindSpeed);
-
         renderContext.RenderCloud(
-            cloudValues.x,
-            cloudValues.y,
-            cloudValues.z);
+            cloud->GetX(),
+            cloud->GetY(),
+            cloud->GetScale());
     }
 
     renderContext.RenderCloudsEnd();

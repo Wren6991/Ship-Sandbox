@@ -15,14 +15,11 @@ std::unique_ptr<GameController> GameController::Create(
     std::shared_ptr<ResourceLoader> resourceLoader,
     ProgressCallback const & progressCallback)
 {
-    // Create game dispatcher
-    std::shared_ptr<GameEventDispatcher> gameEventDispatcher = std::make_shared<GameEventDispatcher>();
-
-	// Create world
-    auto world = std::make_unique<Physics::World>(gameEventDispatcher);
-
     // Load materials
     auto materials = resourceLoader->LoadMaterials();
+
+    // Create game dispatcher
+    std::shared_ptr<GameEventDispatcher> gameEventDispatcher = std::make_shared<GameEventDispatcher>();
 
     // Create render context
     std::unique_ptr<RenderContext> renderContext = std::make_unique<RenderContext>(
@@ -33,17 +30,17 @@ std::unique_ptr<GameController> GameController::Create(
             progressCallback(0.9f * progress, message);
         });
 
+
     //
     // Create controller
     //
 
 	return std::unique_ptr<GameController>(
 		new GameController(
-			std::move(world),
-            std::move(materials),
             std::move(renderContext),
             std::move(gameEventDispatcher),
-            std::move(resourceLoader)));
+            std::move(resourceLoader),
+            std::move(materials)));
 }
 
 void GameController::RegisterGameEventHandler(IGameEventHandler * gameEventHandler)
@@ -226,7 +223,7 @@ void GameController::Reset()
 {
     // Reset world
     assert(!!mWorld);
-    mWorld.reset(new Physics::World(mGameEventDispatcher));
+    mWorld.reset(new Physics::World(mGameEventDispatcher, mGameParameters));
 
     // Reset rendering engine
     assert(!!mRenderContext);

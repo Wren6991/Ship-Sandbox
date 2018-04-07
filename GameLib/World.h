@@ -29,7 +29,9 @@ class World
 {
 public:
 
-	World(std::shared_ptr<IGameEventHandler> gameEventHandler);
+	World(
+        std::shared_ptr<IGameEventHandler> gameEventHandler,
+        GameParameters const & gameParameters);
 
     int AddShip(
         ShipDefinition const & shipDefinition,
@@ -75,9 +77,9 @@ public:
 
 private:
 
-    void RenderClouds(
-        GameParameters const & gameParameters,
-        RenderContext & renderContext) const;
+    void UpdateClouds(GameParameters const & gameParameters);
+
+    void RenderClouds(RenderContext & renderContext) const;
 
 	void UploadLandAndWater(
 		GameParameters const & gameParameters,
@@ -87,7 +89,7 @@ private:
 
 	// Repository
 	std::vector<std::unique_ptr<Ship>> mAllShips;
-    std::vector<Cloud> mAllClouds;
+    std::vector<std::unique_ptr<Cloud>> mAllClouds;
 
 	// The current time 
 	float mCurrentTime;
