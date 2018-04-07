@@ -58,6 +58,7 @@ Here's a list of the major changes I've been doing:
 - Optimized existing code to the point that the fps rate on my laptop reached 16fps (from 8fps)
 - Added connected component detection, used to correctly draw ship break-away parts on top of each other, among other things
 - Added texture mapping for ships, and a new "shp" input file that binds together ship structure and ship image
+- Added more realistic ropes, synthesised between two endpoints
 
 ..and here's a rought list of the major changes I want to do:
 - Test with rewriting the physics as force-based rather than position-based

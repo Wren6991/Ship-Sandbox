@@ -794,10 +794,10 @@ void Ship::GravitateWater(
         // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
+            // Do not propagate water from hull point to hull point
             if (!spring.IsHull())
             {
                 Point * const pointA = spring.GetPointA();
-
                 Point * const pointB = spring.GetPointB();
 
                 // cos_theta > 0 => pointA above pointB
@@ -828,6 +828,7 @@ void Ship::BalancePressure(float dt)
         // Don't visit destroyed springs, or we run the risk of being affected by destroyed connected points
         if (!spring.IsDeleted())
         {
+            // Do not propagate water from hull point to hull point
             if (!spring.IsHull())
             {
                 Point * const pointA = spring.GetPointA();

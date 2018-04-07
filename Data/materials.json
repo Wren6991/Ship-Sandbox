@@ -244,7 +244,7 @@
     },
     {
         "name": "WH_Yel",
-        "strength": 10,
+        "strength": 30,
         "mass": 1000,
         "structural_colour": "#998B0A",
 	"render_colour": "#998B0A",
@@ -255,7 +255,7 @@
     },
     {
         "name": "W_Yel",
-        "strength": 5,
+        "strength": 20,
         "mass": 800,
         "structural_colour": "#AF7C18",
 	"render_colour": "#AF7C18",

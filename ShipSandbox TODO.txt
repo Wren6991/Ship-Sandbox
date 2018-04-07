@@ -57,60 +57,15 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ Test with same strain also for compression	
 		+ And force at 0.0058
 	+ Test with slightly higher stiffness - see if less bending but same breaking
+- Should draw each connected component at once?
 - Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
 	- World::Initialize():
 		- Calcs connected components for each ship
 		- Builds clouds
 		- Invoked by GameController after pair of world::Reset and world::AddShip()
+- Think about hull springs/water propagation
 
 - Gfx:
-	= Do ropes with two endpoints (000xxx)
-		+ Throw exception if doesn't find two endpoints
-		+ Algo: 
-			+ Step 1: build vector<PointInfo> & Matrix<opt<pointIndex>> & vector<RopeInfo>
-			+ Step 2: visit RopeInfos and add to PointInfo's and SpringInfo's
-			+ Step 3: visit PointMatrix & ...
-		+ Starting perf:
-			+ Default ship: 14.1/14.3
-			+ Ropes test: 12.2/12.3
-		+ Need to always use color when rendering springs:
-			+ Spring::Type (Hull, Rope)
-				+ No exposed, just IsHull() & IsRope()
-				+ Make it a bit flag
-			+ Separate RenderContext method for Ropes, stored in separate Element (RopeElement, structurally == SpringElement)
-				+ Upper bound for # of spring ropes given # of points in connected component:
-					+ N
-					+ Upper bound of 'normal' springs doesn't change
-			+ Render: draw ropes after springs and triangles (we want them on top of triangles!), still by connected component
-				+ Use own program
-		+ Ending perf:
-			+ Default ship: 14.2
-			+ Ropes test: 12.3
-		+ Don't make triangles of 3 rope points if at least one is connected to ropes only
-			+ Fix Base III?
-		+ Flip order of rendering when structure: triangles first, then ropes
-			+ Need private subparts of Render()
-		+ Ending perf:
-			+ Default ship: 14.5
-			+ Ropes test: 12.3
-		= Add ropes to Titanic
-			- Make wood non-hull
-			- Add paratie
-		+ Fix unit tests
-		+ Make max(fixedSizeVector) == 9
-			+ Not for triangles - generated rope points will never participate in triangles
-		+ Material/Rope rearc:
-			+ MaterialDatabase
-				+ Loads itself from json
-					+ From ResourceLoader invoked by GameController at init'n
-				+ Guarantees:
-					+ Exactly one material with isRope=true
-					+ Color is #000000
-					+ No colors clash, and no colors fall within rope range
-				+ Replace in GameController, ResourceLoader
-				+ Remove ropeMaterial kung-fu @ Ship::Create and use material->IsRope
-				+ GameController also gives rope renderColour to RenderContext at cctor
-					+ Which sets shader's hardcoded parameter
 	- ShipTexture: Experiment with different min/mag filters
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
@@ -128,12 +83,15 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Dynamics:
 	- Pin points
-		- Point: IsPinned type
+		- Point: Pinned Characteristic
 		- Point::Update: do nothing if pinned
-		- Draw pinned points (via new Render::Upload) with color ? and texture with bull's eye
-		- Tool toggles:
-			- Ship checks if exists pinned in radius: if yes, unpin; else, pin
+		- ShipRenderContext: draw pinned points (via new Render::Upload, done by Ship in same loop as UploadShipPoint) 
+		  using color ? and texture (centered) with bull's eye
+			- Draw at very end of Render(), after stressed springs
+		- Tool just toggles:
+			- Ship checks if exists pinned point in radius: if yes, unpin; else, pin
 			- Returns true if points belongs to ship, so to stop search by World
+			- Cursor is a pin
 	- Test completely force-driven dynamics:
 		- Create branch
 		- Each iteration (test initially with 1 iteration per step; then see with more, but scale dt)
@@ -168,7 +126,12 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			+ Compare behavior with old game
 				+ Steel Ball and broken default ship in old game: explodes? yes
 	- Water:
-		- Did original game propagate water also through hull springs? How did hull thin dividers work?
+		+ Did original game propagate water also through hull springs? YES. How did hull thin dividers work? THEY DIDN'T WORK
+		- Add Point::Hull Characteristic, and don't leak/propagate(incl. gravitate) water if at least one of the two points is hull
+			- Then do we still need Spring::IsHull? NOPE!
+			- Alternatively: Spring Characteristic: WeakHull, set @ construction if at least one point is hull
+				- Then no need for Point::IsHull, worst case we leak water into a leaking hull point 
+			- Alternatively: just make a spring hull if one point is hull; test it
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
 		- Try directional BalancePressure?
@@ -655,6 +618,52 @@ IF WX:
 			+ Better grouping, see RadioBox?
 
 + Gfx:
+	+ Do ropes with two endpoints (000xxx)
+		+ Throw exception if doesn't find two endpoints
+		+ Algo: 
+			+ Step 1: build vector<PointInfo> & Matrix<opt<pointIndex>> & vector<RopeInfo>
+			+ Step 2: visit RopeInfos and add to PointInfo's and SpringInfo's
+			+ Step 3: visit PointMatrix & ...
+		+ Starting perf:
+			+ Default ship: 14.1/14.3
+			+ Ropes test: 12.2/12.3
+		+ Need to always use color when rendering springs:
+			+ Spring::Type (Hull, Rope)
+				+ No exposed, just IsHull() & IsRope()
+				+ Make it a bit flag
+			+ Separate RenderContext method for Ropes, stored in separate Element (RopeElement, structurally == SpringElement)
+				+ Upper bound for # of spring ropes given # of points in connected component:
+					+ N
+					+ Upper bound of 'normal' springs doesn't change
+			+ Render: draw ropes after springs and triangles (we want them on top of triangles!), still by connected component
+				+ Use own program
+		+ Ending perf:
+			+ Default ship: 14.2
+			+ Ropes test: 12.3
+		+ Don't make triangles of 3 rope points if at least one is connected to ropes only
+			+ Fix Base III?
+		+ Flip order of rendering when structure: triangles first, then ropes
+			+ Need private subparts of Render()
+		+ Ending perf:
+			+ Default ship: 14.5
+			+ Ropes test: 12.3
+		+ Add ropes to Titanic
+			+ Make wood non-hull
+		+ Fix unit tests
+		+ Make max(fixedSizeVector) == 9
+			+ Not for triangles - generated rope points will never participate in triangles
+		+ Material/Rope rearc:
+			+ MaterialDatabase
+				+ Loads itself from json
+					+ From ResourceLoader invoked by GameController at init'n
+				+ Guarantees:
+					+ Exactly one material with isRope=true
+					+ Color is #000000
+					+ No colors clash, and no colors fall within rope range
+				+ Replace in GameController, ResourceLoader
+				+ Remove ropeMaterial kung-fu @ Ship::Create and use material->IsRope
+				+ GameController also gives rope renderColour to RenderContext at cctor
+					+ Which sets shader's hardcoded parameter
 	+ Try light diffusion rearc:
 		+ No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs 
 		  and points):
