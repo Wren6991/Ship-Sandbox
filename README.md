@@ -32,9 +32,9 @@ Some interesting background on the original project can be found at <a href="htt
 >- Interact!
 >	- If your ship's taking too long to sink, smash it to bits with your mouse
 
-### Youtube Video
-<a href="http://www.youtube.com/watch?v=LQ0XHRIoQe0">Link</a>.
-
+>### Youtube Video
+><a href="http://www.youtube.com/watch?v=LQ0XHRIoQe0">Link</a>.
+>
 ---
 Back to Gabe's version now.
 
