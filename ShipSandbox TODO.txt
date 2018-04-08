@@ -1,17 +1,18 @@
 =================================================
 Current perf
 =================================================
-- fps: 14.2 (Samsung: 23.2) (Mattia's: 8.7 (Titanic))
-- World::Update: 51.68%
-	- DoSpringsRelaxation: 35.58% (Incl) 3.67% (Excl)
-		- Ship::SpringRelaxationCalculationTask::Process: 31.65%
-	- BalancePressure: 5.28%
-	- GravitateWater: 4.46%
-	- PreparePointsForFinalStep: 2.96%
-	- Point::Update: 1.63%
-	- DiffuseLight: 0.58%
-- Game::Render: 39.85%
-	- Ship::Render: 36.89% (Incl) 0.32% (Excl)
+- fps: 14.1 (Samsung: 24.4) (Mattia's: 15.9)
+- World::Update: 52.28%
+	- DoSpringsRelaxation: 37.16% (Incl) 3.43% (Excl)
+		- Ship::SpringRelaxationCalculationTask::Process: 33.47% (Incl) 33.47% (Excl)
+	- BalancePressure: 5.10%
+	- GravitateWater: 3.91%
+	- DetectConnectedComponents: 2.77%
+	- Point::Update: 1.51%
+	- DiffuseLight: 0.59%
+	- LeakWater: 0.06%
+- MainFrame::RenderGame: 40.52%
+	- Ship::Render: 36.98% (Incl) 0.30% (Excl)
 =================================================
 
 =================================================
@@ -41,12 +42,14 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ Do new .shp's:
 		+ Carnival
 		+ Titanic
+	+ Rerun perf profiling
 	- Do final round with all ships
 	- @Release only: make a .shp the default ship
 	- Screenshot @ github readme
 
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
+		- Try mipmaps, should help make the Titanic artifacts disappear
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
 	- AmbientLightIntensity:
