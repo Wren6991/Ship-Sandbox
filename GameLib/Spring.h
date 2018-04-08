@@ -75,7 +75,7 @@ public:
                 GetParentShip()->GetParentWorld()->IsUnderwater(*mPointA, gameParameters),
                 1);
         }
-        else if (strain > 0.4f * effectiveStrength)
+        else if (strain > 0.25f * effectiveStrength)
         {
             // It's stressed!
             if (!mIsStressed)

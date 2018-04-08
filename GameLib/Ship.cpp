@@ -1094,7 +1094,7 @@ void Ship::LeakWater(
     //
 
     if (!mIsSinking
-        && mTotalWater > static_cast<float>(mAllPoints.size()) / 2.5f)
+        && mTotalWater > static_cast<float>(mAllPoints.size()) / 2.0f)
     {
         // Started sinking
         mParentWorld->GetGameEventHandler()->OnSinkingBegin(mId);

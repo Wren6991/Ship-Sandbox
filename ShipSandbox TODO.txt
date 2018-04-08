@@ -43,6 +43,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Carnival
 		+ Titanic
 	+ Rerun perf profiling
+	- Deploy on Mattia's
 	- Do final round with all ships
 	- @Release only: make a .shp the default ship
 	- Screenshot @ github readme
@@ -94,8 +95,11 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- ...electrical and water...
 		- If it works (!!!):
 			- Set springs' K in material
+				- Fix Titanic masts
 			- Damping: experiment with global velocities
-			- Experiment with semi-implicit Euler (https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf)
+			- Experiment with:
+				- Runge-Kutta
+				- Semi-implicit Euler (https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf)
 	- Do we really need Spring::Damp 3 times? Would once with a higher coeff suffice?
 	- Realistification:
 		= Spring::Damp: dampCorrection should be a force, not just a velocity delta
