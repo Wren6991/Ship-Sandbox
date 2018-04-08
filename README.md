@@ -60,6 +60,11 @@ Here's a list of the major changes I've been doing:
 - Added texture mapping for ships, and a new "shp" input file that binds together ship structure and ship image
 - Added more realistic ropes, synthesised between two endpoints
 
+The game looks like this now:
+<img src="https://i.imgur.com/c8fTsgY.png">
+<img src="https://i.imgur.com/kovxCty.png">
+
+
 ..and here's a rought list of the major changes I want to do:
 - Test with rewriting the physics as force-based rather than position-based
 	- Eventually using Runge-Kutta for integration

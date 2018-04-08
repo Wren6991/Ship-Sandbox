@@ -43,11 +43,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Carnival
 		+ Titanic
 	+ Rerun perf profiling
-	- Lower volume of stress sounds, so that break sounds are louder
-	- Deploy on Mattia's
+	+ Lower volume of stress sounds, so that break sounds are louder
 	= Do final round with all ships
 	= @Release only: make Krafting.shp the default ship
-	- Screenshot @ github readme
+	- Screenshots @ github readme
 
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
