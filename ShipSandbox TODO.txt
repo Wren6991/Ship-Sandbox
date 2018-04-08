@@ -45,30 +45,6 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- @Release only: make a .shp the default ship
 	- Screenshot @ github readme
 
-+ MainFrame: AboutDialog is member & shown on demand
-+ Increase max grab force
-+ Space bar for pause
-	+ When pause, also pause sounds and music
-+ Try half of the relaxation iterations
-	+ Might need to adjust stiffness
-+ Adjust springs stiffness
-	+ Test other values:
-		+ 0.1 => should break faster : YES
-		+ 1.7: explodes
-	+ Test with same strain also for compression	
-		+ And force at 0.0058
-	+ Test with slightly higher stiffness - see if less bending but same breaking
-+ Should draw each connected component at once
-+ Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
-	+ World::Initialize():
-		+ Calcs connected components for each ship
-		+ Builds clouds
-		+ Invoked by GameController after pair of world::Reset and world::AddShip()
-= Test hull springs/water propagation
-	+ Check if also in old program Titanic.png had non-wet hull rudder: YES
-	- Less hull material in Titanic, but maintain strength
-	- Test Titanic afterwards
-
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
 	- Optimizations:
@@ -599,6 +575,8 @@ IF WX:
 + Get rid of unicode
 	+ Can, really?
 + Add splash screen
+
+
 + Controls:
 	+ Smooth pan and zoom
 		+ Takes 1 sec to get to final value (which is stored immediately as real value)
@@ -621,6 +599,9 @@ IF WX:
 		+ Larger points
 		+ SettingsDialog
 			+ Better grouping, see RadioBox?
+	+ Space bar for pause
+		+ When pause, also pause sounds and music
+	+ MainFrame: AboutDialog is member & shown on demand
 
 + Gfx:
 	+ Do ropes with two endpoints (000xxx)
@@ -823,6 +804,23 @@ IF WX:
 		+ Get rid of pre-generated texture names and create on-demand
 			+ Test!
 		+ See if can describe point, color, and texture VBOs at init
+	+ Should draw each connected component at once
+
++ Dynamics
+	+ Try half of the relaxation iterations
+		+ Might need to adjust stiffness
+	+ Adjust springs stiffness
+		+ Test other values:
+			+ 0.1 => should break faster : YES
+			+ 1.7: explodes
+		+ Test with same strain also for compression	
+			+ And force at 0.0058
+		+ Test with slightly higher stiffness - see if less bending but same breaking
+	+ Water
+		+ Test hull springs/water propagation
+			+ Check if also in old program Titanic.png had non-wet hull rudder: YES
+			+ Less hull material in Titanic, but maintain strength
+			+ Test Titanic afterwards
 
 + Debug light/drag issue
 	+ Could be due to distance too close and shooting light to sky
@@ -860,6 +858,7 @@ IF WX:
 		+ Hide it by default and only show via MainFrame menu option
 		+ Complete event handlers
 		+ Do ship sinking event notify in ship (mWater > 1/3 points)
+	+ Increase max grab force
 
 + Sound:
 	+ SFML:
@@ -994,6 +993,12 @@ IF WX:
 		+ Also, don't load default ship autonomously (need to register event handlers before that happens);
 		  rely on MainFrame calling GameController::LoadDefaultShip() after registration
 	+ Change calls to Point::SubtractFromLastPosition() to AddToLastPosition() and use (& implement) unary '-' operator for vectors
+
++ Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
+	+ World::Initialize():
+		+ Calcs connected components for each ship
+		+ Builds clouds
+		+ Invoked by GameController after pair of world::Reset and world::AddShip()
 
 
 ==============================================
