@@ -43,9 +43,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Carnival
 		+ Titanic
 	+ Rerun perf profiling
+	- Lower volume of stress sounds, so that break sounds are louder
 	- Deploy on Mattia's
-	- Do final round with all ships
-	- @Release only: make a .shp the default ship
+	= Do final round with all ships
+	= @Release only: make Krafting.shp the default ship
 	- Screenshot @ github readme
 
 - Gfx:
@@ -115,11 +116,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 				+ Steel Ball and broken default ship in old game: explodes? yes
 	- Water:
 		+ Did original game propagate water also through hull springs? YES. How did hull thin dividers work? THEY DIDN'T WORK
-		- Add Point::Hull Characteristic, and don't leak/propagate(incl. gravitate) water if at least one of the two points is hull
-			- Then do we still need Spring::IsHull? NOPE!
-			- Alternatively: Spring Characteristic: WeakHull, set @ construction if at least one point is hull
-				- Then no need for Point::IsHull, worst case we leak water into a leaking hull point 
-			- Alternatively: just make a spring hull if one point is hull; test it
+		+ Add Point::Hull Characteristic, and don't leak/propagate(incl. gravitate) water if at least one of the two points is hull			
+			+ Alternatively: just make a spring hull if one point is hull; test it
+		- BalancePressure: use gradient, it seems we stuff too much water into points with already too much water
 		- GravitateWater: try inverse visit (from H to L)
 			- Requires PointerVector::rbegin,rend
 		- Try directional BalancePressure?
