@@ -215,7 +215,9 @@ private:
     std::vector<std::size_t> mConnectedComponentSizes;
 
     // Flag remembering whether the number of points has changed
-    // since the last time we delivered them to the rendering context
+    // since the last time we delivered them to the rendering context.
+    // Does not count deleted points at this moment - deleted points remain
+    // in the buffer that we deliver to the rendering context
     mutable bool mIsPointCountDirty;
 
     // Flag remembering whether points (elements) and/or springs (incl. ropes) and/or triangles have changed
@@ -229,9 +231,13 @@ private:
 
 template<>
 inline void Ship::RegisterDestruction(Point * /* element */)
-{
+{    
     // Remember that we need to re-upload ship elements
     mAreElementsDirty = true;
+
+    // We don't mark the point count as dirty, as at this moment we keep 
+    // uploading all points, including deleted ones, to the rendering engine.
+    // We are content with only updating the point *elements*
 }
 
 template<>

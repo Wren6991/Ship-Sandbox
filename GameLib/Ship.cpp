@@ -702,6 +702,7 @@ void Ship::Update(
     DoSpringsRelaxation(dt, gameParameters);
 
     // Update strain for all springs; might cause springs to break
+    // (which would flag elements as dirty)
     for (Spring & spring : mAllSprings)
     {
         // Avoid breaking deleted springs
@@ -711,13 +712,15 @@ void Ship::Update(
         }
     }
 
-    // Clear up pointer containers, in case there have been deletions
-    // during or before this update step
-    mAllElectricalElements.shrink_to_fit();
 
-    // Detect connected components
-    DetectConnectedComponents(currentStepSequenceNumber);
+    //
+    // Detect connected components, if there have been deletions
+    //
 
+    if (mAreElementsDirty)
+    {
+        DetectConnectedComponents(currentStepSequenceNumber);
+    }
 
 
     //
@@ -739,6 +742,10 @@ void Ship::Update(
     //
     // Update electrical dynamics
     //
+
+    // Clear up pointer containers, in case there have been deletions
+    // during or before this update step
+    mAllElectricalElements.shrink_to_fit();
 
     DiffuseLight(
         dt,

@@ -44,13 +44,20 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		+ Titanic
 	+ Rerun perf profiling
 	+ Lower volume of stress sounds, so that break sounds are louder
+	+ @Release only: make Krafting.shp the default ship
+	+ Screenshots @ github readme
 	= Do final round with all ships
-	= @Release only: make Krafting.shp the default ship
-	- Screenshots @ github readme
+	- Tell art guy
+	- Post on Forum
 
 - Gfx:
 	- ShipTexture: Experiment with different min/mag filters
 		- Try mipmaps, should help make the Titanic artifacts disappear
+			- OpenGLGame::CreateMipmappedTexture(img) -> vector<OpenGLTexture>, including base
+				- Do all the dimensions down to 1x1, using floored extents
+				- Algo: take avg of each pair of points, including alpha
+			- Use GL_LINEAR_MIPMAP_LINEAR
+			- See https://www.khronos.org/opengl/wiki/Texture
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
 	- AmbientLightIntensity:
@@ -77,6 +84,25 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- Ship checks if exists pinned point in radius: if yes, unpin; else, pin
 			- Returns true if points belongs to ship, so to stop search by World
 			- Cursor is a pin
+	- Frontier:
+		- Only for non-rope points - rope points never take part in frontier
+		- Realize that a node can belong to up to 4 frontiers (center of 4 holes)
+			- And a point deletion might cause a merge of the four
+		- Frontier is set of points, marked as frontier, and connected to each other via 
+		  nextInFrontier * and prevInFrontier * (in CW order) 
+		- Algo:
+			- There are multiple frontiers, 0 is external, N is internal, isolated
+			- Calculate frontier at ship create, based off structural matrix, using geometry
+			- At each point deletion:
+				- 2 cases: OR: only later check if one of the connected points is already a frontier 
+				  (a deleted frontier point is bound to be connected to two other points of the same frontier, for each frontier)
+					- Point deleted is a frontier point:
+						- TODO
+					- Point deleted is NOT a frontier point:
+						- All its connected points become a frontier
+						- If one of the connected points is already a frontier, then the new frontier points
+						  take that frontierId
+						- TODO
 	- Test completely force-driven dynamics:
 		- Create branch
 		- Each iteration (test initially with 1 iteration per step; then see with more, but scale dt)
@@ -101,18 +127,6 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 				- Runge-Kutta
 				- Semi-implicit Euler (https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf)
 	- Do we really need Spring::Damp 3 times? Would once with a higher coeff suffice?
-	- Realistification:
-		= Spring::Damp: dampCorrection should be a force, not just a velocity delta
-			+ Ship explodes after dividing by mass; might need a larger coefficient
-			- Use a very large coefficient, and consider it'll be divided by mass
-				- Acceleration inv. proportional to mass - the heavier the point, the less the damping
-		+ Ship::Damp: damping 3 times at end should have the same effect
-		+ Exploding ship:
-			+ Check if higher damp factor helps: was 0.5, now 0.8
-		+ Spring equilibrium: 
-			+ Find right overshooting factor (may be slightly smaller)
-			+ Compare behavior with old game
-				+ Steel Ball and broken default ship in old game: explodes? yes
 	- Water:
 		+ Did original game propagate water also through hull springs? YES. How did hull thin dividers work? THEY DIDN'T WORK
 		+ Add Point::Hull Characteristic, and don't leak/propagate(incl. gravitate) water if at least one of the two points is hull			
@@ -124,16 +138,17 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- DestroyAt:
 		- Test: Spring::Destroy() only destroys triangles that contain A-B
 			- Should definitely make both A and B leak, as they both now have an adjacent hole
-	+ Ship::LeakWater:
-		+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
 	- Is Verlet implemented right?
-	- See if can continue queueing tasks without waiting for all blocks of chunks
+	- Review parallel calculation, it suffers from races
+		- Also See if can continue queueing tasks without waiting for all blocks of chunks
 	- Water drag 
 		- The one already there assumes velocity always normal to surface, but we should consider surface normal instead
 
 - Controls:
 	- SettingsDialog: save settings, and defaults
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
+		- GameParameters::ToJson()->picojson::value
+		- GameParameters::FromJson(picojson::value) (sets own)
 
 - Sounds:
 	+ Reset sound controller at ResetAndLoadShip()
@@ -141,26 +156,24 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 
 - Histograms:
 	- class Histogram
-	- Class Statistics (N Histograms, etc.)
-	- World::GetStatistics
+		- map<float, float in [0,1]>
+	- class Statistics (various Histograms, etc.)
+		- Histogram pointWaterHistogram
+		- ...
+	- World::GetStatistics() -> Statistics
 		- Visits all points across ships, no need to merge histograms
+		- Exposed by GameController as well
 	- StatisticsDialog
-		- Has GameController
+		- Pre-created member of MainFrame
+			- Has GameController
+		- Shown depending on menu (like LoggingDialog)
 		- exposes Update() invoked by MainFrame, always, after simulation step
 		- Update(): 
 			- if not visible, return;
-			- Draw Statistics
-
-- Y-center ship after loading
-	+ Log destroyAt world coordinates to see span of Y axis: Y=0 is sea level, - is down, + is up
-	- Use effective y-span (lowest and highest y of real points)
-
-
-- Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
-	- Also jellyfish fixed in 1.2.6?
+			- Get and draw Statistics
+				- Histogram control (panel? Check wx literature)
 
 - Lights
-	- Try additive water @ diffusion (with cap @ Point::CalculateColour)
 	+ need Optional()
 	+ Material:
 		+ use picojson
@@ -205,8 +218,6 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 					- based off clock time, not simulation step
 			- else: consider lighted:
 		- Then, go ahead with DiffuseLight as now
-
-
 	= Lamp render:
 		+ Can test it by itself, by using light material and by cheating with current!
 		= After current propagation:
@@ -218,6 +229,9 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 						- Updates state
 						- Eventually invokes IGameEventHandler->StartFlicker("whichOne")
 							- After choosing "whichOne" and compiling the plan
+							- Plan based on sequence of time points with light at max, matching
+							  sound
+							- SoundController just has map from whichOne to sound
 						- Sets and returns own lightIntensity = f(incoming current, flicker state machine, ...)
 				+ Diffusion: propagate mLight to adjacent points (incl. other lamps),
 				  inv. proportional to distance^2, with a graph flood stopping at max distance
@@ -240,8 +254,10 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- Not considered in Update(), but considered in Render()
 		- MainFrame begins new PendingShipPlace tool
 			- OnMouseMove: tell GameController (->World) mouse position as GameController::MovePendingShipTo(screen coords)
-				- Ship::MoveTo(world x, y): offsets all Point.position's
-					- Ship::mCurrentCenterPosition (init as {0,0}) tracks current center
+				- Ship::MoveTo(world x, y): 
+					- Moves all Points by (x,y)-mCurrentRepresentativePosition
+						- Ship::mCurrentRepresentativePosition (init'd as {0,0}) tracks current "center"
+					- mCurrentRepresentativePosition = (x,y)
 			- OnLDown:
 				- Tell GameController (DropPendingShip(x, y)) which:
 					- Tells World via World::DropPendingShip(x, y):
@@ -821,7 +837,17 @@ IF WX:
 		+ Test with same strain also for compression	
 			+ And force at 0.0058
 		+ Test with slightly higher stiffness - see if less bending but same breaking
+	+ Realistification:
+		+ Ship::Damp: damping 3 times at end should have the same effect
+		+ Exploding ship:
+			+ Check if higher damp factor helps: was 0.5, now 0.8
+		+ Spring equilibrium: 
+			+ Find right overshooting factor (may be slightly smaller)
+			+ Compare behavior with old game
+				+ Steel Ball and broken default ship in old game: explodes? yes
 	+ Water
+		+ Ship::LeakWater:
+			+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
 		+ Test hull springs/water propagation
 			+ Check if also in old program Titanic.png had non-wet hull rudder: YES
 			+ Less hull material in Titanic, but maintain strength
@@ -1004,6 +1030,9 @@ IF WX:
 		+ Calcs connected components for each ship
 		+ Builds clouds
 		+ Invoked by GameController after pair of world::Reset and world::AddShip()
+
++ Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
+	+ Also jellyfish fixed in 1.2.6? NO
 
 
 ==============================================
