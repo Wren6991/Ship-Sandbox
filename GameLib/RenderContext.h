@@ -187,7 +187,7 @@ public:
 
     void AddShip(
         int shipId,
-        std::optional<ImageData> const & texture);
+        std::optional<ImageData> texture);
 
 public:
 
@@ -228,8 +228,8 @@ public:
 
         // Calculate texture dimensions in NDC, as proportion in 1280 X 1024
         // (totally arbitrary, a texture this size would fill the entire screen)
-        float textureTileNdcW = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)].Width) / 1280.0f;
-        float textureTileNdcH = static_cast<float>(mCloudTextureDatas[GetCloudTextureIndex(mCloudBufferSize)].Height) / 1024.0f;
+        float textureTileNdcW = static_cast<float>(mCloudTextureSizes[GetCloudTextureIndex(mCloudBufferSize)].Width) / 1280.0f;
+        float textureTileNdcH = static_cast<float>(mCloudTextureSizes[GetCloudTextureIndex(mCloudBufferSize)].Height) / 1024.0f;
 
         float leftX = mappedX - textureTileNdcW * scale / 2.0f;
         float rightX = mappedX + textureTileNdcW * scale / 2.0f;
@@ -568,13 +568,11 @@ private:
     
     GameOpenGLVBO mCloudVBO;
 
-    std::vector<ImageData> mCloudTextureDatas;
+    std::vector<ImageSize> mCloudTextureSizes;
     std::vector<GameOpenGLTexture> mCloudTextures;
 
     inline size_t GetCloudTextureIndex(size_t cloudIndex) const
     {
-        assert(mCloudTextureDatas.size() == mCloudTextures.size());
-
         return cloudIndex % mCloudTextures.size();
     }
 
@@ -602,7 +600,6 @@ private:
 
     GameOpenGLVBO mLandVBO;
     
-    std::optional<ImageData> mLandTextureData;
     GameOpenGLTexture mLandTexture;
 
 
@@ -634,7 +631,6 @@ private:
 
     GameOpenGLVBO mWaterVBO;
 
-    std::optional<ImageData> mWaterTextureData;
     GameOpenGLTexture mWaterTexture;
 
     //

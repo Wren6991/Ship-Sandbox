@@ -82,9 +82,9 @@ std::unique_ptr<Ship> Ship::Create(
     std::vector<PointInfo> pointInfos;
 
 
-    int const structureWidth = shipDefinition.StructuralImage.Width;
+    int const structureWidth = shipDefinition.StructuralImage.Size.Width;
     float const halfWidth = static_cast<float>(structureWidth) / 2.0f;
-    int const structureHeight = shipDefinition.StructuralImage.Height;
+    int const structureHeight = shipDefinition.StructuralImage.Size.Height;
 
     std::unique_ptr<std::unique_ptr<std::optional<size_t>[]>[]> pointIndexMatrix(new std::unique_ptr<std::optional<size_t>[]>[structureWidth]);    
     
@@ -563,7 +563,7 @@ std::unique_ptr<Ship> Ship::Create(
         }
     }
 
-    LogMessage("Created ship: W=", shipDefinition.StructuralImage.Width, ", H=", shipDefinition.StructuralImage.Height, ", ",
+    LogMessage("Created ship: W=", shipDefinition.StructuralImage.Size.Width, ", H=", shipDefinition.StructuralImage.Size.Height, ", ",
         allPoints.size(), " points, ", allSprings.size(),
         " springs, ", allTriangles.size(), " triangles, ", allElectricalElements.size(), " electrical elements.");
 

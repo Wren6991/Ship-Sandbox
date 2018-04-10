@@ -20,7 +20,7 @@ RenderContext::RenderContext(
     , mCloudBufferSize(0u)
     , mCloudBufferMaxSize(0u)    
     , mCloudVBO()
-    , mCloudTextureDatas()
+    , mCloudTextureSizes()
     , mCloudTextures()
     // Land
     , mLandShaderProgram()
@@ -31,7 +31,6 @@ RenderContext::RenderContext(
     , mLandBufferMaxSize(0u)
     , mLandVBO()
     , mLandTexture()
-    , mLandTextureData()
     // Water
     , mWaterShaderProgram()
     , mWaterShaderAmbientLightIntensityParameter(0)
@@ -42,7 +41,6 @@ RenderContext::RenderContext(
     , mWaterBufferMaxSize(0u)
     , mWaterVBO()
     , mWaterTexture()
-    , mWaterTextureData()
     // Ships
     , mShips()
     , mRopeColour(ropeColour)
@@ -82,7 +80,7 @@ RenderContext::RenderContext(
     // Load textures
     //
 
-    mCloudTextureDatas = resourceLoader.LoadTexturesRgba(
+    auto cloudTextureDatas = resourceLoader.LoadTexturesRgba(
         "cloud",
         [&progressCallback](float progress, std::string const &)
         {
@@ -93,12 +91,12 @@ RenderContext::RenderContext(
     if (progressCallback)
         progressCallback(0.666f, "Loading textures...");
 
-    mLandTextureData.emplace(resourceLoader.LoadTextureRgb(std::string("sand_1.jpg")));
+    auto landTextureData = resourceLoader.LoadTextureRgba(std::string("sand_1.jpg"));
 
     if (progressCallback)
         progressCallback(1.0f, "Loading textures...");
 
-    mWaterTextureData.emplace(resourceLoader.LoadTextureRgb(std::string("water_1.jpg")));
+    auto waterTextureData = resourceLoader.LoadTextureRgba(std::string("water_1.jpg"));
 
 
 
@@ -166,7 +164,7 @@ RenderContext::RenderContext(
     glUseProgram(0);
 
     // Create textures
-    for (size_t i = 0; i < mCloudTextureDatas.size(); ++i)
+    for (size_t i = 0; i < cloudTextureDatas.size(); ++i)
     {
         // Create texture name
         glGenTextures(1, &tmpGLuint);
@@ -184,17 +182,20 @@ RenderContext::RenderContext(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         // Upload texture data
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mCloudTextureDatas[i].Width, mCloudTextureDatas[i].Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, mCloudTextureDatas[i].Data.get());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cloudTextureDatas[i].Size.Width, cloudTextureDatas[i].Size.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, cloudTextureDatas[i].Data.get());
         if (GL_NO_ERROR != glGetError())
         {
             throw GameException("Error uploading cloud texture onto GPU");
         }
 
+        // Store size
+        mCloudTextureSizes.push_back(cloudTextureDatas[i].Size);
+
         // Unbind texture
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    assert(mCloudTextureDatas.size() == mCloudTextures.size());
+    assert(mCloudTextureSizes.size() == mCloudTextures.size());
 
     //
     // Land 
@@ -281,15 +282,16 @@ RenderContext::RenderContext(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    // Set texture filtering parameters
+    // Set texture filtering parameters    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mLandTextureData->Width, mLandTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mLandTextureData->Data.get());
-    if (GL_NO_ERROR != glGetError())
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, landTextureData.Size.Width, landTextureData.Size.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, landTextureData.Data.get());
+    GLenum glError = glGetError();
+    if (GL_NO_ERROR != glError)
     {
-        throw GameException("Error uploading land texture onto GPU");
+        throw GameException("Error uploading ship texture onto GPU: " + std::to_string(glError));
     }
 
     // Unbind texture
@@ -391,7 +393,7 @@ RenderContext::RenderContext(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Upload texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mWaterTextureData->Width, mWaterTextureData->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, mWaterTextureData->Data.get());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, waterTextureData.Size.Width, waterTextureData.Size.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, waterTextureData.Data.get());
     if (GL_NO_ERROR != glGetError())
     {
         throw GameException("Error uploading water texture onto GPU");
@@ -535,12 +537,12 @@ void RenderContext::Reset()
 
 void RenderContext::AddShip(
     int shipId,
-    std::optional<ImageData> const & texture)
+    std::optional<ImageData> texture)
 {   
     assert(shipId == mShips.size());
 
     // Add the ship    
-    mShips.emplace_back(new ShipRenderContext(texture, mRopeColour));
+    mShips.emplace_back(new ShipRenderContext(std::move(texture), mRopeColour));
 }
 
 //////////////////////////////////////////////////////////////////////////////////

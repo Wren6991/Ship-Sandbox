@@ -22,7 +22,7 @@ class ShipRenderContext
 public:
 
     ShipRenderContext(
-        std::optional<ImageData> const & texture,
+        std::optional<ImageData> texture,
         vec3f const & ropeColour);
     
     ~ShipRenderContext();

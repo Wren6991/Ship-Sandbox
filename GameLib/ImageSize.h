@@ -1,27 +1,22 @@
 /***************************************************************************************
 * Original Author:		Gabriele Giuseppini
-* Created:				2018-03-19
+* Created:				2018-04-09
 * Copyright:			Gabriele Giuseppini  (https://github.com/GabrieleGiuseppini)
 ***************************************************************************************/
 #pragma once
 
-#include "ImageSize.h"
-
-#include <memory>
-
-struct ImageData
+struct ImageSize
 {
 public:
 
-    ImageSize const Size;
-    std::unique_ptr<unsigned char const[]> Data;
+    int Width;
+    int Height;
 
-    ImageData(
+    ImageSize(
         int width,
-        int height,
-        std::unique_ptr<unsigned char const[]> data)
-        : Size(width, height)
-        , Data(std::move(data))
+        int height)
+        : Width(width)
+        , Height(height)
     {
     }
 };

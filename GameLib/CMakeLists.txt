@@ -18,6 +18,7 @@ set  (GAME_SOURCES
 	GameParameters.h
 	IGameEventHandler.h
 	ImageData.h
+	ImageSize.h
 	Log.cpp
 	Log.h
 	Material.cpp

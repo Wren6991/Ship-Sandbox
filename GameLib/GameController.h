@@ -178,7 +178,7 @@ private:
 
     void Reset();
 
-    void AddShip(ShipDefinition const & shipDefinition);
+    void AddShip(ShipDefinition shipDefinition);
 
 private:
 

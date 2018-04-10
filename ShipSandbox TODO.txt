@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 14.1 (Samsung: 24.4) (Mattia's: 15.9)
+- fps: 14.5 (Samsung: 24.4) (Mattia's: 15.9)
 - World::Update: 52.28%
 	- DoSpringsRelaxation: 37.16% (Incl) 3.43% (Excl)
 		- Ship::SpringRelaxationCalculationTask::Process: 33.47% (Incl) 33.47% (Excl)
@@ -47,17 +47,22 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	+ @Release only: make Krafting.shp the default ship
 	+ Screenshots @ github readme
 	= Do final round with all ships
-	- Tell art guy
+	+ Tell art guy
 	- Post on Forum
 
 - Gfx:
-	- ShipTexture: Experiment with different min/mag filters
-		- Try mipmaps, should help make the Titanic artifacts disappear
-			- OpenGLGame::CreateMipmappedTexture(img) -> vector<OpenGLTexture>, including base
-				- Do all the dimensions down to 1x1, using floored extents
-				- Algo: take avg of each pair of points, including alpha
-			- Use GL_LINEAR_MIPMAP_LINEAR
-			- See https://www.khronos.org/opengl/wiki/Texture
+	= ShipTexture: Experiment with different min/mag filters
+		= Try mipmaps, should help make the Titanic artifacts disappear
+			+ OpenGLGame::UploadMipmappedTexture(imageData) -> void
+				+ Does base and all the dimensions down to 1x1, using floored extents
+				+ Algo: take avg of each square of points, including alpha
+			+ Use GL_LINEAR_MIPMAP_LINEAR
+			+ See https://www.khronos.org/opengl/wiki/Texture
+			+ Then nuke ImageData stored in RenderContext's
+			+ Use at:
+				+ Ship
+				+ Remove from Land? Test w/out and see if border
+			- Test perf
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
 	- AmbientLightIntensity:
@@ -149,6 +154,15 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
 		- GameParameters::ToJson()->picojson::value
 		- GameParameters::FromJson(picojson::value) (sets own)
+		- Save Settings: saves current to personal_settings.json 
+			- where? see wxwidgets or portable way
+				- Standard paths: http://docs.wxwidgets.org/3.1/classwx_standard_paths.html#a4752213ef4d7bdc71170b9e5c3691f0f
+					- Call App::SetAppName() at startup
+				+ https://softwareengineering.stackexchange.com/questions/3956/best-way-to-save-application-settings/3990#3990?newreg=bffd79f524c14afe84f2178cd3211a94
+			- personal_settings.json loaded at startup if exists, else default_settings.json
+		- Save Settings As: saves with filename, nothing else
+		- Load Settings: loads with filename, changes own settings
+		- Reset Settings: loads default_settings.json, changes own settings
 
 - Sounds:
 	+ Reset sound controller at ResetAndLoadShip()

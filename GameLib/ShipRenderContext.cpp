@@ -10,7 +10,7 @@
 #include <cstring>
 
 ShipRenderContext::ShipRenderContext(
-    std::optional<ImageData> const & texture,
+    std::optional<ImageData> texture,
     vec3f const & ropeColour)
     // Points
     : mPointCount(0u)
@@ -387,6 +387,9 @@ ShipRenderContext::ShipRenderContext(
             throw GameException("Error binding ship texture: " + std::to_string(glError));
         }
 
+        // Upload texture
+        GameOpenGL::UploadMipmappedTexture(std::move(*texture));
+
         //
         // Configure texture
         //
@@ -405,7 +408,7 @@ ShipRenderContext::ShipRenderContext(
             throw GameException("Error setting wrapping of T coordinate of ship texture: " + std::to_string(glError));
         }
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glError = glGetError();
         if (GL_NO_ERROR != glError)
         {
@@ -417,18 +420,6 @@ ShipRenderContext::ShipRenderContext(
         if (GL_NO_ERROR != glError)
         {
             throw GameException("Error setting magnification filter of ship texture: " + std::to_string(glError));
-        }
-
-
-        //
-        // Upload texture
-        //
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->Width, texture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture->Data.get());
-        glError = glGetError();
-        if (GL_NO_ERROR != glError)
-        {
-            throw GameException("Error uploading ship texture onto GPU: " + std::to_string(glError));
         }
 
         // Unbind texture

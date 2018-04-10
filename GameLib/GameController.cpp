@@ -55,7 +55,7 @@ void GameController::ResetAndLoadShip(std::filesystem::path const & filepath)
 
     Reset();
 
-    AddShip(shipDefinition);
+    AddShip(std::move(shipDefinition));
     
 	mLastShipLoadedFilePath = filepath;
 }
@@ -64,7 +64,7 @@ void GameController::AddShip(std::filesystem::path const & filepath)
 {
     auto shipDefinition = mResourceLoader->LoadShipDefinition(filepath);
 
-    AddShip(shipDefinition);
+    AddShip(std::move(shipDefinition));
 
 	mLastShipLoadedFilePath = filepath;
 }
@@ -80,7 +80,7 @@ void GameController::ReloadLastShip()
 
     Reset();
 
-    AddShip(shipDefinition);
+    AddShip(std::move(shipDefinition));
 }
 
 void GameController::DoStep()
@@ -233,13 +233,13 @@ void GameController::Reset()
     mGameEventDispatcher->OnGameReset();
 }
 
-void GameController::AddShip(ShipDefinition const & shipDefinition)
+void GameController::AddShip(ShipDefinition shipDefinition)
 {
     // Add ship to world
     int shipId = mWorld->AddShip(shipDefinition, mMaterials);
 
     // Add ship to rendering engine
-    mRenderContext->AddShip(shipId, shipDefinition.TextureImage);
+    mRenderContext->AddShip(shipId, std::move(shipDefinition.TextureImage));
 
     // Notify
     mGameEventDispatcher->OnShipLoaded(shipId, shipDefinition.ShipName);

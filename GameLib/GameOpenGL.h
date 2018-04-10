@@ -5,6 +5,8 @@
 ***************************************************************************************/
 #pragma once
 
+#include "ImageData.h"
+
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -156,4 +158,6 @@ public:
     static GLint GetParameterLocation(
         GameOpenGLShaderProgram const & shaderProgram,
         std::string const & parameterName);
+
+    static void UploadMipmappedTexture(ImageData baseTexture);
 };
