@@ -51,18 +51,6 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 	- Post on Forum
 
 - Gfx:
-	= ShipTexture: Experiment with different min/mag filters
-		= Try mipmaps, should help make the Titanic artifacts disappear
-			+ OpenGLGame::UploadMipmappedTexture(imageData) -> void
-				+ Does base and all the dimensions down to 1x1, using floored extents
-				+ Algo: take avg of each square of points, including alpha
-			+ Use GL_LINEAR_MIPMAP_LINEAR
-			+ See https://www.khronos.org/opengl/wiki/Texture
-			+ Then nuke ImageData stored in RenderContext's
-			+ Use at:
-				+ Ship
-				+ Remove from Land? Test w/out and see if border
-			- Test perf
 	- Optimizations:
 		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
 	- AmbientLightIntensity:
@@ -109,7 +97,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 						  take that frontierId
 						- TODO
 	- Test completely force-driven dynamics:
-		- Create branch
+		+ Create branch
 		- Each iteration (test initially with 1 iteration per step; then see with more, but scale dt)
 			- Apply forces: 
 				- For each spring:
@@ -841,6 +829,18 @@ IF WX:
 			+ Test!
 		+ See if can describe point, color, and texture VBOs at init
 	+ Should draw each connected component at once
+	+ ShipTexture: Experiment with different min/mag filters
+		+ Try mipmaps, should help make the Titanic artifacts disappear
+			+ OpenGLGame::UploadMipmappedTexture(imageData) -> void
+				+ Does base and all the dimensions down to 1x1, using floored extents
+				+ Algo: take avg of each square of points, including alpha
+			+ Use GL_LINEAR_MIPMAP_LINEAR
+			+ See https://www.khronos.org/opengl/wiki/Texture
+			+ Then nuke ImageData stored in RenderContext's
+			+ Use at:
+				+ Ship
+				+ Remove from Land? Test w/out and see if border
+			+ Test perf
 
 + Dynamics
 	+ Try half of the relaxation iterations
