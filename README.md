@@ -58,6 +58,7 @@ Here's a list of the major changes I've been doing:
 - Optimized existing code to the point that the fps rate on my laptop reached 16fps (from 8fps)
 - Added connected component detection, used to correctly draw ship break-away parts on top of each other, among other things
 - Added texture mapping for ships, and a new "shp" input file that binds together ship structure and ship image
+	- Textures are mipmapped with box filtering
 - Added more realistic ropes, synthesised between two endpoints
 - Removed original parallelism of spring relaxation, as it was inherently wrong (there were race conditions in updating points caught in the boundary between parallel batches)
 
@@ -72,6 +73,7 @@ The game looks like this now:
 - Add directional water drag forces, to simulate underwater gliding 
 	- Requires maintaining convex hull and ship perimeter normals
 - Add ability to pin points - freezing them at their current position
+- Better waves, may be with shallow water equations
 - Leverage vectorized instructions for dynamics calculations 
 - Make lights turn off (after flickering) when generator is wet or when electrical cables break
 - Add time-of-day (i.e. day light change during the game)
