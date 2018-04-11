@@ -1,0 +1,1075 @@
+=================================================
+Current perf
+=================================================
+- fps: 14.6 (Titanic: 11.10) (Samsung: 24.4) (Mattia's: 15.9)
+- World::Update: 52.28%
+	- DoSpringsRelaxation: 37.16% (Incl) 3.43% (Excl)
+		- Ship::SpringRelaxationCalculationTask::Process: 33.47% (Incl) 33.47% (Excl)
+	- BalancePressure: 5.10%
+	- GravitateWater: 3.91%
+	- DetectConnectedComponents: 2.77%
+	- Point::Update: 1.51%
+	- DiffuseLight: 0.59%
+	- LeakWater: 0.06%
+- MainFrame::RenderGame: 40.52%
+	- Ship::Render: 36.98% (Incl) 0.30% (Excl)
+=================================================
+
+=================================================
+Prev perf (before Color buffer separation and light and water in shaders)
+NOTE: fps drop is wholly due to additional vertex shader outputs; it has
+      nothing to do with the additional fragment shader inputs, with the
+      additional vertex attributes, or with the additional fragment shader logic
+=================================================
+- fps: 16.20 (Samsung: 20.4) (Mattia's: 8.7 (Titanic))
+- World::Update: 58.61%
+	- DoSpringsRelaxation: 40.94% (Incl) 3.98% (Excl)
+		- Ship::SpringRelaxationCalculationTask::Process: 36.76%
+	- BalancePressure: 5.51%
+	- GravitateWater: 4.83%
+	- PreparePointsForFinalStep: 3.30%
+	- Point::Update: 2.09%
+	- DiffuseLight: 0.71%
+- Game::Render: 32.64%
+	- Ship::Render: 29.19% (Incl) 0.47% (Excl)
+=================================================
+
+- Release:
+	+ Do structure first (above)
+	+ Check if less rope mass makes empress of britain not break
+	+ Add all other ships 
+		+ Remember: uppercase and spaces filenames
+	+ Do new .shp's:
+		+ Carnival
+		+ Titanic
+	+ Rerun perf profiling
+	+ Lower volume of stress sounds, so that break sounds are louder
+	+ @Release only: make Krafting.shp the default ship
+	+ Screenshots @ github readme
+	= Do final round with all ships
+	+ Tell art guy
+	- Post on Forum
+
+- Gfx:
+	- Optimizations:
+		- See if drawing springs & triangles with Z buffer and depth test helps (for springs' fragment shader)
+	- AmbientLightIntensity:
+		+ Use also in RenderContext::RenderStart() for clear (sky) color
+		+ Phase 1: pgup/down
+		- Phase 2: with clock - TBD
+	- Magnifying glass
+		- https://www.opengl.org/discussion_boards/showthread.php/154811-magnifying-glass-effect
+		- https://www.shadertoy.com/view/4tdXDl
+	- ocean depth bitmaps
+	- Save photos (opens SaveAs FileDialog)
+	- Text (for query tool):
+		- see https://github.com/wxWidgets/wxWidgets/blob/master/samples/opengl/pyramid/pyramid.cpp
+
+- Dynamics:
+	- Pin points
+		- Point: Pinned Characteristic
+		- Point::Update: do nothing if pinned
+			- Springs: TBD - it's expensive to check for each point
+		- ShipRenderContext: draw pinned points (via new Render::Upload, done by Ship in same loop as UploadShipPoint) 
+		  using color ? and texture (centered) with bull's eye
+			- Draw at very end of Render(), after stressed springs
+		- Tool just toggles:
+			- Ship checks if exists pinned point in radius: if yes, unpin; else, pin
+			- Returns true if points belongs to ship, so to stop search by World
+			- Cursor is a pin
+	- Frontier:
+		- Only for non-rope points - rope points never take part in frontier
+		- Realize that a node can belong to up to 4 frontiers (center of 4 holes)
+			- And a point deletion might cause a merge of the four
+		- Frontier is set of points, marked as frontier, and connected to each other via 
+		  nextInFrontier * and prevInFrontier * (in CW order) 
+		- Algo:
+			- There are multiple frontiers, 0 is external, N is internal, isolated
+			- Calculate frontier at ship create, based off structural matrix, using geometry
+			- At each point deletion:
+				- 2 cases: OR: only later check if one of the connected points is already a frontier 
+				  (a deleted frontier point is bound to be connected to two other points of the same frontier, for each frontier)
+					- Point deleted is a frontier point:
+						- TODO
+					- Point deleted is NOT a frontier point:
+						- All its connected points become a frontier
+						- If one of the connected points is already a frontier, then the new frontier points
+						  take that frontierId
+						- TODO
+	- Test completely force-driven dynamics:
+		+ Create branch
+		- Each iteration (test initially with 1 iteration per step; then see with more, but scale dt)
+			- Apply forces: 
+				- For each spring:
+					- Spring force (Stooke's law - need k, try fixed at first)
+					- Damping (try along spring first - like now)
+					- see https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf for equations
+			- For each point:
+				- Gravity (with buoyance)
+				- Drag
+				- Apply verlet integration
+				- Zero force
+				- Do ocean floor crash and bounce
+			- ...do tension strain check...
+			- ...electrical and water...
+		- If it works (!!!):
+			- Set springs' K in material
+				- Fix Titanic masts
+			- Damping: experiment with global velocities
+			- Experiment with:
+				- Runge-Kutta
+				- Semi-implicit Euler (https://www.scss.tcd.ie/Michael.Manzke/CS7057/cs7057-1516-14-MassSpringSystems-mm.pdf)
+	- Do we really need Spring::Damp 3 times? Would once with a higher coeff suffice?
+	- Water:
+		+ Did original game propagate water also through hull springs? YES. How did hull thin dividers work? THEY DIDN'T WORK
+		+ Add Point::Hull Characteristic, and don't leak/propagate(incl. gravitate) water if at least one of the two points is hull			
+			+ Alternatively: just make a spring hull if one point is hull; test it
+		- BalancePressure: use gradient, it seems we stuff too much water into points with already too much water
+		- GravitateWater: try inverse visit (from H to L)
+			- Requires PointerVector::rbegin,rend
+		- Try directional BalancePressure?
+	- DestroyAt:
+		- Test: Spring::Destroy() only destroys triangles that contain A-B
+			- Should definitely make both A and B leak, as they both now have an adjacent hole
+	- Is Verlet implemented right?
+	- Review parallel calculation, it suffers from races
+		- Also See if can continue queueing tasks without waiting for all blocks of chunks
+	- Water drag 
+		- The one already there assumes velocity always normal to surface, but we should consider surface normal instead
+
+- Controls:
+	- SettingsDialog: save settings, and defaults
+		- JSON for both game & render params, assembled & saved by gamecontroller, who also loads it on startup if exists 
+		- GameParameters::ToJson()->picojson::value
+		- GameParameters::FromJson(picojson::value) (sets own)
+		- Save Settings: saves current to personal_settings.json 
+			- where? see wxwidgets or portable way
+				- Standard paths: http://docs.wxwidgets.org/3.1/classwx_standard_paths.html#a4752213ef4d7bdc71170b9e5c3691f0f
+					- Call App::SetAppName() at startup
+					- Pass user folder path to GameController at startup, so latter doesn't have to deal with wxWidgets
+				+ https://softwareengineering.stackexchange.com/questions/3956/best-way-to-save-application-settings/3990#3990?newreg=bffd79f524c14afe84f2178cd3211a94
+			- personal_settings.json loaded at startup if exists, else default_settings.json
+		- Save Settings As: saves with filename, nothing else
+		- Load Settings: loads with filename, changes own settings
+		- Reset Settings: loads default_settings.json, changes own settings
+
+- Sounds:
+	+ Reset sound controller at ResetAndLoadShip()
+	- Water rushing in
+
+- Histograms:
+	- class Histogram
+		- map<float, float in [0,1]>
+	- class Statistics (various Histograms, etc.)
+		- Histogram pointWaterHistogram
+		- ...
+	- World::GetStatistics() -> Statistics
+		- Visits all points across ships, no need to merge histograms
+		- Exposed by GameController as well
+	- StatisticsDialog
+		- Pre-created member of MainFrame
+			- Has GameController
+		- Shown depending on menu (like LoggingDialog)
+		- exposes Update() invoked by MainFrame, always, after simulation step
+		- Update(): 
+			- if not visible, return;
+			- Get and draw Statistics
+				- Histogram control (panel? Check wx literature)
+
+- Lights
+	+ need Optional()
+	+ Material:
+		+ use picojson
+		+ Material.ElectricalProperties (optional)
+			+ type (Material::ElectricalProperties::ElectricalElementType=lamp, cable, generator)
+			+ flat list of all electrical properties, some apply some don't
+	+ class Lamp()
+		+ points to Point and Point points optionally to ElectricalElement (base abstract of Lamp, Cable, Generator)
+			+ ElectricalElement::GetType(){return mType;}: non-virtual, it's optimized by compiler
+	- Current Propagation Algo:
+		+ create new generation seq number; if new is 0 => 1
+		- ElectricalElement has SetVisited(curGen), bool IsVisited(curGen)
+		- All of the following @ new ad-hoc update step
+		- visit whole electrical graph, as:
+			- For each generator point:
+				- if not visited=>flood all connected ElectricalElements from here
+					- for each node: set to visited
+					- No need to have a visited set, just call ElElement->IsVisited(curGen)
+			- Then, lamps will be considered lighted if visited at this generation
+		- OLD:
+			- visit all generator points and count the points in their graphs; for each connected component:
+				- # nodes in component => current
+				- propagate from each of these points to all adjacent cables until light
+				- at a light: add up all incoming currents (compare seq number to decide whether to zero or not) 
+				  and then lower them by distance(==ohm), and then update gen number of lamp
+		- then, visit all lamps:
+			- call Lamp->UpdateLightIntensity(currentGenerationNumber, IGameEventHandler) -> void
+				- Looks at own (generationVisitNumber, state) and:
+					- Updates state
+					- Eventually starts flicker state machine:
+						- iff: state==On and generationVisitNumber != current
+						- Invokes IGameEventHandler->StartFlicker("whichOne")
+							- After choosing "whichOne" and compiling the plan
+						- Sets gen_number = 0
+						- Flicker state machine is based off clock time, not simulation step
+					- Sets own lightIntensity = f(generationVisitNumber, state, flicker state machine)
+
+			TODOOLD:
+			- if gen number != current: just interrupted
+				- set gen_number = 0
+				- start flicker state machine (consumed by diffusion)
+					- based off clock time, not simulation step
+			- else: consider lighted:
+		- Then, go ahead with DiffuseLight as now
+	= Lamp render:
+		+ Can test it by itself, by using light material and by cheating with current!
+		= After current propagation:
+			+ Zero out mLight of each point (use generation sequence number? useful for other Point properties?)
+				+ No, easier and probably faster to do it in same pass as LeakWater - LeakWaterAndZeroLight()
+			- Visit all lamps:
+				- call Lamp->UpdateLightIntensity(IGameEventHandler) -> lightIntensity
+					- Looks at own (current, generationVisitNumber, state) and:
+						- Updates state
+						- Eventually invokes IGameEventHandler->StartFlicker("whichOne")
+							- After choosing "whichOne" and compiling the plan
+							- Plan based on sequence of time points with light at max, matching
+							  sound
+							- SoundController just has map from whichOne to sound
+						- Sets and returns own lightIntensity = f(incoming current, flicker state machine, ...)
+				+ Diffusion: propagate mLight to adjacent points (incl. other lamps),
+				  inv. proportional to distance^2, with a graph flood stopping at max distance
+		+ Point.GetColour() takes also into account mLight (from itself, not from lamp) 
+                  and makes alpha blend just like water
+		+ Need "off" color to use at lamp point when Lamp is off (different than structural color),
+		  used when rendering point in springs/triangles/points
+			+ Not used when using textures, of course
+			+ Needs material's Color to split in StructuralColor and RenderColor (set to the same except for lamps)
+	- See if it still makes sense for ship to have mAllElectricalComponents - might be able to get away with mAllLamps
+	
+
+- Smoke
+	- Smoke-material points, emitting particles with a lifetime and a transparency connected to age
+
+- Multiple ships:
+	- Better after collision detection
+	- When ship loaded (added):
+		- World adds it not to mShips, but as opt<Ship> mPendingShip
+			- Not considered in Update(), but considered in Render()
+		- MainFrame begins new PendingShipPlace tool
+			- OnMouseMove: tell GameController (->World) mouse position as GameController::MovePendingShipTo(screen coords)
+				- Ship::MoveTo(world x, y): 
+					- Moves all Points by (x,y)-mCurrentRepresentativePosition
+						- Ship::mCurrentRepresentativePosition (init'd as {0,0}) tracks current "center"
+					- mCurrentRepresentativePosition = (x,y)
+			- OnLDown:
+				- Tell GameController (DropPendingShip(x, y)) which:
+					- Tells World via World::DropPendingShip(x, y):
+						- Final Ship::MoveTo()
+						- Move ship from mPendingShip into mShips
+					- Fires IGameEventHandler::OnPendingShipPlaced(shipId)
+						- EventTicker: say this and other Reset/Load
+						- SoundController: play sound
+				- Stop PendingShipPlace tool
+
+- Force-driven Feature Wishlist:
+	- Draw option to draw force vectors for each point
+
+==============================================================================
+==============================================================================
+==============================================================================
+==============================================================================
+==============================================================================
+==== DONE
+==============================================================================
+==============================================================================
+==============================================================================
+==============================================================================
+==============================================================================
+
++ Build glfw yourself
+	+ clone from git
+	+ build
+	+ fix Ship's CMake
+		+ C:\Users\Neurodancer\source\build\glfw\src\Release
++ move to source/build:
+	+ ShipSandbox
+
+IF WX:
++ build WX (Debug, Release)
++ add WX to CMakeFiles.txt
+	C:\Users\Neurodancer\source\repos\wxWidgets\include
+	C:\Users\Neurodancer\source\repos\wxWidgets\lib\vc_x64_lib
+		names: wxmsw31u[d]_core.lib wxbase31u[d].lib
++ remove titanicapp.*, titanicmain.* from CMakeFiles.txt
++ do a simple main with wx
++ rebuild WX with C++ Runtime being statically linked
++ test
++ see getting rid of whole wx.h and only include wxwindow
++ get rid of GLFW in all source files
++ setup CMakeFiles.txt: Remove GLFW
++ resuscitate old code, merging it with new existing structure:
+	+ mainApp - mainApp class, main #define
+	+ mainFrame - entire frame
++ test	
++ remove titanicapp.*, titanicmain.*, main_old.cpp
++ one-shot timer
++ nuke GLFW from hard disk (repo, build)
++ add logger and fix missing ship
+
++ Get perf baseline and start Readme.md and Changes.txt
+
+===========
++ cherry-pick that typo fix
++ logging window: try http://docs.wxwidgets.org/3.0/classwx_text_ctrl.html
++ rename members of Frame, cleanup code
+
++ Render/Game"Settings" -> "Parameters"
++ LoggingWindow -> "Dialog"
+
++ SettingsDialog:
+	+ Add spacing
+	+ Taller sliders
+	+ Min and Max
+	+ add textboxes 4 vals
+	+ ApplySettings()
+		+ GameController takes (& gives) absolute vals, & provides GetXMax/MinValue() (from YYYParameters)
+		+ Helper funcs in SettingsDialog do conversions
+	+ ReadSettings()
+	+ Other controls for other settings
+	+ rename members, cleanup code
+
++ MainFrame:
+	+ LogWindow bug when minimizing and maximizing main frame
+	+ Do we need mMainGLCanvas and context to be unique_ptr's?
+	+ Render once @ beginning
+		+ Check if OnPaint is the right one
+	+ Maximize
+	+ ReloadLastSelected
+	+ See if canvas.setcontext is necessary
+		+ Watch out for resize
+	+ +/- for zoom *IN MENU*
+		+ remove wxEVT_CHAR_HOOK at panel and use menu hotkey and event instead
+
++ Investigate dirty lines
+
++ Use own exception
+
++ Fix DestroyAt
+	+ Add DestroyRadius to GameParameters (not in SettingsDialog yet)
+
++ Fix final destroyer
+
++ Setup UnitTests
+	+ Build GTest Debug and Release
+	+ Create UnitTests project in CMake
+	+ First unit test: vectors
+
++ GameException: cctor with string
+	+ Utils::Convert(string)->wstring
+
++ Rebuild Devil but make it a dll with static runtime
++ Move DevIL init to GameController
+	+ No DevIL dep's in ShipSandbox
+	+ DevIL_INCLUDEs from GameLib are not public
+
++ Move to picojson
+	+ Nuke SDK
+	+ Remove public-ness of JSonCPP
+
++ Settings: 
+	+ Destroy Radius
+	+ "World"XYZ if really it is world
+
++ Frustum? For 2D? Try Ortho?
+
++ Change MainFrame's build info
+	+ separate Version.h
+
++ Mask with copyright at all source files (copy from XXmain)
+	+ Already capitalized
+	+ Those to be capitalized
+		+ material
+			+ Rename
+			+ cctors:
+				+ from picojson obj
+			+ Create()->UQ_PTR
+				+ private cctor
+				+ all members const
+			+ optional Material::ElectricalProperties
+		+ Also Renderer becomes a namespace, not a class
+		+ render
+			+ Renderer
+			+ move ScreenToWorld here
+			+ All static methods, inline
+		+ util
+		+ phys: 
+			+ Rename as Ship, World, Point, etc.
+			+ TODO: see first if can split into separate files
+				+ commit & push first
+				+ cpp's in namespace
+				+ Physics.h: includes all and each .h and .cpp includes Physics.h 
+			+ Private vs Public attributes:
+				+ No friends
+				+ All members mPrivate
+				+ All getters and setters (when needed)
+		+ vec
+
++ Perf optimizations:
+	+ Move back to baseline
+	+ Take profile X 2
+	+ set these flags and see impact (on Release)
+		+ Ox
+		+ fp:fast
+	+ Flags for non-MSVC:
+				<Compiler>
+					<Add option="-O3" />
+					<Add option="-ffast-math" />
+					<Add option="-fno-math-errno" />
+					<Add option="-funsafe-math-optimizations" />
+					<Add option="-ffinite-math-only" />
+					<Add option="-fno-trapping-math" />
+				</Compiler>
+	+ Make all render() const
+	+ Make all render() inline
+	+ Make all vector funcs inline in .h
+
+
++ Fix 4 BPP images
+	+ Need ilCopyPixels to convert to standard format (BPP:3, Format: RGB, Type: U_BYTE)
+
++ Material::"Electrical" (and "Sound")
++ See if destroy's lack of point allows for water to flow in
++ FileDialog: filters based off image formats that are supported
++ Jelly ball: see orig code for doubles
++ Less ocean depth max	
++ Data/
+	+ InitialShip.png [also change @ code]
+	+ Materials
++ see if it makes sense that ship::points is set<x, set<y, points>>
++ nuke wxSmith
+	+ Verify all is fine afterwards
++ set icon
++ Debug builds: 
+	+ Enable /Fp:strict and set fpcontrol via /DFLOATING_POINT_CHECKS	
+	+ See if SEH needed (/EHa)
+
++ Mouse pointer based off current tool
+	+ Only on Canvas, normal outside
++ Move IsPaused member out of game controller & parameters; handled by MainFrame via status of mPauseMenuItem
++ DrawAt: the longer it's pressed, the stronger it gets
+	+ Requires TimerTick to also update force and invoke DrawTo when l is down and current tool is Draw
+	+ Also radius of Smash, same thing
++ Tool strength modulation:
+	+ Also modulate cursor (red bar rising)
+		+ Build 10 images (and then cursors) off the base image
+		+ @ tool application, also call SetCursorStrength(strength, minStrength, maxStrength)
+			+ Calculated which one of the (xyzCursors.size()-1) to set, of current tool's cursor
+
++ Phys rearc:
+	+ Confirmed: destroy breaks due to iterator invalidation
+	+ In order to allow for ship building unit tests:
+		+ static unique_ptr<Ship> Ship::Create(unsigned char const * structureImageData, un_map<vec3f, Material*>)
+		+ void World::AddShip(unique_ptr<Ship> && newShip)
+		+ Game::LoadShip(filename) still loads the image, and then Ship::Create and World::AddShip
+	+ Ship_BuildsFromStructureImage_XXX unit test:
+		+ Make structureImageData and verify points, springs, triangles, etc., also indexes & relationships
+			+ Might actually want Material::cctor to be public
+	+ Destroy unit tests:
+		+ Make structureImageData
+		+ DestroyAt
+		+ Verify points, springs, triangles, etc., also indexes & relationships
+		+ Verify crashes in Debug!
+	+ Do phys renames and file split above
+	+ Verify unit tests (1) & runs normally & no fps regression
+	+ Commit & push
+	+ Take new perf baseline (FPS and percentages): 8/9
+	+ Repository rearc:
+		+ PointerContainer:
+			+ Flag is via getter (IsDeleted())
+				+ Also rename other GetIsXYZ() -> IsXYD() and SetXYD()
+			+ RegisterDeletion(): increments counter
+			+ ShrinkToFit: 
+				+ Only if deletion counter != 0
+				+ Allocate new and copy pointer by pointer that's not deleted
+					+ assert counts at the end
+				+ Fix unit tests (need to register deletion, and add case with no registration but deletion)		
+		+ Replace parentWorld with parentShip at all elements
+			+ See also if can get rid of accessing World altogether, in lieu of GameParameters or specific parameter(s) of it (e.g. gravity)
+			+ Spring
+			+ Triangle
+			+ Point
+		+ Physics::ShipElement<TElement>
+			+ Provides IsDeleted()
+			+ Has mParentShip * const (set via cctor) and getter
+			+ public Destroy()
+				+ mIsDeleted = true
+				+ mParentShip->RegisterDestruction<TElement>((TElement *)this)
+			+ Everything derives from it, publicly
+		+ Ship maintains lifetime of points, springs, and triangles in backbones 
+			+ Springs: PointerContainer
+			+ Others: depends, if fast iterator access in arbitrary order is needed => PointerContainer,
+				  else use set (even if never iterated, makes faster deletion)
+			+ RegisterDestruction<TElement>(TElement *element): 
+				+ For things in PointerContainer: invokes PointerContainer::RegisterDeletion()
+				+ For things in sets, maps: invokes set/map.erase(element) // it's a shortcut!
+					+ In these cases, mIsDeleted setting is redundant, but heh...
+		+ Fix crash at Destroy
+			+ Remove all TODOs
+		+ Rethink pointer container: it should iterate Element* rather than Element&
+		+ New FPS: 11/11/12
+		+ Fix disappearing ship
+			+ Make PointerContainer Log a Debug afterwards, instead of Info
+			+ Nuke all the other TODO's
+			+ Run with strict floating point
+				+ Disable exc with overflow & verify that's how we get to NaN
+		+ Commit & push
+		+ See if chunk splitting reprocesses same point twice
+		+ See if connected triangles (at point) should also be vector instead of set	
+			+ Requires Triangle.DestroyFromPoint(Point *) which avoids coming back to caller, to not invalidate iterator
+		+ Test mAllTriangles in PointerContainer
+			+ Should make faster render:
+				+ Before: FPS with pause=18/19
+				+ After: FPS with pause=19
+			+ If not good, undo - KEPT!
+
+		+ Try Adjancency rearc:
+			+ Commit and push first
+    			+ Each adjacency arc exists for each non-hull spring, and lives
+ as long as the spring lives;
+			  we might then get rid of these and just visit the non-hull springs,
+			  provided that we adjust GravitateWater and BalancePressure
+ for the fact that each arc 
+			  would now be visited only once
+
+			+ However, for electrical elements we still want to visit the spring-connected graph,
+			  regardless of hull-ness this time;
+			  we then want each point to know its N attached springs (arcs), which
+			  we maintain as a vector<Spring *> (there's max 8)
+				+ Actually: FixedSizeVector<TElement, Size>, w/erase that shifts and returns bool
+				+ Remove: use vector::erase(std::remove(val)), or self-done for just one
+				+ Adjust GravitateWater and BalancePressure
+ for the fact that each arc 
+			  		is now visited only once
+
+					+ GravitateWater: change to visit springs, and do realize that one of the points 
+					  always has cos > and the other cos <
+					+ BalancePressure: for each pair in which one has water > 1.0, do delta
+					+ Don't take shortcuts, and add comments about this
+				+ Point: expose same API as triangles
+				+ Spring:
+					+ cctor adds itself to its endpoints
+					+ dctor removes itself from its endpoints
+					+ Make sure it's the same code as triangles
+					+ Then remove code from Ship construction
+				+ Replace adjacencymap visit with spring visit (of non-hull only)
+				+ Remove ship.adjacencymap
+				+ Requires Spring.DestroyFromPoint(Point *) which avoids coming back to caller, to not invalidate iterator
+			+ Then see if Point->Destroy() can avoid enumerating all springs to find the ones affected
+				- Check speedup
+		+ x::Destroy()  // Removes all references to self that are found in counterparties
+				// Invokes Destroy() on counterparties it "owns" (e.g. Point->Spring)
+				// Basically: replaces dctors (which now have to go away)
+				// Then, calls base ShipElement::Destroy()
+		+ At the end of each Update(), Ship calls shrink_to_fit on owned pointer container(s)
+			+ Also removes points et al that were deleted on previous DestroyAt()
+		+ Remember to exclude IsDeleted() things during enumerations!
+			+ And assert(!IsDeleted()) when it's impossible the're deleted (e.g. if accessed via relationship that should
+			  have been cut if that element was deleted)
+
+	+ Remove TODO's from unit test and verify (2) & runs normally & no fps regression
+	+ Complete unit tests with all new relationships
+	+ Commit & push
+	+ Take new perf baseline (FPS)
+
+	+ Final refactor physics:
+		+ No friends
+		+ Clear all warnings
+		+ Args by ref - no vector copies!
+		+ phys getters (e.g. point.GetColour()) inline
+		+ Make other inlines
+		+ Fix include files	
+		+ Formulas optimizations
+			+ Point forces: gravity may be applied twice with different magnitude but same vector
+		+ gameparams/world::(waterpressure, strength, ): are these "factors" or "global" really?
+		+ See if FP:fast really makes a difference (Release only)
+		+ All TODO's
+	+ Commit & push
+	+ Verify unit tests & runs normally & no fps regression
++ Menu entry to reset pan and zoom
++ Get rid of unicode
+	+ Can, really?
++ Add splash screen
+
+
++ Controls:
+	+ Smooth pan and zoom
+		+ Takes 1 sec to get to final value (which is stored immediately as real value)
+	+ Zoom: inverse
+		+ 0 - 1000
+		+ Renderer::ZoomToWorldY(zoom) == 70/(zoom + 0.001)
+		+ Also called by GameController's Screen2World 
+			+ also move GameController's Screen2World implementation to Renderer
+		+ See if needs to be exponentially-slider'ed as well
+	+ Settings:
+		+ Strength Adjustment must be settable exponentially (slider=>exp)
+			+ Formula done by gamecontroller at AdjustStrengthAdjustment(), or by SettingsDialog directly
+	+ Page up and page down in menu
+	+ Ship name in title
+		+ MainFrame implements OnShipLoaded() and OnGameReset(), populates mShipNames vector with ship names, and calls SetTitle()
+		+ SetTitle appends Utils::Join(vec<str>, ' + ') to current title
+	+ Radio: draw points, springs, structure, texture
+		+ (Bit) Flag @ GameController->RenderContext->Ship
+			+ Inspected as bit glag by Ship as well @ Render() to avoid useless uploads
+		+ Larger points
+		+ SettingsDialog
+			+ Better grouping, see RadioBox?
+	+ Space bar for pause
+		+ When pause, also pause sounds and music
+	+ MainFrame: AboutDialog is member & shown on demand
+
++ Gfx:
+	+ Do ropes with two endpoints (000xxx)
+		+ Throw exception if doesn't find two endpoints
+		+ Algo: 
+			+ Step 1: build vector<PointInfo> & Matrix<opt<pointIndex>> & vector<RopeInfo>
+			+ Step 2: visit RopeInfos and add to PointInfo's and SpringInfo's
+			+ Step 3: visit PointMatrix & ...
+		+ Starting perf:
+			+ Default ship: 14.1/14.3
+			+ Ropes test: 12.2/12.3
+		+ Need to always use color when rendering springs:
+			+ Spring::Type (Hull, Rope)
+				+ No exposed, just IsHull() & IsRope()
+				+ Make it a bit flag
+			+ Separate RenderContext method for Ropes, stored in separate Element (RopeElement, structurally == SpringElement)
+				+ Upper bound for # of spring ropes given # of points in connected component:
+					+ N
+					+ Upper bound of 'normal' springs doesn't change
+			+ Render: draw ropes after springs and triangles (we want them on top of triangles!), still by connected component
+				+ Use own program
+		+ Ending perf:
+			+ Default ship: 14.2
+			+ Ropes test: 12.3
+		+ Don't make triangles of 3 rope points if at least one is connected to ropes only
+			+ Fix Base III?
+		+ Flip order of rendering when structure: triangles first, then ropes
+			+ Need private subparts of Render()
+		+ Ending perf:
+			+ Default ship: 14.5
+			+ Ropes test: 12.3
+		+ Add ropes to Titanic
+			+ Make wood non-hull
+		+ Fix unit tests
+		+ Make max(fixedSizeVector) == 9
+			+ Not for triangles - generated rope points will never participate in triangles
+		+ Material/Rope rearc:
+			+ MaterialDatabase
+				+ Loads itself from json
+					+ From ResourceLoader invoked by GameController at init'n
+				+ Guarantees:
+					+ Exactly one material with isRope=true
+					+ Color is #000000
+					+ No colors clash, and no colors fall within rope range
+				+ Replace in GameController, ResourceLoader
+				+ Remove ropeMaterial kung-fu @ Ship::Create and use material->IsRope
+				+ GameController also gives rope renderColour to RenderContext at cctor
+					+ Which sets shader's hardcoded parameter
+	+ Try light diffusion rearc:
+		+ No more at C++, but rather in OpenGL as in the following example (written for ShipTriangles only but valid also for springs 
+		  and points):
+			+ Prerequisite: draw ship triangles by connected component (see above)
+			+ Turn off diffusion
+			+ For each component: pass array of all lamps in that component; each lamp has {x, y, intensity};
+			+ Draw each connected component N times (use additive blending), once for each lamp, 
+			  each time passing the single lamp properties as uniform to shaders, 
+			  which calculate distance and do final light blending
+				+ Check right way of doing blending
+		+ REJECTED: perf was awful; this multiple-pass way of doing it hurts too much
+
+	+ Texture mapping:
+		+ UploadLandAndWaterStart()/./End()
+			+ Just specify land y and water y
+			+ Impl:
+				+ y:
+					+ To LandBuffer
+					+ To WaterBuffer
+			+ RenderLand()
+			+ RenderWater()
+		+ Land (sand)
+			+ bottom is not anymore a param but it's filled by RenderLadn(.) with +/- mWorldHeight/2
+				+ only param is x and y (world y)
+			+ texture coordinates are world coordinates
+			+ Magic number is based on desired tile world size
+		+ Water
+			+ Use "water transparency" uniform in shader that sets alpha value in result of texture
+			+ Make texture stretch wrt vertical height of water strip
+			+ Change map, this one's ugly
+		+ Clouds
+			+ Use N textures, each has own rectangular size
+			+ RenderContext loads all available textures and uses them for the clouds, modulo
+				+ ResourceLoader::LoadTexturesRgba(prefix)
+					+ initProgressSink lambda 
+			+ GameParameters.NumberOfClouds (constants)
+			+ World takes numberOfClouds and allocates clouds buffer with random values
+			+ Then, RenderContext::RenderCloudsStart()/./End()
+				+ Buffer contains virtualX and virtualY, and scale
+				+ RenderContext::RenderCloud() makes rectangles (in world coords) based off formula
+			+ Clouds stencil: 
+				+ Draw waterbuffer without texture, but reverse stencil op
+		+ Ship, using second image
+			+ Load ship == image or .shp (JSON)
+			+ First, try naively with just point colors
+				+ Doesn't work, as structural image has too little resolution
+			+ RenderContext is given optional texture image (by GameController) via
+			  RenderContext::AddShip(iShip, opt<ImageData>)
+			  + Requires RenderContext::ResetWorld()
+				+ Simply clears vector of ShipRenderContext()
+					+ ShipRenderContext contains everything ship-related
+						+ Rename springs and triangles to "Elements"
+						+ Touch points with outside world:
+							+ Parameters (booleans, render factors)
+							+ OrthoMatrix
+							+ Helpers
+				+ No need to reset others (land, water, clouds) as their numbers, positions, and data will be given
+				  at the next Render() from scratch
+					+ But it could easily by re-creating uq_ptr<XYZRenderContext()>
+				+ Call from GameController
+			  + Adds ship with opt<ImageData> in arg
+				+ If specd, cctor creates <OpenGLTexture mElementTexture> and uploads immediately
+				+ mShipTextureCoordinatesVBO and other texture machinery is created at startup anyway (if any)
+				+ No need for std::optional<ImageData> TextureImageData
+			  + Remembers if ship has texture via mElementTexture
+			  + Catch exceptions at all interactions of MainFrame with GameController, and display DialogBox
+			  + ResourceLoader::LoadShipDefinition: need to make paths abs wrt .shp path
+			  + Refactor to World::CreateShip() -> ID -> Ship::Create()
+			  + Land and Water texture names: do own, not from array
+			  + Always unbind texture2d after a render
+			+ Also, later, RenderContext is also given textureCoords,
+			  i.e. a buffer of texture X's and Y's (i.e. initial points' coords) for
+			  each of the ship points (i.e. aligned with the point buffer which will be continuosly uploaded)
+			  + TextureCoords created by Ship::Create (always), stored into Ship, and given to RenderContext
+			    (which uploads it, always) once and for all at the same time as colors (i.e. when IsPointCountDirty)
+			+ If a texture is associated with the ship, RenderContext uses a different shader for ShipTriangles
+			+ Krafting:
+				+ Y offset for initial drop
+				+ Remove one layer of hull from bottom, but see how much it bends afterwards
+
+	+ OpenGL optimizations:
+		+ Try without buffer population: 			
+			+ Point has vec2f * const mPosition and vec2f * const mColour, pointing into two fixed buffers
+				+ vectors are packed (static_assert on contiguous 2 or 3)
+				+ Point does not live in PointerContainer but in std::uq_ptr<Point>[]
+					+ Delete does nothing (Destroy does relationships though), just marks it
+			+ Point also has mElementIndex, queried by springs and triangles when rendering themselves
+				+ Can make Ship::Render const again, then
+			+ Pointers to fixed buffers (as arrays of vectors) are owned by Ship and
+			  are given by Ship to RenderContext at each Render via 
+			  RenderContext::UploadVertices(vec2f*, vec3f*, count)
+			+ RenderContext usage of two buffers at each DrawElements:
+				glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+				glVertexAttribPointer(vertexPositionAttribute, 3,  GL_FLOAT, false, 0, 0);
+				glEnableVertexAttribArray(vertexPositionAttribute);
+				glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+				glVertexAttribPointer(vertexColorAttribute, 4, GL_FLOAT, false, 0, 0);
+				glEnableVertexAttribArray(vertexColorAttribute);
+			+ Point's vector pointers are populated by Point::Rebase(buf1, buf2),
+			  invoked by Ship at construction
+				+ Rebase() uses mPointIndex (rename of mElementIndex) to calc pointers
+			+ Try: could also use buffer with mLight and mWater (uploaded each time to GPU as well) to be used by V->F shader 
+			  to blend fragColor with two fixed colors (water blended before ambient light, light after)
+				+ F shader needs to start doing ambient light now, rather than point
+				+ Need Point::CalculateWaterColorIntensity() (clamps and copies mWater to buffer), 
+				  and a dummy Point::FinalizeLightColorIntensity() (dummy because mLight is already finalized)
+				  + or do clamp in shader, so use mWater and mLight straight from buffer, no CalculateX() needed
+				+ If we put light and water in shader, then we don't need to reupload color buffer each time
+			+ Bonus: also test GPU interpolation of mLight and mWater by emitting them at vertex
+		+ Plan:
+			+ 0: Test with additional mLight and mWater uploaded to RenderContext (same Point struct), and fragment shader doing math
+				+ F Shader needs params: ambientLightIntensity; constants: waterColor, lightColor
+				+ Remove point color calculation
+				+ Check perf:
+					+ Before: 16
+					+ After: 14.1
+					+ Keep in mind that we're adding to the buffer, while later we'll remove the colors
+				+ Also test bonus: GPU interpolation of mLight and mWater by emitting them at vertex				
+			+ 1: if OK: PointCore struct (@GameLib) with {position, light, water}, based into Point
+				+ Separate color buffer: 
+					+ Color struct (vec3f) has static_assert's for alignments
+					+ Created by Ship::Create(), moved into Ship member (ElementRepository<vec3f>)
+					+ Uploaded one-shot at first Ship::Render()
+						+ via RenderContext::UploadShipPointColors(vec3f *, size_t elementCount):
+							+ Uploads to GPU right away, with GL_STATIC_DRAW
+							+ Stores size (mShipElementCount) for later assert
+				+ Check perf: 14.2
+				+ Commit 
+				+ Separate PointCore buffer:
+					+ PointCore struct has static_assert's for alignments
+					+ Created by Ship::Create(), moved into Ship member (ElementRepository)
+						+ Points have already been based, at cctor by Ship::Create()
+					+ Uploaded at each Ship::Render()
+						+ via RenderContext::UploadShipPoints(PointCore *, size_t elementCount):
+							+ Asserts size same as color buffer (mShipElementCount)
+							+ Then uploads to GPU right away, with GL_STREAMING_DRAW
+			+ Final:
+				+ Nuke Point::CalculateColour
+				+ Also do light/water color blending at ship *point* fragment shader
+		+ Only keep separate color buffer and water/light done in F shader; point disembodiment was not a good idea
+	+ Draw stressed springs with their own hardcoded texture (1D, 3 pixels: red, red/white, red) of a reddish line with "hot" centre
+		+ https://stackoverflow.com/questions/17866308/texture-a-line-in-opengl
+		+ Make it a 2D with semicircle around T,L corner
+			+ textureCoords are inputPos
+	+ Fix springs showing up around texture from structure
+		+ Make test .shp with three masses and a rope
+	+ Draw points:
+		+ Ship uses RenderContext::UploadPoint(elementIndex), only for !deleted points
+		+ Then, glDrawElements(GL_POINT)
+		+ Nuke PointProgram as it's dupe now
+	+ RenderContext:
+		+ Get rid of pre-generated texture names and create on-demand
+			+ Test!
+		+ See if can describe point, color, and texture VBOs at init
+	+ Should draw each connected component at once
+	+ ShipTexture: Experiment with different min/mag filters
+		+ Try mipmaps, should help make the Titanic artifacts disappear
+			+ OpenGLGame::UploadMipmappedTexture(imageData) -> void
+				+ Does base and all the dimensions down to 1x1, using floored extents
+				+ Algo: take avg of each square of points, including alpha
+			+ Use GL_LINEAR_MIPMAP_LINEAR
+			+ See https://www.khronos.org/opengl/wiki/Texture
+			+ Then nuke ImageData stored in RenderContext's
+			+ Use at:
+				+ Ship
+				+ Remove from Land? Test w/out and see if border
+			+ Test perf
+
++ Dynamics
+	+ Try half of the relaxation iterations
+		+ Might need to adjust stiffness
+	+ Adjust springs stiffness
+		+ Test other values:
+			+ 0.1 => should break faster : YES
+			+ 1.7: explodes
+		+ Test with same strain also for compression	
+			+ And force at 0.0058
+		+ Test with slightly higher stiffness - see if less bending but same breaking
+	+ Realistification:
+		+ Ship::Damp: damping 3 times at end should have the same effect
+		+ Exploding ship:
+			+ Check if higher damp factor helps: was 0.5, now 0.8
+		+ Spring equilibrium: 
+			+ Find right overshooting factor (may be slightly smaller)
+			+ Compare behavior with old game
+				+ Steel Ball and broken default ship in old game: explodes? yes
+	+ Water
+		+ Ship::LeakWater:
+			+ Try rearc: just check if leaking and if externalWaterPressure (0 if above World::WaterHeight) > mWater
+		+ Test hull springs/water propagation
+			+ Check if also in old program Titanic.png had non-wet hull rudder: YES
+			+ Less hull material in Titanic, but maintain strength
+			+ Test Titanic afterwards
+
++ Debug light/drag issue
+	+ Could be due to distance too close and shooting light to sky
++ Do connected component detection
+	+ Get new baseline
++ See perf of merged LeakWater+DetectConnectedComponents vs Separate
+	+ Use perf analyzer:
+		+ Merged:
+			- Ship::Update: 60.64%
+				- PreparePointsForFinalStep: 3.14%
+		+ Separate: 
+			- Ship::Update: 63.69%
+				- LeakWater: 0.11%
+				- DetectConnectedComponents: 3.02%
++ Fix multiple clouds
+
++ Game interactions:
+	+ IGameEventHandler: individual methods, including parameter changes, all default-implemented
+		+ OnDestroy(Material const *, size) // size=1 for each destroy, but Dispatcher aggregates assuming size=anything
+		+ OnBreak(Material const *, size) // size=1 for each break, but Dispatcher aggregates assuming size=anything
+	+ GameController::RegisterGameEventHandler(IGameEventHandler *)
+		+ calls into GameEventDispatcher::RegisterGameEventHandler, who does:
+			+ Registration of real sinks (vector of plain IGameEventHandler *)
+			+ Aggregation of duplicate events 
+				+ e.g.: OnBreak: keep distinct Material * and sum for size
+				+ Clears aggregations at OnStepStart() (from GameController) and publishes them
+				  to registered sinks at OnStepEnd()
+	+ GameController gives shared_ptr<GameEventDispatcher> to Game at Game's cctor (as shared_ptr<IGameEventHandler>)
+	+ GameController calls mGameDispatcher (shared_ptr<GameEventDispatcher>)->OnStepStart()/End()
+	+ Invoke events at Game and below (pass handler at XYZ.Update())
+	+ First GameEventHandler: EventTicker
+		+ It's custom panel at bottom with text ticker
+		+ EventTicker holds wxPanel and draws it (figure out OnPaint and DC...)
+		+ Created by MainFrame and registered by MainFrame on GameController
+		+ Hide it by default and only show via MainFrame menu option
+		+ Complete event handlers
+		+ Do ship sinking event notify in ship (mWater > 1/3 points)
+	+ Increase max grab force
+
++ Sound:
+	+ SFML:
+		+ Build own
+		+ Add bins reference to ship CMake
+	+ Mute @ Menu
+	+ Fix splash progress - make sure final "Complete" shows
+	+ Break/Destroy: handlers also take bool isUnderwater (based off Y of broken thing wrt world's water height)
+	+ MainFrame initializes SoundController, which implements IGameEventHandler
+		+ Initializes off visit of Data/Sounds and Data/Music, w/Music and Sounds
+			+ Mapping of sounds with IGameEventHandler events via:
+				+ Material::optional<SoundProperties>
+					+ SoundMaterial: enum(wood, metal, ...)
+					+ Material enums have StrToX()
+				+ Filename patterns of sounds and music (e.g. destroy_wood_small_underwater_1.wav)
+					+ Parse: if 'destroy'=>expect SoundMaterial next, then ...
+				+ Storage of sounds:
+					+ Maps store vector<SoundBuffer>
+						+ Values are all the variations of the sounds, and 
+						  SoundController chooses randomly
+					+ Sounds are created when played and stored in queue together with timestamp
+				+ Sounds stored in maps (of maps of...) indexed by coordinates off filename patterns
+					+ Material's enums used as coordinates, together with SoundController's own
+					  enums (e.g. action, size, underwater type)
+				+ ResourceLoader has: 
+					+ GetSoundFilenames() -> all sound (relative) filenames
+					+ GetSoundFilepath(filename)
+		+ Do random choice
+		+ Need to manage number of currently-playing sounds
+			+ When currently playing > MaxPlayingSounds (constexpr):
+				+ ScavengeCompletedSounds()
+				+ If still full, stop oldest (among same SoundType, or absolute if none) and pop it 
+			+ ScavengeCompletedSounds() also called at SoundController::Update()
+	+ Stress event
+		+ At break loop: for each spring:
+			+ Spring->UpdateTensionStrain(..., IGameEventHandler):
+				+ If is broken=> this->Destroy(); break event (calc undewater); 
+				+ else if is stressed=>
+					+ If !mIsStressed:
+						+ set; stress event (calc undewater)
+				+ else:
+					+ mIsStressed = false;
+		+ Spring::IsStressed()->mIsStressed, used for rendering
+	+ Don't play soundbuffer if already playing for < 20ms
+	+ Sounds:
+		+ destroy, stress
+		+ finish destroy 
+		+ better cable snap
+		+ Listen to all materials
+		+ fix destroy cable/string's
+		+ Batch convert all to flac
+			+ Test and commit
+		+ underwater: with reverb effect
+			+ Batch mode, save aside current underwater's first!
+	+ MainFrame registers SoundController as Handler with GameController
+	+ Sinking music
+		+ GameController starts it upon OnStartedSinking() event
+	+ See if sounds should be spaced more apart
+	+ See underwater cable sounds - sound like metal?
+		+ break small 1, 3, 4
+		+ destroy medium 1
+		+ destroy small 4
+	+ Draw event: 
+		+ GameController fires Grab, simple
+		+ SoundController: uses own sound.isPlaying as state and starts @ event/stops @ update
+			+ Uses two consecutive Update() w/no Draw in-between as stop
+			+ how to loop though?
++ Put credits
+	+ Splash: https://www.artstation.com/stukata/profile, contact the guy
+
++ Fix: When land is above water, water is upside down
+
++ Optimization: to improve locality: points in contiguous buffer
+	+ No PointerVector but (fixed) std::vector<Point>, and others point to locations in the vector
+	+ Points never deleted, just marked
+		+ So have to check point.IsDeleted() each time the Point buffer is iterated
+		+ No check
+	+ Point destroy: also clear *own* references
+	+ Try contiguous buffer also with springs and triangles
+		+ And not checking isDeleted
+			+ Remove assert's
+		+ Multi-step create loop
+		+ Spring destroy: also clear *own* references
+		+ Triangle destroy: also clear *own* references
+		+ Do check IsDeleted for Spring and Triangle operations that may affect connected non-deleted points
+		+ New perf: 15.7/15.8
+		+ See ElementContainer::range(start, end)
+			+ UnitTests, verify last excluded
+	+ IsDeleted needs only be checked at SpringRender and TriangleRender
+	+ Try fast_qrt for vec2f::length()
+	+ Test fast_XYZ at vector
+		+ fast_inv_sqrt: 15.2/15.3/15.3
+		+ 1/sqrt: 15.3/15.3/15.3
+		+ Nuke'em if ok
+
++ Render optimization: only upload spring elements, triangle elements when they're dirty (deletion occurred)
+	+ Get perf analysis first:
+		- Game::Render: 34.90%:     Ship::Render: 31.53% (Incl)	3.05% (Excl)
+			- RenderShipEnd: 28.24%	- Ship::RegisterDeletion: sets mAreSprings/TrianglesDirty=true
+	+ cctor: true
+	+ set to false after uploaded to RenderContext 
+	+ Move XRay flag consumption to RenderContext 
+
++ Now that we have connected components, fix covering of ship pieces:
+	+ Draw batches of triangles and springs by component, so that pieces are "covered" nicely
+		+ Ship keeps track of # of connected components and of each size
+		+ At RenderXYZ(), allocate N buffers for the vertex indices and dispatch each triangle/spring
+		  to the correct buffer based off ConnectedComponentID 
+			+ ConnectedComponentID passed by caller (spring or triangle) based off the (first) point
+			  of the primitive
+				+ assert other points have same ID
+			+ Note: points themselves are not affected by this; they're still uploaded in their entirety 
+			  once per cycle
+		+ At RenderXYZEnd(), draw each connected component buffer from last to first
+		+ Do for triangles
+		+ Do for springs
+		+ Each connected component must be drawn together - its springs then its triangles
+
++ Code:
+	+ Resources: lowercase filenames
+		+ git
+		+ code
+	+ /Data
+	+ /Ships
+		+ Uppercase ship filenames
+		+ Code (ResourceLoader)
+		+ source (git)
+		+ CMake
+	+ MainFrame::Die(msg of exc)
+	+ Get rid of Game.cpp and move functionality to GameController
+		+ ResourceLoader::LoadDefaultShip()
+		+ Also, don't load default ship autonomously (need to register event handlers before that happens);
+		  rely on MainFrame calling GameController::LoadDefaultShip() after registration
+	+ Change calls to Point::SubtractFromLastPosition() to AddToLastPosition() and use (& implement) unary '-' operator for vectors
+
++ Fix bug: when you reload ship when paused, no clouds & no ship are visible until resumed
+	+ World::Initialize():
+		+ Calcs connected components for each ship
+		+ Builds clouds
+		+ Invoked by GameController after pair of world::Reset and world::AddShip()
+
++ Compare old (released) look with this one, and see if there are changes (in phys, render,...) to take in
+	+ Also jellyfish fixed in 1.2.6? NO
+
+
+==============================================
+        // Inputs from previous shader
+        varying vec3 vertexCol;
+        varying float vertexLampDistance;
+
+        // Parameters        
+        uniform float paramLampLightIntensity;
+        uniform float paramLampLightDiffusionAdjustmentCoefficient;        
+        uniform float paramMultiplePassFraction;
+
+        void main()
+        {
+            vec3 lightPointColour = vec3(1.0, 1.0, 0.25);
+
+            float distance = max(1.0, vertexLampDistance * vertexLampDistance * paramLampLightDiffusionAdjustmentCoefficient);
+            float lightness = paramLampLightIntensity / distance;                        
+            vec3 col = (vertexCol * (1.0 - lightness) + lightPointColour * lightness) * paramMultiplePassFraction;
+            //vec3 multColor = lightPointColour * lightness + (vec3(1.0, 1.0, 1.0) * (1.0 - lightness));
+            //vertexCol = inputCol * multColor;
+
+            gl_FragColor = vec4(col.xyz, 1.0);
+        } 
+==============================================

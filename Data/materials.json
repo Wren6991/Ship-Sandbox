@@ -1,0 +1,849 @@
+[
+    {
+        "name": "Steel Hull",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#A0A0A0",
+        "render_colour": "#A0A0A0",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Steel",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#D8D8D8",
+	"render_colour": "#D8D8D8",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Iron Hull",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#404050",
+	"render_colour": "#404050",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Iron",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#808090",
+	"render_colour": "#808090",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Wooden Hull",
+        "strength": 50,
+        "mass": 1000,
+        "structural_colour": "#905020",
+	"render_colour": "#905020",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Wood",
+        "strength": 40,
+        "mass": 800,
+        "structural_colour": "#E0D8C0",
+	"render_colour": "#E0D8C0",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Titanium Hull",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#565663",
+	"render_colour": "#565663",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Titanium",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#787896",
+	"render_colour": "#787896",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Cardboard Hull",
+        "strength": 5,
+        "mass": 30,
+        "structural_colour": "#A88848",
+        "render_colour": "#A88848",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Cardboard",
+        "strength": 5,
+        "mass": 20,
+        "structural_colour": "#C1A46A",
+	"render_colour": "#C1A46A",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Rope",
+        "strength": 80,
+        "mass": 300,
+        "structural_colour": "#000000",
+	"render_colour": "#000000",
+        "isHull": true,
+	"isRope": true,
+	"sound_properties": {
+		"element_type": "Cable"
+	}
+    },
+    {
+        "name": "SH_Red",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#A71000",
+	"render_colour": "#A71000",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Red",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#D80E00",
+	"render_colour": "#D80E00",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Red",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#840E00",
+	"render_colour": "#840E00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Red",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#9E0F00",
+	"render_colour": "#9E0F00",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Red",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#9E2E0C",
+	"render_colour": "#9E2E0C",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Red",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#B51B1B",
+	"render_colour": "#B51B1B",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Red",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#8F1F00",
+	"render_colour": "#8F1F00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Red",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#BE1400",
+	"render_colour": "#BE1400",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Yel",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#A27A00",
+	"render_colour": "#A27A00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Yel",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#D29800",
+	"render_colour": "#D29800",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Yel",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#806200",
+	"render_colour": "#806200",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Yel",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#997200",
+	"render_colour": "#997200",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Yel",
+        "strength": 30,
+        "mass": 1000,
+        "structural_colour": "#998B0A",
+	"render_colour": "#998B0A",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Yel",
+        "strength": 20,
+        "mass": 800,
+        "structural_colour": "#AF7C18",
+	"render_colour": "#AF7C18",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Yel",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#8B7A00",
+	"render_colour": "#8B7A00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Yel",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#B88D00",
+	"render_colour": "#B88D00",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Gre",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#5A9B00",
+	"render_colour": "#5A9B00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Gre",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#7BC800",
+	"render_colour": "#7BC800",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Gre",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#467B00",
+	"render_colour": "#467B00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Gre",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#569200",
+	"render_colour": "#569200",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Gre",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#439206",
+	"render_colour": "#439206",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Gre",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#78A814",
+	"render_colour": "#78A814",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Gre",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#3C8400",
+	"render_colour": "#3C8400",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Gre",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#66B100",
+	"render_colour": "#66B100",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Blue",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#008A95",
+	"render_colour": "#008A95",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Blue",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#00B6BF",
+	"render_colour": "#00B6BF",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Blue",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#006A76",
+	"render_colour": "#006A76",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Blue",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#00818C",
+	"render_colour": "#00818C",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Blue",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#036E8C",
+	"render_colour": "#036E8C",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Blue",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#10A19D",
+	"render_colour": "#10A19D",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Blue",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#00657E",
+	"render_colour": "#00657E",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Blue",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#009BA9",
+	"render_colour": "#009BA9",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Blue2",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#22437B",
+	"render_colour": "#22437B",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Blue2",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#2D58A0",
+	"render_colour": "#2D58A0",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Blue2",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#1B3261",
+	"render_colour": "#1B3261",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Blue2",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#203E74",
+	"render_colour": "#203E74",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Blue2",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#1E3070",
+	"render_colour": "#1E3070",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Blue2",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#325989",
+	"render_colour": "#325989",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Blue2",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#1A2C66",
+	"render_colour": "#1A2C66",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Blue2",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#26498C",
+	"render_colour": "#26498C",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Pink",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#A900A7",
+	"render_colour": "#A900A7",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Pink",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#D100D6",
+	"render_colour": "#D100D6",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Pink",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#860080",
+	"render_colour": "#860080",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Pink",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#9F009C",
+	"render_colour": "#9F009C",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Pink",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#A30085",
+        "render_colour": "#A30085",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Pink",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#9B00AF",
+	"render_colour": "#9B00AF",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Pink",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#93007B",
+	"render_colour": "#93007B",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Pink",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#BF00BA",
+	"render_colour": "#BF00BA",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "SH_Orange",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#D45B00",
+        "render_colour": "#D45B00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "S_Orange",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#F26500",
+	"render_colour": "#F26500",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "IH_Orange",
+        "strength": 110,
+        "mass": 7950,
+        "structural_colour": "#A84F00",
+	"render_colour": "#A84F00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "I_Orange",
+        "strength": 100,
+        "mass": 7850,
+        "structural_colour": "#C85800",
+	"render_colour": "#C85800",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "WH_Orange",
+        "strength": 10,
+        "mass": 1000,
+        "structural_colour": "#CE8100",
+	"render_colour": "#CE8100",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "W_Orange",
+        "strength": 5,
+        "mass": 800,
+        "structural_colour": "#DE4000",
+	"render_colour": "#DE4000",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "TH_Orange",
+        "strength": 150,
+        "mass": 4600,
+        "structural_colour": "#BA7100",
+	"render_colour": "#BA7100",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "T_Orange",
+        "strength": 140,
+        "mass": 4500,
+        "structural_colour": "#EF6B00",
+	"render_colour": "#EF6B00",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "DB_S_Red",
+        "strength": 320,
+        "mass": 6500,
+        "structural_colour": "#A21000",
+	"render_colour": "#A21000",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "DB_I_Red",
+        "strength": 250,
+        "mass": 7500,
+        "structural_colour": "#7E0C00",
+	"render_colour": "#7E0C00",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "DB_T_Red",
+        "strength": 400,
+        "mass": 6500,
+        "structural_colour": "#842005",
+	"render_colour": "#842005",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Glass",
+        "strength": 40,
+        "mass": 1000,
+        "structural_colour": "#E5FFFF",
+	"render_colour": "#E5FFFF",
+        "isHull": false,
+	"sound_properties": {
+		"element_type": "Glass"
+	}
+    },
+    {
+        "name": "Carbon Hull",
+        "strength": 600,
+        "mass": 758,
+        "structural_colour": "#1A1A1A",
+	"render_colour": "#1A1A1A",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Carbon",
+        "strength": 600,
+        "mass": 758,
+        "structural_colour": "#232323",
+	"render_colour": "#232323",
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "BS Hull",
+        "strength": 175,
+        "mass": 7580,
+        "structural_colour": "#111111",
+	"render_colour": "#111111",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Black Steel",
+        "strength": 160,
+        "mass": 7480,
+        "structural_colour": "#262626",
+	"render_colour": "#262626",
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "DB_W_Red",
+        "strength": 200,
+        "mass": 1600,
+        "structural_colour": "#9B3012",
+	"render_colour": "#9B3012",
+        "isHull": true,
+	"sound_properties": {
+		"element_type": "Wood"
+	}
+    },
+    {
+        "name": "Standard Lamp",
+        "strength": 5,
+        "mass": 30,
+        "structural_colour": "#FFFF00",
+	"render_colour": "#404040",
+	"electrical_properties": {
+		"element_type": "Lamp",
+		"resistance": 0,
+		"generated_voltage": 0
+	},
+	"sound_properties": {
+		"element_type": "Glass"
+	}
+    },
+    {
+        "name": "Standard Generator",
+        "strength": 20,
+        "mass": 900,
+        "structural_colour": "#FC0808",
+	"render_colour": "#303030",
+	"electrical_properties": {
+		"element_type": "Generator",
+		"resistance": 0,
+		"generated_voltage": 12
+	},
+	"sound_properties": {
+		"element_type": "Metal"
+	}
+    },
+    {
+        "name": "Standard Electrical Cable",
+        "strength": 20,
+        "mass": 30,
+        "structural_colour": "#700000",
+	"render_colour": "#202020",
+	"electrical_properties": {
+		"element_type": "Cable",
+		"resistance": 1000,
+		"generated_voltage": 0
+	},
+	"sound_properties": {
+		"element_type": "Cable"
+	}
+    }
+]

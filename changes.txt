@@ -1,3 +1,20 @@
+Alpha 2.0.1 (Gabriele Giuseppini) - Changes:
+ - Ship and land textures are now mipmapped
+ - Removed parallelism of spring relaxation, as it was inherently wrong
+
+Alpha 2.0 (Gabriele Giuseppini) - Changes:
+ - Quite faster (on my single-core laptop: doubled from 7fps to 15fps)
+ - Sounds and music (on cue)
+ - Textures for ships, land, water, and clouds in the sky
+ - More realistic ropes
+ - More realistic water dynamics
+ - When a ship breaks apart, the broken pieces now hide each other correctly
+ - Faster smash tool
+ - The strength of the smash and grab tools depends on how long the mouse button is kept pressed for
+ - Added menu and keyboard shortcuts (+/-) for zoom
+ - Revamped settings window
+ - Added application icon and cursors 
+
 Alpha 1.3 - Changes:
  - Stress markers are visible through panels
  - Added x-ray mode
