@@ -59,6 +59,7 @@ Here's a list of the major changes I've been doing:
 - Added connected component detection, used to correctly draw ship break-away parts on top of each other, among other things
 - Added texture mapping for ships, and a new "shp" input file that binds together ship structure and ship image
 - Added more realistic ropes, synthesised between two endpoints
+- Removed original parallelism of spring relaxation, as it was inherently wrong (there were race conditions in updating points caught in the boundary between parallel batches)
 
 The game looks like this now:
 <img src="https://i.imgur.com/c8fTsgY.png">

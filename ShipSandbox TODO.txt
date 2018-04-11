@@ -1,7 +1,7 @@
 =================================================
 Current perf
 =================================================
-- fps: 14.5 (Samsung: 24.4) (Mattia's: 15.9)
+- fps: 14.6 (Titanic: 11.10) (Samsung: 24.4) (Mattia's: 15.9)
 - World::Update: 52.28%
 	- DoSpringsRelaxation: 37.16% (Incl) 3.43% (Excl)
 		- Ship::SpringRelaxationCalculationTask::Process: 33.47% (Incl) 33.47% (Excl)
@@ -158,6 +158,7 @@ NOTE: fps drop is wholly due to additional vertex shader outputs; it has
 			- where? see wxwidgets or portable way
 				- Standard paths: http://docs.wxwidgets.org/3.1/classwx_standard_paths.html#a4752213ef4d7bdc71170b9e5c3691f0f
 					- Call App::SetAppName() at startup
+					- Pass user folder path to GameController at startup, so latter doesn't have to deal with wxWidgets
 				+ https://softwareengineering.stackexchange.com/questions/3956/best-way-to-save-application-settings/3990#3990?newreg=bffd79f524c14afe84f2178cd3211a94
 			- personal_settings.json loaded at startup if exists, else default_settings.json
 		- Save Settings As: saves with filename, nothing else

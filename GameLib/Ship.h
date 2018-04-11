@@ -13,7 +13,6 @@
 #include "Physics.h"
 #include "PointerContainer.h"
 #include "RenderContext.h"
-#include "Scheduler.h"
 #include "ShipDefinition.h"
 #include "Vectors.h"
 
@@ -36,8 +35,6 @@ public:
     ~Ship();
 
     unsigned int GetId() const { return mId; }
-
-    void Destroy();
 
     World const * GetParentWorld() const { return mParentWorld; }
     World * GetParentWorld() { return mParentWorld; }
@@ -120,63 +117,6 @@ private:
         float dt,
         GameParameters const & gameParameters);
 
-    struct SpringRelaxationCalculateTask : Scheduler::ITask
-    {
-    public:
-
-        SpringRelaxationCalculateTask(
-            Ship * parentShip,
-            size_t startSpringIndex,
-            size_t endSpringIndex)
-            : mParentShip(parentShip)
-            , mStartSpringIndex(startSpringIndex)
-            , mEndSpringIndex(endSpringIndex)
-        {
-        }
-
-        virtual ~SpringRelaxationCalculateTask()
-        {
-        }
-
-        virtual void Process();
-
-    private:
-
-        Ship * const mParentShip;
-        size_t const mStartSpringIndex;
-        size_t const mEndSpringIndex; // 1 past last
-    };
-
-    struct PointIntegrateTask : Scheduler::ITask
-    {
-    public:
-
-        PointIntegrateTask(
-            Ship * parentShip,
-            size_t firstPointIndex,
-            size_t lastPointIndex,
-            float dt)
-            : mParentShip(parentShip)
-            , mFirstPointIndex(firstPointIndex)
-            , mLastPointIndex(lastPointIndex)
-            , mDt(dt)
-        {
-        }
-
-        virtual ~PointIntegrateTask()
-        {
-        }
-
-        virtual void Process();
-
-    private:
-
-        Ship * const mParentShip;
-        size_t const mFirstPointIndex;
-        size_t const mLastPointIndex;
-        float const mDt;
-    };
-
     void DetectConnectedComponents(uint64_t currentStepSequenceNumber);
 
     void LeakWater(
@@ -207,9 +147,6 @@ private:
 
     // Parts repository
     PointerContainer<ElectricalElement> mAllElectricalElements;
-
-    // The scheduler we use for parallelizing updates
-    Scheduler mScheduler;
 
     // Connected components metadata
     std::vector<std::size_t> mConnectedComponentSizes;

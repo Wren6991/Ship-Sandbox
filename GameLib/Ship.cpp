@@ -590,7 +590,6 @@ Ship::Ship(
     , mAllSprings(0)
     , mAllTriangles(0)
     , mAllElectricalElements()
-    , mScheduler()
     , mConnectedComponentSizes()
     , mIsPointCountDirty(true)
     , mAreElementsDirty(true)
@@ -603,6 +602,8 @@ Ship::~Ship()
 {
     // Delete elements that are not unique_ptr's nor are kept
     // in a PointerContainer
+
+    // (None now!)
 }
 
 void Ship::DestroyAt(
@@ -926,35 +927,21 @@ void Ship::DoSpringsRelaxation(
     // Relax
     //
 
-    // Calculate number of parallel chunks and size of each chunk
-    size_t nParallelChunks = mScheduler.GetNumberOfThreads();
-    size_t parallelChunkSize = std::max((mAllSprings.size() / nParallelChunks), (size_t)1);
-
-    assert(parallelChunkSize > 0);
-
     // Run iterations
     //
     // The higher the number of iterations, the stiffer the world becomes.
-    // Note: the effective stiffness coefficient used for relaxations depends also on the number
+    // Note: the effective stiffness coefficient used for relaxations depends also (exponentially) on the number
     // of iterations - the more the iterations, the higher the effective coefficient becomes.
     for (int iter = 0; iter < 24; ++iter)
     {
-        for (size_t i = 0; i < mAllSprings.size(); /* incremented in loop */)
+        for (Spring & spring : mAllSprings)
         {
-            size_t available = mAllSprings.size() - i;
-            size_t thisChunkSize = (available >= parallelChunkSize) ? parallelChunkSize : available;
-            assert(thisChunkSize > 0);
-
-            mScheduler.Schedule(
-                new SpringRelaxationCalculateTask(
-                    this,
-                    i,
-                    i + thisChunkSize));
-
-            i += thisChunkSize;
+            // Don't relax destroyed springs, or we run the risk of being affected by destroyed connected points
+            if (!spring.IsDeleted())
+            {
+                spring.Relax();
+            }
         }
-            
-        mScheduler.WaitForAllTasks();
     }
 
 
@@ -973,29 +960,6 @@ void Ship::DoSpringsRelaxation(
                 spring.Damp(gameParameters.SpringDampingFactor);
             }
         }
-    }
-}
-
-void Ship::SpringRelaxationCalculateTask::Process()
-{
-    for (Spring & spring : mParentShip->mAllSprings.range(mStartSpringIndex, mEndSpringIndex))
-    {
-        // Don't relax destroyed springs, or we run the risk of being affected by destroyed connected points
-        if (!spring.IsDeleted())
-        {
-            spring.Relax();
-        }
-    }
-}
-
-void Ship::PointIntegrateTask::Process()
-{
-    for (size_t i = mFirstPointIndex; i <= mLastPointIndex; ++i)
-    {
-        Point & point = mParentShip->mAllPoints[i];
-
-        point.AddToPosition(point.GetForce() * mDt);
-        point.ZeroForce();
     }
 }
 

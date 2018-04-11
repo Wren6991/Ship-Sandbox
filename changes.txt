@@ -1,3 +1,7 @@
+Alpha 2.0.1 (Gabriele Giuseppini) - Changes:
+ - Ship and land textures are now mipmapped
+ - Removed parallelism of spring relaxation, as it was inherently wrong
+
 Alpha 2.0 (Gabriele Giuseppini) - Changes:
  - Quite faster (on my single-core laptop: doubled from 7fps to 15fps)
  - Sounds and music (on cue)
