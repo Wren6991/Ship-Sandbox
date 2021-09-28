@@ -28,3 +28,14 @@ Features:
 Youtube Video
 -------------
 <a href="http://www.youtube.com/watch?v=LQ0XHRIoQe0">Link.</a>
+
+Building
+-------------
+
+OSX:
+----
+        Install DeVIL (brew install devil)
+        Install GLFW (brew install glfw3)
+        Download <a href="http://http://tinythreadpp.bitsnbites.eu/">tinythread</a> and unpack it into a directory called tinythread.
+        Install <a href="http://jsoncpp.sourceforge.net/">jsoncpp</a>
+        Run make -f Makefile.OSX

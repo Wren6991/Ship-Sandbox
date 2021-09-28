@@ -1,0 +1,8 @@
+CXX=g++
+CXXFLAGS=-Itinythread -Wno-gnu-static-float-init
+
+%.o : %.cpp
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+all: game.o material.o render.o settingsDialog.o util.o main.o phys.o scheduler.o vec.o tinythread/tinythread.o
+	$(CXX) -o $@ $^ -Llib -ljson -lglfw3 -framework OpenGL -lIL -lILU
